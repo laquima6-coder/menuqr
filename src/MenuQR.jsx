@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { supabase, loginAdmin, logoutAdmin, getSession, getRestaurante, getCategorias, getProductos } from "./lib/supabase.js";
 
 /* ══════════════════════════════════════════════════════════════
    GLOBAL STYLES — dos paletas: cliente (cálida) + admin (técnica)
@@ -259,6 +260,108 @@ const AdminModal = ({onClose, children}) => (
 /* ══════════════════════════════════════════════════════════════
    LANDING
 ══════════════════════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════════════════════
+   LOGIN MODAL — auth de dueños de restaurante
+══════════════════════════════════════════════════════════════ */
+function LoginModal({ onSuccess, onClose }) {
+  const [tab,    setTab]    = useState("login"); // login | register
+  const [email,  setEmail]  = useState("");
+  const [pass,   setPass]   = useState("");
+  const [nombre, setNombre] = useState("");
+  const [slug,   setSlug]   = useState("");
+  const [err,    setErr]    = useState("");
+  const [loading,setLoading]= useState(false);
+
+  function slugify(s) {
+    return s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
+  }
+
+  async function handleLogin(e) {
+    e.preventDefault(); setErr(""); setLoading(true);
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass });
+      if (error) { setErr(error.message); return; }
+      onSuccess(data.user);
+    } catch(e) { setErr(e.message); }
+    finally { setLoading(false); }
+  }
+
+  async function handleRegister(e) {
+    e.preventDefault(); setErr(""); setLoading(true);
+    try {
+      if (!nombre || !email || !pass) { setErr("Completá todos los campos"); return; }
+      if (pass.length < 6) { setErr("La contraseña debe tener al menos 6 caracteres"); return; }
+      const sl = slug || slugify(nombre);
+      const { data, error } = await supabase.auth.signUp({ email, password: pass, options: { data: { nombre_restaurante: nombre } } });
+      if (error) { setErr(error.message); return; }
+      // Create restaurant record
+      await supabase.from("restaurantes").insert({
+        owner_id: data.user.id, nombre, slug: sl, email,
+        base_url: `${location.origin}/menu/${sl}`, plan: "free"
+      });
+      onSuccess(data.user);
+    } catch(e) { setErr(e.message); }
+    finally { setLoading(false); }
+  }
+
+  const S = {
+    overlay: { position:"fixed",inset:0,background:"rgba(0,0,0,.75)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:999,padding:20 },
+    card:    { background:"#0C1018",border:"1px solid #1A2230",borderRadius:18,padding:"32px 28px",width:"100%",maxWidth:400,animation:"scaleIn .2s ease" },
+    tabs:    { display:"flex",gap:4,background:"#060810",borderRadius:10,padding:4,marginBottom:24 },
+    tab:     (a) => ({ flex:1,padding:"9px 0",borderRadius:8,border:"none",cursor:"pointer",fontSize:".85rem",fontWeight:600,fontFamily:"Outfit,sans-serif",transition:".2s",background:a?"#1A2230":"transparent",color:a?"#B8D0E8":"#4A6080" }),
+    label:   { display:"block",fontSize:".75rem",color:"#4A6080",marginBottom:5,textTransform:"uppercase",letterSpacing:".04em",fontFamily:"Outfit,sans-serif" },
+    input:   { width:"100%",padding:"11px 14px",background:"#060810",border:"1px solid #1A2230",borderRadius:8,color:"#B8D0E8",fontSize:".95rem",outline:"none",marginBottom:14,fontFamily:"Outfit,sans-serif" },
+    btn:     { width:"100%",padding:13,background:"linear-gradient(135deg,#00FF88,#00C870)",border:"none",borderRadius:8,color:"#060810",fontSize:"1rem",fontWeight:800,cursor:"pointer",fontFamily:"Outfit,sans-serif" },
+    err:     { background:"#1a0808",border:"1px solid #7f1d1d",color:"#f87171",padding:"9px 12px",borderRadius:7,fontSize:".82rem",marginBottom:12,fontFamily:"Outfit,sans-serif" },
+    close:   { position:"absolute",top:14,right:16,background:"none",border:"none",color:"#4A6080",cursor:"pointer",fontSize:20 },
+  };
+
+  return (
+    <div style={S.overlay} onClick={onClose}>
+      <div style={{...S.card,position:"relative"}} onClick={e=>e.stopPropagation()}>
+        <button style={S.close} onClick={onClose}>×</button>
+        <div style={{textAlign:"center",marginBottom:20}}>
+          <div style={{fontSize:"2rem",marginBottom:6}}>🍽️</div>
+          <div style={{fontFamily:"Playfair Display,serif",fontSize:"1.2rem",fontWeight:700,color:"#EDE0C8"}}>MenuQR</div>
+        </div>
+        <div style={S.tabs}>
+          <button style={S.tab(tab==="login")} onClick={()=>{setTab("login");setErr("")}}>Iniciar sesión</button>
+          <button style={S.tab(tab==="register")} onClick={()=>{setTab("register");setErr("")}}>Registrarme</button>
+        </div>
+        {err && <div style={S.err}>{err}</div>}
+        {tab === "login" ? (
+          <form onSubmit={handleLogin}>
+            <label style={S.label}>Email</label>
+            <input style={S.input} type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="tu@restaurante.com" required autoFocus />
+            <label style={S.label}>Contraseña</label>
+            <input style={S.input} type="password" value={pass} onChange={e=>setPass(e.target.value)} placeholder="••••••••" required />
+            <button style={{...S.btn,opacity:loading?.6:1}} type="submit" disabled={loading}>
+              {loading ? "Verificando..." : "Entrar al panel →"}
+            </button>
+          </form>
+        ) : (
+          <form onSubmit={handleRegister}>
+            <label style={S.label}>Nombre del restaurante</label>
+            <input style={S.input} type="text" value={nombre} onChange={e=>{setNombre(e.target.value);setSlug(slugify(e.target.value))}} placeholder="La Trattoria" required autoFocus />
+            <label style={S.label}>URL de tu carta</label>
+            <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:14}}>
+              <span style={{color:"#2A3A50",fontSize:".75rem",whiteSpace:"nowrap",fontFamily:"IBM Plex Mono,monospace"}}>/menu/</span>
+              <input style={{...S.input,marginBottom:0,flex:1}} value={slug} onChange={e=>setSlug(slugify(e.target.value))} placeholder="la-trattoria" />
+            </div>
+            <label style={S.label}>Email</label>
+            <input style={S.input} type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="tu@restaurante.com" required />
+            <label style={S.label}>Contraseña</label>
+            <input style={S.input} type="password" value={pass} onChange={e=>setPass(e.target.value)} placeholder="Mínimo 6 caracteres" required />
+            <button style={{...S.btn,opacity:loading?.6:1}} type="submit" disabled={loading}>
+              {loading ? "Creando cuenta..." : "Crear mi restaurante →"}
+            </button>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function Landing({setMode}) {
   return (
     <div style={{maxWidth:430,margin:"0 auto",minHeight:"100vh",background:"#060810",
@@ -2413,23 +2516,22 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
    ROOT — estado compartido entre cliente y admin
 ══════════════════════════════════════════════════════════════ */
 export default function MenuQR({
-  // Props desde App.jsx (con localStorage)
-  // Si no se pasan props, usa estado interno (para demo standalone)
   local:  localProp,   setLocal:  setLocalProp,
   cats:   catsProp,    setCats:   setCatsProp,
   prods:  prodsProp,   setProds:  setProdsProp,
-  // forceMode: si viene de /menu/:slug saltar directo al modo cliente
   forceMode,
   mesaInicial,
 }) {
-  const [mode, setMode] = useState(forceMode || "landing");
+  const [mode,      setMode]      = useState(forceMode || "landing");
+  const [authUser,  setAuthUser]  = useState(null);   // Supabase user
+  const [showLogin, setShowLogin] = useState(false);
+  const [authLoading, setAuthLoading] = useState(true);
 
-  // Estado interno como fallback (cuando se usa standalone sin App.jsx)
+  // Estado interno como fallback
   const [localInt,  setLocalInt]  = useState(INIT_LOCAL);
   const [catsInt,   setCatsInt]   = useState(INIT_CATS);
   const [prodsInt,  setProdsInt]  = useState(INIT_PRODS);
 
-  // Usar props si están disponibles, sino estado interno
   const local    = localProp  ?? localInt;
   const setLocal = setLocalProp ?? setLocalInt;
   const cats     = catsProp   ?? catsInt;
@@ -2437,28 +2539,150 @@ export default function MenuQR({
   const prods    = prodsProp  ?? prodsInt;
   const setProds = setProdsProp ?? setProdsInt;
 
+  // ── Verificar sesión al montar
+  useEffect(() => {
+    if (!supabase) { setAuthLoading(false); return; }
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        setAuthUser(session.user);
+        loadRestaurantData(session.user.id);
+      }
+      setAuthLoading(false);
+    });
+    // Escuchar cambios de auth
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session?.user) { setAuthUser(session.user); loadRestaurantData(session.user.id); }
+      else { setAuthUser(null); setMode("landing"); }
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // ── Cargar datos del restaurante desde Supabase
+  async function loadRestaurantData(userId) {
+    if (!supabase) return;
+    try {
+      const { data: rest } = await supabase.from("restaurantes").select("*").eq("owner_id", userId).single();
+      if (!rest) return;
+      setLocal({
+        nombre: rest.nombre, descripcion: rest.descripcion || "",
+        direccion: rest.direccion || "", telefono: rest.telefono || "",
+        email: rest.email || "", color: rest.color || "#C9A84C",
+        mesas: rest.mesas || 10, restauranteId: rest.id,
+        slug: rest.slug, baseUrl: rest.base_url || "",
+        ...(rest.config || {}),
+      });
+      const [categorias, productos] = await Promise.all([
+        getCategorias(rest.id),
+        getProductos(rest.id),
+      ]);
+      if (categorias.length) setCats(categorias.map(c => ({ id:c.id, label:c.label, icon:c.icon, activa:c.activa })));
+      if (productos.length)  setProds(productos.map(p => ({ id:p.id, cat:p.categoria_id, name:p.name, desc:p.desc, price:p.price, orig:p.orig, emoji:p.emoji, tag:p.tag, active:p.active })));
+    } catch(e) { console.error("loadRestaurantData:", e); }
+  }
+
+  // ── Cuando se pide ir al admin: verificar auth
+  function goAdmin() {
+    if (authUser) { setMode("admin"); }
+    else { setShowLogin(true); }
+  }
+
+  async function handleLogout() {
+    if (supabase) await supabase.auth.signOut();
+    setAuthUser(null);
+    setMode("landing");
+  }
+
+  function onLoginSuccess(user) {
+    setAuthUser(user);
+    setShowLogin(false);
+    setMode("admin");
+    loadRestaurantData(user.id);
+  }
+
+  if (authLoading) return (
+    <div style={{background:"#060810",minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center"}}>
+      <GS/>
+      <div style={{width:40,height:40,border:"3px solid #1A2230",borderTopColor:"#C9A84C",borderRadius:"50%",animation:"spin .8s linear infinite"}}/>
+    </div>
+  );
+
   return (
     <>
       <GS/>
+      {showLogin && <LoginModal onSuccess={onLoginSuccess} onClose={()=>setShowLogin(false)} />}
       {mode==="landing" && (
-        <Landing setMode={setMode}/>
+        <LandingAuth setMode={setMode} goAdmin={goAdmin} authUser={authUser} onLogout={handleLogout}/>
       )}
       {mode==="client" && (
-        <ClientApp
-          onBack={()=>setMode("landing")}
-          local={local}
-          cats={cats}
-          prods={prods}
-        />
+        <ClientApp onBack={()=>setMode("landing")} local={local} cats={cats} prods={prods}/>
       )}
-      {mode==="admin" && (
+      {mode==="admin" && authUser && (
         <AdminApp
           onBack={()=>setMode("landing")}
           local={local}    setLocal={setLocal}
           cats={cats}      setCats={setCats}
           prods={prods}    setProds={setProds}
+          authUser={authUser} onLogout={handleLogout}
         />
       )}
+      {mode==="admin" && !authUser && (
+        <>{setShowLogin(true) && null}{setMode("landing") && null}</>
+      )}
     </>
+  );
+}
+
+/* ── Landing con Auth ─────────────────────────────────────── */
+function LandingAuth({ setMode, goAdmin, authUser, onLogout }) {
+  return (
+    <div style={{maxWidth:430,margin:"0 auto",minHeight:"100vh",background:"#060810",
+      display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:28}}>
+      <div style={{textAlign:"center",marginBottom:44,animation:"fadeUp .6s ease both"}}>
+        <div style={{width:72,height:72,borderRadius:22,
+          background:"linear-gradient(135deg,#1A1408,rgba(201,168,76,.35))",
+          border:"1px solid rgba(201,168,76,.35)",
+          display:"flex",alignItems:"center",justifyContent:"center",
+          fontSize:36,margin:"0 auto 20px"}}>🍽️</div>
+        <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:"#C9A84C",letterSpacing:3,marginBottom:8}}>MENUQR</p>
+        <h1 style={{fontFamily:"'Playfair Display',serif",fontSize:32,fontWeight:900,color:"#EDE0C8",lineHeight:1.1,marginBottom:8}}>
+          {authUser ? "Bienvenido" : "Carta Digital"}
+        </h1>
+        {authUser
+          ? <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"#5A4A30"}}>{authUser.email}</p>
+          : <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"#5A4A30"}}>Seleccioná la vista que querés explorar</p>
+        }
+      </div>
+      <div style={{width:"100%",display:"flex",flexDirection:"column",gap:12,animation:"fadeUp .6s ease .12s both"}}>
+        <button onClick={()=>setMode("client")} className="pr" style={{
+          background:"linear-gradient(135deg,#1A140A,#241A0E)",border:"1px solid #C9A84C33",
+          borderRadius:18,padding:"20px 22px",display:"flex",alignItems:"center",gap:16,cursor:"pointer",textAlign:"left"}}>
+          <div style={{width:50,height:50,borderRadius:14,background:"#C9A84C14",border:"1px solid #C9A84C33",display:"flex",alignItems:"center",justifyContent:"center",fontSize:26,flexShrink:0}}>📱</div>
+          <div style={{flex:1}}>
+            <p style={{fontFamily:"'Outfit',sans-serif",fontWeight:700,fontSize:16,color:"#EDE0C8",marginBottom:4}}>Ver la carta</p>
+            <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"#5A6A80"}}>Vista del cliente al escanear el QR</p>
+          </div>
+          <span style={{color:"#C9A84C",fontSize:20}}>→</span>
+        </button>
+        <button onClick={goAdmin} className="pr" style={{
+          background:"linear-gradient(135deg,#080C14,#0C1420)",border:"1px solid #00FF8833",
+          borderRadius:18,padding:"20px 22px",display:"flex",alignItems:"center",gap:16,cursor:"pointer",textAlign:"left"}}>
+          <div style={{width:50,height:50,borderRadius:14,background:"#00FF8814",border:"1px solid #00FF8833",display:"flex",alignItems:"center",justifyContent:"center",fontSize:26,flexShrink:0}}>⚙️</div>
+          <div style={{flex:1}}>
+            <p style={{fontFamily:"'Outfit',sans-serif",fontWeight:700,fontSize:16,color:"#EDE0C8",marginBottom:4}}>Panel del dueño</p>
+            <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"#5A6A80"}}>
+              {authUser ? "Pedidos, carta, QRs, caja y gestión" : "Iniciar sesión para acceder"}
+            </p>
+          </div>
+          <span style={{color:"#00FF88",fontSize:20}}>→</span>
+        </button>
+      </div>
+      {authUser && (
+        <button onClick={onLogout} style={{marginTop:20,background:"none",border:"1px solid #1A2230",borderRadius:8,
+          padding:"7px 18px",color:"#4A6080",cursor:"pointer",fontSize:".8rem",fontFamily:"Outfit,sans-serif"}}>
+          Cerrar sesión
+        </button>
+      )}
+      <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:"#1A2A40",marginTop:24,letterSpacing:1}}>MENUQR · v1.0</p>
+    </div>
   );
 }
