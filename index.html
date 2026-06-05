@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
+    <!-- PWA -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#060810" />
+
+    <!-- Apple / iOS -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="MenuQR" />
+    <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+
+    <!-- SEO -->
+    <meta name="description" content="Carta digital con QR para restaurantes. El cliente escanea, ve el menú y hace su pedido desde la mesa." />
+
+    <!-- Open Graph -->
+    <meta property="og:title"       content="MenuQR — Carta digital para tu restaurante" />
+    <meta property="og:description" content="El cliente escanea el QR, ve tu carta y hace el pedido desde la mesa." />
+    <meta property="og:type"        content="website" />
+    <meta property="og:image"       content="/icons/icon-512.png" />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="/icons/icon-192.png" />
+
+    <title>MenuQR</title>
+
+    <!-- Prevenir flash blanco al cargar -->
+    <style>
+      html, body, #root {
+        margin: 0;
+        padding: 0;
+        background: #060810;
+        min-height: 100vh;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
