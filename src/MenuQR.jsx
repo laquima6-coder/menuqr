@@ -2668,7 +2668,7 @@ export default function MenuQR({
     // Escuchar cambios de auth
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session?.user) { setAuthUser(session.user); loadRestaurantData(session.user.id); }
-      else { setAuthUser(null); setMode("landing"); }
+      else { setAuthUser(null); if(!forceMode) setMode("landing"); }
     });
     return () => subscription.unsubscribe();
   }, []);
@@ -2715,7 +2715,7 @@ export default function MenuQR({
     loadRestaurantData(user.id);
   }
 
-  if (authLoading) return (
+  if (authLoading && !forceMode) return (
     <div style={{background:"#0d1117",minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center"}}>
       <GS/>
       <div style={{width:40,height:40,border:"3px solid #1A2230",borderTopColor:"#C9A84C",borderRadius:"50%",animation:"spin .8s linear infinite"}}/>
