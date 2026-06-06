@@ -2700,3 +2700,102 @@ export default function MenuQR({
   function goAdmin() {
     if (authUser) { setMode("admin"); }
     else { setShowLogin(true); }
+  }
+
+  async function handleLogout() {
+    if (supabase) await supabase.auth.signOut();
+    setAuthUser(null);
+    setMode("landing");
+  }
+
+  function onLoginSuccess(user) {
+    setAuthUser(user);
+    setShowLogin(false);
+    setMode("admin");
+    loadRestaurantData(user.id);
+  }
+
+  if (authLoading) return (
+    <div style={{background:"#0d1117",minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center"}}>
+      <GS/>
+      <div style={{width:40,height:40,border:"3px solid #1A2230",borderTopColor:"#C9A84C",borderRadius:"50%",animation:"spin .8s linear infinite"}}/>
+    </div>
+  );
+
+  return (
+    <>
+      <GS/>
+      {showLogin && <LoginModal onSuccess={onLoginSuccess} onClose={()=>setShowLogin(false)} />}
+      {mode==="landing" && (
+        <LandingAuth setMode={setMode} goAdmin={goAdmin} authUser={authUser} onLogout={handleLogout}/>
+      )}
+      {mode==="client" && (
+        <ClientApp onBack={()=>setMode("landing")} local={local} cats={cats} prods={prods}/>
+      )}
+      {mode==="admin" && authUser && (
+        <AdminApp
+          onBack={()=>setMode("landing")}
+          local={local}    setLocal={setLocal}
+          cats={cats}      setCats={setCats}
+          prods={prods}    setProds={setProds}
+          authUser={authUser} onLogout={handleLogout}
+        />
+      )}
+      {mode==="admin" && !authUser && null}
+    </>
+  );
+}
+
+function LandingAuth({ setMode, goAdmin, authUser, onLogout }) {
+  return (
+    <div style={{maxWidth:430,margin:"0 auto",minHeight:"100vh",background:"#0d1117",
+      display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:28}}>
+      <div style={{textAlign:"center",marginBottom:44,animation:"fadeUp .6s ease both"}}>
+        <div style={{width:72,height:72,borderRadius:22,
+          background:"linear-gradient(135deg,#1A1408,rgba(201,168,76,.35))",
+          border:"1px solid rgba(201,168,76,.35)",
+          display:"flex",alignItems:"center",justifyContent:"center",
+          fontSize:36,margin:"0 auto 20px"}}>🍽️</div>
+        <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:"#C9A84C",letterSpacing:3,marginBottom:8}}>MENUQR</p>
+        <h1 style={{fontFamily:"'Playfair Display',serif",fontSize:32,fontWeight:900,color:"#EDE0C8",lineHeight:1.1,marginBottom:8}}>
+          {authUser ? "Bienvenido" : "Carta Digital"}
+        </h1>
+        {authUser
+          ? <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"#5A4A30"}}>{authUser.email}</p>
+          : <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"#5A4A30"}}>Seleccioná la vista que querés explorar</p>
+        }
+      </div>
+      <div style={{width:"100%",display:"flex",flexDirection:"column",gap:12,animation:"fadeUp .6s ease .12s both"}}>
+        <button onClick={()=>setMode("client")} className="pr" style={{
+          background:"linear-gradient(135deg,#1A140A,#241A0E)",border:"1px solid #C9A84C33",
+          borderRadius:18,padding:"20px 22px",display:"flex",alignItems:"center",gap:16,cursor:"pointer",textAlign:"left"}}>
+          <div style={{width:50,height:50,borderRadius:14,background:"#C9A84C14",border:"1px solid #C9A84C33",display:"flex",alignItems:"center",justifyContent:"center",fontSize:26,flexShrink:0}}>📱</div>
+          <div style={{flex:1}}>
+            <p style={{fontFamily:"'Outfit',sans-serif",fontWeight:700,fontSize:16,color:"#EDE0C8",marginBottom:4}}>Ver la carta</p>
+            <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"#5A6A80"}}>Vista del cliente al escanear el QR</p>
+          </div>
+          <span style={{color:"#C9A84C",fontSize:20}}>→</span>
+        </button>
+        <button onClick={goAdmin} className="pr" style={{
+          background:"linear-gradient(135deg,#080C14,#0C1420)",border:"1px solid #00FF8833",
+          borderRadius:18,padding:"20px 22px",display:"flex",alignItems:"center",gap:16,cursor:"pointer",textAlign:"left"}}>
+          <div style={{width:50,height:50,borderRadius:14,background:"#00FF8814",border:"1px solid #00FF8833",display:"flex",alignItems:"center",justifyContent:"center",fontSize:26,flexShrink:0}}>⚙️</div>
+          <div style={{flex:1}}>
+            <p style={{fontFamily:"'Outfit',sans-serif",fontWeight:700,fontSize:16,color:"#EDE0C8",marginBottom:4}}>Panel del dueño</p>
+            <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"#5A6A80"}}>
+              {authUser ? "Pedidos, carta, QRs, caja y gestión" : "Iniciar sesión para acceder"}
+            </p>
+          </div>
+          <span style={{color:"#00FF88",fontSize:20}}>→</span>
+        </button>
+      </div>
+      {authUser && (
+        <button onClick={onLogout} style={{marginTop:20,background:"none",border:"1px solid #1A2230",borderRadius:8,
+          padding:"7px 18px",color:"#4A6080",cursor:"pointer",fontSize:".8rem",fontFamily:"Outfit,sans-serif"}}>
+          Cerrar sesión
+        </button>
+      )}
+      <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:"#1A2A40",marginTop:24,letterSpacing:1}}>MENUQR · v1.0</p>
+    </div>
+  );
+}
