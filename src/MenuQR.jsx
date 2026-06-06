@@ -105,12 +105,7 @@ export const INIT_PRODS = [
   {id:15,cat:"beb",  name:"Limonada Artesanal",      price:1400, orig:null,  desc:"Limón, jengibre y menta.",                              tag:null,    emoji:"🍋", active:true},
 ];
 
-const INIT_ORDERS = [
-  {id:"001",table:3, time:"20:14",status:"nuevo",     items:[{name:"Bife de Chorizo",qty:2},{name:"Cerveza",qty:3}],   total:17300,pay:"Mercado Pago", tip:0},
-  {id:"002",table:7, time:"20:22",status:"preparando",items:[{name:"Combo Parrilla",qty:1},{name:"Tiramisú",qty:2}],   total:12400,pay:"Efectivo",     tip:1860},
-  {id:"003",table:1, time:"20:31",status:"listo",     items:[{name:"Provoleta",qty:1},{name:"Pasta",qty:2}],           total:10000,pay:"Transferencia", tip:0},
-  {id:"004",table:9, time:"20:45",status:"entregado", items:[{name:"Milanesa",qty:2}],                                total:10800,pay:"Mercado Pago",  tip:1620},
-];
+const INIT_ORDERS = []; // Pedidos reales vienen de Supabase en tiempo real
 
 const BILLETES = [
   {val:10000,label:"$10.000"},{val:2000,label:"$2.000"},{val:1000,label:"$1.000"},
@@ -708,7 +703,40 @@ function ClientApp({onBack, local, cats, prods}) {
             )}
           </div>
         )}
-        <button onClick={()=>pay&&setView("done")} className="pr" style={{
+        <button onClick={async()=>{
+          if(!pay) return;
+          // Calcular total con propina
+          const cartItems = Object.values(cart).filter(i=>i.qty>0);
+          const subtotal  = cartItems.reduce((s,i)=>s+i.price*i.qty,0);
+          const tipAmount = tipPct!=null?(tipPct===0?0:Math.round(subtotal*tipPct/100)):0;
+          const totalFinal= subtotal + tipAmount;
+          const mesa = local.mesa || mesaInicial || 1;
+          // Guardar en Supabase si está disponible
+          if(supabase && local.restauranteId){
+            try {
+              const {data:pedido,error} = await supabase.from("pedidos").insert({
+                restaurante_id: local.restauranteId,
+                mesa_numero:    mesa,
+                status:         "nuevo",
+                metodo_pago:    pay,
+                propina:        tipAmount,
+                total:          totalFinal,
+                nota:           note||null,
+              }).select().single();
+              if(!error && pedido){
+                const items = cartItems.map(i=>({
+                  pedido_id:   pedido.id,
+                  producto_id: i.id,
+                  nombre:      i.name,
+                  precio:      i.price,
+                  cantidad:    i.qty,
+                }));
+                await supabase.from("pedido_items").insert(items);
+              }
+            } catch(e){ console.error("Error guardando pedido:",e); }
+          }
+          setView("done");
+        }} className="pr" style={{
           width:"100%",
           background:pay?"var(--cg)":"var(--cc)",
           color:pay?"#0A0806":"var(--cm)",
@@ -940,6 +968,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
 
   /* ── State de QR */
   const [qrSelected,setQRS]  = useState(null);
+  const [mesaNumAdmin,setMesaNumAdmin] = useState(1);
 
   /* ── State de gestión */
   const [gModal,setGModal]   = useState(null);
@@ -955,14 +984,52 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
     setTimeout(()=>setToastM(null),2400);
   };
 
-  /* ── Simulación de pedidos desactivada en producción */
+  /* ── Cargar pedidos del día y suscribirse en tiempo real */
+  useEffect(()=>{
+    if(!supabase || !local.restauranteId) return;
+    const hoy = new Date().toISOString().slice(0,10);
+    // Cargar pedidos de hoy
+    supabase.from("pedidos")
+      .select("*, pedido_items(*)")
+      .eq("restaurante_id", local.restauranteId)
+      .gte("created_at", hoy+"T00:00:00")
+      .order("created_at",{ascending:false})
+      .then(({data})=>{
+        if(data?.length) setOrders(data.map(p=>({
+          id:p.id, table:p.mesa_numero, time:new Date(p.created_at).toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"}),
+          status:p.status, items:(p.pedido_items||[]).map(i=>({name:i.nombre,qty:i.cantidad})),
+          total:p.total, pay:p.metodo_pago||"", tip:p.propina||0,
+        })));
+      });
+    // Suscribirse a nuevos pedidos en tiempo real
+    const ch = supabase.channel("pedidos-admin-"+local.restauranteId)
+      .on("postgres_changes",{event:"INSERT",schema:"public",table:"pedidos",filter:`restaurante_id=eq.${local.restauranteId}`},
+        payload=>{
+          const p=payload.new;
+          setOrders(os=>[{
+            id:p.id, table:p.mesa_numero, time:new Date(p.created_at).toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"}),
+            status:p.status, items:[], total:p.total, pay:p.metodo_pago||"", tip:p.propina||0,
+          },...os]);
+          toast(`🔔 Nuevo pedido · Mesa ${p.mesa_numero}`);
+        })
+      .on("postgres_changes",{event:"UPDATE",schema:"public",table:"pedidos",filter:`restaurante_id=eq.${local.restauranteId}`},
+        payload=>{
+          const p=payload.new;
+          setOrders(os=>os.map(o=>o.id===p.id?{...o,status:p.status}:o));
+        })
+      .subscribe();
+    return ()=>{ supabase.removeChannel(ch); };
+  },[local.restauranteId]);
 
-  const advance = id=>{
-    setOrders(os=>os.map(o=>{
-      if(o.id!==id) return o;
-      const next=STATUS_CFG[o.status].next;
-      return next?{...o,status:next}:o;
-    }));
+  const advance = async id=>{
+    const o = orders.find(o=>o.id===id);
+    if(!o) return;
+    const next = STATUS_CFG[o.status]?.next;
+    if(!next) return;
+    setOrders(os=>os.map(x=>x.id===id?{...x,status:next}:x));
+    if(supabase && local.restauranteId){
+      await supabase.from("pedidos").update({status:next}).eq("id",id);
+    }
     toast("Estado actualizado ✓");
   };
 
@@ -1144,7 +1211,8 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
   };
 
   const QRViewModal = ({tableNum, onClose}) => {
-    const data = `https://${local.baseUrl}/mesa/${tableNum}`;
+    const cleanBase = (local.baseUrl||'').replace(/^https?:\/\//,'');
+    const data = `https://${cleanBase}/mesa/${tableNum}`;
     return (
       <AdminModal onClose={onClose}>
         <div style={{padding:"16px 20px 28px",textAlign:"center"}}>
@@ -1463,13 +1531,14 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
   ══════════════════════════════════════════ */
   const QRTab = () => {
     const [qrType,setQrType] = useState("mesa");
-    const [mesaNum,setMesaNum]= useState(1);
+    const mesaNum = mesaNumAdmin;
+    const setMesaNum = setMesaNumAdmin;
     const [promoUrl,setPromoUrl]=useState("");
 
     const getQRData = () => {
       switch(qrType){
         case "mesa":
-          return `https://${local.baseUrl}/mesa/${mesaNum}`;
+          return `https://${(local.baseUrl||'').replace(/^https?:\/\//,'')}/mesa/${mesaNum}`;
         case "wifi":
           return `WIFI:T:WPA;S:${local.wifi_nombre};P:${local.wifi_pass};;`;
         case "whatsapp":
@@ -1923,7 +1992,34 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
               resize:"none",height:72}}/>
         </div>
 
-        <button onClick={()=>toast("✓ Cambios guardados")} className="pr"
+        <button onClick={async ()=>{
+          if(local.restauranteId && supabase){
+            const {error} = await supabase.from("restaurantes").update({
+              nombre:    local.nombre,
+              descripcion: local.descripcion,
+              direccion: local.direccion,
+              telefono:  local.telefono,
+              email:     local.email,
+              color:     local.color,
+              mesas:     local.mesas,
+              base_url:  (local.baseUrl||"").replace(/^https?:\/\//,""),
+              config: {
+                propina:     local.propina,
+                happyHour:   local.happyHour,
+                happyDesde:  local.happyDesde,
+                happyHasta:  local.happyHasta,
+                wifi_nombre: local.wifi_nombre,
+                wifi_pass:   local.wifi_pass,
+                whatsapp:    local.whatsapp,
+                whatsapp_msg:local.whatsapp_msg,
+              }
+            }).eq("id", local.restauranteId);
+            if(error) toast("Error al guardar: "+error.message,"err");
+            else toast("✓ Cambios guardados en la nube");
+          } else {
+            toast("✓ Cambios guardados localmente");
+          }
+        }} className="pr"
           style={{width:"100%",background:"var(--gi)",color:"#fff",border:"none",
             borderRadius:12,padding:14,fontFamily:"'Outfit',sans-serif",
             fontSize:15,fontWeight:600,cursor:"pointer"}}>
@@ -1941,13 +2037,20 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
         orig:"",emoji:"🍽️",tag:"",active:true,isNew:true,
       }});
       const openEdit = p => setGModal({type:"prod",data:{...p,price:String(p.price),orig:String(p.orig||"")}});
-      const deleteProd = id => {
+      const deleteProd = async id => {
         setProds(ps=>ps.filter(p=>p.id!==id));
+        if(local.restauranteId && supabase){
+          await supabase.from("productos").delete().eq("id",id);
+        }
         toast("Producto eliminado","warn");
       };
-      const toggleProd = id => {
+      const toggleProd = async id => {
         const p=prods.find(p=>p.id===id);
-        setProds(ps=>ps.map(x=>x.id===id?{...x,active:!x.active}:x));
+        const newActive = !p.active;
+        setProds(ps=>ps.map(x=>x.id===id?{...x,active:newActive}:x));
+        if(local.restauranteId && supabase){
+          await supabase.from("productos").update({active:newActive}).eq("id",id);
+        }
         toast(p.active?`"${p.name}" ocultado`:`"${p.name}" visible`);
       };
 
@@ -1976,9 +2079,13 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
                     fontWeight:600,cursor:"pointer",fontFamily:"'Outfit',sans-serif",padding:0}}>
                     {cat.icon} {cat.label}
                   </button>
-                  <button onClick={()=>setCats(cs=>cs.map(c=>
-                    c.id===cat.id?{...c,activa:!c.activa}:c
-                  ))} style={{background:"none",border:"none",cursor:"pointer",
+                  <button onClick={async()=>{
+                    const newActiva = !cat.activa;
+                    setCats(cs=>cs.map(c=>c.id===cat.id?{...c,activa:newActiva}:c));
+                    if(local.restauranteId && supabase){
+                      await supabase.from("categorias").update({activa:newActiva}).eq("id",cat.id);
+                    }
+                  }} style={{background:"none",border:"none",cursor:"pointer",
                     color:cat.activa?"var(--gd)":"var(--gr)",fontSize:10,
                     padding:0,lineHeight:1}}>
                     {cat.activa?"👁":"🙈"}
@@ -2191,19 +2298,36 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
       const form    = gModal.data;
       const setForm = (k,v) => setGModal(m=>({...m,data:{...m.data,[k]:v}}));
 
-      const saveProd = () => {
+      const saveProd = async () => {
         if(!form.name||!form.price) return toast("Completá nombre y precio","err");
-        const data = {
-          ...form,
-          price:Number(form.price),
-          orig:form.orig?Number(form.orig):null,
-          tag:form.tag||null,
-          isNew:undefined,
+        const isNew = !!form.isNew;
+        const payload = {
+          restaurante_id: local.restauranteId,
+          categoria_id:   form.cat,
+          name:    form.name,
+          desc:    form.desc||null,
+          price:   Number(form.price),
+          orig:    form.orig?Number(form.orig):null,
+          emoji:   form.emoji||"🍽️",
+          tag:     form.tag||null,
+          active:  form.active!==false,
+          orden:   form.orden||0,
         };
-        if(form.isNew) setProds(ps=>[...ps,data]);
-        else setProds(ps=>ps.map(p=>p.id===data.id?data:p));
+        if(!isNew) payload.id = form.id;
+
+        if(local.restauranteId && supabase){
+          const {data:saved,error} = await supabase.from("productos")
+            .upsert(payload, {onConflict:"id"}).select().single();
+          if(error){ toast("Error al guardar: "+error.message,"err"); return; }
+          if(isNew) setProds(ps=>[...ps,{...saved,cat:saved.categoria_id}]);
+          else setProds(ps=>ps.map(p=>p.id===saved.id?{...saved,cat:saved.categoria_id}:p));
+        } else {
+          const localData = {...payload, id:form.id||Date.now(), cat:form.cat};
+          if(isNew) setProds(ps=>[...ps,localData]);
+          else setProds(ps=>ps.map(p=>p.id===localData.id?localData:p));
+        }
         setGModal(null);
-        toast(form.isNew?"Producto agregado ✓":"Producto actualizado ✓");
+        toast(isNew?"Producto agregado ✓":"Producto actualizado ✓");
       };
 
       return (
@@ -2335,12 +2459,20 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
               fontFamily:"'Outfit',sans-serif",fontSize:13,cursor:"pointer"}}>
               Cancelar
             </button>
-            <button onClick={()=>{
+            <button onClick={async ()=>{
               if(!nNombre) return toast("Ingresá un nombre","err");
-              setCats(cs=>[...cs,{
-                id:nNombre.toLowerCase().replace(/\s+/g,"_")+Date.now(),
-                label:nNombre,icon:nIcono,activa:true
-              }]);
+              if(local.restauranteId && supabase){
+                const {data:cat,error} = await supabase.from("categorias")
+                  .insert({restaurante_id:local.restauranteId, label:nNombre, icon:nIcono, activa:true, orden:cats.length})
+                  .select().single();
+                if(error){ toast("Error: "+error.message,"err"); return; }
+                setCats(cs=>[...cs,{id:cat.id,label:cat.label,icon:cat.icon,activa:cat.activa}]);
+              } else {
+                setCats(cs=>[...cs,{
+                  id:nNombre.toLowerCase().replace(/\s+/g,"_")+Date.now(),
+                  label:nNombre,icon:nIcono,activa:true
+                }]);
+              }
               setGModal(null);
               toast("Categoría creada ✓");
             }} className="pr" style={{
@@ -2568,106 +2700,3 @@ export default function MenuQR({
   function goAdmin() {
     if (authUser) { setMode("admin"); }
     else { setShowLogin(true); }
-  }
-
-  async function handleLogout() {
-    if (supabase) await supabase.auth.signOut();
-    setAuthUser(null);
-    setMode("landing");
-  }
-
-  function onLoginSuccess(user) {
-    setAuthUser(user);
-    setShowLogin(false);
-    setMode("admin");
-    loadRestaurantData(user.id);
-  }
-
-  if (authLoading) return (
-    <div style={{background:"#060810",minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center"}}>
-      <GS/>
-      <div style={{width:40,height:40,border:"3px solid #1A2230",borderTopColor:"#C9A84C",borderRadius:"50%",animation:"spin .8s linear infinite"}}/>
-    </div>
-  );
-
-  return (
-    <>
-      <GS/>
-      {showLogin && <LoginModal onSuccess={onLoginSuccess} onClose={()=>setShowLogin(false)} />}
-      {mode==="landing" && (
-        <LandingAuth setMode={setMode} goAdmin={goAdmin} authUser={authUser} onLogout={handleLogout}/>
-      )}
-      {mode==="client" && (
-        <ClientApp onBack={()=>setMode("landing")} local={local} cats={cats} prods={prods}/>
-      )}
-      {mode==="admin" && authUser && (
-        <AdminApp
-          onBack={()=>setMode("landing")}
-          local={local}    setLocal={setLocal}
-          cats={cats}      setCats={setCats}
-          prods={prods}    setProds={setProds}
-          authUser={authUser} onLogout={handleLogout}
-        />
-      )}
-      {mode==="admin" && !authUser && (
-        <>{setShowLogin(true) && null}{setMode("landing") && null}</>
-      )}
-    </>
-  );
-}
-
-/* ── Landing con Auth ─────────────────────────────────────── */
-function LandingAuth({ setMode, goAdmin, authUser, onLogout }) {
-  return (
-    <div style={{maxWidth:430,margin:"0 auto",minHeight:"100vh",background:"#060810",
-      display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:28}}>
-      <div style={{textAlign:"center",marginBottom:44,animation:"fadeUp .6s ease both"}}>
-        <div style={{width:72,height:72,borderRadius:22,
-          background:"linear-gradient(135deg,#1A1408,rgba(201,168,76,.35))",
-          border:"1px solid rgba(201,168,76,.35)",
-          display:"flex",alignItems:"center",justifyContent:"center",
-          fontSize:36,margin:"0 auto 20px"}}>🍽️</div>
-        <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:"#C9A84C",letterSpacing:3,marginBottom:8}}>MENUQR</p>
-        <h1 style={{fontFamily:"'Playfair Display',serif",fontSize:32,fontWeight:900,color:"#EDE0C8",lineHeight:1.1,marginBottom:8}}>
-          {authUser ? "Bienvenido" : "Carta Digital"}
-        </h1>
-        {authUser
-          ? <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"#5A4A30"}}>{authUser.email}</p>
-          : <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"#5A4A30"}}>Seleccioná la vista que querés explorar</p>
-        }
-      </div>
-      <div style={{width:"100%",display:"flex",flexDirection:"column",gap:12,animation:"fadeUp .6s ease .12s both"}}>
-        <button onClick={()=>setMode("client")} className="pr" style={{
-          background:"linear-gradient(135deg,#1A140A,#241A0E)",border:"1px solid #C9A84C33",
-          borderRadius:18,padding:"20px 22px",display:"flex",alignItems:"center",gap:16,cursor:"pointer",textAlign:"left"}}>
-          <div style={{width:50,height:50,borderRadius:14,background:"#C9A84C14",border:"1px solid #C9A84C33",display:"flex",alignItems:"center",justifyContent:"center",fontSize:26,flexShrink:0}}>📱</div>
-          <div style={{flex:1}}>
-            <p style={{fontFamily:"'Outfit',sans-serif",fontWeight:700,fontSize:16,color:"#EDE0C8",marginBottom:4}}>Ver la carta</p>
-            <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"#5A6A80"}}>Vista del cliente al escanear el QR</p>
-          </div>
-          <span style={{color:"#C9A84C",fontSize:20}}>→</span>
-        </button>
-        <button onClick={goAdmin} className="pr" style={{
-          background:"linear-gradient(135deg,#080C14,#0C1420)",border:"1px solid #00FF8833",
-          borderRadius:18,padding:"20px 22px",display:"flex",alignItems:"center",gap:16,cursor:"pointer",textAlign:"left"}}>
-          <div style={{width:50,height:50,borderRadius:14,background:"#00FF8814",border:"1px solid #00FF8833",display:"flex",alignItems:"center",justifyContent:"center",fontSize:26,flexShrink:0}}>⚙️</div>
-          <div style={{flex:1}}>
-            <p style={{fontFamily:"'Outfit',sans-serif",fontWeight:700,fontSize:16,color:"#EDE0C8",marginBottom:4}}>Panel del dueño</p>
-            <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"#5A6A80"}}>
-              {authUser ? "Pedidos, carta, QRs, caja y gestión" : "Iniciar sesión para acceder"}
-            </p>
-          </div>
-          <span style={{color:"#00FF88",fontSize:20}}>→</span>
-        </button>
-      </div>
-      {authUser && (
-        <button onClick={onLogout} style={{marginTop:20,background:"none",border:"1px solid #1A2230",borderRadius:8,
-          padding:"7px 18px",color:"#4A6080",cursor:"pointer",fontSize:".8rem",fontFamily:"Outfit,sans-serif"}}>
-          Cerrar sesión
-        </button>
-      )}
-      <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:"#1A2A40",marginTop:24,letterSpacing:1}}>MENUQR · v1.0</p>
-    </div>
-  );
-}
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
