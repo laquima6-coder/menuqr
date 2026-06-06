@@ -14,8 +14,8 @@ const GS = () => (
       --cm:  #5A4A30; --cd: #7A6A50; --ct: #C8B898; --cbri:#EDE0C8;
       --cg:  #C9A84C; --cg2:#E8C46A; --cgr:#4A9A5A; --crd:#C84040;
       /* Admin — cockpit técnico */
-      --ab:  #060810; --as: #0C1018; --ac: #101620; --abr:#1A2230;
-      --am:  #304050; --ad: #506070; --at: #90A8C0; --abri:#C8DCF0;
+      --ab:  #0d1117; --as: #161b22; --ac: #1c2128; --abr:#2a3441;
+      --am:  #4a5a6a; --ad: #6a8090; --at: #a0b8c8; --abri:#d8ecf8;
       --ag:  #00FF88; --aam:#FFB020; --ar: #FF3B5C; --abl:#3D8EFF;
       /* Gestión — dashboard SaaS */
       --gb:  #080B12; --gs: #0F1320; --gc: #111827; --gbr:#1E2A3A;
@@ -25,7 +25,7 @@ const GS = () => (
     }
 
     * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent }
-    body { background:#060810 }
+    body { background:#0d1117 }
     ::-webkit-scrollbar { width:4px }
     ::-webkit-scrollbar-track { background:transparent }
     ::-webkit-scrollbar-thumb { background:#1E2A3A; border-radius:2px }
@@ -945,7 +945,8 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
   const [gModal,setGModal]   = useState(null);
 
   useEffect(()=>{
-    const t=setInterval(()=>setClock(new Date()),1000);
+    // Actualizar reloj cada minuto (no cada segundo para evitar re-renders)
+    const t=setInterval(()=>setClock(new Date()),60000);
     return()=>clearInterval(t);
   },[]);
 
@@ -954,26 +955,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
     setTimeout(()=>setToastM(null),2400);
   };
 
-  /* ── Simular pedido nuevo cada 22s */
-  useEffect(()=>{
-    const names=["Bife de Chorizo","Cerveza Artesanal","Provoleta","Tiramisú","Combo Parrilla"];
-    const pays =["Mercado Pago","Efectivo","Transferencia"];
-    const t=setInterval(()=>{
-      const o={
-        id:String(orders.length+1).padStart(3,"0"),
-        table:Math.floor(Math.random()*local.mesas)+1,
-        time:new Date().toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"}),
-        status:"nuevo",
-        items:[{name:names[Math.floor(Math.random()*names.length)],qty:Math.floor(Math.random()*3)+1}],
-        total:(Math.floor(Math.random()*6)+2)*1000+Math.floor(Math.random()*9)*100,
-        pay:pays[Math.floor(Math.random()*3)],
-        tip:0,
-      };
-      setOrders(prev=>[o,...prev]);
-      toast(`🔔 Nuevo pedido · Mesa ${o.table}`);
-    },22000);
-    return()=>clearInterval(t);
-  },[orders,local.mesas]);
+  /* ── Simulación de pedidos desactivada en producción */
 
   const advance = id=>{
     setOrders(os=>os.map(o=>{
@@ -2378,8 +2360,8 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
      RENDER PRINCIPAL DEL ADMIN
   ══════════════════════════════════════════ */
   return (
-    <div style={{maxWidth:430,margin:"0 auto",minHeight:"100vh",
-      background:"var(--ab)",paddingBottom:80,position:"relative"}}>
+    <div style={{maxWidth:700,margin:"0 auto",minHeight:"100vh",
+      background:"var(--ab)",paddingBottom:100,position:"relative"}}>
       <GS/>
 
       {/* TOP BAR */}
@@ -2427,21 +2409,23 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
 
       {/* BOTTOM NAV */}
       <nav style={{position:"fixed",bottom:0,left:"50%",
-        transform:"translateX(-50%)",width:"100%",maxWidth:430,
-        background:"var(--as)",borderTop:"1px solid var(--abr)",
-        display:"flex",padding:"7px 0 13px",zIndex:50}}>
+        transform:"translateX(-50%)",width:"100%",maxWidth:700,
+        background:"var(--as)",borderTop:"2px solid var(--abr)",
+        display:"flex",padding:"10px 0 18px",zIndex:50,
+        boxShadow:"0 -4px 20px rgba(0,0,0,.4)"}}>
         {TABS.map(t=>{
           const a = tab===t.id;
           return (
             <button key={t.id} onClick={()=>setTab(t.id)} className="pr" style={{
               flex:1,background:"none",border:"none",
               display:"flex",flexDirection:"column",
-              alignItems:"center",gap:2,cursor:"pointer",position:"relative"}}>
-              <span style={{fontSize:15,
+              alignItems:"center",gap:4,cursor:"pointer",position:"relative",
+              padding:"4px 0"}}>
+              <span style={{fontSize:24,
                 color:a?"var(--ag)":"var(--am)",
-                textShadow:a?"0 0 10px var(--ag)":"none",
+                textShadow:a?"0 0 12px var(--ag)":"none",
                 transition:"all .2s"}}>{t.icon}</span>
-              <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:7,
+              <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,
                 fontWeight:700,letterSpacing:.4,
                 color:a?"var(--ag)":"var(--am)",
                 transition:"color .2s"}}>{t.label}</span>
@@ -2686,3 +2670,4 @@ function LandingAuth({ setMode, goAdmin, authUser, onLogout }) {
     </div>
   );
 }
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
