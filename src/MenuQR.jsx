@@ -969,6 +969,8 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
   /* ── State de QR */
   const [qrSelected,setQRS]  = useState(null);
   const [mesaNumAdmin,setMesaNumAdmin] = useState(1);
+  const [qrType,setQrType]   = useState("mesa");
+  const [promoUrl,setPromoUrl] = useState("");
 
   /* ── State de gestión */
   const [gModal,setGModal]   = useState(null);
@@ -1530,10 +1532,8 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
      QR TAB — 4 tipos de QR
   ══════════════════════════════════════════ */
   const QRTab = () => {
-    const [qrType,setQrType] = useState("mesa");
     const mesaNum = mesaNumAdmin;
     const setMesaNum = setMesaNumAdmin;
-    const [promoUrl,setPromoUrl]=useState("");
 
     const getQRData = () => {
       switch(qrType){
@@ -2534,7 +2534,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
       {tab==="home"    && <HomeTab/>}
       {tab==="orders"  && <OrdersTab/>}
       {tab==="carta"   && <CartaTab/>}
-      {tab==="qr"      && <QRTab/>}
+      {tab==="qr"      && QRTab()}
       {tab==="caja"    && <CajaTab/>}
       {tab==="gestion" && <GestionTab/>}
       {tab==="config"  && <ConfigTab/>}
@@ -2668,7 +2668,7 @@ export default function MenuQR({
     // Escuchar cambios de auth
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session?.user) { setAuthUser(session.user); loadRestaurantData(session.user.id); }
-      else { setAuthUser(null); if(!forceMode) setMode("landing"); }
+      else { setAuthUser(null); setMode("landing"); }
     });
     return () => subscription.unsubscribe();
   }, []);
@@ -2715,8 +2715,8 @@ export default function MenuQR({
     loadRestaurantData(user.id);
   }
 
-  if (authLoading && !forceMode) return (
-    <div style={{background:"#0d1117",minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center"}}>
+  if (authLoading) return (
+    <div style={{background:"#060810",minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center"}}>
       <GS/>
       <div style={{width:40,height:40,border:"3px solid #1A2230",borderTopColor:"#C9A84C",borderRadius:"50%",animation:"spin .8s linear infinite"}}/>
     </div>
@@ -2746,9 +2746,10 @@ export default function MenuQR({
   );
 }
 
+/* ── Landing con Auth ─────────────────────────────────────── */
 function LandingAuth({ setMode, goAdmin, authUser, onLogout }) {
   return (
-    <div style={{maxWidth:430,margin:"0 auto",minHeight:"100vh",background:"#0d1117",
+    <div style={{maxWidth:430,margin:"0 auto",minHeight:"100vh",background:"#060810",
       display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:28}}>
       <div style={{textAlign:"center",marginBottom:44,animation:"fadeUp .6s ease both"}}>
         <div style={{width:72,height:72,borderRadius:22,
