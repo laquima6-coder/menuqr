@@ -7,7 +7,7 @@ import { supabase } from '../lib/supabase.js'
    Acceso: PIN + email de super admin configurado en .env
 ══════════════════════════════════════════════════════════ */
 
-const SUPER_PIN = import.meta.env.VITE_SUPER_PIN || '000000'
+const SUPER_PIN = import.meta.env.VITE_SUPER_PIN || 'Tincho1364#'
 
 const PLAN_PRICES = { free:0, basico:15, pro:35, empresa:89 }
 const PLAN_COLORS = { free:'#4A6080', basico:'#3D8EFF', pro:'#6366F1', empresa:'#10B981' }
