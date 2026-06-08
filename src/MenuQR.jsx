@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { supabase, loginAdmin, logoutAdmin, getSession, getRestaurante, getCategorias, getProductos } from "./lib/supabase.js";
+import { supabase, loginAdmin, logoutAdmin, getSession, getRestaurante, getCategorias, getProductos, createTurno, closeTurno, getTurnos } from "./lib/supabase.js";
 
 /* ══════════════════════════════════════════════════════════════
    GLOBAL STYLES — dos paletas: cliente (cálida) + admin (técnica)
@@ -119,6 +119,15 @@ const STATUS_CFG = {
   listo:      {label:"LISTO",    color:"#00FF88", dim:"rgba(0,255,136,.1)",   next:"entregado",  action:"→ ENTREGAR"},
   entregado:  {label:"ENTREGADO",color:"#506070", dim:"rgba(80,96,112,.1)",   next:null,         action:null},
 };
+
+const PLAN_LIMITS = {
+  free:    { maxProds:10,  pedidos:false, caja:false },
+  basico:  { maxProds:9999,pedidos:true,  caja:false },
+  pro:     { maxProds:9999,pedidos:true,  caja:true  },
+  empresa: { maxProds:9999,pedidos:true,  caja:true  },
+};
+const PLAN_LABELS = { free:"FREE", basico:"BÁSICO", pro:"PRO ✦", empresa:"EMPRESA" };
+const PLAN_COLORS_MAP = { free:"#4A6080", basico:"#3D8EFF", pro:"#6366F1", empresa:"#10B981" };
 
 const PAYS = [
   {id:"mp",    label:"Mercado Pago", icon:"💳", sub:"QR o link de pago"},
@@ -1209,6 +1218,27 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
     setTimeout(()=>setToastM(null),2400);
   };
 
+  /* ── Cargar turno activo de caja desde Supabase */
+  useEffect(()=>{
+    if(!supabase || !local.restauranteId) return;
+    getTurnos(local.restauranteId).then(turnos=>{
+      const open = turnos?.find(t=>t.estado==="abierto");
+      if(open){
+        setTurno({
+          id: open.id, supabaseId: open.id,
+          cajero: open.cajero||"Cajero",
+          horaApertura: new Date(open.hora_apertura).toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"}),
+          fecha: new Date(open.hora_apertura).toLocaleDateString("es-AR",{day:"2-digit",month:"2-digit",year:"numeric"}),
+          fondoApertura: open.fondo_apertura||0,
+          arqueoAp: open.arqueo_apertura||{},
+          ventas: {efectivo:0,mercadopago:0,debito:0,credito:0,transferencia:0},
+          arqueoFinal: null, horaCierre: null, estado:"abierto",
+        });
+        setCajaScr("turno");
+      }
+    });
+  },[local.restauranteId]);
+
   /* ── Cargar pedidos del día y suscribirse en tiempo real */
   useEffect(()=>{
     if(!supabase || !local.restauranteId) return;
@@ -1264,26 +1294,50 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
   const active    = orders.filter(o=>o.status!=="entregado");
 
   /* ── Caja helpers */
-  const makeVentas=()=>({efectivo:42000,mercadopago:35000,debito:18000,credito:12000,transferencia:8000});
+  const makeVentas=()=>{
+    const ent=orders.filter(o=>o.status==="entregado");
+    return {
+      efectivo:      ent.filter(o=>o.pay==="cash" ).reduce((s,o)=>s+o.total+(o.tip||0),0),
+      mercadopago:   ent.filter(o=>o.pay==="mp"   ).reduce((s,o)=>s+o.total+(o.tip||0),0),
+      debito:        ent.filter(o=>o.pay==="card" ).reduce((s,o)=>s+o.total+(o.tip||0),0),
+      credito:       0,
+      transferencia: ent.filter(o=>o.pay==="trans").reduce((s,o)=>s+o.total+(o.tip||0),0),
+    };
+  };
 
-  const abrirTurno = total => {
+  const abrirTurno = async total => {
+    const ventas0={efectivo:0,mercadopago:0,debito:0,credito:0,transferencia:0};
     const t={id:histTurnos.length+1,cajero:cajero.trim()||"Cajero",
       horaApertura:nowStr(),fecha:todStr(),fondoApertura:total,
-      arqueoAp:{...arqVals},ventas:makeVentas(),
+      arqueoAp:{...arqVals},ventas:ventas0,
       arqueoFinal:null,horaCierre:null,estado:"abierto"};
     setTurno(t); setArqV(emptyArq()); setArqAp(false);
     setCajaScr("turno"); toast("Turno abierto ✓");
+    if(supabase && local.restauranteId){
+      const saved = await createTurno({
+        restaurante_id: local.restauranteId,
+        cajero: cajero.trim()||"Cajero",
+        hora_apertura: new Date().toISOString(),
+        fondo_apertura: total,
+        arqueo_apertura: arqVals,
+        estado: "abierto",
+      });
+      if(saved?.id) setTurno(prev=>({...prev, supabaseId: saved.id}));
+    }
   };
 
   const confirmarZ = () => {
-    const t={...turno,arqueoFinal:{...arqVals}};
+    const t={...turno,arqueoFinal:{...arqVals},ventas:makeVentas()};
     setTurno(t); setArqCi(false); setTkt({tipo:"Z",turno:t});
   };
 
-  const ejecutarZ = () => {
+  const ejecutarZ = async () => {
     const c={...turno,estado:"cerrado",horaCierre:nowStr()};
     setHist(h=>[c,...h]); setTurno(null); setTkt(null);
     setCajaScr("inicio"); toast("Cierre Z ejecutado ✓");
+    if(supabase && turno?.supabaseId){
+      await closeTurno(turno.supabaseId, arqVals, new Date().toISOString());
+    }
   };
 
   /* ══════════════════════════════════════════
@@ -1759,7 +1813,31 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
      CAJA TAB
   ══════════════════════════════════════════ */
   const CajaTab = () => {
-    const tv = turno ? Object.values(turno.ventas).reduce((s,v)=>s+v,0) : 0;
+    const plan = local.plan||"free";
+    const canCaja = PLAN_LIMITS[plan]?.caja !== false;
+    const liveVentas = makeVentas();
+    const tv = Object.values(liveVentas).reduce((s,v)=>s+v,0);
+    if(!canCaja) return (
+      <div style={{padding:"18px 16px 0"}}>
+        <ALbl>Gestión financiera</ALbl>
+        <h2 style={{fontFamily:"'Outfit',sans-serif",fontSize:20,fontWeight:800,color:"var(--abri)",marginBottom:20}}>Caja</h2>
+        <div style={{background:"rgba(99,102,241,.07)",border:"1px solid rgba(99,102,241,.3)",borderRadius:20,padding:"32px 20px",textAlign:"center"}}>
+          <p style={{fontSize:40,marginBottom:12}}>🔒</p>
+          <p style={{fontFamily:"'Outfit',sans-serif",fontSize:17,fontWeight:700,color:"var(--abri)",marginBottom:8}}>Función exclusiva Plan Pro</p>
+          <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"var(--ad)",marginBottom:20,lineHeight:1.5}}>
+            La gestión de caja, arqueos y cierre Z requieren plan Pro o Empresa.
+          </p>
+          <div style={{background:"var(--gi)",borderRadius:12,padding:"12px 24px",display:"inline-block"}}>
+            <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:12,fontWeight:700,color:"#fff",letterSpacing:1}}>
+              PLAN ACTUAL: {PLAN_LABELS[plan]||plan.toUpperCase()}
+            </p>
+          </div>
+          <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,color:"var(--am)",marginTop:16}}>
+            Contactá a soporte para upgradear tu plan.
+          </p>
+        </div>
+      </div>
+    );
     return (
       <div style={{padding:"18px 16px 0"}}>
         <div style={{marginBottom:14}}>
@@ -1819,11 +1897,11 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
             </div>
             <div style={{background:"var(--ac)",border:"1px solid var(--abr)",
               borderRadius:16,overflow:"hidden",marginBottom:14}}>
-              {[["💵","Efectivo",turno.ventas.efectivo],
-                ["💳","Mercado Pago",turno.ventas.mercadopago],
-                ["💳","Débito",turno.ventas.debito],
-                ["💳","Crédito",turno.ventas.credito],
-                ["🏦","Transferencia",turno.ventas.transferencia]
+              {[["💵","Efectivo",liveVentas.efectivo],
+                ["💳","Mercado Pago",liveVentas.mercadopago],
+                ["💳","Débito",liveVentas.debito],
+                ["💳","Crédito",liveVentas.credito],
+                ["🏦","Transferencia",liveVentas.transferencia]
               ].map(([icon,label,val],i,arr)=>(
                 <div key={label} style={{display:"flex",justifyContent:"space-between",
                   alignItems:"center",padding:"12px 16px",
@@ -2077,10 +2155,17 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
       const setAC     = setGActiveCat;
       const visProds = prods.filter(p=>p.cat===activeCat);
 
-      const openNew = () => setGModal({type:"prod",data:{
-        id:Date.now(),cat:activeCat,name:"",desc:"",price:"",
-        orig:"",emoji:"🍽️",tag:"",active:true,isNew:true,
-      }});
+      const planLimit = PLAN_LIMITS[local.plan||"free"];
+      const openNew = () => {
+        if(prods.length >= planLimit.maxProds){
+          toast(`Plan ${PLAN_LABELS[local.plan||"free"]}: máximo ${planLimit.maxProds} productos. Actualizá tu plan para agregar más.`,"warn");
+          return;
+        }
+        setGModal({type:"prod",data:{
+          id:Date.now(),cat:activeCat,name:"",desc:"",price:"",
+          orig:"",emoji:"🍽️",tag:"",active:true,isNew:true,
+        }});
+      };
       const openEdit = p => setGModal({type:"prod",data:{...p,price:String(p.price),orig:String(p.orig||"")}});
       const deleteProd = async id => {
         setProds(ps=>ps.filter(p=>p.id!==id));
@@ -2511,6 +2596,16 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
               <Dot color="var(--ag)" pulse/>
               <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,
                 color:"var(--ag)",letterSpacing:1}}>EN LÍNEA</p>
+              {local.plan && local.plan!=="free" && (
+                <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:7,
+                  fontWeight:700,letterSpacing:1,
+                  color:PLAN_COLORS_MAP[local.plan]||"var(--ag)",
+                  background:(PLAN_COLORS_MAP[local.plan]||"#6366F1")+"15",
+                  border:`1px solid ${(PLAN_COLORS_MAP[local.plan]||"#6366F1")}44`,
+                  padding:"1px 5px",borderRadius:4}}>
+                  {PLAN_LABELS[local.plan]||local.plan.toUpperCase()}
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -2680,6 +2775,8 @@ export default function MenuQR({
         email: rest.email || "", color: rest.color || "#C9A84C",
         mesas: rest.mesas || 10, restauranteId: rest.id,
         slug: rest.slug, baseUrl: rest.base_url || "",
+        plan: rest.plan || "free",
+        activo: rest.activo !== false,
         ...(rest.config || {}),
       });
       const [categorias, productos] = await Promise.all([
