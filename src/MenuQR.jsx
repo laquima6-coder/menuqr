@@ -1105,6 +1105,63 @@ function QRTabComp({ mesaNum, setMesaNum, qrType, setQrType, promoUrl, setPromoU
 }
 
 /* ══════════════════════════════════════════════════════════════
+   CAT MODAL — nivel de módulo (evita useState condicional)
+══════════════════════════════════════════════════════════════ */
+function CatModal({local, cats, setCats, setGModal, toast}) {
+  const ICONOS = ["◇","◉","◌","◎","✦","★","◈","▶","♦","❋","🍕","🥩","🍹","☕"];
+  const [nNombre,setNN] = useState("");
+  const [nIcono, setNI] = useState("◇");
+  return (
+    <BottomModal title="Nueva categoría" onClose={()=>setGModal(null)}>
+      <GLbl>Ícono</GLbl>
+      <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:14}}>
+        {ICONOS.map(ic=>(
+          <button key={ic} onClick={()=>setNI(ic)} style={{
+            background:nIcono===ic?"rgba(99,102,241,.15)":"var(--gs)",
+            border:`1px solid ${nIcono===ic?"var(--gi)":"var(--gbr)"}`,
+            borderRadius:8,width:40,height:40,fontSize:18,
+            color:nIcono===ic?"var(--gi2)":"var(--gt)",cursor:"pointer"}}>
+            {ic}
+          </button>
+        ))}
+      </div>
+      <GInput label="Nombre *" value={nNombre} onChange={setNN}
+        placeholder="Ej: Pastas, Carnes, Vegano..."/>
+      <div style={{display:"flex",gap:10,marginTop:4}}>
+        <button onClick={()=>setGModal(null)} className="pr" style={{
+          flex:1,background:"var(--gs)",color:"var(--gt)",
+          border:"1px solid var(--gbr)",borderRadius:10,padding:12,
+          fontFamily:"'Outfit',sans-serif",fontSize:13,cursor:"pointer"}}>
+          Cancelar
+        </button>
+        <button onClick={async ()=>{
+          if(!nNombre) return toast("Ingresá un nombre","err");
+          if(local.restauranteId && supabase){
+            const {data:cat,error} = await supabase.from("categorias")
+              .insert({restaurante_id:local.restauranteId, label:nNombre, icon:nIcono, activa:true, orden:cats.length})
+              .select().single();
+            if(error){ toast("Error: "+error.message,"err"); return; }
+            setCats(cs=>[...cs,{id:cat.id,label:cat.label,icon:cat.icon,activa:cat.activa}]);
+          } else {
+            setCats(cs=>[...cs,{
+              id:nNombre.toLowerCase().replace(/\s+/g,"_")+Date.now(),
+              label:nNombre,icon:nIcono,activa:true
+            }]);
+          }
+          setGModal(null);
+          toast("Categoría creada ✓");
+        }} className="pr" style={{
+          flex:2,background:"var(--gi)",color:"#fff",border:"none",
+          borderRadius:10,padding:12,fontFamily:"'Outfit',sans-serif",
+          fontSize:14,fontWeight:600,cursor:"pointer"}}>
+          Crear categoría
+        </button>
+      </div>
+    </BottomModal>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════
    ADMIN APP — panel completo del dueño
    Tabs: Inicio · Pedidos · Carta · QRs · Caja · Gestión · Config
 ══════════════════════════════════════════════════════════════ */
@@ -1134,6 +1191,12 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
 
   /* ── State de gestión */
   const [gModal,setGModal]   = useState(null);
+
+  /* ── State de tabs (lifted para evitar useState en nested components) */
+  const [ordersFilter, setOrdersFilter] = useState("activos");
+  const [cartaAc, setCartaAc]           = useState("");
+  const [gSubTab, setGSubTab]           = useState("local");
+  const [gActiveCat, setGActiveCat]     = useState("");
 
   useEffect(()=>{
     // Actualizar reloj cada minuto (no cada segundo para evitar re-renders)
@@ -1525,7 +1588,8 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
      ORDERS TAB
   ══════════════════════════════════════════ */
   const OrdersTab = () => {
-    const [f,setF] = useState("activos");
+    const f    = ordersFilter;
+    const setF = setOrdersFilter;
     const vis = f==="activos"
       ? orders.filter(o=>o.status!=="entregado")
       : orders.filter(o=>o.status==="entregado");
@@ -1614,8 +1678,9 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
   ══════════════════════════════════════════ */
   const CartaTab = () => {
     const catNames = [...new Set(prods.map(p=>p.cat))];
-    const [ac,setAc] = useState(catNames[0]||"");
-    const visProds   = prods.filter(p=>p.cat===ac);
+    const ac    = cartaAc || catNames[0] || "";
+    const setAc = setCartaAc;
+    const visProds = prods.filter(p=>p.cat===ac);
     const catLabel   = cats.find(c=>c.id===ac)?.label || ac;
     return (
       <div style={{padding:"18px 16px 0"}}>
@@ -1845,7 +1910,8 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
      GESTIÓN TAB — todo editable
   ══════════════════════════════════════════ */
   const GestionTab = () => {
-    const [subTab, setSubTab] = useState("local");
+    const subTab    = gSubTab;
+    const setSubTab = setGSubTab;
 
     /* ── Subcomponents inline */
     const LocalSection = () => (
@@ -2007,7 +2073,8 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
     );
 
     const CartaSection = () => {
-      const [activeCat,setAC] = useState(cats[0]?.id||"");
+      const activeCat = gActiveCat || cats[0]?.id || "";
+      const setAC     = setGActiveCat;
       const visProds = prods.filter(p=>p.cat===activeCat);
 
       const openNew = () => setGModal({type:"prod",data:{
@@ -2409,61 +2476,11 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
       );
     }
 
-    /* Modal de nueva categoría */
+    /* Modal de nueva categoría — extraído a nivel de módulo */
     if(gModal.type==="cat") {
-      const ICONOS = ["◇","◉","◌","◎","✦","★","◈","▶","♦","❋","🍕","🥩","🍹","☕"];
-      const [nNombre,setNN] = useState("");
-      const [nIcono, setNI] = useState("◇");
-      return (
-        <BottomModal title="Nueva categoría" onClose={()=>setGModal(null)}>
-          <GLbl>Ícono</GLbl>
-          <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:14}}>
-            {ICONOS.map(ic=>(
-              <button key={ic} onClick={()=>setNI(ic)} style={{
-                background:nIcono===ic?"rgba(99,102,241,.15)":"var(--gs)",
-                border:`1px solid ${nIcono===ic?"var(--gi)":"var(--gbr)"}`,
-                borderRadius:8,width:40,height:40,fontSize:18,
-                color:nIcono===ic?"var(--gi2)":"var(--gt)",cursor:"pointer"}}>
-                {ic}
-              </button>
-            ))}
-          </div>
-          <GInput label="Nombre *" value={nNombre} onChange={setNN}
-            placeholder="Ej: Pastas, Carnes, Vegano..."/>
-          <div style={{display:"flex",gap:10,marginTop:4}}>
-            <button onClick={()=>setGModal(null)} className="pr" style={{
-              flex:1,background:"var(--gs)",color:"var(--gt)",
-              border:"1px solid var(--gbr)",borderRadius:10,padding:12,
-              fontFamily:"'Outfit',sans-serif",fontSize:13,cursor:"pointer"}}>
-              Cancelar
-            </button>
-            <button onClick={async ()=>{
-              if(!nNombre) return toast("Ingresá un nombre","err");
-              if(local.restauranteId && supabase){
-                const {data:cat,error} = await supabase.from("categorias")
-                  .insert({restaurante_id:local.restauranteId, label:nNombre, icon:nIcono, activa:true, orden:cats.length})
-                  .select().single();
-                if(error){ toast("Error: "+error.message,"err"); return; }
-                setCats(cs=>[...cs,{id:cat.id,label:cat.label,icon:cat.icon,activa:cat.activa}]);
-              } else {
-                setCats(cs=>[...cs,{
-                  id:nNombre.toLowerCase().replace(/\s+/g,"_")+Date.now(),
-                  label:nNombre,icon:nIcono,activa:true
-                }]);
-              }
-              setGModal(null);
-              toast("Categoría creada ✓");
-            }} className="pr" style={{
-              flex:2,background:"var(--gi)",color:"#fff",border:"none",
-              borderRadius:10,padding:12,fontFamily:"'Outfit',sans-serif",
-              fontSize:14,fontWeight:600,cursor:"pointer"}}>
-              Crear categoría
-            </button>
-          </div>
-        </BottomModal>
-      );
+      return <CatModal local={local} cats={cats} setCats={setCats} setGModal={setGModal} toast={toast}/>;
     }
-    return null;
+        return null;
   };
 
   /* ══════════════════════════════════════════
