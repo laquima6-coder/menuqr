@@ -557,6 +557,28 @@ const TR = {
   transfer:     {es:"Transferencia",    en:"Transfer",           pt:"Transferência",         it:"Bonifico",           fr:"Virement",          de:"Überweisung",        zh:"转账",              ja:"振込",              ko:"이체"},
 };
 const t = (key,lang) => TR[key]?.[lang] || TR[key]?.es || key;
+const CAT_TR = {
+  "entradas":      {en:"Starters",      pt:"Entradas",         it:"Antipasti",      fr:"Entrées",        de:"Vorspeisen",     zh:"前菜",    ja:"前菜",            ko:"에피타이저"},
+  "principales":   {en:"Main courses",  pt:"Pratos principais",it:"Secondi",        fr:"Plats",          de:"Hauptgerichte",  zh:"主菜",    ja:"メインディッシュ",  ko:"메인 요리"},
+  "postres":       {en:"Desserts",      pt:"Sobremesas",       it:"Dolci",          fr:"Desserts",       de:"Nachspeisen",    zh:"甜点",    ja:"デザート",         ko:"디저트"},
+  "bebidas":       {en:"Drinks",        pt:"Bebidas",          it:"Bevande",        fr:"Boissons",       de:"Getränke",       zh:"饮料",    ja:"ドリンク",         ko:"음료"},
+  "ensaladas":     {en:"Salads",        pt:"Saladas",          it:"Insalate",       fr:"Salades",        de:"Salate",         zh:"沙拉",    ja:"サラダ",           ko:"샐러드"},
+  "pizzas":        {en:"Pizzas",        pt:"Pizzas",           it:"Pizze",          fr:"Pizzas",         de:"Pizzen",         zh:"披萨",    ja:"ピザ",             ko:"피자"},
+  "hamburguesas":  {en:"Burgers",       pt:"Hambúrgueres",     it:"Hamburger",      fr:"Burgers",        de:"Burger",         zh:"汉堡",    ja:"バーガー",         ko:"버거"},
+  "pastas":        {en:"Pasta",         pt:"Massas",           it:"Pasta",          fr:"Pâtes",          de:"Pasta",          zh:"意面",    ja:"パスタ",           ko:"파스타"},
+  "carnes":        {en:"Grills",        pt:"Carnes",           it:"Carni",          fr:"Viandes",        de:"Fleisch",        zh:"肉类",    ja:"肉料理",           ko:"육류"},
+  "mariscos":      {en:"Seafood",       pt:"Frutos do mar",    it:"Frutti di mare", fr:"Fruits de mer",  de:"Meeresfrüchte",  zh:"海鲜",    ja:"シーフード",        ko:"해산물"},
+  "sopas":         {en:"Soups",         pt:"Sopas",            it:"Zuppe",          fr:"Soupes",         de:"Suppen",         zh:"汤",      ja:"スープ",           ko:"수프"},
+  "sandwiches":    {en:"Sandwiches",    pt:"Sanduíches",       it:"Panini",         fr:"Sandwichs",      de:"Sandwiches",     zh:"三明治",  ja:"サンドイッチ",      ko:"샌드위치"},
+  "desayuno":      {en:"Breakfast",     pt:"Café da manhã",    it:"Colazione",      fr:"Petit-déjeuner", de:"Frühstück",      zh:"早餐",    ja:"朝食",             ko:"아침식사"},
+  "almuerzo":      {en:"Lunch",         pt:"Almoço",           it:"Pranzo",         fr:"Déjeuner",       de:"Mittagessen",    zh:"午餐",    ja:"昼食",             ko:"점심"},
+  "cena":          {en:"Dinner",        pt:"Jantar",           it:"Cena",           fr:"Dîner",          de:"Abendessen",     zh:"晚餐",    ja:"夕食",             ko:"저녁"},
+  "promociones":   {en:"Specials",      pt:"Promoções",        it:"Promozioni",     fr:"Promotions",     de:"Aktionen",       zh:"特价",    ja:"お得情報",         ko:"프로모션"},
+  "vegano":        {en:"Vegan",         pt:"Vegano",           it:"Vegano",         fr:"Végétalien",     de:"Vegan",          zh:"素食",    ja:"ヴィーガン",        ko:"비건"},
+  "sin tacc":      {en:"Gluten Free",   pt:"Sem glúten",       it:"Senza glutine",  fr:"Sans gluten",    de:"Glutenfrei",     zh:"无麸质",  ja:"グルテンフリー",    ko:"글루텐 프리"},
+  "para compartir":{en:"To share",      pt:"Para compartilhar",it:"Da condividere", fr:"À partager",     de:"Zum Teilen",     zh:"分享菜",  ja:"シェア料理",        ko:"나눔 요리"},
+};
+const tCat = (label,lang) => { if(!lang||lang==="es") return label; const k=label.toLowerCase().trim(); return CAT_TR[k]?.[lang]||label; };
 
 /* ══════════════════════════════════════════════════════════════
    CLIENT APP — carta del cliente
@@ -630,8 +652,8 @@ function ClientApp({onBack, local, cats, prods}) {
       display:"flex",flexDirection:"column",alignItems:"center",
       justifyContent:"center",padding:24,textAlign:"center"}}>
       <GS/>
-      <div style={{position:"fixed",top:10,right:10,zIndex:100,display:"flex",gap:3,flexWrap:"wrap",maxWidth:180,justifyContent:"flex-end"}}>
-        {LANGS.map(l=><button key={l.code} onClick={()=>changeLang(l.code)} style={{background:lang===l.code?"rgba(201,168,76,.25)":"rgba(10,8,6,.7)",border:`1px solid ${lang===l.code?"var(--cg)":"rgba(255,255,255,.12)"}`,borderRadius:6,padding:"3px 6px",cursor:"pointer",fontFamily:"'IBM Plex Mono',monospace",fontSize:9,fontWeight:700,color:lang===l.code?"var(--cg)":"rgba(255,255,255,.6)",backdropFilter:"blur(8px)",lineHeight:1.2}}>{l.flag} {l.name}</button>)}
+      <div style={{display:"flex",gap:4,flexWrap:"wrap",justifyContent:"center",marginBottom:16}}>
+        {LANGS.map(l=><button key={l.code} onClick={()=>changeLang(l.code)} style={{background:lang===l.code?"rgba(201,168,76,.25)":"rgba(10,8,6,.7)",border:`1px solid ${lang===l.code?"var(--cg)":"rgba(255,255,255,.12)"}`,borderRadius:6,padding:"5px 8px",cursor:"pointer",fontFamily:"'IBM Plex Mono',monospace",fontSize:10,fontWeight:700,color:lang===l.code?"var(--cg)":"rgba(255,255,255,.6)",backdropFilter:"blur(8px)",lineHeight:1.2,minWidth:36,textAlign:"center"}}>{l.flag} {l.name}</button>)}
       </div>
       <div style={{animation:"scaleIn .5s cubic-bezier(.34,1.56,.64,1) both"}}>
         <div style={{width:80,height:80,borderRadius:"50%",
@@ -913,16 +935,15 @@ function ClientApp({onBack, local, cats, prods}) {
       <GS/>
 
       {/* Language switcher */}
-      <div style={{position:"fixed",top:10,right:10,zIndex:100,
-        display:"flex",gap:3,flexWrap:"wrap",maxWidth:200,justifyContent:"flex-end"}}>
+      <div style={{display:"flex",gap:4,flexWrap:"wrap",justifyContent:"flex-end",marginBottom:12}}>
         {LANGS.map(l=>(
           <button key={l.code} onClick={()=>changeLang(l.code)} style={{
             background:lang===l.code?"rgba(201,168,76,.25)":"rgba(10,8,6,.7)",
             border:`1px solid ${lang===l.code?"var(--cg)":"rgba(255,255,255,.12)"}`,
-            borderRadius:6,padding:"3px 6px",cursor:"pointer",
-            fontFamily:"'IBM Plex Mono',monospace",fontSize:9,fontWeight:700,
+            borderRadius:6,padding:"5px 8px",cursor:"pointer",
+            fontFamily:"'IBM Plex Mono',monospace",fontSize:10,fontWeight:700,
             color:lang===l.code?"var(--cg)":"rgba(255,255,255,.6)",
-            backdropFilter:"blur(8px)",lineHeight:1.2}}>
+            backdropFilter:"blur(8px)",lineHeight:1.2,minWidth:36,textAlign:"center"}}>
             {l.flag} {l.name}
           </button>
         ))}
@@ -996,7 +1017,7 @@ function ClientApp({onBack, local, cats, prods}) {
               border:`1px solid ${activeCat===cat.id?local.color||"var(--cg)":"var(--cbr)"}`,
               borderRadius:20,padding:"7px 16px",
               cursor:"pointer",whiteSpace:"nowrap",flexShrink:0,transition:"all .2s"}}>
-              {cat.icon} {cat.label}
+              {cat.icon} {tCat(cat.label,lang)}
             </button>
           ))}
         </div>
@@ -2573,7 +2594,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
                   <button onClick={()=>setAC(cat.id)} style={{background:"none",border:"none",
                     color:activeCat===cat.id?"var(--gi2)":"var(--gt)",fontSize:13,
                     fontWeight:600,cursor:"pointer",fontFamily:"'Outfit',sans-serif",padding:0}}>
-                    {cat.icon} {cat.label}
+                    {cat.icon} {tCat(cat.label,lang)}
                   </button>
                   <button onClick={async()=>{
                     const newActiva = !cat.activa;
