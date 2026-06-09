@@ -1981,6 +1981,27 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
                 );
               })}
             </div>
+            {/* Método de pago — siempre visible, vertical */}
+            <div style={{marginTop:8,marginBottom:4}}>
+              <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,
+                color:"var(--am)",letterSpacing:1,marginBottom:8}}>MÉTODO DE PAGO</p>
+              <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                {VR_PAYS.map(p=>(
+                  <button key={p.id} onClick={()=>setVrPay(p.id)} style={{
+                    width:"100%",padding:"12px 16px",borderRadius:12,cursor:"pointer",
+                    display:"flex",alignItems:"center",gap:12,textAlign:"left",
+                    fontFamily:"'Outfit',sans-serif",fontSize:14,fontWeight:600,
+                    background:vrPay===p.id?"var(--abl)":"var(--ac)",
+                    color:vrPay===p.id?"#fff":"var(--abri)",
+                    border:`1px solid ${vrPay===p.id?"var(--abl)":"var(--abr)"}`,
+                    transition:"all .15s"}}>
+                    <span style={{fontSize:20}}>{p.icon}</span>
+                    {p.label}
+                    {vrPay===p.id && <span style={{marginLeft:"auto",fontSize:12}}>✓</span>}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
           {/* Footer sticky */}
           {vrTotal>0 && (
@@ -1998,17 +2019,6 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
                 </div>
                 <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:22,
                   fontWeight:700,color:"var(--ag)"}}>${fmt(vrTotal)}</p>
-              </div>
-              <div style={{display:"flex",gap:6,marginBottom:12,flexWrap:"wrap"}}>
-                {VR_PAYS.map(p=>(
-                  <button key={p.id} onClick={()=>setVrPay(p.id)} style={{
-                    flex:"1 0 auto",padding:"8px 10px",borderRadius:10,cursor:"pointer",
-                    fontFamily:"'IBM Plex Mono',monospace",fontSize:9,fontWeight:700,
-                    letterSpacing:.5,textTransform:"uppercase",
-                    background:vrPay===p.id?"var(--abl)":"var(--ac)",
-                    color:vrPay===p.id?"#fff":"var(--ad)",
-                    border:`1px solid ${vrPay===p.id?"var(--abl)":"var(--abr)"}`}}>{p.icon} {p.label}</button>
-                ))}
               </div>
               <button onClick={vrConfirm} disabled={!vrPay||vrLoading} style={{
                 width:"100%",padding:14,
@@ -2579,7 +2589,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
       };
 
       return (
-        <div>
+        <div style={{background:"var(--gb)",borderRadius:16,padding:"0 0 8px"}}>
           {/* Categorías */}
           <div style={{background:"var(--gc)",border:"1px solid var(--gbr)",
             borderRadius:16,padding:16,marginBottom:12}}>
@@ -2594,8 +2604,8 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
             <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
               {cats.map(cat=>(
                 <div key={cat.id} style={{display:"flex",alignItems:"center",gap:5,
-                  background:activeCat===cat.id?"rgba(99,102,241,.15)":"var(--gs)",
-                  border:`1px solid ${activeCat===cat.id?"rgba(99,102,241,.4)":"var(--gbr)"}`,
+                  background:activeCat===cat.id?"rgba(99,102,241,.2)":"rgba(255,255,255,.06)",
+                  border:`1px solid ${activeCat===cat.id?"rgba(99,102,241,.6)":"rgba(255,255,255,.12)"}`,
                   borderRadius:20,padding:"6px 12px 6px 10px",
                   opacity:cat.activa?1:.4,transition:"all .2s"}}>
                   <button onClick={()=>setAC(cat.id)} style={{background:"none",border:"none",
@@ -2635,9 +2645,9 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
           </div>
 
           {visProds.length===0 && (
-            <div style={{textAlign:"center",padding:"40px 0",color:"var(--gm)"}}>
+            <div style={{textAlign:"center",padding:"40px 0"}}>
               <p style={{fontSize:32,marginBottom:8}}>🍽️</p>
-              <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:14,color:"var(--gd)"}}>
+              <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:14,color:"var(--gt)"}}>
                 Sin productos. Agregá el primero.
               </p>
             </div>
