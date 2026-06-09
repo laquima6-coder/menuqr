@@ -517,6 +517,48 @@ function Landing({setMode}) {
 }
 
 /* ══════════════════════════════════════════════════════════════
+   TRANSLATIONS — idiomas del menú del cliente
+══════════════════════════════════════════════════════════════ */
+const LANGS = [
+  {code:"es",flag:"🇦🇷",name:"ES"},
+  {code:"en",flag:"🇺🇸",name:"EN"},
+  {code:"pt",flag:"🇧🇷",name:"PT"},
+  {code:"it",flag:"🇮🇹",name:"IT"},
+  {code:"fr",flag:"🇫🇷",name:"FR"},
+  {code:"de",flag:"🇩🇪",name:"DE"},
+  {code:"zh",flag:"🇨🇳",name:"中文"},
+  {code:"ja",flag:"🇯🇵",name:"日本語"},
+  {code:"ko",flag:"🇰🇷",name:"한국"},
+];
+const TR = {
+  welcome:      {es:"BIENVENIDO A",     en:"WELCOME TO",         pt:"BEM-VINDO A",        it:"BENVENUTI DA",       fr:"BIENVENUE À",       de:"WILLKOMMEN BEI",     zh:"欢迎光临",          ja:"ようこそ",          ko:"어서오세요"},
+  menu:         {es:"Menú",             en:"Menu",               pt:"Cardápio",            it:"Menu",               fr:"Menu",              de:"Speisekarte",        zh:"菜单",              ja:"メニュー",          ko:"메뉴"},
+  myOrder:      {es:"Tu pedido",        en:"Your order",         pt:"Seu pedido",          it:"Il tuo ordine",      fr:"Votre commande",    de:"Ihre Bestellung",    zh:"您的订单",          ja:"ご注文",            ko:"주문 내역"},
+  viewOrder:    {es:"Ver mi pedido",    en:"View my order",      pt:"Ver meu pedido",      it:"Vedi ordine",        fr:"Voir ma commande",  de:"Bestellung anzeigen",zh:"查看订单",          ja:"注文を見る",         ko:"주문 보기"},
+  subtotal:     {es:"Subtotal",         en:"Subtotal",           pt:"Subtotal",            it:"Subtotale",          fr:"Sous-total",        de:"Zwischensumme",      zh:"小计",              ja:"小計",              ko:"소계"},
+  total:        {es:"Total",            en:"Total",              pt:"Total",               it:"Totale",             fr:"Total",             de:"Gesamt",             zh:"合计",              ja:"合計",              ko:"합계"},
+  tip:          {es:"Propina",          en:"Tip",                pt:"Gorjeta",             it:"Mancia",             fr:"Pourboire",         de:"Trinkgeld",          zh:"小费",              ja:"チップ",            ko:"팁"},
+  tipQ:         {es:"¿Dejar propina?",  en:"Leave a tip?",       pt:"Deixar gorjeta?",     it:"Lasciare mancia?",   fr:"Laisser un pourboire?",de:"Trinkgeld geben?",zh:"是否给小费？",      ja:"チップを追加？",     ko:"팁을 남기시겠어요?"},
+  noTip:        {es:"Sin propina",      en:"No tip",             pt:"Sem gorjeta",         it:"Senza mancia",       fr:"Sans pourboire",    de:"Kein Trinkgeld",     zh:"不给小费",          ja:"チップなし",         ko:"팁 없음"},
+  other:        {es:"{T('other')}",   en:"Custom amount:",     pt:"Outro valor:",        it:"Altro importo:",     fr:"Autre montant:",    de:"Anderer Betrag:",    zh:"其他金额：",         ja:"その他の金額：",      ko:"다른 금액："},
+  notes:        {es:"Aclaraciones",     en:"Notes",              pt:"Observações",         it:"Note",               fr:"Remarques",         de:"Anmerkungen",        zh:"备注",              ja:"備考",              ko:"메모"},
+  notesHint:    {es:"Ej: sin cebolla, alergia al gluten...", en:"E.g: no onion, gluten allergy...", pt:"Ex: sem cebola...", it:"Es: senza cipolla...", fr:"Ex: sans oignon...", de:"Z.B.: ohne Zwiebel...", zh:"例如：不要洋葱...", ja:"例：玉ねぎなし...", ko:"예: 양파 없이..."},
+  payMethod:    {es:"Método de pago",   en:"Payment method",     pt:"Forma de pagamento",  it:"Metodo di pagamento",fr:"Mode de paiement",  de:"Zahlungsmethode",    zh:"支付方式",          ja:"お支払い方法",       ko:"결제 방법"},
+  confirm:      {es:"Confirmar pedido →",en:"Confirm order →",  pt:"Confirmar pedido →",  it:"Conferma ordine →",  fr:"Confirmer commande →",de:"Bestellung bestätigen →",zh:"确认订单 →",    ja:"注文を確定 →",       ko:"주문 확인 →"},
+  choosePay:    {es:"Elegí un método de pago",en:"Choose a payment method",pt:"Escolha um método",it:"Scegli un metodo",fr:"Choisissez un mode",de:"Zahlungsmethode wählen",zh:"请选择支付方式",ja:"お支払い方法を選択",ko:"결제 방법 선택"},
+  orderReceived:{es:"{T('orderReceived')}",  en:"ORDER RECEIVED",     pt:"PEDIDO RECEBIDO",     it:"ORDINE RICEVUTO",    fr:"COMMANDE REÇUE",    de:"BESTELLUNG ERHALTEN",zh:"订单已接收",        ja:"ご注文受付",         ko:"주문 접수됨"},
+  thanks:       {es:"¡Gracias!",        en:"Thank you!",         pt:"Obrigado!",            it:"Grazie!",            fr:"Merci!",            de:"Danke!",             zh:"谢谢！",            ja:"ありがとうございます！",ko:"감사합니다!"},
+  estTime:      {es:"{T('estTime')}", en:"Estimated time: 15–20 min.", pt:"Tempo estimado: 15–20 min.", it:"Tempo stimato: 15–20 min.", fr:"Temps estimé: 15–20 min.", de:"Geschätzte Zeit: 15–20 Min.", zh:"预计时间：15–20分钟", ja:"お待ち時間：15–20分", ko:"예상 시간: 15–20분"},
+  orderMore:    {es:"Pedir más",        en:"Order more",         pt:"Pedir mais",           it:"Ordina ancora",      fr:"Commander plus",    de:"Mehr bestellen",     zh:"继续点餐",          ja:"追加注文",           ko:"더 주문하기"},
+  backHome:     {es:"← Inicio",         en:"← Back",             pt:"← Início",             it:"← Indietro",         fr:"← Retour",          de:"← Zurück",           zh:"← 返回",            ja:"← 戻る",            ko:"← 뒤로"},
+  happyHour:    {es:"◈ Happy Hour activo",en:"◈ Happy Hour active",pt:"◈ Happy Hour ativo",it:"◈ Happy Hour attivo",fr:"◈ Happy Hour actif", de:"◈ Happy Hour aktiv", zh:"◈ 快乐时光进行中",  ja:"◈ ハッピーアワー中",  ko:"◈ 해피아워 진행중"},
+  cash:         {es:"Efectivo",         en:"Cash",               pt:"Dinheiro",             it:"Contanti",           fr:"Espèces",           de:"Bargeld",            zh:"现金",              ja:"現金",              ko:"현금"},
+  card:         {es:"Tarjeta",          en:"Card",               pt:"Cartão",               it:"Carta",              fr:"Carte",             de:"Karte",              zh:"刷卡",              ja:"カード",            ko:"카드"},
+  transfer:     {es:"Transferencia",    en:"Transfer",           pt:"Transferência",         it:"Bonifico",           fr:"Virement",          de:"Überweisung",        zh:"转账",              ja:"振込",              ko:"이체"},
+};
+const t = (key,lang) => TR[key]?.[lang] || TR[key]?.es || key;
+
+/* ══════════════════════════════════════════════════════════════
    CLIENT APP — carta del cliente
 ══════════════════════════════════════════════════════════════ */
 function ClientApp({onBack, local, cats, prods}) {
@@ -527,6 +569,9 @@ function ClientApp({onBack, local, cats, prods}) {
   const [note,setNote]   = useState("");
   const [tipPct,setTipPct] = useState(null); // null | 0 | 10 | 15 | 20
   const [tipCustom,setTC]  = useState("");
+  const [lang,setLang]     = useState(()=>localStorage.getItem("menuqr_lang")||"es");
+  const T = (key) => t(key,lang);
+  const changeLang = (code) => { setLang(code); localStorage.setItem("menuqr_lang",code); };
   const [secs,setSecs]   = useState(
     // calcula segundos hasta el fin del happy hour
     () => {
@@ -585,6 +630,9 @@ function ClientApp({onBack, local, cats, prods}) {
       display:"flex",flexDirection:"column",alignItems:"center",
       justifyContent:"center",padding:24,textAlign:"center"}}>
       <GS/>
+      <div style={{position:"fixed",top:10,right:10,zIndex:100,display:"flex",gap:3,flexWrap:"wrap",maxWidth:180,justifyContent:"flex-end"}}>
+        {LANGS.map(l=><button key={l.code} onClick={()=>changeLang(l.code)} style={{background:lang===l.code?"rgba(201,168,76,.25)":"rgba(10,8,6,.7)",border:`1px solid ${lang===l.code?"var(--cg)":"rgba(255,255,255,.12)"}`,borderRadius:6,padding:"3px 6px",cursor:"pointer",fontFamily:"'IBM Plex Mono',monospace",fontSize:9,fontWeight:700,color:lang===l.code?"var(--cg)":"rgba(255,255,255,.6)",backdropFilter:"blur(8px)",lineHeight:1.2}}>{l.flag} {l.name}</button>)}
+      </div>
       <div style={{animation:"scaleIn .5s cubic-bezier(.34,1.56,.64,1) both"}}>
         <div style={{width:80,height:80,borderRadius:"50%",
           background:"linear-gradient(135deg,var(--cg),var(--cg2))",
@@ -594,7 +642,7 @@ function ClientApp({onBack, local, cats, prods}) {
         <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:"var(--cg)",
           letterSpacing:2,marginBottom:8}}>PEDIDO RECIBIDO</p>
         <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:28,color:"var(--cbri)",
-          marginBottom:6,fontWeight:700}}>¡Gracias!</h2>
+          marginBottom:6,fontWeight:700}}>{T('thanks')}</h2>
         <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"var(--cm)",
           marginBottom:24,lineHeight:1.6}}>
           Tu pedido llegó a cocina.<br/>Tiempo estimado: 15–20 min.
@@ -613,20 +661,20 @@ function ClientApp({onBack, local, cats, prods}) {
             <div style={{display:"flex",justifyContent:"space-between",
               padding:"7px 0",borderBottom:"1px solid var(--cbr)",
               fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"var(--ct)"}}>
-              <span>💝 Propina</span>
+              <span>💝 {T('tip')}</span>
               <span style={{color:"var(--cgr)"}}>$ {fmt(tipAmt)}</span>
             </div>
           )}
           <div style={{display:"flex",justifyContent:"space-between",paddingTop:12,
             fontFamily:"'Playfair Display',serif",fontSize:19,fontWeight:700,color:"var(--cg)"}}>
-            <span>Total</span><span>$ {fmt(grandTotal)}</span>
+            <span>{T('total')}</span><span>$ {fmt(grandTotal)}</span>
           </div>
         </div>
         <div style={{display:"flex",gap:10,width:"100%",maxWidth:340}}>
           <button onClick={reset} className="pr" style={{flex:1,background:"var(--cc)",
             border:"1px solid var(--cbr)",borderRadius:14,padding:13,
             fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:600,
-            color:"var(--ct)",cursor:"pointer"}}>Pedir más</button>
+            color:"var(--ct)",cursor:"pointer"}}>{T('orderMore')}</button>
           <button onClick={onBack} className="pr" style={{flex:1,background:"var(--cg)",
             border:"none",borderRadius:14,padding:13,
             fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,
@@ -651,7 +699,7 @@ function ClientApp({onBack, local, cats, prods}) {
           display:"flex",alignItems:"center",justifyContent:"center"}}>←</button>
         <div>
           <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:22,
-            color:"var(--cbri)",fontWeight:700}}>Tu pedido</h2>
+            color:"var(--cbri)",fontWeight:700}}>{T('myOrder')}</h2>
           <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"var(--cm)"}}>
             Mesa 7 · {items.length} producto{items.length!==1?"s":""}
           </p>
@@ -689,7 +737,7 @@ function ClientApp({onBack, local, cats, prods}) {
           ))}
           <div style={{display:"flex",justifyContent:"space-between",
             padding:"12px 16px",borderTop:"1px solid var(--cbr)"}}>
-            <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"var(--cm)"}}>Subtotal</span>
+            <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"var(--cm)"}}>{T('subtotal')}</span>
             <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:16,
               fontWeight:700,color:"var(--cg)"}}>$ {fmt(subTotal)}</span>
           </div>
@@ -703,7 +751,7 @@ function ClientApp({onBack, local, cats, prods}) {
               <span style={{fontSize:20}}>💝</span>
               <div>
                 <p style={{fontFamily:"'Playfair Display',serif",fontSize:16,
-                  color:"var(--cbri)",fontWeight:700}}>¿Querés dejar propina?</p>
+                  color:"var(--cbri)",fontWeight:700}}>{T('tipQ')}</p>
                 <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,color:"var(--cm)"}}>
                   100% para el equipo del restaurante
                 </p>
@@ -760,7 +808,7 @@ function ClientApp({onBack, local, cats, prods}) {
 
         {/* Nota */}
         <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:"var(--cm)",
-          letterSpacing:2,textTransform:"uppercase",marginBottom:8}}>Aclaraciones</p>
+          letterSpacing:2,textTransform:"uppercase",marginBottom:8}}>{T('notes')}</p>
         <textarea value={note} onChange={e=>setNote(e.target.value)}
           placeholder="Sin sal, alergia a mariscos, sin gluten..."
           style={{width:"100%",background:"var(--cc)",border:"1px solid var(--cbr)",
@@ -770,7 +818,7 @@ function ClientApp({onBack, local, cats, prods}) {
 
         {/* Método de pago */}
         <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:"var(--cm)",
-          letterSpacing:2,textTransform:"uppercase",marginBottom:10}}>Método de pago</p>
+          letterSpacing:2,textTransform:"uppercase",marginBottom:10}}>{T('payMethod')}</p>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
           {PAYS.map(p=>(
             <button key={p.id} onClick={()=>setPay(p.id)} className="pr" style={{
@@ -828,6 +876,7 @@ function ClientApp({onBack, local, cats, prods}) {
                 propina:        tipAmount,
                 total:          totalFinal,
                 nota:           note||null,
+                idioma:         lang||"es",
               }).select().single();
               if(!error && pedido){
                 const items = cartItems.map(i=>({
@@ -851,7 +900,7 @@ function ClientApp({onBack, local, cats, prods}) {
           cursor:pay?"pointer":"not-allowed",
           boxShadow:pay?"0 8px 28px rgba(201,168,76,.25)":"none",
           transition:"all .25s"}}>
-          {pay?"Confirmar pedido →":"Elegí un método de pago"}
+          {pay?T('confirm'):T('choosePay')}
         </button>
       </div>
     </div>
@@ -862,6 +911,22 @@ function ClientApp({onBack, local, cats, prods}) {
     <div style={{maxWidth:430,margin:"0 auto",minHeight:"100vh",
       background:"var(--cb)",paddingBottom:cartCount>0?96:36}}>
       <GS/>
+
+      {/* Language switcher */}
+      <div style={{position:"fixed",top:10,right:10,zIndex:100,
+        display:"flex",gap:3,flexWrap:"wrap",maxWidth:200,justifyContent:"flex-end"}}>
+        {LANGS.map(l=>(
+          <button key={l.code} onClick={()=>changeLang(l.code)} style={{
+            background:lang===l.code?"rgba(201,168,76,.25)":"rgba(10,8,6,.7)",
+            border:`1px solid ${lang===l.code?"var(--cg)":"rgba(255,255,255,.12)"}`,
+            borderRadius:6,padding:"3px 6px",cursor:"pointer",
+            fontFamily:"'IBM Plex Mono',monospace",fontSize:9,fontWeight:700,
+            color:lang===l.code?"var(--cg)":"rgba(255,255,255,.6)",
+            backdropFilter:"blur(8px)",lineHeight:1.2}}>
+            {l.flag} {l.name}
+          </button>
+        ))}
+      </div>
 
       {/* Header con grain texture */}
       <div style={{background:"linear-gradient(160deg,#1a1208,var(--cb))",
@@ -875,10 +940,10 @@ function ClientApp({onBack, local, cats, prods}) {
           <div>
             <button onClick={onBack} style={{background:"none",border:"none",
               color:"var(--cm)",fontSize:11,fontFamily:"'IBM Plex Mono',monospace",
-              letterSpacing:1,cursor:"pointer",marginBottom:8,padding:0}}>← INICIO</button>
+              letterSpacing:1,cursor:"pointer",marginBottom:8,padding:0}}>{T('backHome')}</button>
             <div style={{width:26,height:2,background:"var(--cg)",marginBottom:8,borderRadius:1}}/>
             <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:"var(--cg)",
-              letterSpacing:3,marginBottom:4}}>BIENVENIDO A</p>
+              letterSpacing:3,marginBottom:4}}>{T('welcome')}</p>
             {/* Nombre dinámico del local */}
             <h1 style={{fontFamily:"'Playfair Display',serif",fontSize:30,fontWeight:900,
               color:"var(--cbri)",lineHeight:1.1}}>{local.nombre}</h1>
@@ -909,7 +974,7 @@ function ClientApp({onBack, local, cats, prods}) {
             display:"flex",justifyContent:"space-between",alignItems:"center"}}>
             <div>
               <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,
-                color:"var(--cg)",fontWeight:600,marginBottom:1}}>◈ Happy Hour activo</p>
+                color:"var(--cg)",fontWeight:600,marginBottom:1}}>{T('happyHour')}</p>
               <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,color:"var(--cm)"}}>
                 Promos hasta las {local.happyHasta} hs
               </p>
@@ -1040,7 +1105,7 @@ function ClientApp({onBack, local, cats, prods}) {
               justifyContent:"center",fontFamily:"'IBM Plex Mono',monospace",
               fontSize:12,fontWeight:800,color:"#0A0806"}}>{cartCount}</div>
             <span style={{fontFamily:"'DM Sans',sans-serif",fontWeight:700,
-              fontSize:15,color:"#0A0806"}}>Ver mi pedido</span>
+              fontSize:15,color:"#0A0806"}}>{T('viewOrder')}</span>
             <span style={{fontFamily:"'IBM Plex Mono',monospace",fontWeight:800,
               fontSize:15,color:"#0A0806"}}>$ {fmt(subTotal)}</span>
           </button>
