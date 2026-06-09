@@ -709,7 +709,7 @@ function ClientApp({onBack, local, cats, prods}) {
   /* ── CART */
   if(view==="cart") return (
     <div style={{maxWidth:430,margin:"0 auto",minHeight:"100vh",
-      background:"var(--cb)",paddingBottom:130}}>
+      background:"var(--cb)",paddingBottom:220}}>
       <GS/>
       {/* Header */}
       <div style={{padding:"24px 20px 16px",borderBottom:"1px solid var(--cbr)",
@@ -841,15 +841,16 @@ function ClientApp({onBack, local, cats, prods}) {
         {/* Método de pago */}
         <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:"var(--cm)",
           letterSpacing:2,textTransform:"uppercase",marginBottom:10}}>{T('payMethod')}</p>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:20}}>
           {PAYS.map(p=>(
             <button key={p.id} onClick={()=>setPay(p.id)} className="pr" style={{
-              background:pay===p.id?"rgba(201,168,76,.1)":"var(--cc)",
-              border:`1px solid ${pay===p.id?"var(--cg)":"var(--cbr)"}`,
-              borderRadius:14,padding:"14px 12px",
-              cursor:"pointer",textAlign:"left",transition:"all .2s"}}>
-              <span style={{fontSize:22,display:"block",marginBottom:5}}>{p.icon}</span>
-              <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:600,
+              background:pay===p.id?"rgba(201,168,76,.15)":"rgba(255,255,255,.05)",
+              border:`2px solid ${pay===p.id?"var(--cg)":"rgba(255,255,255,.2)"}`,
+              borderRadius:14,padding:"16px 12px",
+              cursor:"pointer",textAlign:"left",transition:"all .2s",
+              boxShadow:pay===p.id?"0 0 0 3px rgba(201,168,76,.1)":"none"}}>
+              <span style={{fontSize:26,display:"block",marginBottom:6}}>{p.icon}</span>
+              <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:700,
                 color:pay===p.id?"var(--cg)":"var(--cbri)",marginBottom:2}}>{p.label}</p>
               <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,color:"var(--cm)"}}>{p.sub}</p>
             </button>
