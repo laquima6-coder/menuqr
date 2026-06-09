@@ -268,13 +268,15 @@ const AdminModal = ({onClose, children}) => (
    LOGIN MODAL — auth de dueños de restaurante
 ══════════════════════════════════════════════════════════════ */
 function LoginModal({ onSuccess, onClose }) {
-  const [tab,    setTab]    = useState("login"); // login | register
+  const [tab,    setTab]    = useState("login"); // login | register | forgot
   const [email,  setEmail]  = useState("");
   const [pass,   setPass]   = useState("");
   const [nombre, setNombre] = useState("");
   const [slug,   setSlug]   = useState("");
   const [err,    setErr]    = useState("");
+  const [ok,     setOk]     = useState("");
   const [loading,setLoading]= useState(false);
+  const [showPass,setShowPass]= useState(false);
 
   function slugify(s) {
     return s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
@@ -286,6 +288,18 @@ function LoginModal({ onSuccess, onClose }) {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass });
       if (error) { setErr(error.message); return; }
       onSuccess(data.user);
+    } catch(e) { setErr(e.message); }
+    finally { setLoading(false); }
+  }
+
+  async function handleForgot(e) {
+    e.preventDefault(); setErr(""); setOk(""); setLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${location.origin}/`
+      });
+      if (error) { setErr(error.message); return; }
+      setOk("✓ Te enviamos un email para resetear tu contraseña. Revisá tu bandeja de entrada.");
     } catch(e) { setErr(e.message); }
     finally { setLoading(false); }
   }
@@ -328,20 +342,39 @@ function LoginModal({ onSuccess, onClose }) {
           <div style={{fontSize:"2rem",marginBottom:6}}>🍽️</div>
           <div style={{fontFamily:"Playfair Display,serif",fontSize:"1.2rem",fontWeight:700,color:"#EDE0C8"}}>MenuQR</div>
         </div>
-        <div style={S.tabs}>
-          <button style={S.tab(tab==="login")} onClick={()=>{setTab("login");setErr("")}}>Iniciar sesión</button>
-          <button style={S.tab(tab==="register")} onClick={()=>{setTab("register");setErr("")}}>Registrarme</button>
-        </div>
+        {tab !== "forgot" && <div style={S.tabs}>
+          <button style={S.tab(tab==="login")} onClick={()=>{setTab("login");setErr("");setOk("")}}>Iniciar sesión</button>
+          <button style={S.tab(tab==="register")} onClick={()=>{setTab("register");setErr("");setOk("")}}>Registrarme</button>
+        </div>}
         {err && <div style={S.err}>{err}</div>}
-        {tab === "login" ? (
+        {ok  && <div style={{background:"#081a0f",border:"1px solid #14532d",color:"#4ade80",padding:"9px 12px",borderRadius:7,fontSize:".82rem",marginBottom:12,fontFamily:"Outfit,sans-serif"}}>{ok}</div>}
+        {tab === "forgot" ? (
+          <form onSubmit={handleForgot}>
+            <div style={{textAlign:"center",marginBottom:16,color:"#EDE0C8",fontFamily:"Outfit,sans-serif",fontWeight:600}}>Recuperar contraseña</div>
+            <label style={S.label}>Tu email</label>
+            <input style={S.input} type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="tu@restaurante.com" required autoFocus />
+            <button style={{...S.btn,opacity:loading?.6:1}} type="submit" disabled={loading}>
+              {loading ? "Enviando..." : "Enviar email de recuperación"}
+            </button>
+            <div style={{textAlign:"center",marginTop:12}}>
+              <button type="button" onClick={()=>{setTab("login");setErr("");setOk("")}} style={{background:"none",border:"none",color:"#4A6080",cursor:"pointer",fontSize:".82rem",fontFamily:"Outfit,sans-serif",textDecoration:"underline"}}>← Volver al login</button>
+            </div>
+          </form>
+        ) : tab === "login" ? (
           <form onSubmit={handleLogin}>
             <label style={S.label}>Email</label>
             <input style={S.input} type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="tu@restaurante.com" required autoFocus />
             <label style={S.label}>Contraseña</label>
-            <input style={S.input} type="password" value={pass} onChange={e=>setPass(e.target.value)} placeholder="••••••••" required />
+            <div style={{position:"relative",marginBottom:14}}>
+              <input style={{...S.input,marginBottom:0,paddingRight:40}} type={showPass?"text":"password"} value={pass} onChange={e=>setPass(e.target.value)} placeholder="••••••••" required />
+              <button type="button" onClick={()=>setShowPass(v=>!v)} style={{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",cursor:"pointer",color:"#4A6080",fontSize:"1.1rem",padding:0,lineHeight:1}}>{showPass?"🙈":"👁️"}</button>
+            </div>
             <button style={{...S.btn,opacity:loading?.6:1}} type="submit" disabled={loading}>
               {loading ? "Verificando..." : "Entrar al panel →"}
             </button>
+            <div style={{textAlign:"center",marginTop:10}}>
+              <button type="button" onClick={()=>{setTab("forgot");setErr("");setOk("")}} style={{background:"none",border:"none",color:"#4A6080",cursor:"pointer",fontSize:".82rem",fontFamily:"Outfit,sans-serif",textDecoration:"underline"}}>¿Olvidaste tu contraseña?</button>
+            </div>
           </form>
         ) : (
           <form onSubmit={handleRegister}>
@@ -355,7 +388,10 @@ function LoginModal({ onSuccess, onClose }) {
             <label style={S.label}>Email</label>
             <input style={S.input} type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="tu@restaurante.com" required />
             <label style={S.label}>Contraseña</label>
-            <input style={S.input} type="password" value={pass} onChange={e=>setPass(e.target.value)} placeholder="Mínimo 6 caracteres" required />
+            <div style={{position:"relative",marginBottom:14}}>
+              <input style={{...S.input,marginBottom:0,paddingRight:40}} type={showPass?"text":"password"} value={pass} onChange={e=>setPass(e.target.value)} placeholder="Mínimo 6 caracteres" required />
+              <button type="button" onClick={()=>setShowPass(v=>!v)} style={{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",cursor:"pointer",color:"#4A6080",fontSize:"1.1rem",padding:0,lineHeight:1}}>{showPass?"🙈":"👁️"}</button>
+            </div>
             <button style={{...S.btn,opacity:loading?.6:1}} type="submit" disabled={loading}>
               {loading ? "Creando cuenta..." : "Crear mi restaurante →"}
             </button>

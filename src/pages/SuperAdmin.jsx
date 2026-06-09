@@ -30,6 +30,7 @@ export default function SuperAdmin() {
   const [auth,     setAuth]     = useState(() => sessionStorage.getItem('sa_auth') === '1')
   const [pin,      setPin]      = useState('')
   const [pinErr,   setPinErr]   = useState(false)
+  const [showPin,  setShowPin]  = useState(false)
   const [tab,      setTab]      = useState('restaurantes')
   const [data,     setData]     = useState({ restaurantes:[], stats:{} })
   const [loading,  setLoading]  = useState(false)
@@ -126,12 +127,19 @@ export default function SuperAdmin() {
           <div style={{fontSize:'2.5rem',marginBottom:12}}>🔐</div>
           <div style={{fontSize:'1.2rem',fontWeight:700,color:'#B8D0E8',marginBottom:6}}>Super Admin</div>
           <div style={{color:'#4A6080',fontSize:'.85rem',marginBottom:24}}>Panel de gestión de MenuQR</div>
-          <input
-            type="password" maxLength={8} placeholder="PIN de acceso"
-            value={pin} onChange={e=>setPin(e.target.value)}
-            onKeyDown={e=>e.key==='Enter'&&checkPin()}
-            style={{width:'100%',padding:14,background:'#060810',border:`1px solid ${pinErr?'#7f1d1d':'#1E2A3A'}`,borderRadius:8,color:'#B8D0E8',fontSize:'1.4rem',textAlign:'center',letterSpacing:'.3em',marginBottom:14,fontFamily:'IBM Plex Mono,monospace'}}
-          />
+          <div style={{position:'relative',marginBottom:14}}>
+            <input
+              type={showPin?"text":"password"} maxLength={20} placeholder="PIN de acceso"
+              value={pin} onChange={e=>setPin(e.target.value)}
+              onKeyDown={e=>e.key==='Enter'&&checkPin()}
+              style={{width:'100%',padding:'14px 44px 14px 14px',background:'#060810',border:`1px solid ${pinErr?'#7f1d1d':'#1E2A3A'}`,borderRadius:8,color:'#B8D0E8',fontSize:'1.4rem',textAlign:'center',letterSpacing:'.3em',fontFamily:'IBM Plex Mono,monospace',boxSizing:'border-box'}}
+            />
+            <button type="button" onClick={()=>setShowPin(v=>!v)}
+              style={{position:'absolute',right:12,top:'50%',transform:'translateY(-50%)',background:'none',border:'none',cursor:'pointer',color:'#4A6080',fontSize:'1.2rem',padding:0,lineHeight:1}}
+              title={showPin?"Ocultar PIN":"Mostrar PIN"}>
+              {showPin ? '🙈' : '👁️'}
+            </button>
+          </div>
           {pinErr && <div style={{color:'#f87171',fontSize:'.82rem',marginBottom:10}}>PIN incorrecto</div>}
           <button onClick={checkPin} style={{width:'100%',padding:13,background:'linear-gradient(135deg,#6366F1,#818CF8)',border:'none',borderRadius:8,color:'#fff',fontSize:'1rem',fontWeight:700,cursor:'pointer'}}>
             Ingresar
