@@ -39,6 +39,7 @@ const GS = () => (
     @keyframes pulseG   { 0%,100%{box-shadow:0 0 0 0 rgba(0,255,136,.3)} 50%{box-shadow:0 0 0 7px rgba(0,255,136,0)} }
     @keyframes pulseGold{ 0%,100%{box-shadow:0 0 0 0 rgba(201,168,76,.3)} 50%{box-shadow:0 0 0 7px rgba(201,168,76,0)} }
     @keyframes itemIn   { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+    @keyframes spin      { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
 
     .cf .ci { animation:itemIn .4s ease both }
     .cf .ci:nth-child(1){animation-delay:.04s} .cf .ci:nth-child(2){animation-delay:.08s}
@@ -540,15 +541,15 @@ const TR = {
   tip:          {es:"Propina",          en:"Tip",                pt:"Gorjeta",             it:"Mancia",             fr:"Pourboire",         de:"Trinkgeld",          zh:"小费",              ja:"チップ",            ko:"팁"},
   tipQ:         {es:"¿Dejar propina?",  en:"Leave a tip?",       pt:"Deixar gorjeta?",     it:"Lasciare mancia?",   fr:"Laisser un pourboire?",de:"Trinkgeld geben?",zh:"是否给小费？",      ja:"チップを追加？",     ko:"팁을 남기시겠어요?"},
   noTip:        {es:"Sin propina",      en:"No tip",             pt:"Sem gorjeta",         it:"Senza mancia",       fr:"Sans pourboire",    de:"Kein Trinkgeld",     zh:"不给小费",          ja:"チップなし",         ko:"팁 없음"},
-  other:        {es:"{T('other')}",   en:"Custom amount:",     pt:"Outro valor:",        it:"Altro importo:",     fr:"Autre montant:",    de:"Anderer Betrag:",    zh:"其他金额：",         ja:"その他の金額：",      ko:"다른 금액："},
+  other:        {es:"Otra cantidad:",   en:"Custom amount:",     pt:"Outro valor:",        it:"Altro importo:",     fr:"Autre montant:",    de:"Anderer Betrag:",    zh:"其他金额：",         ja:"その他の金額：",      ko:"다른 금액："},
   notes:        {es:"Aclaraciones",     en:"Notes",              pt:"Observações",         it:"Note",               fr:"Remarques",         de:"Anmerkungen",        zh:"备注",              ja:"備考",              ko:"메모"},
   notesHint:    {es:"Ej: sin cebolla, alergia al gluten...", en:"E.g: no onion, gluten allergy...", pt:"Ex: sem cebola...", it:"Es: senza cipolla...", fr:"Ex: sans oignon...", de:"Z.B.: ohne Zwiebel...", zh:"例如：不要洋葱...", ja:"例：玉ねぎなし...", ko:"예: 양파 없이..."},
   payMethod:    {es:"Método de pago",   en:"Payment method",     pt:"Forma de pagamento",  it:"Metodo di pagamento",fr:"Mode de paiement",  de:"Zahlungsmethode",    zh:"支付方式",          ja:"お支払い方法",       ko:"결제 방법"},
   confirm:      {es:"Confirmar pedido →",en:"Confirm order →",  pt:"Confirmar pedido →",  it:"Conferma ordine →",  fr:"Confirmer commande →",de:"Bestellung bestätigen →",zh:"确认订单 →",    ja:"注文を確定 →",       ko:"주문 확인 →"},
   choosePay:    {es:"Elegí un método de pago",en:"Choose a payment method",pt:"Escolha um método",it:"Scegli un metodo",fr:"Choisissez un mode",de:"Zahlungsmethode wählen",zh:"请选择支付方式",ja:"お支払い方法を選択",ko:"결제 방법 선택"},
-  orderReceived:{es:"{T('orderReceived')}",  en:"ORDER RECEIVED",     pt:"PEDIDO RECEBIDO",     it:"ORDINE RICEVUTO",    fr:"COMMANDE REÇUE",    de:"BESTELLUNG ERHALTEN",zh:"订单已接收",        ja:"ご注文受付",         ko:"주문 접수됨"},
+  orderReceived:{es:"PEDIDO RECIBIDO",         en:"ORDER RECEIVED",     pt:"PEDIDO RECEBIDO",     it:"ORDINE RICEVUTO",    fr:"COMMANDE REÇUE",    de:"BESTELLUNG ERHALTEN",zh:"订单已接收",        ja:"ご注文受付",         ko:"주문 접수됨"},
   thanks:       {es:"¡Gracias!",        en:"Thank you!",         pt:"Obrigado!",            it:"Grazie!",            fr:"Merci!",            de:"Danke!",             zh:"谢谢！",            ja:"ありがとうございます！",ko:"감사합니다!"},
-  estTime:      {es:"{T('estTime')}", en:"Estimated time: 15–20 min.", pt:"Tempo estimado: 15–20 min.", it:"Tempo stimato: 15–20 min.", fr:"Temps estimé: 15–20 min.", de:"Geschätzte Zeit: 15–20 Min.", zh:"预计时间：15–20分钟", ja:"お待ち時間：15–20分", ko:"예상 시간: 15–20분"},
+  estTime:      {es:"Tiempo estimado: 15–20 min.", en:"Estimated time: 15–20 min.", pt:"Tempo estimado: 15–20 min.", it:"Tempo stimato: 15–20 min.", fr:"Temps estimé: 15–20 min.", de:"Geschätzte Zeit: 15–20 Min.", zh:"预计时间：15–20分钟", ja:"お待ち時間：15–20分", ko:"예상 시간: 15–20분"},
   orderMore:    {es:"Pedir más",        en:"Order more",         pt:"Pedir mais",           it:"Ordina ancora",      fr:"Commander plus",    de:"Mehr bestellen",     zh:"继续点餐",          ja:"追加注文",           ko:"더 주문하기"},
   backHome:     {es:"← Inicio",         en:"← Back",             pt:"← Início",             it:"← Indietro",         fr:"← Retour",          de:"← Zurück",           zh:"← 返回",            ja:"← 戻る",            ko:"← 뒤로"},
   happyHour:    {es:"◈ Happy Hour activo",en:"◈ Happy Hour active",pt:"◈ Happy Hour ativo",it:"◈ Happy Hour attivo",fr:"◈ Happy Hour actif", de:"◈ Happy Hour aktiv", zh:"◈ 快乐时光进行中",  ja:"◈ ハッピーアワー中",  ko:"◈ 해피아워 진행중"},
@@ -662,12 +663,12 @@ function ClientApp({onBack, local, cats, prods}) {
           fontSize:36,margin:"0 auto 22px",
           boxShadow:"0 0 0 12px rgba(201,168,76,.08),0 0 0 24px rgba(201,168,76,.04)"}}>✓</div>
         <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:"var(--cg)",
-          letterSpacing:2,marginBottom:8}}>PEDIDO RECIBIDO</p>
+          letterSpacing:2,marginBottom:8}}>{T("orderReceived")}</p>
         <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:28,color:"var(--cbri)",
           marginBottom:6,fontWeight:700}}>{T('thanks')}</h2>
         <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"var(--cm)",
           marginBottom:24,lineHeight:1.6}}>
-          Tu pedido llegó a cocina.<br/>Tiempo estimado: 15–20 min.
+          {T("estTime")}
         </p>
         <div style={{background:"var(--cc)",border:"1px solid var(--cbr)",borderRadius:18,
           padding:18,marginBottom:20,textAlign:"left",width:"100%",maxWidth:340}}>
@@ -723,7 +724,7 @@ function ClientApp({onBack, local, cats, prods}) {
           <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:22,
             color:"var(--cbri)",fontWeight:700}}>{T('myOrder')}</h2>
           <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"var(--cm)"}}>
-            Mesa 7 · {items.length} producto{items.length!==1?"s":""}
+            {local.mesa?`Mesa ${local.mesa} · `:"Pedido · "}{items.length} producto{items.length!==1?"s":""}
           </p>
         </div>
       </div>
@@ -887,7 +888,7 @@ function ClientApp({onBack, local, cats, prods}) {
           const subtotal  = cartItems.reduce((s,i)=>s+i.price*i.qty,0);
           const tipAmount = tipPct!=null?(tipPct===0?0:Math.round(subtotal*tipPct/100)):0;
           const totalFinal= subtotal + tipAmount;
-          const mesa = local.mesa || mesaInicial || 1;
+          const mesa = local.mesa || 1;
           // Guardar en Supabase si está disponible
           if(supabase && local.restauranteId){
             try {
@@ -970,7 +971,7 @@ function ClientApp({onBack, local, cats, prods}) {
             <h1 style={{fontFamily:"'Playfair Display',serif",fontSize:30,fontWeight:900,
               color:"var(--cbri)",lineHeight:1.1}}>{local.nombre}</h1>
             <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,color:"var(--cm)",marginTop:4}}>
-              Mesa 7 · {nowStr()}
+              {local.mesa?`Mesa ${local.mesa} · `:""}{nowStr()}
             </p>
           </div>
           <button onClick={()=>setView("cart")} style={{position:"relative",
@@ -1870,7 +1871,12 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
     const catIds = [...new Set(prods.filter(p=>p.active).map(p=>p.cat))];
     const [vrActiveCat, setVrActiveCat] = useState(catIds[0]||"");
     const visProd = prods.filter(p=>p.active && p.cat===vrActiveCat);
-    const PAYS = ["efectivo","tarjeta","transferencia","mercadopago"];
+    const VR_PAYS = [
+      {id:"cash",  label:"Efectivo",      icon:"💵"},
+      {id:"card",  label:"Tarjeta",       icon:"💳"},
+      {id:"trans", label:"Transferencia", icon:"🏦"},
+      {id:"mp",    label:"Mercado Pago",  icon:"📲"},
+    ];
     return (
       <div style={{position:"fixed",inset:0,zIndex:200,background:"rgba(0,0,0,.85)",
         display:"flex",alignItems:"flex-end",justifyContent:"center"}}>
@@ -1936,7 +1942,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
                     background:vrActiveCat===cid?"var(--abl)":"var(--ac)",
                     color:vrActiveCat===cid?"#fff":"var(--ad)",
                     border:`1px solid ${vrActiveCat===cid?"var(--abl)":"var(--abr)"}`}}>
-                    {cat?.emoji||""} {cat?.label||cid}
+                    {cat?.icon||""} {cat?.label||cid}
                   </button>
                 );
               })}
@@ -1994,14 +2000,14 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
                   fontWeight:700,color:"var(--ag)"}}>${fmt(vrTotal)}</p>
               </div>
               <div style={{display:"flex",gap:6,marginBottom:12,flexWrap:"wrap"}}>
-                {PAYS.map(p=>(
-                  <button key={p} onClick={()=>setVrPay(p)} style={{
+                {VR_PAYS.map(p=>(
+                  <button key={p.id} onClick={()=>setVrPay(p.id)} style={{
                     flex:"1 0 auto",padding:"8px 10px",borderRadius:10,cursor:"pointer",
                     fontFamily:"'IBM Plex Mono',monospace",fontSize:9,fontWeight:700,
                     letterSpacing:.5,textTransform:"uppercase",
-                    background:vrPay===p?"var(--abl)":"var(--ac)",
-                    color:vrPay===p?"#fff":"var(--ad)",
-                    border:`1px solid ${vrPay===p?"var(--abl)":"var(--abr)"}`}}>{p}</button>
+                    background:vrPay===p.id?"var(--abl)":"var(--ac)",
+                    color:vrPay===p.id?"#fff":"var(--ad)",
+                    border:`1px solid ${vrPay===p.id?"var(--abl)":"var(--abr)"}`}}>{p.icon} {p.label}</button>
                 ))}
               </div>
               <button onClick={vrConfirm} disabled={!vrPay||vrLoading} style={{
