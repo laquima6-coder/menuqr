@@ -1243,6 +1243,47 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
   const [gSubTab, setGSubTab]           = useState("local");
   const [gActiveCat, setGActiveCat]     = useState("");
 
+  /* ── State de venta rápida (pedido manual desde caja) */
+  const [showVentaRapida, setShowVentaRapida] = useState(false);
+  const [vrCart, setVrCart]                   = useState({});
+  const [vrMesa, setVrMesa]                   = useState("mostrador");
+  const [vrMesaNum, setVrMesaNum]             = useState(1);
+  const [vrPay, setVrPay]                     = useState(null);
+  const [vrLoading, setVrLoading]             = useState(false);
+
+  const vrTotal = Object.values(vrCart).reduce((s,i)=>s+i.price*i.qty,0);
+  const vrAdd = (prod) => setVrCart(c=>({...c,[prod.id]:{...prod,qty:(c[prod.id]?.qty||0)+1}}));
+  const vrSub = (prod) => setVrCart(c=>{
+    const qty=(c[prod.id]?.qty||0)-1;
+    if(qty<=0){const n={...c};delete n[prod.id];return n;}
+    return {...c,[prod.id]:{...prod,qty}};
+  });
+  const vrConfirm = async()=>{
+    const items = Object.values(vrCart).filter(i=>i.qty>0);
+    if(!items.length || !vrPay) return;
+    setVrLoading(true);
+    try {
+      const mesaNum = vrMesa==="mostrador" ? 0 : vrMesaNum;
+      const {data:pedido,error} = await supabase.from("pedidos").insert({
+        restaurante_id: local.restauranteId,
+        mesa_numero:    mesaNum,
+        status:         "nuevo",
+        metodo_pago:    vrPay,
+        propina:        0,
+        total:          vrTotal,
+        nota:           vrMesa==="mostrador"?"Venta en mostrador":null,
+      }).select().single();
+      if(!error && pedido){
+        await supabase.from("pedido_items").insert(
+          items.map(i=>({pedido_id:pedido.id,producto_id:i.id,nombre:i.name,precio:i.price,cantidad:i.qty}))
+        );
+      }
+      setVrCart({}); setVrPay(null); setShowVentaRapida(false);
+      toast("✓ Venta registrada");
+    } catch(e){ toast("Error al guardar","err"); }
+    finally { setVrLoading(false); }
+  };
+
   useEffect(()=>{
     // Actualizar reloj cada minuto (no cada segundo para evitar re-renders)
     const t=setInterval(()=>setClock(new Date()),60000);
@@ -1675,6 +1716,162 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
   );
 
   /* ══════════════════════════════════════════
+     VENTA RÁPIDA MODAL
+  ══════════════════════════════════════════ */
+  const VentaRapidaModal = () => {
+    const catIds = [...new Set(prods.filter(p=>p.active).map(p=>p.cat))];
+    const [vrActiveCat, setVrActiveCat] = useState(catIds[0]||"");
+    const visProd = prods.filter(p=>p.active && p.cat===vrActiveCat);
+    const PAYS = ["efectivo","tarjeta","transferencia","mercadopago"];
+    return (
+      <div style={{position:"fixed",inset:0,zIndex:200,background:"rgba(0,0,0,.85)",
+        display:"flex",alignItems:"flex-end",justifyContent:"center"}}>
+        <div style={{background:"var(--as)",border:"1px solid var(--abr)",
+          borderRadius:"22px 22px 0 0",width:"100%",maxWidth:700,
+          maxHeight:"92vh",display:"flex",flexDirection:"column",overflow:"hidden"}}>
+          {/* Header */}
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",
+            padding:"18px 18px 12px",borderBottom:"1px solid var(--abr)",flexShrink:0}}>
+            <div>
+              <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,
+                color:"var(--am)",letterSpacing:1}}>CAJA</p>
+              <h2 style={{fontFamily:"'Outfit',sans-serif",fontSize:20,fontWeight:800,
+                color:"var(--abri)"}}>Venta Rápida</h2>
+            </div>
+            <button onClick={()=>{setShowVentaRapida(false);setVrCart({});setVrPay(null);}}
+              style={{background:"var(--ac)",border:"1px solid var(--abr)",borderRadius:8,
+                color:"var(--ad)",fontSize:18,width:36,height:36,cursor:"pointer",
+                display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
+          </div>
+          {/* Body scroll */}
+          <div style={{overflowY:"auto",flex:1,padding:"14px 16px"}}>
+            {/* Mesa / mostrador selector */}
+            <div style={{marginBottom:14}}>
+              <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,
+                color:"var(--am)",letterSpacing:1,marginBottom:6}}>TIPO DE VENTA</p>
+              <div style={{display:"flex",gap:8}}>
+                {["mostrador","mesa"].map(t=>(
+                  <button key={t} onClick={()=>setVrMesa(t)} style={{
+                    flex:1,padding:"9px 0",borderRadius:10,cursor:"pointer",
+                    fontFamily:"'IBM Plex Mono',monospace",fontSize:10,fontWeight:700,
+                    letterSpacing:1,textTransform:"uppercase",
+                    background:vrMesa===t?"var(--abl)":"var(--ac)",
+                    color:vrMesa===t?"#fff":"var(--ad)",
+                    border:`1px solid ${vrMesa===t?"var(--abl)":"var(--abr)"}`}}>{t}</button>
+                ))}
+              </div>
+              {vrMesa==="mesa" && (
+                <div style={{display:"flex",alignItems:"center",gap:10,marginTop:10}}>
+                  <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,
+                    color:"var(--ad)",letterSpacing:1}}>MESA Nº</p>
+                  <div style={{display:"flex",alignItems:"center",gap:8}}>
+                    <button onClick={()=>setVrMesaNum(n=>Math.max(1,n-1))}
+                      style={{width:32,height:32,borderRadius:8,border:"1px solid var(--abr)",
+                        background:"var(--ac)",color:"var(--abri)",fontSize:16,cursor:"pointer"}}>−</button>
+                    <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:18,
+                      fontWeight:700,color:"var(--abri)",minWidth:28,textAlign:"center"}}>{vrMesaNum}</span>
+                    <button onClick={()=>setVrMesaNum(n=>n+1)}
+                      style={{width:32,height:32,borderRadius:8,border:"1px solid var(--abr)",
+                        background:"var(--ac)",color:"var(--abri)",fontSize:16,cursor:"pointer"}}>+</button>
+                  </div>
+                </div>
+              )}
+            </div>
+            {/* Categorías */}
+            <div style={{display:"flex",gap:6,overflowX:"auto",marginBottom:12,scrollbarWidth:"none"}}>
+              {catIds.map(cid=>{
+                const cat = cats.find(c=>c.id===cid);
+                return (
+                  <button key={cid} onClick={()=>setVrActiveCat(cid)} style={{
+                    flexShrink:0,padding:"7px 12px",borderRadius:20,cursor:"pointer",
+                    fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:600,
+                    background:vrActiveCat===cid?"var(--abl)":"var(--ac)",
+                    color:vrActiveCat===cid?"#fff":"var(--ad)",
+                    border:`1px solid ${vrActiveCat===cid?"var(--abl)":"var(--abr)"}`}}>
+                    {cat?.emoji||""} {cat?.label||cid}
+                  </button>
+                );
+              })}
+            </div>
+            {/* Productos */}
+            <div style={{marginBottom:16}}>
+              {visProd.map(p=>{
+                const qty = vrCart[p.id]?.qty||0;
+                return (
+                  <div key={p.id} style={{display:"flex",alignItems:"center",
+                    justifyContent:"space-between",padding:"11px 14px",
+                    background:"var(--ac)",border:"1px solid var(--abr)",
+                    borderRadius:12,marginBottom:8}}>
+                    <div style={{flex:1,minWidth:0}}>
+                      <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:600,
+                        color:"var(--abri)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.name}</p>
+                      <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:11,
+                        color:"var(--ag)",fontWeight:700}}>${fmt(p.price)}</p>
+                    </div>
+                    <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
+                      {qty>0 && <>
+                        <button onClick={()=>vrSub(p)} style={{width:30,height:30,borderRadius:8,
+                          border:"1px solid var(--abr)",background:"var(--as)",
+                          color:"var(--abri)",fontSize:16,cursor:"pointer",
+                          display:"flex",alignItems:"center",justifyContent:"center"}}>−</button>
+                        <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:15,
+                          fontWeight:700,color:"var(--abri)",minWidth:20,textAlign:"center"}}>{qty}</span>
+                      </>}
+                      <button onClick={()=>vrAdd(p)} style={{width:30,height:30,borderRadius:8,
+                        border:`1px solid ${qty>0?"var(--abl)":"var(--abr)"}`,
+                        background:qty>0?"var(--abl)":"var(--ac)",
+                        color:qty>0?"#fff":"var(--abri)",fontSize:16,cursor:"pointer",
+                        display:"flex",alignItems:"center",justifyContent:"center"}}>+</button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+          {/* Footer sticky */}
+          {vrTotal>0 && (
+            <div style={{padding:"14px 16px",borderTop:"1px solid var(--abr)",
+              background:"var(--as)",flexShrink:0}}>
+              <div style={{display:"flex",justifyContent:"space-between",
+                alignItems:"center",marginBottom:12}}>
+                <div>
+                  {Object.values(vrCart).filter(i=>i.qty>0).map(i=>(
+                    <p key={i.id} style={{fontFamily:"'IBM Plex Mono',monospace",
+                      fontSize:10,color:"var(--at)"}}>
+                      <span style={{color:"var(--am)"}}>{i.qty}×</span> {i.name}
+                    </p>
+                  ))}
+                </div>
+                <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:22,
+                  fontWeight:700,color:"var(--ag)"}}>${fmt(vrTotal)}</p>
+              </div>
+              <div style={{display:"flex",gap:6,marginBottom:12,flexWrap:"wrap"}}>
+                {PAYS.map(p=>(
+                  <button key={p} onClick={()=>setVrPay(p)} style={{
+                    flex:"1 0 auto",padding:"8px 10px",borderRadius:10,cursor:"pointer",
+                    fontFamily:"'IBM Plex Mono',monospace",fontSize:9,fontWeight:700,
+                    letterSpacing:.5,textTransform:"uppercase",
+                    background:vrPay===p?"var(--abl)":"var(--ac)",
+                    color:vrPay===p?"#fff":"var(--ad)",
+                    border:`1px solid ${vrPay===p?"var(--abl)":"var(--abr)"}`}}>{p}</button>
+                ))}
+              </div>
+              <button onClick={vrConfirm} disabled={!vrPay||vrLoading} style={{
+                width:"100%",padding:14,
+                background:vrPay?"linear-gradient(135deg,#00FF88,#00C870)":"var(--ac)",
+                color:vrPay?"#060810":"var(--am)",border:"none",borderRadius:12,
+                fontFamily:"'Outfit',sans-serif",fontSize:15,fontWeight:800,
+                cursor:vrPay?"pointer":"not-allowed",opacity:vrLoading?.7:1}}>
+                {vrLoading?"Guardando...":vrPay?"✓ Confirmar venta":"Elegí un método de pago"}
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  /* ══════════════════════════════════════════
      ORDERS TAB
   ══════════════════════════════════════════ */
   const OrdersTab = () => {
@@ -1692,7 +1889,14 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
             <h2 style={{fontFamily:"'Outfit',sans-serif",fontSize:20,fontWeight:800,
               color:"var(--abri)"}}>Pedidos</h2>
           </div>
-          <div style={{display:"flex",gap:6}}>
+          <div style={{display:"flex",gap:6,alignItems:"center"}}>
+            <button onClick={()=>setShowVentaRapida(true)} style={{
+              background:"linear-gradient(135deg,#00FF88,#00C870)",
+              color:"#060810",border:"none",borderRadius:10,
+              padding:"7px 12px",fontFamily:"'IBM Plex Mono',monospace",
+              fontSize:9,fontWeight:700,cursor:"pointer",letterSpacing:1}}>
+              ＋ VENTA
+            </button>
             {["activos","cerrados"].map(fi=>(
               <button key={fi} onClick={()=>setF(fi)} style={{
                 background:f===fi?"var(--abl)":"var(--ac)",
@@ -2611,6 +2815,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
     <div style={{maxWidth:700,margin:"0 auto",minHeight:"100vh",
       background:"var(--ab)",paddingBottom:100,position:"relative"}}>
       <GS/>
+      {showVentaRapida && <VentaRapidaModal/>}
 
       {/* TOP BAR */}
       <div style={{background:"var(--as)",borderBottom:"1px solid var(--abr)",
