@@ -61,6 +61,65 @@ const GS = () => (
     input:focus,textarea:focus,select:focus { outline:none }
     input[type=number]::-webkit-outer-spin-button,
     input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none }
+
+    /* ── DESKTOP LAYOUT ───────────────────── */
+    @media (min-width: 900px) {
+      .admin-wrap {
+        display: flex !important;
+        flex-direction: row !important;
+        max-width: none !important;
+        width: 100vw !important;
+        margin: 0 !important;
+        height: 100vh;
+        overflow: hidden;
+        padding-bottom: 0 !important;
+      }
+      .admin-sidebar {
+        display: flex !important;
+        flex-direction: column;
+        width: 220px;
+        min-width: 220px;
+        height: 100vh;
+        background: var(--as);
+        border-right: 1px solid var(--abr);
+        position: sticky;
+        top: 0;
+        flex-shrink: 0;
+        overflow-y: auto;
+        z-index: 10;
+      }
+      .admin-main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        min-width: 0;
+      }
+      .admin-topbar {
+        position: sticky !important;
+        top: 0;
+      }
+      .admin-content-scroll {
+        flex: 1;
+        overflow-y: auto;
+        padding-bottom: 24px !important;
+      }
+      .admin-bottomnav {
+        display: none !important;
+      }
+      .admin-sidebar-nav {
+        display: flex !important;
+      }
+      .admin-sidebar-logo {
+        display: flex !important;
+      }
+    }
+    @media (max-width: 899px) {
+      .admin-sidebar-nav { display: none !important; }
+      .admin-sidebar-logo { display: none !important; }
+      .admin-sidebar { display: none !important; }
+      .admin-content-scroll { display: contents; }
+    }
   `}</style>
 );
 
@@ -2812,13 +2871,61 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
      RENDER PRINCIPAL DEL ADMIN
   ══════════════════════════════════════════ */
   return (
-    <div style={{maxWidth:700,margin:"0 auto",minHeight:"100vh",
+    <div className="admin-wrap" style={{maxWidth:700,margin:"0 auto",minHeight:"100vh",
       background:"var(--ab)",paddingBottom:100,position:"relative"}}>
       <GS/>
       {showVentaRapida && <VentaRapidaModal/>}
 
+      {/* DESKTOP SIDEBAR */}
+      <div className="admin-sidebar" style={{display:"none"}}>
+        <div className="admin-sidebar-logo" style={{display:"none",padding:"20px 18px 12px",
+          borderBottom:"1px solid var(--abr)",flexShrink:0}}>
+          <div style={{display:"flex",alignItems:"center",gap:10}}>
+            <div style={{width:34,height:34,borderRadius:9,
+              background:"linear-gradient(135deg,#003322,rgba(0,255,136,.3))",
+              border:"1px solid rgba(0,255,136,.2)",display:"flex",
+              alignItems:"center",justifyContent:"center",fontSize:17}}>🍽️</div>
+            <div>
+              <p style={{fontFamily:"'Outfit',sans-serif",fontSize:13,fontWeight:800,
+                color:"var(--abri)",lineHeight:1}}>{local.nombre||"MenuQR"}</p>
+              <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,
+                color:"var(--am)",letterSpacing:1,marginTop:2}}>PANEL ADMIN</p>
+            </div>
+          </div>
+        </div>
+        <nav className="admin-sidebar-nav" style={{display:"none",flexDirection:"column",
+          padding:"12px 10px",flex:1,gap:2}}>
+          {TABS.map(t=>{
+            const a = tab===t.id;
+            return (
+              <button key={t.id} onClick={()=>setTab(t.id)} className="pr" style={{
+                display:"flex",alignItems:"center",gap:10,
+                padding:"10px 12px",borderRadius:10,border:"none",cursor:"pointer",
+                background:a?"rgba(61,142,255,.15)":"transparent",
+                color:a?"var(--abl)":"var(--am)",
+                fontFamily:"'IBM Plex Mono',monospace",fontSize:11,fontWeight:700,
+                letterSpacing:.5,textAlign:"left",position:"relative",transition:".15s"}}>
+                <span style={{fontSize:15,minWidth:20,textAlign:"center"}}>{t.icon}</span>
+                <span style={{flex:1}}>{t.label}</span>
+                {t.badge>0 && <span style={{background:"var(--aam)",color:"#060810",
+                  borderRadius:10,padding:"1px 6px",fontSize:9,fontWeight:700}}>{t.badge}</span>}
+                {a && <div style={{position:"absolute",left:0,top:"20%",height:"60%",
+                  width:3,borderRadius:2,background:"var(--abl)"}}/>}
+              </button>
+            );
+          })}
+        </nav>
+        <div style={{padding:"14px 18px",borderTop:"1px solid var(--abr)",flexShrink:0}}>
+          <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,
+            color:"var(--abr)",letterSpacing:1}}>MENUQR · v1.0</p>
+        </div>
+      </div>
+
+      {/* DESKTOP MAIN WRAPPER */}
+      <div className="admin-main" style={{}}>
+
       {/* TOP BAR */}
-      <div style={{background:"var(--as)",borderBottom:"1px solid var(--abr)",
+      <div className="admin-topbar" style={{background:"var(--as)",borderBottom:"1px solid var(--abr)",
         padding:"14px 18px 10px",position:"sticky",top:0,zIndex:40,
         display:"flex",justifyContent:"space-between",alignItems:"center"}}>
         <div style={{display:"flex",alignItems:"center",gap:10}}>
@@ -2860,6 +2967,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
             color:"var(--am)"}}>{todStr()}</p>
         </div>
       </div>
+      <div className="admin-content-scroll">
 
       {/* CONTENT */}
       {tab==="home"    && <HomeTab/>}
@@ -2870,8 +2978,11 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
       {tab==="gestion" && <GestionTab/>}
       {tab==="config"  && <ConfigTab/>}
 
+      </div>{/* end admin-content-scroll */}
+      </div>{/* end admin-main */}
+
       {/* BOTTOM NAV */}
-      <nav style={{position:"fixed",bottom:0,left:"50%",
+      <nav className="admin-bottomnav" style={{position:"fixed",bottom:0,left:"50%",
         transform:"translateX(-50%)",width:"100%",maxWidth:700,
         background:"var(--as)",borderTop:"2px solid var(--abr)",
         display:"flex",padding:"10px 0 18px",zIndex:50,
