@@ -2611,7 +2611,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
                   <button onClick={()=>setAC(cat.id)} style={{background:"none",border:"none",
                     color:activeCat===cat.id?"var(--gi2)":"var(--gt)",fontSize:13,
                     fontWeight:600,cursor:"pointer",fontFamily:"'Outfit',sans-serif",padding:0}}>
-                    {cat.icon} {tCat(cat.label,lang)}
+                    {cat.icon} {cat.label}
                   </button>
                   <button onClick={async()=>{
                     const newActiva = !cat.activa;
