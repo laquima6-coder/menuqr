@@ -81,12 +81,13 @@ const GS = () => (
         min-width: 220px;
         height: 100vh;
         background: var(--as);
-        border-right: 1px solid var(--abr);
+        border-left: 1px solid var(--abr);
         position: sticky;
         top: 0;
         flex-shrink: 0;
         overflow-y: auto;
         z-index: 10;
+        order: 2;
       }
       .admin-main {
         flex: 1;
@@ -94,6 +95,7 @@ const GS = () => (
         flex-direction: column;
         overflow: hidden;
         min-width: 0;
+        order: 1;
       }
       .admin-topbar {
         position: sticky !important;
