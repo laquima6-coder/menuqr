@@ -2036,20 +2036,140 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
   };
 
   /* ══════════════════════════════════════════
-     ORDERS TAB
+     ORDERS TAB — Kanban POS
   ══════════════════════════════════════════ */
   const OrdersTab = () => {
     const f    = ordersFilter;
     const setF = setOrdersFilter;
-    const vis = f==="activos"
-      ? orders.filter(o=>o.status!=="entregado")
-      : orders.filter(o=>o.status==="entregado");
+
+    /* ── Imprimir comanda ── */
+    const printComanda = (o) => {
+      const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Comanda</title><style>
+        @page{size:80mm auto;margin:4mm}
+        *{box-sizing:border-box;margin:0;padding:0}
+        body{font-family:'Courier New',monospace;font-size:12px;color:#000;background:#fff;width:72mm}
+        .c{text-align:center}.b{font-weight:bold}
+        .line{border-top:1px dashed #000;margin:5px 0}
+        .row{display:flex;justify-content:space-between;padding:3px 0}
+        .name{font-size:16px;font-weight:bold;text-transform:uppercase;letter-spacing:2px}
+        .tag{font-size:10px;letter-spacing:3px;margin-top:2px}
+        .mesa{font-size:28px;font-weight:bold;margin:6px 0}
+        .item{display:flex;padding:3px 0;border-bottom:1px dotted #ccc}
+        .qty{font-weight:bold;min-width:24px}
+        .total{font-size:18px;font-weight:bold}
+      </style></head><body>
+        <div class="c">
+          <div class="name">${local.nombre}</div>
+          <div class="tag">COMANDA DE COCINA</div>
+          <div class="mesa">MESA ${o.table}</div>
+        </div>
+        <div class="line"></div>
+        <div class="row"><span>#${String(o.id).slice(-4)}</span><span>${o.time}</span></div>
+        <div class="row"><span>Pago:</span><span class="b">${o.pay||"—"}</span></div>
+        <div class="line"></div>
+        ${o.items.map(it=>`<div class="item"><span class="qty">${it.qty}×</span><span style="flex:1;padding-left:8px">${it.name}</span></div>`).join('')}
+        <div class="line"></div>
+        <div class="row"><span class="b">TOTAL</span><span class="total">$${fmt(o.total)}</span></div>
+        ${o.tip>0?`<div class="row"><span>Propina</span><span>+ $${fmt(o.tip)}</span></div>`:''}
+        <div class="line"></div>
+        <div class="c" style="font-size:9px;margin-top:6px;color:#888">MenuQR · ${new Date().toLocaleString('es-AR')}</div>
+        <script>window.onload=function(){window.print();setTimeout(function(){window.close()},1200)}</script>
+      </body></html>`;
+      const w = window.open('','_blank','width=380,height=550,toolbar=0,menubar=0,scrollbars=0');
+      if(w){w.document.write(html);w.document.close();}
+    };
+
+    /* ── Splits ── */
+    const nuevos   = orders.filter(o=>o.status==="nuevo");
+    const enCocina = orders.filter(o=>o.status==="preparando");
+    const listos   = orders.filter(o=>o.status==="listo");
+    const cerrados = orders.filter(o=>o.status==="entregado");
+
+    /* ── Card de pedido ── */
+    const OCard = ({o}) => {
+      const s = STATUS_CFG[o.status];
+      return (
+        <div className="ar" style={{background:"var(--as)",
+          border:`1px solid ${s.color}28`,
+          borderTop:`3px solid ${s.color}`,
+          borderRadius:12,marginBottom:8,overflow:"hidden"}}>
+          {/* Cabecera */}
+          <div style={{padding:"10px 12px 6px",display:"flex",
+            justifyContent:"space-between",alignItems:"flex-start"}}>
+            <div>
+              <span style={{fontFamily:"'IBM Plex Mono',monospace",fontWeight:700,
+                fontSize:20,color:s.color,lineHeight:1}}>M{o.table}</span>
+              <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,
+                color:"var(--am)",marginTop:2}}>
+                #{String(o.id).slice(-4)} · {o.time}
+              </p>
+            </div>
+            <div style={{display:"flex",gap:5,alignItems:"center"}}>
+              <span style={{fontFamily:"'IBM Plex Mono',monospace",fontWeight:700,
+                fontSize:13,color:"var(--ag)"}}>${fmt(o.total)}</span>
+              <button onClick={()=>printComanda(o)} title="Imprimir comanda" style={{
+                background:"none",border:`1px solid var(--abr)`,borderRadius:6,
+                padding:"4px 7px",color:"var(--ad)",fontSize:13,cursor:"pointer",
+                lineHeight:1}}>🖨️</button>
+            </div>
+          </div>
+          {/* Items */}
+          <div style={{padding:"6px 12px 8px",borderTop:"1px solid var(--abr)"}}>
+            {o.items.map((it,i)=>(
+              <p key={i} style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:11,
+                color:"var(--at)",lineHeight:1.8}}>
+                <span style={{color:s.color,fontWeight:700}}>{it.qty}×</span> {it.name}
+              </p>
+            ))}
+            {o.pay && (
+              <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,
+                color:"var(--am)",marginTop:4}}>{o.pay}</p>
+            )}
+          </div>
+          {/* Acción */}
+          {s.next && (
+            <button onClick={()=>advance(o.id)} className="pr" style={{
+              width:"100%",background:`${s.color}14`,border:"none",
+              borderTop:`1px solid ${s.color}30`,padding:"9px",
+              fontFamily:"'IBM Plex Mono',monospace",fontSize:10,fontWeight:700,
+              color:s.color,cursor:"pointer",letterSpacing:1.5}}>{s.action}</button>
+          )}
+        </div>
+      );
+    };
+
+    /* ── Columna kanban ── */
+    const KCol = ({title, color, colOrders}) => (
+      <div style={{flex:1,minWidth:0}}>
+        <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:10,
+          padding:"8px 11px",background:`${color}10`,
+          border:`1px solid ${color}28`,borderRadius:10}}>
+          <span style={{width:8,height:8,borderRadius:"50%",background:color,
+            flexShrink:0,boxShadow:`0 0 7px ${color}`}}/>
+          <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,
+            fontWeight:700,color,letterSpacing:2,flex:1}}>{title}</span>
+          <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:12,
+            fontWeight:700,color,background:`${color}22`,
+            borderRadius:12,padding:"1px 8px",minWidth:22,textAlign:"center"}}>
+            {colOrders.length}
+          </span>
+        </div>
+        {colOrders.length===0
+          ? <div style={{textAlign:"center",padding:"20px 0"}}>
+              <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:"var(--am)",letterSpacing:1}}>vacío</p>
+            </div>
+          : colOrders.map(o=><OCard key={o.id} o={o}/>)
+        }
+      </div>
+    );
+
     return (
       <div style={{padding:"18px 16px 0"}}>
+        {/* Header */}
         <div style={{display:"flex",justifyContent:"space-between",
           alignItems:"center",marginBottom:14}}>
           <div>
-            <ALbl>Gestión</ALbl>
+            <ALbl>Sala en vivo</ALbl>
             <h2 style={{fontFamily:"'Outfit',sans-serif",fontSize:20,fontWeight:800,
               color:"var(--abri)"}}>Pedidos</h2>
           </div>
@@ -2073,60 +2193,23 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
             ))}
           </div>
         </div>
-        {vis.length===0 && (
-          <div style={{textAlign:"center",padding:"50px 0",color:"var(--am)"}}>
-            <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:13}}>
-              // sin pedidos
-            </p>
+
+        {f==="activos" ? (
+          <div style={{display:"flex",gap:10}}>
+            <KCol title="NUEVOS"    color="#FFB020" colOrders={nuevos}/>
+            <KCol title="EN COCINA" color="#3D8EFF" colOrders={enCocina}/>
+            <KCol title="LISTOS"    color="#00FF88" colOrders={listos}/>
+          </div>
+        ) : (
+          <div>
+            {cerrados.length===0 && (
+              <div style={{textAlign:"center",padding:"50px 0",color:"var(--am)"}}>
+                <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:13}}>// sin pedidos cerrados</p>
+              </div>
+            )}
+            {cerrados.map(o=><OCard key={o.id} o={o}/>)}
           </div>
         )}
-        {vis.map(o=>{
-          const s=STATUS_CFG[o.status];
-          return (
-            <div key={o.id} className="ar" style={{background:"var(--ac)",
-              border:`1px solid ${o.status==="nuevo"?"rgba(255,176,32,.25)":"var(--abr)"}`,
-              borderLeft:`3px solid ${s.color}`,
-              borderRadius:16,marginBottom:10,overflow:"hidden"}}>
-              <div style={{display:"flex",justifyContent:"space-between",
-                alignItems:"center",padding:"13px 16px 8px"}}>
-                <div style={{display:"flex",gap:10,alignItems:"center"}}>
-                  <span style={{fontFamily:"'IBM Plex Mono',monospace",fontWeight:700,
-                    fontSize:17,color:s.color}}>M{o.table}</span>
-                  <div>
-                    <Chip status={o.status}/>
-                    <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,
-                      color:"var(--ad)",marginTop:3}}>
-                      #{o.id} · {o.time} · {o.pay}
-                    </p>
-                  </div>
-                </div>
-                <div style={{textAlign:"right"}}>
-                  <p style={{fontFamily:"'IBM Plex Mono',monospace",fontWeight:700,
-                    fontSize:15,color:"var(--ag)"}}>${fmt(o.total)}</p>
-                  {o.tip>0 && (
-                    <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,
-                      color:"rgba(74,154,90,.8)"}}>💝 +${fmt(o.tip)}</p>
-                  )}
-                </div>
-              </div>
-              <div style={{padding:"8px 16px",borderTop:"1px solid var(--abr)",
-                borderBottom:s.next?"1px solid var(--abr)":"none"}}>
-                {o.items.map((it,i)=>(
-                  <p key={i} style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:11,
-                    color:"var(--at)",padding:"2px 0"}}>
-                    <span style={{color:"var(--am)"}}>{it.qty}×</span> {it.name}
-                  </p>
-                ))}
-              </div>
-              {s.next && (
-                <button onClick={()=>advance(o.id)} className="pr" style={{
-                  width:"100%",background:"transparent",border:"none",padding:"12px",
-                  fontFamily:"'IBM Plex Mono',monospace",fontSize:11,fontWeight:700,
-                  color:s.color,cursor:"pointer",letterSpacing:1.5}}>{s.action}</button>
-              )}
-            </div>
-          );
-        })}
       </div>
     );
   };
