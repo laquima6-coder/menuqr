@@ -1781,71 +1781,152 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
   /* ══════════════════════════════════════════
      HOME TAB
   ══════════════════════════════════════════ */
-  const HomeTab = () => (
+  const HomeTab = () => {
+    const hour   = new Date().getHours();
+    const greet  = hour < 13 ? "Buenos días" : hour < 20 ? "Buenas tardes" : "Buenas noches";
+    const payInfo = makeVentas();
+    const cerrados = orders.filter(o=>o.status==="entregado").length;
+    const mesasActivas = [...new Set(active.map(o=>o.table))].length;
+    return (
     <div style={{padding:"18px 16px 0"}}>
-      {/* Revenue card */}
-      <div style={{background:"var(--ac)",border:"1px solid rgba(0,255,136,.15)",
-        borderRadius:18,padding:20,marginBottom:12,position:"relative",overflow:"hidden"}}>
-        <ALbl color="var(--ag)">Ingresos de hoy</ALbl>
-        <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:34,fontWeight:700,
-          color:"var(--ag)",letterSpacing:-1,lineHeight:1}}>$ {fmt(revenue)}</p>
-        {tipsTotal>0 && (
-          <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,
-            color:"rgba(0,255,136,.5)",marginTop:4}}>
-            incl. $ {fmt(tipsTotal)} en propinas 💝
-          </p>
-        )}
-        <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,
-          color:"var(--am)",marginTop:4}}>
-          {orders.filter(o=>o.status==="entregado").length} pedidos cerrados
-        </p>
+
+      {/* ── Header */}
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16}}>
+        <div>
+          <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:"var(--am)",
+            letterSpacing:2,marginBottom:4}}>{greet.toUpperCase()}</p>
+          <h1 style={{fontFamily:"'Outfit',sans-serif",fontSize:21,fontWeight:800,
+            color:"var(--abri)",lineHeight:1.05,margin:0}}>
+            {local.nombre||"Tu restaurante"}
+          </h1>
+        </div>
+        <button onClick={()=>setShowVentaRapida(true)} className="pr" style={{
+          background:"var(--ag)",color:"#060810",border:"none",borderRadius:12,
+          padding:"9px 14px",fontFamily:"'IBM Plex Mono',monospace",fontSize:11,
+          fontWeight:800,cursor:"pointer",letterSpacing:.5,flexShrink:0,
+          boxShadow:"0 0 18px rgba(0,255,136,.28)",display:"flex",alignItems:"center",gap:6}}>
+          ⚡ NUEVA VENTA
+        </button>
       </div>
 
-      {/* Stats */}
-      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:12}}>
+      {/* ── Revenue card */}
+      <div style={{background:"linear-gradient(135deg,#040D0A 0%,#081812 100%)",
+        border:"1px solid rgba(0,255,136,.18)",borderRadius:18,
+        padding:"18px 20px",marginBottom:10,position:"relative",overflow:"hidden"}}>
+        <div style={{position:"absolute",top:-28,right:-28,width:110,height:110,
+          borderRadius:"50%",background:"rgba(0,255,136,.05)",pointerEvents:"none"}}/>
+        <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,
+          color:"rgba(0,255,136,.55)",letterSpacing:2,marginBottom:6}}>INGRESOS HOY</p>
+        <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:40,fontWeight:700,
+          color:"var(--ag)",letterSpacing:-2,lineHeight:1,marginBottom:8}}>
+          ${fmt(revenue)}
+        </p>
+        <div style={{display:"flex",alignItems:"center",gap:16}}>
+          <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:"var(--am)"}}>
+            {cerrados} {cerrados===1?"pedido cerrado":"pedidos cerrados"}
+          </span>
+          {tipsTotal>0 && (
+            <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,
+              color:"rgba(0,255,136,.5)"}}>
+              +${fmt(tipsTotal)} propinas 💝
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* ── Stat cards */}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:10}}>
         {[
-          {label:"NUEVOS",  val:newCount,                                          color:"var(--aam)"},
-          {label:"EN MESA", val:[...new Set(active.map(o=>o.table))].length,       color:"var(--abl)"},
-          {label:"ACTIVOS", val:active.length,                                     color:"var(--ag)"},
+          {label:"NUEVOS",   val:newCount,      color:"#FFB020", bg:"rgba(255,176,32,.08)", border:"rgba(255,176,32,.22)"},
+          {label:"EN MESA",  val:mesasActivas,  color:"#3D8EFF", bg:"rgba(61,142,255,.08)", border:"rgba(61,142,255,.2)"},
+          {label:"ACTIVOS",  val:active.length, color:"var(--ag)", bg:"rgba(0,255,136,.06)", border:"rgba(0,255,136,.18)"},
         ].map(s=>(
-          <div key={s.label} style={{background:"var(--ac)",
-            border:`1px solid ${s.label==="NUEVOS"&&s.val>0?"rgba(255,176,32,.3)":"var(--abr)"}`,
-            borderRadius:14,padding:"13px 10px",textAlign:"center"}}>
-            <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:26,
-              fontWeight:700,color:s.color,lineHeight:1}}>{s.val}</p>
+          <div key={s.label} style={{background:s.bg,border:`1px solid ${s.border}`,
+            borderRadius:14,padding:"14px 8px",textAlign:"center"}}>
+            <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:30,fontWeight:700,
+              color:s.color,lineHeight:1,marginBottom:5}}>{s.val}</p>
             <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,
-              color:"var(--am)",marginTop:5,letterSpacing:1.5}}>{s.label}</p>
+              color:"var(--am)",letterSpacing:1.5}}>{s.label}</p>
           </div>
         ))}
       </div>
 
-      {/* Recent orders */}
-      <div style={{background:"var(--ac)",border:"1px solid var(--abr)",
-        borderRadius:16,overflow:"hidden"}}>
-        <div style={{padding:"11px 16px 7px",borderBottom:"1px solid var(--abr)"}}>
-          <ALbl>Últimos pedidos</ALbl>
+      {/* ── Payment breakdown (only if there are sales) */}
+      {revenue>0 && (
+        <div style={{background:"var(--ac)",border:"1px solid var(--abr)",
+          borderRadius:16,overflow:"hidden",marginBottom:10}}>
+          <div style={{padding:"10px 14px 7px",borderBottom:"1px solid var(--abr)"}}>
+            <ALbl>Métodos de pago hoy</ALbl>
+          </div>
+          {[
+            {icon:"💵",label:"Efectivo",     val:payInfo.efectivo},
+            {icon:"📲",label:"Mercado Pago", val:payInfo.mercadopago},
+            {icon:"💳",label:"Débito",       val:payInfo.debito},
+            {icon:"💳",label:"Crédito",      val:payInfo.credito},
+            {icon:"🏦",label:"Transferencia",val:payInfo.transferencia},
+          ].filter(p=>p.val>0).map((p,i,arr)=>(
+            <div key={p.label} style={{display:"flex",justifyContent:"space-between",
+              alignItems:"center",padding:"9px 14px",
+              borderBottom:i<arr.length-1?"1px solid var(--abr)":"none"}}>
+              <div style={{display:"flex",alignItems:"center",gap:9}}>
+                <span style={{fontSize:13}}>{p.icon}</span>
+                <span style={{fontFamily:"'Outfit',sans-serif",fontSize:12,
+                  color:"var(--at)"}}>{p.label}</span>
+              </div>
+              <div style={{display:"flex",alignItems:"center",gap:10}}>
+                <div style={{width:56,height:3,borderRadius:2,
+                  background:"var(--abr)",overflow:"hidden"}}>
+                  <div style={{width:`${Math.round(p.val/revenue*100)}%`,
+                    height:"100%",background:"var(--ag)",borderRadius:2}}/>
+                </div>
+                <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:12,
+                  fontWeight:600,color:"var(--abri)",minWidth:58,textAlign:"right"}}>
+                  ${fmt(p.val)}
+                </span>
+              </div>
+            </div>
+          ))}
         </div>
-        {orders.slice(0,5).map((o,i)=>{
+      )}
+
+      {/* ── Recent orders */}
+      <div style={{background:"var(--ac)",border:"1px solid var(--abr)",
+        borderRadius:16,overflow:"hidden",marginBottom:8}}>
+        <div style={{padding:"10px 14px 7px",borderBottom:"1px solid var(--abr)",
+          display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <ALbl>Últimos pedidos</ALbl>
+          {orders.length>5 && (
+            <button onClick={()=>setTab("orders")} style={{background:"none",border:"none",
+              fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:"var(--abl)",
+              cursor:"pointer",letterSpacing:.5}}>VER TODOS →</button>
+          )}
+        </div>
+        {orders.length===0 ? (
+          <div style={{padding:"22px 16px",textAlign:"center"}}>
+            <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:11,
+              color:"var(--am)"}}>Sin pedidos aún hoy</p>
+          </div>
+        ) : orders.slice(0,5).map((o,i)=>{
           const s=STATUS_CFG[o.status];
           return (
             <div key={o.id} className="ar" style={{display:"flex",
               justifyContent:"space-between",alignItems:"center",
-              padding:"11px 16px",
-              borderBottom:i<4?"1px solid var(--abr)":"none"}}>
+              padding:"10px 14px",
+              borderBottom:i<Math.min(orders.length,5)-1?"1px solid var(--abr)":"none"}}>
               <div style={{display:"flex",gap:10,alignItems:"center"}}>
-                <div style={{width:32,height:32,borderRadius:8,background:s.dim,
-                  border:`1px solid ${s.color}33`,display:"flex",
+                <div style={{width:34,height:34,borderRadius:9,background:s.dim,
+                  border:`1px solid ${s.color}44`,display:"flex",
                   alignItems:"center",justifyContent:"center",
                   fontFamily:"'IBM Plex Mono',monospace",fontWeight:700,
-                  fontSize:13,color:s.color}}>{o.table}</div>
+                  fontSize:14,color:s.color}}>{o.table}</div>
                 <div>
                   <p style={{fontFamily:"'Outfit',sans-serif",fontWeight:600,
-                    fontSize:13,color:"var(--abri)"}}>
-                    Mesa {o.table} <span style={{color:"var(--am)",fontWeight:400,
-                    fontSize:11}}>#{o.id}</span>
+                    fontSize:13,color:"var(--abri)",lineHeight:1.1}}>
+                    Mesa {o.table}
+                    <span style={{color:"var(--am)",fontWeight:400,fontSize:10}}> ·{o.id}</span>
                   </p>
                   <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,
-                    color:"var(--ad)"}}>{o.time} · {o.pay}</p>
+                    color:"var(--ad)",marginTop:2}}>{o.time} · {o.pay}</p>
                 </div>
               </div>
               <div style={{textAlign:"right"}}>
@@ -1862,7 +1943,8 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
         })}
       </div>
     </div>
-  );
+    );
+  };
 
   /* ══════════════════════════════════════════
      VENTA RÁPIDA MODAL
