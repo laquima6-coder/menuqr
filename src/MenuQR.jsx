@@ -58,6 +58,23 @@ const GS = () => (
     .pr { transition:transform .14s,opacity .14s }
     .pr:active { transform:scale(.94); opacity:.8 }
 
+    /* ── POS Caja */
+    .pos-cat {
+      display:flex;flex-direction:column;align-items:center;gap:5px;
+      background:var(--ac);border:1px solid var(--abr);border-radius:11px;
+      padding:12px 6px;cursor:pointer;width:100%;
+      transition:background .15s,border-color .15s,box-shadow .15s;
+    }
+    .pos-cat:hover { background:rgba(61,142,255,.12);border-color:rgba(61,142,255,.4);box-shadow:0 0 0 1px rgba(61,142,255,.15); }
+    .pos-cat.sel   { background:rgba(61,142,255,.18);border-color:var(--abl);box-shadow:0 0 10px rgba(61,142,255,.15); }
+
+    .pos-item {
+      background:var(--ac);border:1px solid var(--abr);border-radius:12px;
+      padding:13px 12px;cursor:default;
+      transition:background .15s,border-color .15s,box-shadow .15s;
+    }
+    .pos-item:hover { background:rgba(0,255,136,.07);border-color:rgba(0,255,136,.28);box-shadow:0 0 0 1px rgba(0,255,136,.08); }
+
     input,textarea,select { font-family:'Outfit',sans-serif }
     input:focus,textarea:focus,select:focus { outline:none }
     input[type=number]::-webkit-outer-spin-button,
@@ -2617,107 +2634,119 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
               )}
             </div>
 
-            {/* ── Acordeón de categorías */}
-            <div style={{borderRadius:14,overflow:"hidden",border:"1px solid var(--abr)"}}>
-              {catList.length===0 ? (
-                <div style={{padding:"18px 16px",textAlign:"center",background:"var(--ac)"}}>
-                  <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:"var(--am)"}}>
-                    Sin productos activos. Agregá productos en Gestión → Carta.
-                  </p>
-                </div>
-              ) : catList.map((cat,ci)=>{
-                const isOpen = cajaOpenCat===cat.id;
-                const catProds = prods.filter(p=>p.active && p.cat===cat.id);
-                const catQty = catProds.reduce((s,p)=>s+(cajaCart[p.id]?.qty||0),0);
-                return (
-                  <div key={cat.id} style={{borderBottom:ci<catList.length-1?"1px solid var(--abr)":"none"}}>
-                    {/* Fila de categoría */}
-                    <button onClick={()=>setCajaOpenCat(isOpen?null:cat.id)}
-                      style={{width:"100%",padding:"12px 14px",
-                        background:isOpen?"rgba(61,142,255,.07)":"var(--ac)",
-                        border:"none",cursor:"pointer",
-                        display:"flex",alignItems:"center",gap:10,textAlign:"left",
-                        transition:"background .15s"}}>
-                      <span style={{fontSize:16,minWidth:22}}>{cat.icon||"🍽️"}</span>
-                      <span style={{fontFamily:"'Outfit',sans-serif",fontSize:13,fontWeight:700,
-                        color:"var(--abri)",flex:1}}>{cat.label}</span>
-                      {catQty>0 && (
-                        <span style={{background:"var(--abl)",color:"#fff",
-                          borderRadius:10,padding:"1px 7px",
-                          fontFamily:"'IBM Plex Mono',monospace",fontSize:9,fontWeight:700}}>
-                          {catQty}
-                        </span>
-                      )}
-                      <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:11,
-                        color:"var(--am)",transition:"transform .2s",
-                        display:"inline-block",transform:isOpen?"rotate(90deg)":"rotate(0deg)"}}>▶</span>
-                    </button>
-                    {/* Productos expandidos */}
-                    {isOpen && (
-                      <div style={{background:"var(--as)",borderTop:"1px solid var(--abr)"}}>
-                        {catProds.map((p,pi)=>{
-                          const qty = cajaCart[p.id]?.qty||0;
-                          return (
-                            <div key={p.id} style={{display:"flex",alignItems:"center",
-                              padding:"10px 14px",gap:10,
-                              borderBottom:pi<catProds.length-1?"1px solid rgba(255,255,255,.04)":"none"}}>
-                              <div style={{flex:1,minWidth:0}}>
-                                <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,
-                                  fontWeight:600,color:"var(--abri)",
-                                  overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.name}</p>
-                                <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:11,
-                                  color:"var(--ag)",fontWeight:700}}>${fmt(p.price)}</p>
-                              </div>
-                              <div style={{display:"flex",alignItems:"center",gap:7,flexShrink:0}}>
-                                {qty>0 && <>
-                                  <button onClick={()=>cajaSub(p)}
-                                    style={{width:28,height:28,borderRadius:7,
-                                      border:"1px solid var(--abr)",background:"var(--ac)",
-                                      color:"var(--abri)",fontSize:15,cursor:"pointer",
-                                      display:"flex",alignItems:"center",justifyContent:"center"}}>−</button>
-                                  <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:14,
-                                    fontWeight:700,color:"var(--abri)",minWidth:18,textAlign:"center"}}>
-                                    {qty}
-                                  </span>
-                                </>}
-                                <button onClick={()=>cajaAdd(p)}
-                                  style={{width:28,height:28,borderRadius:7,
-                                    border:`1px solid ${qty>0?"var(--abl)":"var(--abr)"}`,
-                                    background:qty>0?"var(--abl)":"var(--ac)",
-                                    color:qty>0?"#fff":"var(--abri)",
-                                    fontSize:15,cursor:"pointer",
-                                    display:"flex",alignItems:"center",justifyContent:"center"}}>+</button>
-                              </div>
-                            </div>
-                          );
-                        })}
+            {/* ── Layout dos columnas: productos izq | categorías der */}
+            {catList.length===0 ? (
+              <div style={{padding:"20px",textAlign:"center",background:"var(--ac)",
+                borderRadius:14,border:"1px solid var(--abr)"}}>
+                <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:11,color:"var(--am)"}}>
+                  Sin productos activos. Agregá en Gestión → Carta.
+                </p>
+              </div>
+            ) : (
+              <div style={{display:"flex",gap:8,height:400}}>
+
+                {/* IZQUIERDA — productos de la categoría activa */}
+                <div style={{flex:1,overflowY:"auto",display:"flex",flexDirection:"column",gap:7}}>
+                  {(()=>{
+                    const activeCat = cajaOpenCat || catList[0]?.id;
+                    const catProds = prods.filter(p=>p.active && p.cat===activeCat);
+                    return catProds.length===0 ? (
+                      <div style={{padding:"20px",textAlign:"center"}}>
+                        <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:"var(--am)"}}>
+                          Sin productos en esta categoría
+                        </p>
                       </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+                    ) : catProds.map(p=>{
+                      const qty = cajaCart[p.id]?.qty||0;
+                      return (
+                        <div key={p.id} className="pos-item">
+                          {/* Nombre y precio */}
+                          <p style={{fontFamily:"'Outfit',sans-serif",fontSize:16,fontWeight:700,
+                            color:"var(--abri)",marginBottom:3,lineHeight:1.2}}>{p.name}</p>
+                          <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:15,
+                            fontWeight:700,color:"var(--ag)",marginBottom:10}}>${fmt(p.price)}</p>
+                          {/* Controles +/- */}
+                          <div style={{display:"flex",alignItems:"center",gap:8}}>
+                            {qty>0 && <>
+                              <button onClick={()=>cajaSub(p)} className="pr"
+                                style={{width:34,height:34,borderRadius:8,border:"1px solid var(--abr)",
+                                  background:"var(--as)",color:"var(--abri)",fontSize:18,
+                                  cursor:"pointer",display:"flex",alignItems:"center",
+                                  justifyContent:"center",fontWeight:700}}>−</button>
+                              <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:17,
+                                fontWeight:700,color:"var(--abri)",minWidth:24,textAlign:"center"}}>
+                                {qty}
+                              </span>
+                            </>}
+                            <button onClick={()=>cajaAdd(p)} className="pr"
+                              style={{width:34,height:34,borderRadius:8,
+                                border:`1px solid ${qty>0?"var(--abl)":"var(--abr)"}`,
+                                background:qty>0?"var(--abl)":"var(--as)",
+                                color:qty>0?"#fff":"var(--abri)",fontSize:18,
+                                cursor:"pointer",display:"flex",alignItems:"center",
+                                justifyContent:"center",fontWeight:700}}>+</button>
+                            {qty>0 && (
+                              <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:11,
+                                color:"var(--am)",marginLeft:2}}>
+                                = ${fmt(p.price*qty)}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    });
+                  })()}
+                </div>
+
+                {/* DERECHA — lista de categorías */}
+                <div style={{width:100,overflowY:"auto",display:"flex",
+                  flexDirection:"column",gap:6,flexShrink:0}}>
+                  {catList.map(cat=>{
+                    const isSel = (cajaOpenCat||catList[0]?.id)===cat.id;
+                    const catQty = prods.filter(p=>p.active&&p.cat===cat.id)
+                      .reduce((s,p)=>s+(cajaCart[p.id]?.qty||0),0);
+                    return (
+                      <button key={cat.id} onClick={()=>setCajaOpenCat(cat.id)}
+                        className={`pos-cat${isSel?" sel":""}`} style={{border:"none"}}>
+                        <span style={{fontSize:22}}>{cat.icon||"🍽️"}</span>
+                        <span style={{fontFamily:"'Outfit',sans-serif",fontSize:11,fontWeight:700,
+                          color:isSel?"var(--abl)":"var(--at)",textAlign:"center",
+                          lineHeight:1.2,wordBreak:"break-word"}}>
+                          {cat.label}
+                        </span>
+                        {catQty>0 && (
+                          <span style={{background:"var(--abl)",color:"#fff",borderRadius:8,
+                            padding:"1px 6px",fontFamily:"'IBM Plex Mono',monospace",
+                            fontSize:9,fontWeight:700}}>{catQty}</span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* ── Ticket y cobro */}
             {cajaTotal>0 && (
               <div style={{background:"var(--ac)",border:"1px solid var(--abr)",
                 borderRadius:14,marginTop:10,overflow:"hidden"}}>
-                {/* Items */}
+                {/* Items del carrito */}
                 <div style={{padding:"10px 14px 8px",borderBottom:"1px solid var(--abr)"}}>
                   {Object.values(cajaCart).filter(i=>i.qty>0).map(i=>(
                     <div key={i.id} style={{display:"flex",justifyContent:"space-between",
-                      padding:"3px 0",fontFamily:"'IBM Plex Mono',monospace",fontSize:11}}>
+                      alignItems:"center",padding:"4px 0",
+                      fontFamily:"'IBM Plex Mono',monospace",fontSize:12}}>
                       <span style={{color:"var(--at)"}}><span style={{color:"var(--am)"}}>{i.qty}×</span> {i.name}</span>
-                      <span style={{color:"var(--abri)",fontWeight:700}}>${fmt(i.price*i.qty)}</span>
+                      <span style={{color:"var(--abri)",fontWeight:700,marginLeft:8}}>${fmt(i.price*i.qty)}</span>
                     </div>
                   ))}
                 </div>
                 {/* Total */}
-                <div style={{display:"flex",justifyContent:"space-between",
-                  alignItems:"center",padding:"10px 14px",borderBottom:"1px solid var(--abr)"}}>
-                  <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:12,
-                    fontWeight:700,color:"var(--am)"}}>TOTAL</span>
-                  <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:22,
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",
+                  padding:"10px 14px",borderBottom:"1px solid var(--abr)"}}>
+                  <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:13,
+                    fontWeight:700,color:"var(--am)",letterSpacing:1}}>TOTAL</span>
+                  <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:24,
                     fontWeight:700,color:"var(--ag)"}}>${fmt(cajaTotal)}</span>
                 </div>
                 {/* Método de pago */}
@@ -2726,40 +2755,40 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
                     color:"var(--am)",letterSpacing:1.5,marginBottom:8}}>MÉTODO DE PAGO</p>
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
                     {CAJA_PAYS.map(p=>(
-                      <button key={p.id} onClick={()=>setCajaPay(p.id)} style={{
-                        padding:"9px 10px",borderRadius:9,cursor:"pointer",
+                      <button key={p.id} onClick={()=>setCajaPay(p.id)} className="pr" style={{
+                        padding:"10px 10px",borderRadius:10,cursor:"pointer",
                         display:"flex",alignItems:"center",gap:8,
-                        fontFamily:"'Outfit',sans-serif",fontSize:12,fontWeight:600,
+                        fontFamily:"'Outfit',sans-serif",fontSize:13,fontWeight:600,
                         background:cajaPay===p.id?"var(--abl)":"var(--as)",
                         color:cajaPay===p.id?"#fff":"var(--abri)",
                         border:`1px solid ${cajaPay===p.id?"var(--abl)":"var(--abr)"}`,
                         transition:"all .15s"}}>
-                        <span style={{fontSize:15}}>{p.icon}</span>
+                        <span style={{fontSize:16}}>{p.icon}</span>
                         {p.label}
-                        {cajaPay===p.id && <span style={{marginLeft:"auto",fontSize:11}}>✓</span>}
+                        {cajaPay===p.id && <span style={{marginLeft:"auto",fontSize:12}}>✓</span>}
                       </button>
                     ))}
                   </div>
                 </div>
                 {/* Botones cobrar */}
                 <div style={{padding:"10px 14px",display:"flex",gap:8}}>
-                  <button onClick={()=>cajaConfirm(true)}
-                    disabled={!cajaPay||cajaLoading}
-                    style={{flex:1,padding:"11px 8px",borderRadius:10,cursor:cajaPay?"pointer":"not-allowed",
+                  <button onClick={()=>cajaConfirm(true)} disabled={!cajaPay||cajaLoading}
+                    className="pr"
+                    style={{flex:1,padding:"13px 8px",borderRadius:11,
+                      cursor:cajaPay?"pointer":"not-allowed",
                       background:"var(--as)",color:cajaPay?"var(--abri)":"var(--am)",
-                      border:"1px solid var(--abr)",
-                      fontFamily:"'Outfit',sans-serif",fontSize:12,fontWeight:700,
-                      display:"flex",alignItems:"center",justifyContent:"center",gap:6,
-                      opacity:cajaLoading?.7:1}}>
+                      border:"1px solid var(--abr)",fontFamily:"'Outfit',sans-serif",
+                      fontSize:13,fontWeight:700,display:"flex",alignItems:"center",
+                      justifyContent:"center",gap:6,opacity:cajaLoading?.7:1}}>
                     🖨️ Cobrar e imprimir
                   </button>
-                  <button onClick={()=>cajaConfirm(false)}
-                    disabled={!cajaPay||cajaLoading}
-                    style={{flex:1,padding:"11px 8px",borderRadius:10,
+                  <button onClick={()=>cajaConfirm(false)} disabled={!cajaPay||cajaLoading}
+                    className="pr"
+                    style={{flex:1,padding:"13px 8px",borderRadius:11,
                       cursor:cajaPay?"pointer":"not-allowed",
                       background:cajaPay?"linear-gradient(135deg,#00FF88,#00C870)":"var(--ac)",
                       color:cajaPay?"#060810":"var(--am)",border:"none",
-                      fontFamily:"'Outfit',sans-serif",fontSize:12,fontWeight:800,
+                      fontFamily:"'Outfit',sans-serif",fontSize:13,fontWeight:800,
                       opacity:cajaLoading?.7:1}}>
                     {cajaLoading?"Guardando...":"✓ Cobrar"}
                   </button>
