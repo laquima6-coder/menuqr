@@ -1400,14 +1400,66 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
   const [vrPay, setVrPay]                     = useState(null);
   const [vrLoading, setVrLoading]             = useState(false);
 
-  const vrTotal = Object.values(vrCart).reduce((s,i)=>s+i.price*i.qty,0);
-  const vrAdd = (prod) => setVrCart(c=>({...c,[prod.id]:{...prod,qty:(c[prod.id]?.qty||0)+1}}));
-  const vrSub = (prod) => setVrCart(c=>{
-    const qty=(c[prod.id]?.qty||0)-1;
-    if(qty<=0){const n={...c};delete n[prod.id];return n;}
-    return {...c,[prod.id]:{...prod,qty}};
-  });
-  const vrConfirm = async()=>{
+  /* ── State de POS embebido en Caja */
+  const [cajaCart, setCajaCart]         = useState({});
+  const [cajaPay, setCajaPay]           = useState(null);
+  const [cajaMesaTipo, setCajaMesaTipo] = useState("mostrador");
+  const [cajaMesaNum, setCajaMesaNum]   = useState(1);
+  const [cajaOpenCat, setCajaOpenCat]   = useState(null);
+  const [cajaLoading, setCajaLoading]   = useState(false);
+
+  const vrTotal    = Object.values(vrCart).reduce((s,i)=>s+i.price*i.qty,0);
+  const cajaTotal  = Object.values(cajaCart).reduce((s,i)=>s+i.price*i.qty,0);
+
+  const vrAdd  = (prod) => setVrCart(c=>({...c,[prod.id]:{...prod,qty:(c[prod.id]?.qty||0)+1}}));
+  const vrSub  = (prod) => setVrCart(c=>{const qty=(c[prod.id]?.qty||0)-1;if(qty<=0){const n={...c};delete n[prod.id];return n;}return{...c,[prod.id]:{...prod,qty}};});
+  const cajaAdd= (prod) => setCajaCart(c=>({...c,[prod.id]:{...prod,qty:(c[prod.id]?.qty||0)+1}}));
+  const cajaSub= (prod) => setCajaCart(c=>{const qty=(c[prod.id]?.qty||0)-1;if(qty<=0){const n={...c};delete n[prod.id];return n;}return{...c,[prod.id]:{...prod,qty}};});
+
+  /* ── Print ticket (recibo para el cliente) */
+  const printTicket = (o) => {
+    const PAY_LABELS={cash:"Efectivo",mp:"Mercado Pago",card:"Tarjeta Débito",trans:"Transferencia"};
+    const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Ticket</title>
+    <style>
+      @page{size:80mm auto;margin:0}
+      *{box-sizing:border-box;margin:0;padding:0}
+      body{font-family:'Courier New',monospace;font-size:12px;color:#000;background:#fff;width:80mm;padding:5mm 6mm}
+      .c{text-align:center}
+      .line{border-top:1px dashed #000;margin:6px 0}
+      .row{display:flex;justify-content:space-between;padding:2px 0;font-size:11px}
+      .logo{font-size:17px;font-weight:bold;text-transform:uppercase;letter-spacing:2px;margin-bottom:3px}
+      .sub{font-size:9px;letter-spacing:1px;color:#555;margin-bottom:1px}
+      .item{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px dotted #ccc}
+      .iname{flex:1;font-size:12px}
+      .iprice{min-width:56px;text-align:right;font-weight:bold;font-size:12px}
+      .total{display:flex;justify-content:space-between;padding:5px 0;font-size:15px;font-weight:bold}
+      .thanks{font-size:13px;font-weight:bold;text-align:center;margin:9px 0 4px;letter-spacing:1px}
+      .footer{font-size:9px;color:#888;text-align:center;line-height:1.5}
+    </style></head><body>
+      <div class="c">
+        <div class="logo">${local.nombre||"Restaurante"}</div>
+        ${local.direccion?`<div class="sub">${local.direccion}</div>`:""}
+        ${local.telefono?`<div class="sub">Tel: ${local.telefono}</div>`:""}
+      </div>
+      <div class="line"></div>
+      <div class="row"><span>${new Date().toLocaleDateString("es-AR")}</span><span>${new Date().toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"})}</span></div>
+      <div class="row"><span>Pedido #${String(o.id).slice(-4)}</span><span>${o.table===0||o.table==="0"?"Mostrador":"Mesa "+o.table}</span></div>
+      <div class="line"></div>
+      ${o.items.map(it=>`<div class="item"><span class="iname">${it.qty}× ${it.name}</span><span class="iprice">${it.price?"$"+fmt(it.qty*(it.price||0)):""}</span></div>`).join("")}
+      <div class="line"></div>
+      <div class="total"><span>TOTAL</span><span>$${fmt(o.total)}</span></div>
+      ${o.tip>0?`<div class="row"><span>Propina</span><span>+$${fmt(o.tip)}</span></div>`:""}
+      <div class="row"><span>Pago</span><span><b>${PAY_LABELS[o.pay]||o.pay||"—"}</b></span></div>
+      <div class="line"></div>
+      <div class="thanks">¡Gracias!</div>
+      <div class="footer">${local.email?local.email+"<br>":""}Emitido por MenuQR</div>
+      <script>window.onload=function(){window.print();setTimeout(function(){window.close()},1500)}</script>
+    </body></html>`;
+    const w=window.open("","_blank","width=420,height=620,toolbar=0,menubar=0,scrollbars=0");
+    if(w){w.document.write(html);w.document.close();}
+  };
+
+  const vrConfirm = async(shouldPrint=false)=>{
     const items = Object.values(vrCart).filter(i=>i.qty>0);
     if(!items.length || !vrPay) return;
     setVrLoading(true);
@@ -1426,11 +1478,39 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
         await supabase.from("pedido_items").insert(
           items.map(i=>({pedido_id:pedido.id,producto_id:i.id,nombre:i.name,precio:i.price,cantidad:i.qty}))
         );
+        if(shouldPrint) printTicket({id:pedido.id,table:mesaNum,items,total:vrTotal,pay:vrPay,tip:0});
       }
       setVrCart({}); setVrPay(null); setShowVentaRapida(false);
       toast("✓ Venta registrada");
     } catch(e){ toast("Error al guardar","err"); }
     finally { setVrLoading(false); }
+  };
+
+  const cajaConfirm = async(shouldPrint=false)=>{
+    const items = Object.values(cajaCart).filter(i=>i.qty>0);
+    if(!items.length || !cajaPay) return;
+    setCajaLoading(true);
+    try {
+      const mesaNum = cajaMesaTipo==="mostrador" ? 0 : cajaMesaNum;
+      const {data:pedido,error} = await supabase.from("pedidos").insert({
+        restaurante_id: local.restauranteId,
+        mesa_numero:    mesaNum,
+        status:         "nuevo",
+        metodo_pago:    cajaPay,
+        propina:        0,
+        total:          cajaTotal,
+        nota:           cajaMesaTipo==="mostrador"?"Venta en mostrador":null,
+      }).select().single();
+      if(!error && pedido){
+        await supabase.from("pedido_items").insert(
+          items.map(i=>({pedido_id:pedido.id,producto_id:i.id,nombre:i.name,precio:i.price,cantidad:i.qty}))
+        );
+        if(shouldPrint) printTicket({id:pedido.id,table:mesaNum,items,total:cajaTotal,pay:cajaPay,tip:0});
+      }
+      setCajaCart({}); setCajaPay(null);
+      toast("✓ Venta registrada");
+    } catch(e){ toast("Error al guardar","err"); }
+    finally { setCajaLoading(false); }
   };
 
   useEffect(()=>{
@@ -2102,14 +2182,32 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
                 <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:22,
                   fontWeight:700,color:"var(--ag)"}}>${fmt(vrTotal)}</p>
               </div>
-              <button onClick={vrConfirm} disabled={!vrPay||vrLoading} style={{
-                width:"100%",padding:14,
-                background:vrPay?"linear-gradient(135deg,#00FF88,#00C870)":"var(--ac)",
-                color:vrPay?"#060810":"var(--am)",border:"none",borderRadius:12,
-                fontFamily:"'Outfit',sans-serif",fontSize:15,fontWeight:800,
-                cursor:vrPay?"pointer":"not-allowed",opacity:vrLoading?.7:1}}>
-                {vrLoading?"Guardando...":vrPay?"✓ Confirmar venta":"Elegí un método de pago"}
-              </button>
+              {vrPay ? (
+                <div style={{display:"flex",gap:8}}>
+                  <button onClick={()=>vrConfirm(true)} disabled={vrLoading} style={{
+                    flex:1,padding:"13px 10px",
+                    background:"var(--ac)",color:"var(--abri)",
+                    border:"1px solid var(--abr)",borderRadius:12,
+                    fontFamily:"'Outfit',sans-serif",fontSize:13,fontWeight:700,
+                    cursor:"pointer",display:"flex",alignItems:"center",
+                    justifyContent:"center",gap:6,opacity:vrLoading?.7:1}}>
+                    🖨️ Cobrar e imprimir
+                  </button>
+                  <button onClick={()=>vrConfirm(false)} disabled={vrLoading} style={{
+                    flex:1,padding:"13px 10px",
+                    background:"linear-gradient(135deg,#00FF88,#00C870)",
+                    color:"#060810",border:"none",borderRadius:12,
+                    fontFamily:"'Outfit',sans-serif",fontSize:13,fontWeight:800,
+                    cursor:"pointer",opacity:vrLoading?.7:1}}>
+                    {vrLoading?"Guardando...":"✓ Confirmar"}
+                  </button>
+                </div>
+              ) : (
+                <div style={{padding:"13px 0",textAlign:"center",
+                  fontFamily:"'IBM Plex Mono',monospace",fontSize:11,color:"var(--am)"}}>
+                  Elegí un método de pago para continuar
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -2386,133 +2484,333 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
     const canCaja = PLAN_LIMITS[plan]?.caja !== false;
     const liveVentas = makeVentas();
     const tv = Object.values(liveVentas).reduce((s,v)=>s+v,0);
+
+    const CAJA_PAYS = [
+      {id:"cash",  label:"Efectivo",     icon:"💵"},
+      {id:"mp",    label:"Mercado Pago", icon:"📲"},
+      {id:"card",  label:"Débito",       icon:"💳"},
+      {id:"trans", label:"Transf.",      icon:"🏦"},
+    ];
+
+    /* ── Categorías con productos activos */
+    const catList = cats.filter(c=>prods.some(p=>p.active && p.cat===c.id));
+
     if(!canCaja) return (
       <div style={{padding:"18px 16px 0"}}>
-        <ALbl>Gestión financiera</ALbl>
-        <h2 style={{fontFamily:"'Outfit',sans-serif",fontSize:20,fontWeight:800,color:"var(--abri)",marginBottom:20}}>Caja</h2>
-        <div style={{background:"rgba(99,102,241,.07)",border:"1px solid rgba(99,102,241,.3)",borderRadius:20,padding:"32px 20px",textAlign:"center"}}>
+        <div style={{background:"rgba(99,102,241,.07)",border:"1px solid rgba(99,102,241,.3)",
+          borderRadius:20,padding:"32px 20px",textAlign:"center"}}>
           <p style={{fontSize:40,marginBottom:12}}>🔒</p>
-          <p style={{fontFamily:"'Outfit',sans-serif",fontSize:17,fontWeight:700,color:"var(--abri)",marginBottom:8}}>Función exclusiva Plan Pro</p>
-          <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"var(--ad)",marginBottom:20,lineHeight:1.5}}>
+          <p style={{fontFamily:"'Outfit',sans-serif",fontSize:17,fontWeight:700,
+            color:"var(--abri)",marginBottom:8}}>Función exclusiva Plan Pro</p>
+          <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"var(--ad)",
+            marginBottom:20,lineHeight:1.5}}>
             La gestión de caja, arqueos y cierre Z requieren plan Pro o Empresa.
           </p>
           <div style={{background:"var(--gi)",borderRadius:12,padding:"12px 24px",display:"inline-block"}}>
-            <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:12,fontWeight:700,color:"#fff",letterSpacing:1}}>
+            <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:12,fontWeight:700,
+              color:"#fff",letterSpacing:1}}>
               PLAN ACTUAL: {PLAN_LABELS[plan]||plan.toUpperCase()}
             </p>
           </div>
-          <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,color:"var(--am)",marginTop:16}}>
-            Contactá a soporte para upgradear tu plan.
-          </p>
         </div>
       </div>
     );
+
     return (
       <div style={{padding:"18px 16px 0"}}>
-        <div style={{marginBottom:14}}>
-          <ALbl>Gestión financiera</ALbl>
-          <h2 style={{fontFamily:"'Outfit',sans-serif",fontSize:20,fontWeight:800,
-            color:"var(--abri)"}}>Caja</h2>
-        </div>
 
-        {/* Estado */}
+        {/* ── Estado del turno */}
         <div style={{background:"var(--ac)",
           border:`1px solid ${turno?"rgba(0,255,136,.2)":"rgba(255,59,92,.2)"}`,
-          borderRadius:16,padding:18,marginBottom:14,
+          borderRadius:16,padding:"14px 18px",marginBottom:12,
           display:"flex",alignItems:"center",gap:14}}>
-          <div style={{width:44,height:44,borderRadius:12,
+          <div style={{width:42,height:42,borderRadius:11,
             background:turno?"rgba(0,255,136,.1)":"rgba(255,59,92,.1)",
             border:`1px solid ${turno?"rgba(0,255,136,.3)":"rgba(255,59,92,.3)"}`,
-            display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}>
+            display:"flex",alignItems:"center",justifyContent:"center",fontSize:20}}>
             {turno?"🔓":"🔒"}
           </div>
-          <div>
-            <p style={{fontFamily:"'Outfit',sans-serif",fontSize:15,fontWeight:700,
+          <div style={{flex:1}}>
+            <p style={{fontFamily:"'Outfit',sans-serif",fontSize:14,fontWeight:700,
               color:"var(--abri)"}}>{turno?"Turno activo":"Caja cerrada"}</p>
-            <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:"var(--ad)"}}>
+            <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:"var(--ad)"}}>
               {turno?`${turno.cajero} · desde ${turno.horaApertura}`:"Sin turno activo"}
             </p>
           </div>
+          {turno && (
+            <div style={{display:"flex",gap:6}}>
+              <button onClick={()=>setTkt({tipo:"X",turno:{...turno}})} className="pr"
+                style={{background:"rgba(245,158,11,.08)",border:"1px solid rgba(245,158,11,.3)",
+                  borderRadius:9,padding:"6px 11px",cursor:"pointer",
+                  fontFamily:"'IBM Plex Mono',monospace",fontSize:12,fontWeight:800,
+                  color:"var(--aam)"}}>X</button>
+              <button onClick={()=>{setArqV(emptyArq());setArqCi(true);}} className="pr"
+                style={{background:"rgba(255,59,92,.07)",border:"1px solid rgba(255,59,92,.3)",
+                  borderRadius:9,padding:"6px 11px",cursor:"pointer",
+                  fontFamily:"'IBM Plex Mono',monospace",fontSize:12,fontWeight:800,
+                  color:"var(--ar)"}}>Z</button>
+            </div>
+          )}
         </div>
 
+        {/* ── Abrir turno */}
         {!turno && (
-          <>
+          <div style={{background:"var(--ac)",border:"1px solid var(--abr)",
+            borderRadius:14,padding:16,marginBottom:12}}>
             <ALbl>Cajero responsable</ALbl>
             <input value={cajero} onChange={e=>setCajero(e.target.value)}
               placeholder="Nombre del cajero..."
               style={{width:"100%",background:"var(--ab)",border:"1px solid var(--abr)",
-                borderRadius:10,padding:"12px 14px",color:"var(--abri)",
-                fontFamily:"'Outfit',sans-serif",fontSize:13,marginBottom:14}}/>
+                borderRadius:9,padding:"11px 13px",color:"var(--abri)",
+                fontFamily:"'Outfit',sans-serif",fontSize:13,marginBottom:12}}/>
             <button onClick={()=>{setArqV(emptyArq());setArqAp(true);}} className="pr"
               style={{width:"100%",background:"var(--ag)",color:"#000",border:"none",
-                borderRadius:14,padding:15,fontFamily:"'IBM Plex Mono',monospace",
-                fontSize:13,fontWeight:700,cursor:"pointer",letterSpacing:1,
-                boxShadow:"0 0 20px rgba(0,255,136,.15)",marginBottom:12}}>
+                borderRadius:12,padding:14,fontFamily:"'IBM Plex Mono',monospace",
+                fontSize:12,fontWeight:700,cursor:"pointer",letterSpacing:1,
+                boxShadow:"0 0 18px rgba(0,255,136,.15)"}}>
               ▶ ABRIR TURNO
             </button>
-          </>
+          </div>
         )}
 
+        {/* ══ POS: REGISTRAR VENTA ══ */}
+        {turno && (
+          <div style={{marginBottom:12}}>
+
+            {/* Cabecera sección */}
+            <div style={{display:"flex",justifyContent:"space-between",
+              alignItems:"center",marginBottom:8}}>
+              <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,
+                color:"var(--am)",letterSpacing:2}}>REGISTRAR VENTA</p>
+              {cajaTotal>0 && (
+                <button onClick={()=>{setCajaCart({});setCajaPay(null);}}
+                  style={{background:"none",border:"none",
+                    fontFamily:"'IBM Plex Mono',monospace",fontSize:9,
+                    color:"var(--ar)",cursor:"pointer",letterSpacing:.5}}>
+                  LIMPIAR ×
+                </button>
+              )}
+            </div>
+
+            {/* Tipo de venta */}
+            <div style={{display:"flex",gap:7,marginBottom:10}}>
+              {["mostrador","mesa"].map(t=>(
+                <button key={t} onClick={()=>setCajaMesaTipo(t)} style={{
+                  flex:1,padding:"8px 0",borderRadius:9,cursor:"pointer",
+                  fontFamily:"'IBM Plex Mono',monospace",fontSize:9,fontWeight:700,
+                  letterSpacing:1,textTransform:"uppercase",
+                  background:cajaMesaTipo===t?"var(--abl)":"var(--ac)",
+                  color:cajaMesaTipo===t?"#fff":"var(--ad)",
+                  border:`1px solid ${cajaMesaTipo===t?"var(--abl)":"var(--abr)"}`}}>{t}</button>
+              ))}
+              {cajaMesaTipo==="mesa" && (
+                <div style={{display:"flex",alignItems:"center",gap:6,flexShrink:0}}>
+                  <button onClick={()=>setCajaMesaNum(n=>Math.max(1,n-1))}
+                    style={{width:28,height:28,borderRadius:7,border:"1px solid var(--abr)",
+                      background:"var(--ac)",color:"var(--abri)",fontSize:14,cursor:"pointer"}}>−</button>
+                  <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:15,fontWeight:700,
+                    color:"var(--abri)",minWidth:22,textAlign:"center"}}>{cajaMesaNum}</span>
+                  <button onClick={()=>setCajaMesaNum(n=>n+1)}
+                    style={{width:28,height:28,borderRadius:7,border:"1px solid var(--abr)",
+                      background:"var(--ac)",color:"var(--abri)",fontSize:14,cursor:"pointer"}}>+</button>
+                </div>
+              )}
+            </div>
+
+            {/* ── Acordeón de categorías */}
+            <div style={{borderRadius:14,overflow:"hidden",border:"1px solid var(--abr)"}}>
+              {catList.length===0 ? (
+                <div style={{padding:"18px 16px",textAlign:"center",background:"var(--ac)"}}>
+                  <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:"var(--am)"}}>
+                    Sin productos activos. Agregá productos en Gestión → Carta.
+                  </p>
+                </div>
+              ) : catList.map((cat,ci)=>{
+                const isOpen = cajaOpenCat===cat.id;
+                const catProds = prods.filter(p=>p.active && p.cat===cat.id);
+                const catQty = catProds.reduce((s,p)=>s+(cajaCart[p.id]?.qty||0),0);
+                return (
+                  <div key={cat.id} style={{borderBottom:ci<catList.length-1?"1px solid var(--abr)":"none"}}>
+                    {/* Fila de categoría */}
+                    <button onClick={()=>setCajaOpenCat(isOpen?null:cat.id)}
+                      style={{width:"100%",padding:"12px 14px",
+                        background:isOpen?"rgba(61,142,255,.07)":"var(--ac)",
+                        border:"none",cursor:"pointer",
+                        display:"flex",alignItems:"center",gap:10,textAlign:"left",
+                        transition:"background .15s"}}>
+                      <span style={{fontSize:16,minWidth:22}}>{cat.icon||"🍽️"}</span>
+                      <span style={{fontFamily:"'Outfit',sans-serif",fontSize:13,fontWeight:700,
+                        color:"var(--abri)",flex:1}}>{cat.label}</span>
+                      {catQty>0 && (
+                        <span style={{background:"var(--abl)",color:"#fff",
+                          borderRadius:10,padding:"1px 7px",
+                          fontFamily:"'IBM Plex Mono',monospace",fontSize:9,fontWeight:700}}>
+                          {catQty}
+                        </span>
+                      )}
+                      <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:11,
+                        color:"var(--am)",transition:"transform .2s",
+                        display:"inline-block",transform:isOpen?"rotate(90deg)":"rotate(0deg)"}}>▶</span>
+                    </button>
+                    {/* Productos expandidos */}
+                    {isOpen && (
+                      <div style={{background:"var(--as)",borderTop:"1px solid var(--abr)"}}>
+                        {catProds.map((p,pi)=>{
+                          const qty = cajaCart[p.id]?.qty||0;
+                          return (
+                            <div key={p.id} style={{display:"flex",alignItems:"center",
+                              padding:"10px 14px",gap:10,
+                              borderBottom:pi<catProds.length-1?"1px solid rgba(255,255,255,.04)":"none"}}>
+                              <div style={{flex:1,minWidth:0}}>
+                                <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,
+                                  fontWeight:600,color:"var(--abri)",
+                                  overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.name}</p>
+                                <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:11,
+                                  color:"var(--ag)",fontWeight:700}}>${fmt(p.price)}</p>
+                              </div>
+                              <div style={{display:"flex",alignItems:"center",gap:7,flexShrink:0}}>
+                                {qty>0 && <>
+                                  <button onClick={()=>cajaSub(p)}
+                                    style={{width:28,height:28,borderRadius:7,
+                                      border:"1px solid var(--abr)",background:"var(--ac)",
+                                      color:"var(--abri)",fontSize:15,cursor:"pointer",
+                                      display:"flex",alignItems:"center",justifyContent:"center"}}>−</button>
+                                  <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:14,
+                                    fontWeight:700,color:"var(--abri)",minWidth:18,textAlign:"center"}}>
+                                    {qty}
+                                  </span>
+                                </>}
+                                <button onClick={()=>cajaAdd(p)}
+                                  style={{width:28,height:28,borderRadius:7,
+                                    border:`1px solid ${qty>0?"var(--abl)":"var(--abr)"}`,
+                                    background:qty>0?"var(--abl)":"var(--ac)",
+                                    color:qty>0?"#fff":"var(--abri)",
+                                    fontSize:15,cursor:"pointer",
+                                    display:"flex",alignItems:"center",justifyContent:"center"}}>+</button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* ── Ticket y cobro */}
+            {cajaTotal>0 && (
+              <div style={{background:"var(--ac)",border:"1px solid var(--abr)",
+                borderRadius:14,marginTop:10,overflow:"hidden"}}>
+                {/* Items */}
+                <div style={{padding:"10px 14px 8px",borderBottom:"1px solid var(--abr)"}}>
+                  {Object.values(cajaCart).filter(i=>i.qty>0).map(i=>(
+                    <div key={i.id} style={{display:"flex",justifyContent:"space-between",
+                      padding:"3px 0",fontFamily:"'IBM Plex Mono',monospace",fontSize:11}}>
+                      <span style={{color:"var(--at)"}}><span style={{color:"var(--am)"}}>{i.qty}×</span> {i.name}</span>
+                      <span style={{color:"var(--abri)",fontWeight:700}}>${fmt(i.price*i.qty)}</span>
+                    </div>
+                  ))}
+                </div>
+                {/* Total */}
+                <div style={{display:"flex",justifyContent:"space-between",
+                  alignItems:"center",padding:"10px 14px",borderBottom:"1px solid var(--abr)"}}>
+                  <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:12,
+                    fontWeight:700,color:"var(--am)"}}>TOTAL</span>
+                  <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:22,
+                    fontWeight:700,color:"var(--ag)"}}>${fmt(cajaTotal)}</span>
+                </div>
+                {/* Método de pago */}
+                <div style={{padding:"10px 14px",borderBottom:"1px solid var(--abr)"}}>
+                  <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,
+                    color:"var(--am)",letterSpacing:1.5,marginBottom:8}}>MÉTODO DE PAGO</p>
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
+                    {CAJA_PAYS.map(p=>(
+                      <button key={p.id} onClick={()=>setCajaPay(p.id)} style={{
+                        padding:"9px 10px",borderRadius:9,cursor:"pointer",
+                        display:"flex",alignItems:"center",gap:8,
+                        fontFamily:"'Outfit',sans-serif",fontSize:12,fontWeight:600,
+                        background:cajaPay===p.id?"var(--abl)":"var(--as)",
+                        color:cajaPay===p.id?"#fff":"var(--abri)",
+                        border:`1px solid ${cajaPay===p.id?"var(--abl)":"var(--abr)"}`,
+                        transition:"all .15s"}}>
+                        <span style={{fontSize:15}}>{p.icon}</span>
+                        {p.label}
+                        {cajaPay===p.id && <span style={{marginLeft:"auto",fontSize:11}}>✓</span>}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                {/* Botones cobrar */}
+                <div style={{padding:"10px 14px",display:"flex",gap:8}}>
+                  <button onClick={()=>cajaConfirm(true)}
+                    disabled={!cajaPay||cajaLoading}
+                    style={{flex:1,padding:"11px 8px",borderRadius:10,cursor:cajaPay?"pointer":"not-allowed",
+                      background:"var(--as)",color:cajaPay?"var(--abri)":"var(--am)",
+                      border:"1px solid var(--abr)",
+                      fontFamily:"'Outfit',sans-serif",fontSize:12,fontWeight:700,
+                      display:"flex",alignItems:"center",justifyContent:"center",gap:6,
+                      opacity:cajaLoading?.7:1}}>
+                    🖨️ Cobrar e imprimir
+                  </button>
+                  <button onClick={()=>cajaConfirm(false)}
+                    disabled={!cajaPay||cajaLoading}
+                    style={{flex:1,padding:"11px 8px",borderRadius:10,
+                      cursor:cajaPay?"pointer":"not-allowed",
+                      background:cajaPay?"linear-gradient(135deg,#00FF88,#00C870)":"var(--ac)",
+                      color:cajaPay?"#060810":"var(--am)",border:"none",
+                      fontFamily:"'Outfit',sans-serif",fontSize:12,fontWeight:800,
+                      opacity:cajaLoading?.7:1}}>
+                    {cajaLoading?"Guardando...":"✓ Cobrar"}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── Resumen ventas del turno */}
         {turno && (
           <>
             <div style={{background:"linear-gradient(135deg,#060F12,#091A14)",
-              border:"1px solid rgba(0,255,136,.2)",borderRadius:18,
-              padding:20,marginBottom:13}}>
-              <ALbl color="var(--ag)">Total ventas del turno</ALbl>
-              <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:32,
+              border:"1px solid rgba(0,255,136,.2)",borderRadius:16,
+              padding:"16px 20px",marginBottom:10}}>
+              <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,
+                color:"rgba(0,255,136,.55)",letterSpacing:2,marginBottom:4}}>TOTAL DEL TURNO</p>
+              <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:30,
                 fontWeight:700,color:"var(--ag)",letterSpacing:-1,lineHeight:1}}>
-                $ {fmt(tv)}
+                ${fmt(tv)}
               </p>
             </div>
             <div style={{background:"var(--ac)",border:"1px solid var(--abr)",
-              borderRadius:16,overflow:"hidden",marginBottom:14}}>
+              borderRadius:14,overflow:"hidden",marginBottom:12}}>
               {[["💵","Efectivo",liveVentas.efectivo],
-                ["💳","Mercado Pago",liveVentas.mercadopago],
+                ["📲","Mercado Pago",liveVentas.mercadopago],
                 ["💳","Débito",liveVentas.debito],
-                ["💳","Crédito",liveVentas.credito],
-                ["🏦","Transferencia",liveVentas.transferencia]
+                ["🏦","Transferencia",liveVentas.transferencia],
               ].map(([icon,label,val],i,arr)=>(
                 <div key={label} style={{display:"flex",justifyContent:"space-between",
-                  alignItems:"center",padding:"12px 16px",
+                  alignItems:"center",padding:"10px 14px",
                   borderBottom:i<arr.length-1?"1px solid var(--abr)":"none"}}>
-                  <div style={{display:"flex",alignItems:"center",gap:10}}>
-                    <span style={{fontSize:14}}>{icon}</span>
-                    <span style={{fontFamily:"'Outfit',sans-serif",fontSize:13,
+                  <div style={{display:"flex",alignItems:"center",gap:9}}>
+                    <span style={{fontSize:13}}>{icon}</span>
+                    <span style={{fontFamily:"'Outfit',sans-serif",fontSize:12,
                       color:"var(--at)"}}>{label}</span>
                   </div>
-                  <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:13,
-                    fontWeight:600,color:"var(--abri)"}}>${fmt(val)}</span>
+                  <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:12,
+                    fontWeight:600,color:val>0?"var(--abri)":"var(--am)"}}>${fmt(val)}</span>
                 </div>
               ))}
-            </div>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
-              <button onClick={()=>setTkt({tipo:"X",turno:{...turno}})} className="pr"
-                style={{background:"var(--ac)",border:"1px solid var(--abr)",
-                  borderRadius:14,padding:"15px 12px",cursor:"pointer",textAlign:"center"}}>
-                <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:22,
-                  color:"var(--aam)",fontWeight:700,marginBottom:3}}>X</p>
-                <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,
-                  color:"var(--ad)",letterSpacing:1}}>PARCIAL</p>
-              </button>
-              <button onClick={()=>{setArqV(emptyArq());setArqCi(true);}} className="pr"
-                style={{background:"rgba(255,59,92,.06)",
-                  border:"1px solid rgba(255,59,92,.3)",
-                  borderRadius:14,padding:"15px 12px",cursor:"pointer",textAlign:"center"}}>
-                <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:22,
-                  color:"var(--ar)",fontWeight:700,marginBottom:3}}>Z</p>
-                <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,
-                  color:"var(--ar)",letterSpacing:1,opacity:.8}}>CIERRE</p>
-              </button>
             </div>
           </>
         )}
 
-        {/* Historial */}
+        {/* ── Historial de turnos */}
         {histTurnos.length>0 && (
           <div style={{background:"var(--ac)",border:"1px solid var(--abr)",
-            borderRadius:16,overflow:"hidden"}}>
-            <div style={{padding:"10px 16px 6px",borderBottom:"1px solid var(--abr)"}}>
-              <ALbl>Historial</ALbl>
+            borderRadius:14,overflow:"hidden",marginBottom:8}}>
+            <div style={{padding:"9px 14px 6px",borderBottom:"1px solid var(--abr)"}}>
+              <ALbl>Historial de turnos</ALbl>
             </div>
             {histTurnos.slice(0,3).map((t,i)=>{
               const htv=Object.values(t.ventas).reduce((s,v)=>s+v,0);
@@ -2522,7 +2820,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
               const d = hta!==null ? hta-(htv+t.fondoApertura) : null;
               return (
                 <div key={t.id} style={{display:"flex",justifyContent:"space-between",
-                  alignItems:"center",padding:"11px 16px",
+                  alignItems:"center",padding:"10px 14px",
                   borderBottom:i<histTurnos.slice(0,3).length-1?"1px solid var(--abr)":"none",
                   cursor:"pointer"}}
                   onClick={()=>setTkt({tipo:"Z",turno:t})}>
