@@ -2661,33 +2661,33 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
                       return (
                         <div key={p.id} className="pos-item">
                           {/* Nombre y precio */}
-                          <p style={{fontFamily:"'Outfit',sans-serif",fontSize:16,fontWeight:700,
-                            color:"var(--abri)",marginBottom:3,lineHeight:1.2}}>{p.name}</p>
-                          <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:15,
-                            fontWeight:700,color:"var(--ag)",marginBottom:10}}>${fmt(p.price)}</p>
+                          <p style={{fontFamily:"'Outfit',sans-serif",fontSize:22,fontWeight:800,
+                            color:"var(--abri)",marginBottom:4,lineHeight:1.2}}>{p.name}</p>
+                          <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:20,
+                            fontWeight:700,color:"var(--ag)",marginBottom:12}}>${fmt(p.price)}</p>
                           {/* Controles +/- */}
-                          <div style={{display:"flex",alignItems:"center",gap:8}}>
+                          <div style={{display:"flex",alignItems:"center",gap:10}}>
                             {qty>0 && <>
                               <button onClick={()=>cajaSub(p)} className="pr"
-                                style={{width:34,height:34,borderRadius:8,border:"1px solid var(--abr)",
-                                  background:"var(--as)",color:"var(--abri)",fontSize:18,
+                                style={{width:42,height:42,borderRadius:10,border:"1px solid var(--abr)",
+                                  background:"var(--as)",color:"var(--abri)",fontSize:22,
                                   cursor:"pointer",display:"flex",alignItems:"center",
                                   justifyContent:"center",fontWeight:700}}>−</button>
-                              <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:17,
-                                fontWeight:700,color:"var(--abri)",minWidth:24,textAlign:"center"}}>
+                              <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:22,
+                                fontWeight:700,color:"var(--abri)",minWidth:28,textAlign:"center"}}>
                                 {qty}
                               </span>
                             </>}
                             <button onClick={()=>cajaAdd(p)} className="pr"
-                              style={{width:34,height:34,borderRadius:8,
+                              style={{width:42,height:42,borderRadius:10,
                                 border:`1px solid ${qty>0?"var(--abl)":"var(--abr)"}`,
                                 background:qty>0?"var(--abl)":"var(--as)",
-                                color:qty>0?"#fff":"var(--abri)",fontSize:18,
+                                color:qty>0?"#fff":"var(--abri)",fontSize:22,
                                 cursor:"pointer",display:"flex",alignItems:"center",
                                 justifyContent:"center",fontWeight:700}}>+</button>
                             {qty>0 && (
-                              <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:11,
-                                color:"var(--am)",marginLeft:2}}>
+                              <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:14,
+                                color:"var(--am)",marginLeft:4}}>
                                 = ${fmt(p.price*qty)}
                               </span>
                             )}
@@ -2708,16 +2708,16 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
                     return (
                       <button key={cat.id} onClick={()=>setCajaOpenCat(cat.id)}
                         className={`pos-cat${isSel?" sel":""}`} style={{border:"none"}}>
-                        <span style={{fontSize:22}}>{cat.icon||"🍽️"}</span>
-                        <span style={{fontFamily:"'Outfit',sans-serif",fontSize:11,fontWeight:700,
+                        <span style={{fontSize:28}}>{cat.icon||"🍽️"}</span>
+                        <span style={{fontFamily:"'Outfit',sans-serif",fontSize:13,fontWeight:700,
                           color:isSel?"var(--abl)":"var(--at)",textAlign:"center",
                           lineHeight:1.2,wordBreak:"break-word"}}>
                           {cat.label}
                         </span>
                         {catQty>0 && (
                           <span style={{background:"var(--abl)",color:"#fff",borderRadius:8,
-                            padding:"1px 6px",fontFamily:"'IBM Plex Mono',monospace",
-                            fontSize:9,fontWeight:700}}>{catQty}</span>
+                            padding:"2px 7px",fontFamily:"'IBM Plex Mono',monospace",
+                            fontSize:11,fontWeight:700}}>{catQty}</span>
                         )}
                       </button>
                     );
