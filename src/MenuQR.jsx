@@ -3762,13 +3762,23 @@ export default function MenuQR({
   // ── Verificar sesión al montar
   useEffect(() => {
     if (!supabase) { setAuthLoading(false); return; }
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        setAuthUser(session.user);
-        loadRestaurantData(session.user.id);
-      }
+    // Detectar si el usuario llegó desde un link de recuperación de contraseña
+    const isRecovery = window.location.hash.includes("type=recovery") ||
+                       window.location.search.includes("type=recovery");
+    if (isRecovery) {
+      setRecoveryMode(true);
       setAuthLoading(false);
-    });
+      // Limpiar el hash de la URL
+      window.history.replaceState(null, "", window.location.pathname);
+    } else {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session?.user) {
+          setAuthUser(session.user);
+          loadRestaurantData(session.user.id);
+        }
+        setAuthLoading(false);
+      });
+    }
     // Escuchar cambios de auth
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "PASSWORD_RECOVERY") {
