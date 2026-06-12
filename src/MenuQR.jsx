@@ -375,7 +375,7 @@ function LoginModal({ onSuccess, onClose }) {
     e.preventDefault(); setErr(""); setOk(""); setLoading(true);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${location.origin}/`
+        redirectTo: "https://menuqr-ten.vercel.app/"
       });
       if (error) { setErr(error.message); return; }
       setOk("✓ Te enviamos un email para resetear tu contraseña. Revisá tu bandeja de entrada.");
@@ -473,6 +473,70 @@ function LoginModal({ onSuccess, onClose }) {
             </div>
             <button style={{...S.btn,opacity:loading?.6:1}} type="submit" disabled={loading}>
               {loading ? "Creando cuenta..." : "Crear mi restaurante →"}
+            </button>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════
+   RESET PASSWORD MODAL — cuando el usuario llega desde el email de recuperación
+══════════════════════════════════════════════════════════════ */
+function ResetPasswordModal({ onDone }) {
+  const [pass,   setPass]   = useState("");
+  const [pass2,  setPass2]  = useState("");
+  const [loading,setLoading]= useState(false);
+  const [err,    setErr]    = useState("");
+  const [ok,     setOk]     = useState("");
+  const [show,   setShow]   = useState(false);
+
+  const S = {
+    overlay: { position:"fixed",inset:0,background:"rgba(0,0,0,.82)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:9999,padding:20 },
+    card:    { background:"#0C1018",border:"1px solid #1A2230",borderRadius:18,padding:"32px 28px",width:"100%",maxWidth:400,animation:"scaleIn .2s ease" },
+    label:   { display:"block",fontSize:".75rem",color:"#4A6080",marginBottom:5,textTransform:"uppercase",letterSpacing:".04em",fontFamily:"Outfit,sans-serif" },
+    input:   { width:"100%",padding:"11px 14px",background:"#060810",border:"1px solid #1A2230",borderRadius:8,color:"#B8D0E8",fontSize:".95rem",outline:"none",marginBottom:14,fontFamily:"Outfit,sans-serif" },
+    btn:     { width:"100%",padding:13,background:"linear-gradient(135deg,#00FF88,#00C870)",border:"none",borderRadius:8,color:"#060810",fontSize:"1rem",fontWeight:800,cursor:"pointer",fontFamily:"Outfit,sans-serif" },
+    err:     { background:"#1a0808",border:"1px solid #7f1d1d",color:"#f87171",padding:"9px 12px",borderRadius:7,fontSize:".82rem",marginBottom:12,fontFamily:"Outfit,sans-serif" },
+    ok:      { background:"#081a0f",border:"1px solid #14532d",color:"#4ade80",padding:"9px 12px",borderRadius:7,fontSize:".82rem",marginBottom:12,fontFamily:"Outfit,sans-serif" },
+  };
+
+  async function handleReset(e) {
+    e.preventDefault(); setErr("");
+    if (pass.length < 6) { setErr("La contraseña debe tener al menos 6 caracteres"); return; }
+    if (pass !== pass2)  { setErr("Las contraseñas no coinciden"); return; }
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password: pass });
+      if (error) { setErr(error.message); return; }
+      setOk("✓ ¡Contraseña actualizada! Redirigiendo...");
+      setTimeout(() => onDone(), 1800);
+    } catch(e) { setErr(e.message); }
+    finally { setLoading(false); }
+  }
+
+  return (
+    <div style={S.overlay}>
+      <div style={S.card}>
+        <div style={{textAlign:"center",marginBottom:20}}>
+          <div style={{fontSize:"2rem",marginBottom:6}}>🔐</div>
+          <div style={{fontFamily:"Outfit,sans-serif",fontSize:"1.15rem",fontWeight:700,color:"#EDE0C8",marginBottom:4}}>Nueva contraseña</div>
+          <div style={{fontFamily:"Outfit,sans-serif",fontSize:".82rem",color:"#4A6080"}}>Ingresá tu nueva contraseña para el panel</div>
+        </div>
+        {err && <div style={S.err}>{err}</div>}
+        {ok  && <div style={S.ok}>{ok}</div>}
+        {!ok && (
+          <form onSubmit={handleReset}>
+            <label style={S.label}>Nueva contraseña</label>
+            <div style={{position:"relative",marginBottom:14}}>
+              <input style={{...S.input,marginBottom:0,paddingRight:40}} type={show?"text":"password"} value={pass} onChange={e=>setPass(e.target.value)} placeholder="mínimo 6 caracteres" required autoFocus />
+              <button type="button" onClick={()=>setShow(v=>!v)} style={{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",cursor:"pointer",color:"#4A6080",fontSize:"1.1rem",padding:0,lineHeight:1}}>{show?"🙈":"👁️"}</button>
+            </div>
+            <label style={S.label}>Repetir contraseña</label>
+            <input style={S.input} type={show?"text":"password"} value={pass2} onChange={e=>setPass2(e.target.value)} placeholder="repetí la contraseña" required />
+            <button style={{...S.btn,opacity:loading?.6:1}} type="submit" disabled={loading}>
+              {loading ? "Guardando..." : "Guardar nueva contraseña →"}
             </button>
           </form>
         )}
@@ -3681,6 +3745,7 @@ export default function MenuQR({
   const [authUser,  setAuthUser]  = useState(null);   // Supabase user
   const [showLogin, setShowLogin] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
+  const [recoveryMode, setRecoveryMode] = useState(false);
 
   // Estado interno como fallback
   const [localInt,  setLocalInt]  = useState(INIT_LOCAL);
@@ -3706,6 +3771,11 @@ export default function MenuQR({
     });
     // Escuchar cambios de auth
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "PASSWORD_RECOVERY") {
+        // El usuario llegó desde el link de recuperación — mostrar formulario de nueva contraseña
+        setRecoveryMode(true);
+        return;
+      }
       if (session?.user) { setAuthUser(session.user); loadRestaurantData(session.user.id); }
       else { setAuthUser(null); setMode("landing"); }
     });
@@ -3766,6 +3836,7 @@ export default function MenuQR({
   return (
     <>
       <GS/>
+      {recoveryMode && <ResetPasswordModal onDone={()=>{ setRecoveryMode(false); }} />}
       {showLogin && <LoginModal onSuccess={onLoginSuccess} onClose={()=>setShowLogin(false)} />}
       {mode==="landing" && (
         <LandingAuth setMode={setMode} goAdmin={goAdmin} authUser={authUser} onLogout={handleLogout}/>
