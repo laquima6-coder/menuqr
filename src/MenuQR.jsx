@@ -3787,7 +3787,7 @@ export default function MenuQR({
         return;
       }
       if (session?.user) { setAuthUser(session.user); loadRestaurantData(session.user.id); }
-      else { setAuthUser(null); setMode("landing"); }
+      else { setAuthUser(null); if (!forceMode) setMode("landing"); }
     });
     return () => subscription.unsubscribe();
   }, []);
