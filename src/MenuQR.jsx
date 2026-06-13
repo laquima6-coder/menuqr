@@ -693,8 +693,9 @@ function ClientApp({onBack, local, cats, prods}) {
   },[]);
 
   // Solo productos activos
-  const activeCats  = cats.filter(c=>c.activa);
-  const catItems    = prods.filter(p=>p.cat===activeCat && p.active);
+  // activa !== false: muestra categorías con activa=true O activa=null (por defecto visibles)
+  const activeCats  = cats.filter(c=>c.activa !== false);
+  const catItems    = prods.filter(p=>p.cat===activeCat && (p.active || p.active==null));
   const items       = Object.values(cart);
   const subTotal    = items.reduce((s,i)=>s+i.price*i.qty,0);
   const tipAmt      = tipPct===0 ? 0 : tipPct ? Math.round(subTotal*(tipPct/100))
@@ -774,6 +775,14 @@ function ClientApp({onBack, local, cats, prods}) {
             <span>{T('total')}</span><span>$ {fmt(grandTotal)}</span>
           </div>
         </div>
+        {/* Debug: mostrar error de guardado si hubo uno */}
+        {typeof window!=="undefined" && localStorage.getItem("menuqr_last_order_error") && (
+          <div style={{background:"#1a0808",border:"1px solid #7f1d1d",color:"#f87171",
+            padding:"10px 14px",borderRadius:10,marginBottom:16,fontSize:12,
+            fontFamily:"monospace",textAlign:"left",maxWidth:340,width:"100%"}}>
+            ⚠️ {localStorage.getItem("menuqr_last_order_error")}
+          </div>
+        )}
         <div style={{display:"flex",gap:10,width:"100%",maxWidth:340}}>
           <button onClick={reset} className="pr" style={{flex:1,background:"var(--cc)",
             border:"1px solid var(--cbr)",borderRadius:14,padding:13,
@@ -971,7 +980,11 @@ function ClientApp({onBack, local, cats, prods}) {
           const totalFinal= subtotal + tipAmount;
           const mesa = local.mesa || 1;
           // Guardar en Supabase si está disponible
-          if(supabase && local.restauranteId){
+          let pedidoGuardado = false;
+          let errorMsg = null;
+          if(!supabase) errorMsg = "Supabase no configurado";
+          else if(!local.restauranteId) errorMsg = "Sin restauranteId";
+          else {
             try {
               const {data:pedido,error} = await supabase.from("pedidos").insert({
                 restaurante_id: local.restauranteId,
@@ -983,7 +996,9 @@ function ClientApp({onBack, local, cats, prods}) {
                 nota:           note||null,
                 idioma:         lang||"es",
               }).select().single();
-              if(!error && pedido){
+              if(error){ errorMsg = error.message; }
+              else if(pedido){
+                pedidoGuardado = true;
                 const items = cartItems.map(i=>({
                   pedido_id:   pedido.id,
                   producto_id: i.id,
@@ -993,8 +1008,11 @@ function ClientApp({onBack, local, cats, prods}) {
                 }));
                 await supabase.from("pedido_items").insert(items);
               }
-            } catch(e){ console.error("Error guardando pedido:",e); }
+            } catch(e){ errorMsg = e.message; }
           }
+          // Guardar resultado para mostrarlo en la pantalla "done"
+          if(errorMsg) localStorage.setItem("menuqr_last_order_error", errorMsg);
+          else localStorage.removeItem("menuqr_last_order_error");
           setView("done");
         }} className="pr" style={{
           width:"100%",
@@ -1440,6 +1458,32 @@ function CatModal({local, cats, setCats, setGModal, toast}) {
    ADMIN APP — panel completo del dueño
    Tabs: Inicio · Pedidos · Carta · QRs · Caja · Gestión · Config
 ══════════════════════════════════════════════════════════════ */
+/* ── Sonidos de notificación (Web Audio API, sin archivos externos) ── */
+function playSound(type) {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    // [frecuencia, inicio_seg, duración_seg]
+    const tonos = {
+      nuevo:  [[880,0,.08],[880,.12,.08],[1100,.26,.12]],   // 3 beeps agudos — pedido nuevo
+      cocina: [[660,0,.10],[880,.18,.10]],                   // 2 tonos medios — pasa a cocina
+      listo:  [[523,0,.09],[659,.12,.09],[784,.25,.14]],     // acorde suave — pedido listo
+    };
+    (tonos[type] || tonos.nuevo).forEach(([freq, delay, dur]) => {
+      const osc  = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      const t = ctx.currentTime + delay;
+      gain.gain.setValueAtTime(0, t);
+      gain.gain.linearRampToValueAtTime(0.4, t + 0.01);
+      gain.gain.linearRampToValueAtTime(0, t + dur);
+      osc.start(t);
+      osc.stop(t + dur + 0.05);
+    });
+  } catch(e) { /* audio no disponible */ }
+}
+
 function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
 
   /* ── State del admin */
@@ -1630,37 +1674,82 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
   useEffect(()=>{
     if(!supabase || !local.restauranteId) return;
     const hoy = new Date().toISOString().slice(0,10);
+    let knownIds = new Set(); // para detectar pedidos nuevos en el polling
+
+    const mapPedido = p => ({
+      id:p.id, table:p.mesa_numero,
+      time:new Date(p.created_at).toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"}),
+      status:p.status, items:(p.pedido_items||[]).map(i=>({name:i.nombre,qty:i.cantidad})),
+      total:p.total, pay:p.metodo_pago||"", tip:p.propina||0,
+    });
+
     // Cargar pedidos de hoy
-    supabase.from("pedidos")
-      .select("*, pedido_items(*)")
-      .eq("restaurante_id", local.restauranteId)
-      .gte("created_at", hoy+"T00:00:00")
-      .order("created_at",{ascending:false})
-      .then(({data})=>{
-        if(data?.length) setOrders(data.map(p=>({
-          id:p.id, table:p.mesa_numero, time:new Date(p.created_at).toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"}),
-          status:p.status, items:(p.pedido_items||[]).map(i=>({name:i.nombre,qty:i.cantidad})),
-          total:p.total, pay:p.metodo_pago||"", tip:p.propina||0,
-        })));
-      });
-    // Suscribirse a nuevos pedidos en tiempo real
+    const loadPedidos = async () => {
+      const {data} = await supabase.from("pedidos")
+        .select("*, pedido_items(*)")
+        .eq("restaurante_id", local.restauranteId)
+        .gte("created_at", hoy+"T00:00:00")
+        .order("created_at",{ascending:false});
+      if(!data?.length) return [];
+      return data.map(mapPedido);
+    };
+
+    loadPedidos().then(mapped => {
+      if(mapped.length) {
+        setOrders(mapped);
+        mapped.forEach(p=>knownIds.add(p.id));
+      }
+    });
+
+    // Suscribirse a nuevos pedidos en tiempo real (Realtime)
     const ch = supabase.channel("pedidos-admin-"+local.restauranteId)
       .on("postgres_changes",{event:"INSERT",schema:"public",table:"pedidos",filter:`restaurante_id=eq.${local.restauranteId}`},
         payload=>{
           const p=payload.new;
-          setOrders(os=>[{
-            id:p.id, table:p.mesa_numero, time:new Date(p.created_at).toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"}),
-            status:p.status, items:[], total:p.total, pay:p.metodo_pago||"", tip:p.propina||0,
-          },...os]);
+          if(knownIds.has(p.id)) return;
+          knownIds.add(p.id);
+          setOrders(os=>[mapPedido({...p,pedido_items:[]}), ...os]);
           toast(`🔔 Nuevo pedido · Mesa ${p.mesa_numero}`);
+          playSound('nuevo');
         })
       .on("postgres_changes",{event:"UPDATE",schema:"public",table:"pedidos",filter:`restaurante_id=eq.${local.restauranteId}`},
         payload=>{
           const p=payload.new;
           setOrders(os=>os.map(o=>o.id===p.id?{...o,status:p.status}:o));
+          if(p.status==="preparando") playSound('cocina');
+          if(p.status==="listo")      playSound('listo');
         })
       .subscribe();
-    return ()=>{ supabase.removeChannel(ch); };
+
+    // ── Polling de respaldo cada 5 seg (por si Realtime no está habilitado en Supabase)
+    const poll = setInterval(async () => {
+      const mapped = await loadPedidos();
+      setOrders(prev => {
+        const prevStatuses = Object.fromEntries(prev.map(o=>[o.id,o.status]));
+        // Detectar pedidos nuevos
+        mapped.forEach(p => {
+          if(!knownIds.has(p.id)) {
+            knownIds.add(p.id);
+            toast(`🔔 Nuevo pedido · Mesa ${p.table}`);
+            playSound('nuevo');
+          } else if(prevStatuses[p.id] && prevStatuses[p.id]!==p.status) {
+            // Detectar cambio de estado
+            if(p.status==="preparando") playSound('cocina');
+            if(p.status==="listo")      playSound('listo');
+          }
+        });
+        // Actualizar estados sin perder datos locales
+        return mapped.map(newP => {
+          const old = prev.find(o=>o.id===newP.id);
+          return old ? {...old, status:newP.status} : newP;
+        });
+      });
+    }, 5000);
+
+    return ()=>{
+      supabase.removeChannel(ch);
+      clearInterval(poll);
+    };
   },[local.restauranteId]);
 
   const advance = async id=>{
@@ -1950,6 +2039,21 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
     const mesasActivas = [...new Set(active.map(o=>o.table))].length;
     return (
     <div style={{padding:"18px 16px 0"}}>
+
+      {/* ── Debug temporal: estado de conexión */}
+      {!local.restauranteId && (
+        <div style={{background:"#1a0808",border:"1px solid #7f1d1d",color:"#f87171",
+          padding:"8px 12px",borderRadius:8,marginBottom:12,fontSize:11,fontFamily:"monospace"}}>
+          ⚠️ Sin restauranteId — los pedidos en tiempo real no van a funcionar.<br/>
+          Cerrá sesión y volvé a entrar con tu mail.
+        </div>
+      )}
+      {local.restauranteId && (
+        <div style={{background:"rgba(0,255,136,.06)",border:"1px solid rgba(0,255,136,.2)",color:"#00FF88",
+          padding:"6px 12px",borderRadius:8,marginBottom:12,fontSize:10,fontFamily:"monospace"}}>
+          ✓ Conectado · {local.restauranteId.slice(0,8)}...
+        </div>
+      )}
 
       {/* ── Header */}
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16}}>
