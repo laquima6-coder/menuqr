@@ -34,7 +34,11 @@ export default function App() {
         <Route path="/superadmin" element={<SuperAdmin />} />
         <Route path="/superadmin/:section" element={<SuperAdmin />} />
 
-        {/* Panel del dueño + landing */}
+        {/* Carta pública por slug corto — clientes escanean /:slug */}
+        <Route path="/:slug" element={<MenuPublico />} />
+        <Route path="/:slug/mesa/:mesa" element={<MenuPublico />} />
+
+        {/* Panel del dueño + landing (solo en raíz /) */}
         <Route path="/*" element={
           <MenuQR
             local={local}   setLocal={setLocal}
