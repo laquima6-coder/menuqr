@@ -1561,6 +1561,9 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
   /* ── State de venta rápida (pedido manual desde caja) */
   const [showVentaRapida, setShowVentaRapida] = useState(false);
   const [vrCart, setVrCart]                   = useState({});
+  const [histDate, setHistDate]               = useState("");
+  const [histOrders, setHistOrders]           = useState([]);
+  const [histLoading, setHistLoading]         = useState(false);
   const [vrMesa, setVrMesa]                   = useState("mostrador");
   const [vrMesaNum, setVrMesaNum]             = useState(1);
   const [vrPay, setVrPay]                     = useState(null);
@@ -2510,54 +2513,87 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
     const listos   = orders.filter(o=>o.status==="listo");
     const cerrados = orders.filter(o=>o.status==="entregado");
 
-    /* ── Card de pedido ── */
+    /* ── Card de pedido (expandible con glow) ── */
     const OCard = ({o}) => {
+      const [open, setOpen] = useState(false);
       const s = STATUS_CFG[o.status];
       return (
-        <div className="ar" style={{background:"var(--as)",
-          border:`1px solid ${s.color}28`,
+        <div className="ar" style={{
+          background:"var(--as)",
+          border:`2px solid ${open ? s.color+"99" : s.color+"28"}`,
           borderTop:`3px solid ${s.color}`,
-          borderRadius:12,marginBottom:8,overflow:"hidden"}}>
-          {/* Cabecera */}
-          <div style={{padding:"10px 12px 6px",display:"flex",
-            justifyContent:"space-between",alignItems:"flex-start"}}>
-            <div>
+          borderRadius:12,marginBottom:8,overflow:"hidden",
+          boxShadow: open ? `0 0 24px ${s.color}22, 0 4px 16px rgba(0,0,0,.4)` : "0 2px 6px rgba(0,0,0,.2)",
+          transition:"box-shadow .25s,border-color .25s",
+        }}>
+          {/* Cabecera — siempre visible, click para expandir */}
+          <div onClick={()=>setOpen(v=>!v)} style={{
+            padding:"10px 12px",display:"flex",
+            justifyContent:"space-between",alignItems:"center",
+            cursor:"pointer",userSelect:"none",
+            background: open ? `${s.color}08` : "transparent",
+            transition:"background .2s",
+          }}>
+            <div style={{display:"flex",alignItems:"center",gap:10}}>
               <span style={{fontFamily:"'IBM Plex Mono',monospace",fontWeight:700,
-                fontSize:20,color:s.color,lineHeight:1}}>M{o.table}</span>
-              <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,
-                color:"var(--am)",marginTop:2}}>
-                #{String(o.id).slice(-4)} · {o.time}
-              </p>
+                fontSize:22,color:s.color,lineHeight:1}}>
+                {o.table===0||o.table==="0"?"MC":"M"+o.table}
+              </span>
+              <div>
+                <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,
+                  color:"var(--am)"}}>#{String(o.id).slice(-4)} · {o.time}</p>
+                <Chip status={o.status}/>
+              </div>
             </div>
-            <div style={{display:"flex",gap:5,alignItems:"center"}}>
+            <div style={{display:"flex",alignItems:"center",gap:8}}>
               <span style={{fontFamily:"'IBM Plex Mono',monospace",fontWeight:700,
                 fontSize:13,color:"var(--ag)"}}>${fmt(o.total)}</span>
-              <button onClick={()=>printComanda(o)} title="Imprimir comanda" style={{
-                background:"none",border:`1px solid var(--abr)`,borderRadius:6,
-                padding:"4px 7px",color:"var(--ad)",fontSize:13,cursor:"pointer",
-                lineHeight:1}}>🖨️</button>
+              <span style={{
+                color:s.color,fontSize:11,lineHeight:1,
+                display:"inline-block",
+                transition:"transform .25s",
+                transform:open?"rotate(180deg)":"rotate(0deg)",
+              }}>▼</span>
             </div>
           </div>
-          {/* Items */}
-          <div style={{padding:"6px 12px 8px",borderTop:"1px solid var(--abr)"}}>
-            {o.items.map((it,i)=>(
-              <p key={i} style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:11,
-                color:"var(--at)",lineHeight:1.8}}>
-                <span style={{color:s.color,fontWeight:700}}>{it.qty}×</span> {it.name}
-              </p>
-            ))}
-            {o.pay && (
-              <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,
-                color:"var(--am)",marginTop:4}}>{o.pay}</p>
-            )}
-          </div>
-          {/* Acción */}
-          {s.next && (
-            <button onClick={()=>advance(o.id)} className="pr" style={{
-              width:"100%",background:`${s.color}14`,border:"none",
-              borderTop:`1px solid ${s.color}30`,padding:"9px",
-              fontFamily:"'IBM Plex Mono',monospace",fontSize:10,fontWeight:700,
-              color:s.color,cursor:"pointer",letterSpacing:1.5}}>{s.action}</button>
+          {/* Contenido expandible */}
+          {open && (
+            <div style={{borderTop:`1px solid ${s.color}30`}}>
+              <div style={{padding:"8px 12px 10px",display:"flex",
+                justifyContent:"space-between",alignItems:"flex-start",gap:8}}>
+                <div style={{flex:1}}>
+                  {o.items.map((it,i)=>(
+                    <p key={i} style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:11,
+                      color:"var(--at)",lineHeight:1.9}}>
+                      <span style={{color:s.color,fontWeight:700}}>{it.qty}×</span> {it.name}
+                    </p>
+                  ))}
+                  {o.pay && (
+                    <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,
+                      color:"var(--am)",marginTop:4}}>💳 {o.pay}</p>
+                  )}
+                  {o.tip>0 && (
+                    <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,
+                      color:"rgba(0,255,136,.6)",marginTop:2}}>💝 +${fmt(o.tip)} propina</p>
+                  )}
+                </div>
+                <button onClick={e=>{e.stopPropagation();printComanda(o);}} title="Imprimir comanda" style={{
+                  background:"none",border:`1px solid var(--abr)`,borderRadius:6,
+                  padding:"4px 7px",color:"var(--ad)",fontSize:13,cursor:"pointer",
+                  lineHeight:1,flexShrink:0}}>🖨️</button>
+              </div>
+              {/* Botón de avance */}
+              {s.next && (
+                <button onClick={e=>{e.stopPropagation();advance(o.id);}} className="pr" style={{
+                  width:"100%",background:`${s.color}18`,border:"none",
+                  borderTop:`1px solid ${s.color}30`,padding:"11px",
+                  fontFamily:"'IBM Plex Mono',monospace",fontSize:11,fontWeight:700,
+                  color:s.color,cursor:"pointer",letterSpacing:1.5,
+                  display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+                  {s.action}
+                </button>
+              )}
+            </div>
           )}
         </div>
       );
@@ -2647,7 +2683,94 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
     const ac    = cartaAc || catNames[0] || "";
     const setAc = setCartaAc;
     const visProds = prods.filter(p=>p.cat===ac);
-    const catLabel   = cats.find(c=>c.id===ac)?.label || ac;
+
+    /* Card expandible por producto */
+    const ProdCard = ({p, i, total}) => {
+      const [open, setOpen] = useState(false);
+      const activeColor = p.active ? (p.sin_stock ? "var(--aam)" : "var(--ag)") : "var(--am)";
+      const glowColor   = p.active ? (p.sin_stock ? "#FFB020" : "#00FF88") : "#4A5A6A";
+      return (
+        <div style={{
+          borderBottom: i < total-1 ? "1px solid var(--abr)" : "none",
+          background: open ? `${glowColor}07` : "transparent",
+          transition:"background .2s",
+          boxShadow: open ? `inset 3px 0 0 ${glowColor}` : "none",
+        }}>
+          {/* Fila principal — click para expandir */}
+          <div onClick={()=>setOpen(v=>!v)} style={{
+            display:"flex",alignItems:"center",gap:12,
+            padding:"13px 16px",cursor:"pointer",userSelect:"none",
+            opacity:p.active?1:.5,transition:"opacity .3s",
+          }}>
+            <span style={{fontSize:22,flexShrink:0}}>{p.emoji}</span>
+            <Dot color={activeColor} pulse={p.active&&!p.sin_stock}/>
+            <div style={{flex:1,minWidth:0}}>
+              <p style={{fontFamily:"'Outfit',sans-serif",fontWeight:600,
+                fontSize:14,color:"var(--abri)",lineHeight:1.2}}>{p.name}
+                {p.sin_stock && (
+                  <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,
+                    color:"var(--aam)",background:"rgba(255,176,32,.1)",
+                    border:"1px solid rgba(255,176,32,.3)",borderRadius:4,
+                    padding:"1px 5px",marginLeft:6,verticalAlign:"middle"}}>
+                    SIN STOCK
+                  </span>
+                )}
+              </p>
+              <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:11,
+                color:"var(--ag)",marginTop:2}}>$ {fmt(p.price)}</p>
+            </div>
+            <span style={{
+              color:"var(--am)",fontSize:10,lineHeight:1,
+              display:"inline-block",
+              transition:"transform .25s",
+              transform:open?"rotate(180deg)":"rotate(0deg)",
+            }}>▼</span>
+          </div>
+          {/* Panel expandido */}
+          {open && (
+            <div style={{padding:"0 16px 14px",display:"flex",gap:10,flexWrap:"wrap",
+              borderTop:`1px solid ${glowColor}22`}}>
+              {p.desc && (
+                <p style={{width:"100%",fontFamily:"'DM Sans',sans-serif",fontSize:12,
+                  color:"var(--at)",lineHeight:1.5,marginBottom:6,marginTop:8}}>
+                  {p.desc}
+                </p>
+              )}
+              {/* Sin stock toggle */}
+              <button onClick={async e=>{
+                e.stopPropagation();
+                const next = !p.sin_stock;
+                setProds(ps=>ps.map(x=>x.id===p.id?{...x,sin_stock:next}:x));
+                if(supabase) await supabase.from("productos").update({sin_stock:next}).eq("id",p.id);
+                toast(next?`"${p.name}" marcado sin stock`:`"${p.name}" con stock`);
+              }} style={{
+                background:p.sin_stock?"rgba(255,176,32,.15)":"var(--as)",
+                border:`1px solid ${p.sin_stock?"rgba(255,176,32,.4)":"var(--abr)"}`,
+                borderRadius:8,padding:"7px 12px",cursor:"pointer",
+                fontFamily:"'IBM Plex Mono',monospace",fontSize:9,fontWeight:700,
+                color:p.sin_stock?"var(--aam)":"var(--am)",letterSpacing:.5,
+                flexShrink:0}}>
+                {p.sin_stock?"✓ SIN STOCK":"● STOCK OK"}
+              </button>
+              {/* Visibilidad toggle */}
+              <div style={{display:"flex",alignItems:"center",gap:8,
+                background:"var(--as)",border:"1px solid var(--abr)",
+                borderRadius:8,padding:"7px 12px"}}>
+                <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,
+                  color:"var(--am)",letterSpacing:.5}}>
+                  {p.active?"VISIBLE":"OCULTO"}
+                </span>
+                <ToggleA on={p.active} onChange={()=>{
+                  setProds(ps=>ps.map(x=>x.id===p.id?{...x,active:!x.active}:x));
+                  toast(p.active?`"${p.name}" ocultado`:`"${p.name}" visible`);
+                }}/>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    };
+
     return (
       <div style={{padding:"18px 16px 0"}}>
         <div style={{display:"flex",justifyContent:"space-between",
@@ -2666,7 +2789,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
         </div>
         <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"var(--ad)",
           marginBottom:12}}>
-          Toggle rápido. Para agregar o editar productos usá la pestaña <b style={{color:"var(--abri)"}}>Gestión</b>.
+          Tocá un producto para ver opciones. Para editar usá <b style={{color:"var(--abri)"}}>Gestión</b>.
         </p>
         <div style={{display:"flex",gap:6,overflowX:"auto",marginBottom:12,
           scrollbarWidth:"none"}}>
@@ -2696,48 +2819,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
             </div>
           )}
           {visProds.map((p,i)=>(
-            <div key={p.id} style={{display:"flex",alignItems:"center",gap:12,
-              padding:"13px 16px",
-              borderBottom:i<visProds.length-1?"1px solid var(--abr)":"none",
-              opacity:p.active?1:.4,transition:"opacity .3s"}}>
-              <span style={{fontSize:22,flexShrink:0}}>{p.emoji}</span>
-              <Dot color={p.active?(p.sin_stock?"var(--aam)":"var(--ag)"):"var(--am)"}
-                pulse={p.active&&!p.sin_stock}/>
-              <div style={{flex:1}}>
-                <p style={{fontFamily:"'Outfit',sans-serif",fontWeight:600,
-                  fontSize:14,color:"var(--abri)"}}>{p.name}
-                  {p.sin_stock && (
-                    <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,
-                      color:"var(--aam)",background:"rgba(255,176,32,.1)",
-                      border:"1px solid rgba(255,176,32,.3)",borderRadius:4,
-                      padding:"1px 5px",marginLeft:6,verticalAlign:"middle"}}>
-                      SIN STOCK
-                    </span>
-                  )}
-                </p>
-                <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:11,
-                  color:"var(--ag)",marginTop:1}}>$ {fmt(p.price)}</p>
-              </div>
-              {/* Sin stock toggle */}
-              <button onClick={async()=>{
-                const next = !p.sin_stock;
-                setProds(ps=>ps.map(x=>x.id===p.id?{...x,sin_stock:next}:x));
-                if(supabase) await supabase.from("productos").update({sin_stock:next}).eq("id",p.id);
-                toast(next?`"${p.name}" marcado sin stock`:`"${p.name}" con stock`);
-              }} style={{
-                background:p.sin_stock?"rgba(255,176,32,.15)":"var(--as)",
-                border:`1px solid ${p.sin_stock?"rgba(255,176,32,.4)":"var(--abr)"}`,
-                borderRadius:7,padding:"4px 8px",cursor:"pointer",
-                fontFamily:"'IBM Plex Mono',monospace",fontSize:8,fontWeight:700,
-                color:p.sin_stock?"var(--aam)":"var(--am)",letterSpacing:.5,
-                flexShrink:0}}>
-                {p.sin_stock?"✓ SIN STOCK":"STOCK"}
-              </button>
-              <ToggleA on={p.active} onChange={()=>{
-                setProds(ps=>ps.map(x=>x.id===p.id?{...x,active:!x.active}:x));
-                toast(p.active?`"${p.name}" ocultado`:`"${p.name}" visible`);
-              }}/>
-            </div>
+            <ProdCard key={p.id} p={p} i={i} total={visProds.length}/>
           ))}
         </div>
       </div>
@@ -3175,6 +3257,150 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
             ⬇ EXPORTAR VENTAS HOY (CSV)
           </button>
         )}
+
+        {/* ── Historial de días anteriores */}
+        <div style={{marginTop:6}}>
+          <div style={{display:"flex",justifyContent:"space-between",
+            alignItems:"center",marginBottom:10}}>
+            <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,
+              color:"var(--am)",letterSpacing:2}}>HISTORIAL DE DÍAS</p>
+            <input type="date"
+              value={histDate}
+              max={new Date(Date.now()-86400000).toISOString().slice(0,10)}
+              onChange={async e=>{
+                const d = e.target.value;
+                setHistDate(d);
+                if(!d || !supabase || !local.restauranteId) return;
+                setHistLoading(true);
+                const {data} = await supabase.from("pedidos")
+                  .select("*, pedido_items(*)")
+                  .eq("restaurante_id", local.restauranteId)
+                  .gte("created_at", d+"T00:00:00.000Z")
+                  .lt("created_at",  d+"T23:59:59.999Z")
+                  .order("created_at",{ascending:false});
+                setHistLoading(false);
+                setHistOrders((data||[]).map(p=>({
+                  id:p.id, table:p.mesa_numero,
+                  time:new Date(p.created_at).toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"}),
+                  status:p.status,
+                  items:(p.pedido_items||[]).map(i=>({name:i.nombre,qty:i.cantidad})),
+                  total:p.total, pay:p.metodo_pago||"", tip:p.propina||0,
+                })));
+              }}
+              style={{background:"var(--ac)",border:"1px solid var(--abr)",
+                borderRadius:8,padding:"6px 10px",color:"var(--abri)",
+                fontSize:12,fontFamily:"'IBM Plex Mono',monospace",cursor:"pointer"}}/>
+          </div>
+
+          {histDate && (
+            <div style={{background:"var(--ac)",border:"1px solid var(--abr)",
+              borderRadius:16,overflow:"hidden",marginBottom:8}}>
+              {histLoading ? (
+                <div style={{padding:"24px",textAlign:"center",
+                  fontFamily:"'IBM Plex Mono',monospace",fontSize:11,color:"var(--am)"}}>
+                  Cargando...
+                </div>
+              ) : histOrders.length===0 ? (
+                <div style={{padding:"24px",textAlign:"center"}}>
+                  <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:11,color:"var(--am)"}}>
+                    Sin pedidos para esta fecha
+                  </p>
+                </div>
+              ) : (
+                <div>
+                  {/* Resumen del día */}
+                  <div style={{padding:"14px 18px",borderBottom:"1px solid var(--abr)",
+                    display:"flex",gap:24,alignItems:"center",
+                    background:"rgba(0,255,136,.04)"}}>
+                    <div>
+                      <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:26,
+                        fontWeight:700,color:"var(--ag)",lineHeight:1}}>
+                        ${fmt(histOrders.filter(o=>o.status==="entregado")
+                          .reduce((s,o)=>s+(o.total||0)+(o.tip||0),0))}
+                      </p>
+                      <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,
+                        color:"var(--am)",letterSpacing:1.5,marginTop:3}}>TOTAL DEL DÍA</p>
+                    </div>
+                    <div>
+                      <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:26,
+                        fontWeight:700,color:"var(--abri)",lineHeight:1}}>
+                        {histOrders.filter(o=>o.status==="entregado").length}
+                      </p>
+                      <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,
+                        color:"var(--am)",letterSpacing:1.5,marginTop:3}}>PEDIDOS</p>
+                    </div>
+                    {/* Exportar CSV del día seleccionado */}
+                    <button onClick={()=>{
+                      const rows = [["Hora","Mesa","Items","Total","Método","Propina"]];
+                      histOrders.filter(o=>o.status==="entregado").forEach(o=>{
+                        rows.push([o.time,o.table||"Mostrador",
+                          (o.items||[]).map(i=>`${i.qty}x ${i.name}`).join(" | "),
+                          o.total,o.pay||"",o.tip||0]);
+                      });
+                      const csv = rows.map(r=>r.map(c=>`"${c}"`).join(",")).join("\n");
+                      const blob = new Blob(["﻿"+csv],{type:"text/csv;charset=utf-8;"});
+                      const a = document.createElement("a");
+                      a.href = URL.createObjectURL(blob);
+                      a.download = `ventas_${histDate}.csv`;
+                      a.click();
+                    }} style={{
+                      marginLeft:"auto",background:"var(--as)",
+                      border:"1px solid var(--abr)",borderRadius:8,
+                      padding:"7px 12px",cursor:"pointer",
+                      fontFamily:"'IBM Plex Mono',monospace",fontSize:9,fontWeight:700,
+                      color:"var(--at)",letterSpacing:.5}}>
+                      ⬇ CSV
+                    </button>
+                  </div>
+                  {/* Lista de pedidos del día */}
+                  {histOrders.map((o,i)=>{
+                    const sc = STATUS_CFG[o.status];
+                    return (
+                      <div key={o.id} style={{
+                        display:"flex",justifyContent:"space-between",
+                        alignItems:"flex-start",gap:12,
+                        padding:"12px 16px",
+                        borderBottom:i<histOrders.length-1?"1px solid var(--abr)":"none"}}>
+                        <div style={{flex:1,minWidth:0}}>
+                          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
+                            <span style={{fontFamily:"'IBM Plex Mono',monospace",
+                              fontWeight:700,fontSize:14,
+                              color:sc?.color||"var(--at)"}}>
+                              {o.table===0||o.table==="0"?"Mostrador":"Mesa "+o.table}
+                            </span>
+                            <Chip status={o.status}/>
+                          </div>
+                          <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,
+                            color:"var(--am)",marginBottom:4}}>
+                            {o.time}{o.pay?` · ${o.pay}`:""}
+                          </p>
+                          {o.items.map((it,j)=>(
+                            <p key={j} style={{fontFamily:"'IBM Plex Mono',monospace",
+                              fontSize:10,color:"var(--at)",lineHeight:1.7}}>
+                              {it.qty}× {it.name}
+                            </p>
+                          ))}
+                        </div>
+                        <div style={{textAlign:"right",flexShrink:0}}>
+                          <p style={{fontFamily:"'IBM Plex Mono',monospace",fontWeight:700,
+                            fontSize:14,color:"var(--ag)"}}>
+                            ${fmt(o.total)}
+                          </p>
+                          {o.tip>0 && (
+                            <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,
+                              color:"rgba(0,255,136,.5)",marginTop:2}}>
+                              +${fmt(o.tip)} propina
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     );
   };
@@ -3846,358 +4072,4 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
                   color:PLAN_COLORS_MAP[local.plan]||"var(--ag)",
                   background:(PLAN_COLORS_MAP[local.plan]||"#6366F1")+"15",
                   border:`1px solid ${(PLAN_COLORS_MAP[local.plan]||"#6366F1")}44`,
-                  padding:"1px 5px",borderRadius:4}}>
-                  {PLAN_LABELS[local.plan]||local.plan.toUpperCase()}
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
-        <div style={{textAlign:"right"}}>
-          <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:15,
-            fontWeight:700,color:"var(--abri)",
-            animation:"blink 1s step-end infinite"}}>
-            {clock.toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"})}
-          </p>
-          <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,
-            color:"var(--am)"}}>{todStr()}</p>
-        </div>
-      </div>
-      <div className="admin-content-scroll">
-
-      {/* CONTENT */}
-      {tab==="home"    && <HomeTab/>}
-      {tab==="orders"  && <OrdersTab/>}
-      {tab==="carta"   && <CartaTab/>}
-      {tab==="qr"      && <QRTabComp mesaNum={mesaNumAdmin} setMesaNum={setMesaNumAdmin} qrType={qrType} setQrType={setQrType} promoUrl={promoUrl} setPromoUrl={setPromoUrl} local={local}/>}
-      {tab==="caja"    && <CajaTab/>}
-      {tab==="gestion" && <GestionTab/>}
-      {tab==="config"  && <ConfigTab/>}
-
-      </div>{/* end admin-content-scroll */}
-      </div>{/* end admin-main */}
-
-      {/* BOTTOM NAV */}
-      <nav className="admin-bottomnav" style={{position:"fixed",bottom:0,left:"50%",
-        transform:"translateX(-50%)",width:"100%",maxWidth:700,
-        background:"var(--as)",borderTop:"2px solid var(--abr)",
-        display:"flex",padding:"10px 0 18px",zIndex:50,
-        boxShadow:"0 -4px 20px rgba(0,0,0,.4)"}}>
-        {TABS.map(t=>{
-          const a = tab===t.id;
-          return (
-            <button key={t.id} onClick={()=>setTab(t.id)} className="pr" style={{
-              flex:1,background:"none",border:"none",
-              display:"flex",flexDirection:"column",
-              alignItems:"center",gap:4,cursor:"pointer",position:"relative",
-              padding:"4px 0"}}>
-              <span style={{fontSize:24,
-                color:a?"var(--ag)":"var(--am)",
-                textShadow:a?"0 0 12px var(--ag)":"none",
-                transition:"all .2s"}}>{t.icon}</span>
-              <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,
-                fontWeight:700,letterSpacing:.4,
-                color:a?"var(--ag)":"var(--am)",
-                transition:"color .2s"}}>{t.label}</span>
-              {(t.badge||0)>0 && (
-                <span style={{position:"absolute",top:0,right:"8%",
-                  background:"var(--aam)",color:"#000",borderRadius:"50%",
-                  width:14,height:14,fontFamily:"'IBM Plex Mono',monospace",
-                  fontSize:8,fontWeight:800,display:"flex",
-                  alignItems:"center",justifyContent:"center"}}>
-                  {t.badge}
-                </span>
-              )}
-              {a && (
-                <div style={{position:"absolute",bottom:-7,left:"50%",
-                  transform:"translateX(-50%)",width:16,height:2,
-                  background:"var(--ag)",borderRadius:2,
-                  boxShadow:"0 0 6px var(--ag)"}}/>
-              )}
-            </button>
-          );
-        })}
-      </nav>
-
-      {/* ADMIN MODALS */}
-      {showArqAp && (
-        <ArqModal title="Arqueo de apertura" onConfirm={abrirTurno}
-          onCancel={()=>setArqAp(false)} btnLabel="▶ ABRIR TURNO"
-          btnColor="var(--ag)"/>
-      )}
-      {showArqCi && (
-        <ArqModal title="Arqueo de cierre" onConfirm={confirmarZ}
-          onCancel={()=>setArqCi(false)} btnLabel="GENERAR INFORME Z"
-          btnColor="var(--ar)"/>
-      )}
-      {showTkt && (
-        <TktModal tipo={showTkt.tipo} t={showTkt.turno}
-          onClose={()=>setTkt(null)} onZ={ejecutarZ}/>
-      )}
-      {qrSelected && (
-        <QRViewModal tableNum={qrSelected} onClose={()=>setQRS(null)}/>
-      )}
-
-      {/* GESTIÓN MODALS */}
-      {renderGModal()}
-
-      {/* TOAST */}
-      {toastMsg && (
-        <div style={{position:"fixed",bottom:24,left:"50%",
-          transform:"translateX(-50%)",
-          background:toastMsg.type==="err" ?"rgba(239,68,68,.15)"
-                    :toastMsg.type==="warn"?"rgba(245,158,11,.15)"
-                    :"rgba(0,255,136,.1)",
-          border:`1px solid ${toastMsg.type==="err" ?"rgba(239,68,68,.4)"
-                             :toastMsg.type==="warn"?"rgba(245,158,11,.4)"
-                             :"rgba(0,255,136,.3)"}`,
-          borderRadius:12,padding:"11px 20px",
-          fontFamily:"'Outfit',sans-serif",fontSize:14,fontWeight:600,
-          color:toastMsg.type==="err" ?"#EF4444"
-               :toastMsg.type==="warn"?"#F59E0B"
-               :"var(--ag)",
-          zIndex:400,whiteSpace:"nowrap",
-          boxShadow:"0 4px 24px rgba(0,0,0,.5)",
-          animation:"fadeUp .25s ease"}}>
-          {toastMsg.msg}
-        </div>
-      )}
-    </div>
-  );
-}
-
-/* ══════════════════════════════════════════════════════════════
-   ROOT — estado compartido entre cliente y admin
-══════════════════════════════════════════════════════════════ */
-export default function MenuQR({
-  local:  localProp,   setLocal:  setLocalProp,
-  cats:   catsProp,    setCats:   setCatsProp,
-  prods:  prodsProp,   setProds:  setProdsProp,
-  forceMode,
-  mesaInicial,
-}) {
-  const [mode,      setMode]      = useState(forceMode || "landing");
-  const [authUser,  setAuthUser]  = useState(null);   // Supabase user
-  const [showLogin, setShowLogin] = useState(false);
-  const [authLoading, setAuthLoading] = useState(true);
-  const [recoveryMode, setRecoveryMode] = useState(false);
-
-  // Estado interno como fallback
-  const [localInt,  setLocalInt]  = useState(INIT_LOCAL);
-  const [catsInt,   setCatsInt]   = useState(INIT_CATS);
-  const [prodsInt,  setProdsInt]  = useState(INIT_PRODS);
-
-  const local    = localProp  ?? localInt;
-  const setLocal = setLocalProp ?? setLocalInt;
-  const cats     = catsProp   ?? catsInt;
-  const setCats  = setCatsProp ?? setCatsInt;
-  const prods    = prodsProp  ?? prodsInt;
-  const setProds = setProdsProp ?? setProdsInt;
-
-  // ── Verificar sesión al montar
-  useEffect(() => {
-    if (!supabase) { setAuthLoading(false); return; }
-    // Detectar si el usuario llegó desde un link de recuperación de contraseña
-    const isRecovery = window.location.hash.includes("type=recovery") ||
-                       window.location.search.includes("type=recovery");
-    if (isRecovery) {
-      setRecoveryMode(true);
-      setAuthLoading(false);
-      // Limpiar el hash de la URL
-      window.history.replaceState(null, "", window.location.pathname);
-    } else {
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        if (session?.user) {
-          setAuthUser(session.user);
-          loadRestaurantData(session.user.id);
-        }
-        setAuthLoading(false);
-      });
-    }
-    // Escuchar cambios de auth
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === "PASSWORD_RECOVERY") {
-        // El usuario llegó desde el link de recuperación — mostrar formulario de nueva contraseña
-        setRecoveryMode(true);
-        return;
-      }
-      if (session?.user) { setAuthUser(session.user); loadRestaurantData(session.user.id); }
-      else { setAuthUser(null); if (!forceMode) setMode("landing"); }
-    });
-    return () => subscription.unsubscribe();
-  }, []);
-
-  // ── Cargar datos del restaurante desde Supabase
-  async function loadRestaurantData(userId) {
-    if (!supabase) return;
-    try {
-      const { data: rest } = await supabase.from("restaurantes").select("*").eq("owner_id", userId).single();
-      if (!rest) return;
-      setLocal({
-        nombre: rest.nombre, descripcion: rest.descripcion || "",
-        direccion: rest.direccion || "", telefono: rest.telefono || "",
-        email: rest.email || "", color: rest.color || "#C9A84C",
-        mesas: rest.mesas || 10, restauranteId: rest.id,
-        slug: rest.slug, baseUrl: rest.base_url || "",
-        plan: rest.plan || "free",
-        activo: rest.activo !== false,
-        ...(rest.config || {}),
-      });
-      const [categorias, productos] = await Promise.all([
-        getCategorias(rest.id),
-        getProductos(rest.id),
-      ]);
-      if (categorias.length) setCats(categorias.map(c => ({ id:c.id, label:c.label, icon:c.icon, activa:c.activa })));
-      if (productos.length)  setProds(productos.map(p => ({ id:p.id, cat:p.categoria_id, name:p.name, desc:p.desc, price:p.price, orig:p.orig, emoji:p.emoji, tag:p.tag, active:p.active })));
-    } catch(e) { console.error("loadRestaurantData:", e); }
-  }
-
-  // ── Cuando se pide ir al admin: verificar auth
-  function goAdmin() {
-    if (authUser) { setMode("admin"); }
-    else { setShowLogin(true); }
-  }
-
-  async function handleLogout() {
-    if (supabase) await supabase.auth.signOut();
-    setAuthUser(null);
-    setMode("landing");
-  }
-
-  function onLoginSuccess(user) {
-    setAuthUser(user);
-    setShowLogin(false);
-    setMode("admin");
-    loadRestaurantData(user.id);
-  }
-
-  if (authLoading) return (
-    <div style={{background:"#060810",minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center"}}>
-      <GS/>
-      <div style={{width:40,height:40,border:"3px solid #1A2230",borderTopColor:"#C9A84C",borderRadius:"50%",animation:"spin .8s linear infinite"}}/>
-    </div>
-  );
-
-  return (
-    <>
-      <GS/>
-      {recoveryMode && <ResetPasswordModal onDone={()=>{ setRecoveryMode(false); }} />}
-      {showLogin && <LoginModal onSuccess={onLoginSuccess} onClose={()=>setShowLogin(false)} />}
-      {mode==="landing" && (
-        <LandingAuth setMode={setMode} goAdmin={goAdmin} authUser={authUser} onLogout={handleLogout}/>
-      )}
-      {mode==="client" && (
-        <ClientApp onBack={()=>setMode("landing")} local={local} cats={cats} prods={prods}/>
-      )}
-      {mode==="admin" && authUser && (
-        <AdminApp
-          onBack={()=>setMode("landing")}
-          local={local}    setLocal={setLocal}
-          cats={cats}      setCats={setCats}
-          prods={prods}    setProds={setProds}
-          authUser={authUser} onLogout={handleLogout}
-        />
-      )}
-      {mode==="admin" && !authUser && null}
-    </>
-  );
-}
-
-/* ── Landing con Auth ─────────────────────────────────────── */
-function LandingAuth({ setMode, goAdmin, authUser, onLogout }) {
-  return (
-    <div style={{maxWidth:430,margin:"0 auto",minHeight:"100vh",background:"#0D0D0D",
-      display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
-      padding:28,position:"relative",overflow:"hidden"}}>
-      {/* Decorative blobs */}
-      <div style={{position:"absolute",top:-80,right:-60,width:260,height:260,
-        borderRadius:"50%",background:"rgba(249,115,22,.07)",pointerEvents:"none"}}/>
-      <div style={{position:"absolute",bottom:-60,left:-60,width:200,height:200,
-        borderRadius:"50%",background:"rgba(249,115,22,.04)",pointerEvents:"none"}}/>
-
-      <div style={{textAlign:"center",marginBottom:48,animation:"fadeUp .6s ease both",position:"relative"}}>
-        {/* Logo */}
-        <div style={{width:80,height:80,borderRadius:26,
-          background:"linear-gradient(135deg,#F97316,#FB923C)",
-          display:"flex",alignItems:"center",justifyContent:"center",
-          fontSize:38,margin:"0 auto 22px",
-          boxShadow:"0 12px 40px rgba(249,115,22,.35)"}}>🍽️</div>
-        <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,color:"#F97316",
-          letterSpacing:4,fontWeight:700,marginBottom:10}}>MENUQR</p>
-        <h1 style={{fontFamily:"'DM Sans',sans-serif",fontSize:34,fontWeight:800,
-          color:"#FFF",lineHeight:1.1,marginBottom:10}}>
-          {authUser ? "Bienvenido" : "Carta Digital"}
-        </h1>
-        {authUser
-          ? <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"#555"}}>{authUser.email}</p>
-          : <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"#555"}}>Explorá tu restaurante</p>
-        }
-      </div>
-
-      <div style={{width:"100%",display:"flex",flexDirection:"column",gap:14,
-        animation:"fadeUp .6s ease .12s both",position:"relative"}}>
-        {/* Carta */}
-        <button onClick={()=>setMode("client")} className="pr" style={{
-          background:"linear-gradient(135deg,#1A1A1A,#222)",
-          border:"1px solid #2D2D2D",
-          borderRadius:22,padding:"22px 24px",
-          display:"flex",alignItems:"center",gap:18,
-          cursor:"pointer",textAlign:"left",
-          transition:"border-color .2s, box-shadow .2s"}}
-          onMouseEnter={e=>{e.currentTarget.style.borderColor="#F97316";e.currentTarget.style.boxShadow="0 0 24px rgba(249,115,22,.15)"}}
-          onMouseLeave={e=>{e.currentTarget.style.borderColor="#2D2D2D";e.currentTarget.style.boxShadow="none"}}>
-          <div style={{width:54,height:54,borderRadius:16,
-            background:"linear-gradient(135deg,#F97316,#FB923C)",
-            display:"flex",alignItems:"center",justifyContent:"center",
-            fontSize:28,flexShrink:0,boxShadow:"0 6px 20px rgba(249,115,22,.3)"}}>📱</div>
-          <div style={{flex:1}}>
-            <p style={{fontFamily:"'DM Sans',sans-serif",fontWeight:700,fontSize:17,
-              color:"#FFF",marginBottom:5}}>Ver la carta</p>
-            <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"#555"}}>
-              Vista del cliente al escanear el QR
-            </p>
-          </div>
-          <span style={{color:"#F97316",fontSize:22,fontWeight:300}}>›</span>
-        </button>
-
-        {/* Admin */}
-        <button onClick={goAdmin} className="pr" style={{
-          background:"linear-gradient(135deg,#0F1520,#131C2A)",
-          border:"1px solid #1E2A3A",
-          borderRadius:22,padding:"22px 24px",
-          display:"flex",alignItems:"center",gap:18,
-          cursor:"pointer",textAlign:"left",
-          transition:"border-color .2s, box-shadow .2s"}}
-          onMouseEnter={e=>{e.currentTarget.style.borderColor="#00FF88";e.currentTarget.style.boxShadow="0 0 24px rgba(0,255,136,.1)"}}
-          onMouseLeave={e=>{e.currentTarget.style.borderColor="#1E2A3A";e.currentTarget.style.boxShadow="none"}}>
-          <div style={{width:54,height:54,borderRadius:16,
-            background:"linear-gradient(135deg,#003322,#004433)",
-            border:"1px solid rgba(0,255,136,.2)",
-            display:"flex",alignItems:"center",justifyContent:"center",
-            fontSize:28,flexShrink:0}}>⚙️</div>
-          <div style={{flex:1}}>
-            <p style={{fontFamily:"'DM Sans',sans-serif",fontWeight:700,fontSize:17,
-              color:"#FFF",marginBottom:5}}>Panel del dueño</p>
-            <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"#4A6080"}}>
-              {authUser ? "Pedidos, carta, QRs, caja y gestión" : "Iniciar sesión para acceder"}
-            </p>
-          </div>
-          <span style={{color:"#00FF88",fontSize:22,fontWeight:300}}>›</span>
-        </button>
-      </div>
-
-      {authUser && (
-        <button onClick={onLogout} style={{marginTop:22,background:"none",
-          border:"1px solid #222",borderRadius:10,
-          padding:"8px 20px",color:"#444",cursor:"pointer",
-          fontSize:12,fontFamily:"'DM Sans',sans-serif",transition:"color .2s"}}
-          onMouseEnter={e=>e.currentTarget.style.color="#888"}
-          onMouseLeave={e=>e.currentTarget.style.color="#444"}>
-          Cerrar sesión
-        </button>
-      )}
-      <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:9,color:"#222",
-        marginTop:28,letterSpacing:2}}>MENUQR · v1.0</p>
-    </div>
-  );
-}
+              
