@@ -1755,14 +1755,25 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
     // Suscribirse a nuevos pedidos en tiempo real (Realtime)
     const ch = supabase.channel("pedidos-admin-"+local.restauranteId)
       .on("postgres_changes",{event:"INSERT",schema:"public",table:"pedidos",filter:`restaurante_id=eq.${local.restauranteId}`},
-        payload=>{
+        async payload=>{
           const p=payload.new;
           if(knownIds.has(p.id)) return;
           knownIds.add(p.id);
+          // Agregar inmediatamente con items vacíos para notificar rápido
           setOrders(os=>[mapPedido({...p,pedido_items:[]}), ...os]);
           toast(`🔔 Nuevo pedido · Mesa ${p.mesa_numero}`);
           playSound('nuevo');
           pushNotify("🔔 Nuevo pedido", `Mesa ${p.mesa_numero} · $${p.total?.toLocaleString('es-AR')||''}`);
+          // Buscar los items del pedido y actualizar en 800ms
+          setTimeout(async()=>{
+            const {data:items} = await supabase.from("pedido_items")
+              .select("*").eq("pedido_id", p.id);
+            if(items?.length){
+              setOrders(os=>os.map(o=>o.id===p.id
+                ? {...o, items:items.map(i=>({name:i.nombre,qty:i.cantidad,price:i.precio||0}))}
+                : o));
+            }
+          }, 800);
         })
       .on("postgres_changes",{event:"UPDATE",schema:"public",table:"pedidos",filter:`restaurante_id=eq.${local.restauranteId}`},
         payload=>{
@@ -1794,10 +1805,16 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
             }
           }
         });
-        // Actualizar estados sin perder datos locales
+        // Actualizar estado e items sin perder datos locales
         return mapped.map(newP => {
           const old = prev.find(o=>o.id===newP.id);
-          return old ? {...old, status:newP.status} : newP;
+          if(!old) return newP;
+          return {
+            ...old,
+            status: newP.status,
+            // Actualizar items si el nuevo tiene más info que el viejo
+            items: newP.items.length > 0 ? newP.items : old.items,
+          };
         });
       });
     }, 5000);
@@ -2513,153 +2530,102 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
     const listos   = orders.filter(o=>o.status==="listo");
     const cerrados = orders.filter(o=>o.status==="entregado");
 
-    /* ── Card de pedido activo — siempre desplegado ── */
-    const OCard = ({o, compact=false}) => {
-      const [open, setOpen] = useState(false);
+    /* ── Card de pedido — siempre 100% visible, sin toggle ── */
+    const OCard = ({o}) => {
       const s = STATUS_CFG[o.status];
-      const mesaLabel = o.table===0||o.table==="0"||o.table===null ? "MC" : "M"+o.table;
+      const mesaLabel = (o.table===0||o.table==="0"||o.table===null) ? "MOSTRADOR" : "MESA "+o.table;
       const PAY_LABEL = {cash:"Efectivo",mp:"Mercado Pago",card:"Débito/Créd.",trans:"Transferencia"};
-
-      if(compact) {
-        /* Versión compacta colapsable — para pedidos cerrados */
-        return (
-          <div className="ar" style={{
-            background:"var(--as)",
-            border:`1px solid ${open ? s.color+"60" : s.color+"22"}`,
-            borderLeft:`3px solid ${s.color}`,
-            borderRadius:10,marginBottom:6,overflow:"hidden",
-            boxShadow: open ? `0 0 14px ${s.color}18` : "none",
-            transition:"box-shadow .2s,border-color .2s",
-          }}>
-            <div onClick={()=>setOpen(v=>!v)} style={{
-              padding:"10px 12px",display:"flex",
-              justifyContent:"space-between",alignItems:"center",
-              cursor:"pointer",userSelect:"none",
-            }}>
-              <div style={{display:"flex",alignItems:"center",gap:10}}>
-                <span style={{fontFamily:"'IBM Plex Mono',monospace",fontWeight:700,
-                  fontSize:16,color:s.color}}>{mesaLabel}</span>
-                <div>
-                  <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,
-                    color:"var(--am)"}}>{o.time} · {o.items.length} item{o.items.length!==1?"s":""}</p>
-                </div>
-              </div>
-              <div style={{display:"flex",alignItems:"center",gap:8}}>
-                <span style={{fontFamily:"'IBM Plex Mono',monospace",fontWeight:700,
-                  fontSize:13,color:"var(--ag)"}}>${fmt(o.total)}</span>
-                <span style={{color:"var(--am)",fontSize:10,
-                  display:"inline-block",transition:"transform .2s",
-                  transform:open?"rotate(180deg)":"rotate(0deg)"}}>▼</span>
-              </div>
-            </div>
-            {open && (
-              <div style={{borderTop:`1px solid ${s.color}20`,padding:"8px 12px 10px"}}>
-                {o.items.map((it,i)=>(
-                  <p key={i} style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:11,
-                    color:"var(--at)",lineHeight:1.8}}>
-                    <span style={{fontWeight:700}}>{it.qty}×</span> {it.name}
-                  </p>
-                ))}
-                <div style={{display:"flex",justifyContent:"space-between",
-                  alignItems:"center",marginTop:8,paddingTop:8,
-                  borderTop:"1px solid var(--abr)"}}>
-                  <div>
-                    {o.pay && <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,
-                      color:"var(--am)"}}>💳 {PAY_LABEL[o.pay]||o.pay}</p>}
-                    {o.tip>0 && <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,
-                      color:"rgba(0,255,136,.6)"}}>💝 +${fmt(o.tip)} propina</p>}
-                  </div>
-                  <button onClick={e=>{e.stopPropagation();printComanda(o);}} style={{
-                    background:"none",border:"1px solid var(--abr)",borderRadius:6,
-                    padding:"4px 7px",color:"var(--ad)",fontSize:12,cursor:"pointer"}}>🖨️</button>
-                </div>
-              </div>
-            )}
-          </div>
-        );
-      }
-
-      /* Versión completa — siempre visible para activos */
+      const isClosed  = o.status === "entregado";
       return (
         <div className="ar" style={{
           background:"var(--as)",
-          border:`2px solid ${s.color}55`,
+          border:`2px solid ${isClosed ? "#2a3441" : s.color+"66"}`,
           borderTop:`3px solid ${s.color}`,
           borderRadius:12,marginBottom:8,overflow:"hidden",
-          boxShadow:`0 0 20px ${s.color}18, 0 3px 12px rgba(0,0,0,.35)`,
+          boxShadow: isClosed ? "none" : `0 0 18px ${s.color}18, 0 3px 10px rgba(0,0,0,.3)`,
         }}>
-          {/* Cabecera */}
-          <div style={{padding:"10px 12px 8px",display:"flex",
+          {/* ── Cabecera */}
+          <div style={{padding:"10px 14px 8px",display:"flex",
             justifyContent:"space-between",alignItems:"flex-start",
-            background:`${s.color}08`}}>
+            background:`${s.color}${isClosed?"04":"09"}`}}>
             <div>
               <span style={{fontFamily:"'IBM Plex Mono',monospace",fontWeight:700,
-                fontSize:24,color:s.color,lineHeight:1,display:"block"}}>{mesaLabel}</span>
+                fontSize:isClosed?15:20,color:s.color,display:"block",lineHeight:1}}>
+                {mesaLabel}
+              </span>
               <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,
-                color:"var(--am)",marginTop:2}}>
+                color:"var(--am)",marginTop:3}}>
                 #{String(o.id).slice(-4)} · {o.time}
               </p>
             </div>
-            <div style={{display:"flex",alignItems:"center",gap:6}}>
-              <span style={{fontFamily:"'IBM Plex Mono',monospace",fontWeight:700,
-                fontSize:15,color:"var(--ag)"}}>${fmt(o.total)}</span>
-              <button onClick={()=>printComanda(o)} title="Imprimir" style={{
+            <div style={{display:"flex",alignItems:"center",gap:7}}>
+              <div style={{textAlign:"right"}}>
+                <p style={{fontFamily:"'IBM Plex Mono',monospace",fontWeight:700,
+                  fontSize:isClosed?13:16,color:isClosed?"var(--ag)":s.color}}>
+                  ${fmt(o.total+(o.tip||0))}
+                </p>
+                {o.tip>0 && (
+                  <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,
+                    color:"rgba(0,255,136,.55)"}}>incl. propina</p>
+                )}
+              </div>
+              <button onClick={()=>printComanda(o)} title="Imprimir comanda" style={{
                 background:"none",border:"1px solid var(--abr)",borderRadius:6,
-                padding:"4px 7px",color:"var(--ad)",fontSize:12,cursor:"pointer",
-                lineHeight:1}}>🖨️</button>
+                padding:"4px 7px",color:"var(--ad)",fontSize:12,cursor:"pointer",lineHeight:1}}>
+                🖨️
+              </button>
             </div>
           </div>
 
-          {/* Detalle de items */}
-          <div style={{padding:"8px 12px 10px",borderTop:`1px solid ${s.color}25`}}>
-            {o.items.length===0
-              ? <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,
-                  color:"var(--am)"}}>Sin items</p>
-              : o.items.map((it,i)=>(
-                <p key={i} style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:12,
-                  color:"var(--at)",lineHeight:1.85}}>
-                  <span style={{color:s.color,fontWeight:700,marginRight:4}}>{it.qty}×</span>
-                  {it.name}
+          {/* ── Items — siempre visibles */}
+          <div style={{padding:"9px 14px 10px",borderTop:`1px solid ${s.color}22`}}>
+            {o.items.length===0 ? (
+              <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,
+                color:"var(--am)",fontStyle:"italic"}}>cargando items...</p>
+            ) : (
+              o.items.map((it,i)=>(
+                <div key={i} style={{display:"flex",justifyContent:"space-between",
+                  alignItems:"baseline",paddingBottom:2}}>
+                  <p style={{fontFamily:"'IBM Plex Mono',monospace",
+                    fontSize:isClosed?11:13,color:"var(--at)",lineHeight:1.9}}>
+                    <span style={{color:s.color,fontWeight:700,marginRight:5}}>{it.qty}×</span>
+                    {it.name}
+                  </p>
                   {it.price>0 && (
-                    <span style={{color:"var(--am)",fontSize:10,marginLeft:4}}>
+                    <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,
+                      color:"var(--am)",marginLeft:8,flexShrink:0}}>
                       ${fmt(it.qty*(it.price||0))}
                     </span>
                   )}
-                </p>
+                </div>
               ))
-            }
+            )}
           </div>
 
-          {/* Footer: pago + total */}
-          <div style={{padding:"6px 12px 8px",borderTop:`1px solid ${s.color}20`,
-            display:"flex",justifyContent:"space-between",alignItems:"center",
-            background:`${s.color}05`}}>
-            <div>
+          {/* ── Pago */}
+          {(o.pay||o.tip>0) && (
+            <div style={{padding:"5px 14px 8px",borderTop:`1px solid ${s.color}15`,
+              display:"flex",gap:12,flexWrap:"wrap"}}>
               {o.pay && (
                 <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,
                   color:"var(--ad)"}}>💳 {PAY_LABEL[o.pay]||o.pay}</p>
               )}
               {o.tip>0 && (
                 <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,
-                  color:"rgba(0,255,136,.65)"}}>💝 propina ${fmt(o.tip)}</p>
+                  color:"rgba(0,255,136,.6)"}}>💝 propina ${fmt(o.tip)}</p>
               )}
             </div>
-            <div style={{textAlign:"right"}}>
-              <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,
-                color:"var(--am)",letterSpacing:1}}>TOTAL</p>
-              <p style={{fontFamily:"'IBM Plex Mono',monospace",fontWeight:700,
-                fontSize:16,color:s.color}}>${fmt(o.total+(o.tip||0))}</p>
-            </div>
-          </div>
+          )}
 
-          {/* Botón de avance */}
+          {/* ── Botón de avance (solo pedidos activos) */}
           {s.next && (
             <button onClick={()=>advance(o.id)} className="pr" style={{
-              width:"100%",background:`${s.color}1C`,border:"none",
-              borderTop:`1px solid ${s.color}35`,padding:"11px",
-              fontFamily:"'IBM Plex Mono',monospace",fontSize:11,fontWeight:700,
+              width:"100%",background:`${s.color}1A`,border:"none",
+              borderTop:`1px solid ${s.color}33`,padding:"12px",
+              fontFamily:"'IBM Plex Mono',monospace",fontSize:12,fontWeight:700,
               color:s.color,cursor:"pointer",letterSpacing:1.5,
-              display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+              display:"flex",alignItems:"center",justifyContent:"center",gap:8,
+              touchAction:"manipulation",WebkitTapHighlightColor:"transparent"}}>
               {s.action}
             </button>
           )}
@@ -2833,7 +2799,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
                 <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:13}}>// sin pedidos cerrados</p>
               </div>
             )}
-            {cerrados.map(o=><OCard key={o.id} o={o} compact={true}/>)}
+            {cerrados.map(o=><OCard key={o.id} o={o}/>)}
           </div>
         )}
       </div>
@@ -4088,4 +4054,507 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
                   style={{flex:1,background:"none",border:"none",padding:"11px 12px",
                     color:"var(--gbri)",fontSize:14,fontFamily:"'IBM Plex Mono',monospace",
                     fontWeight:600}}/>
-              </div
+              </div>
+            </div>
+            <div>
+              <GLbl>Precio original</GLbl>
+              <div style={{display:"flex",alignItems:"center",background:"var(--gb)",
+                border:"1px solid var(--gbr)",borderRadius:10,overflow:"hidden"}}>
+                <span style={{padding:"0 10px",fontFamily:"'IBM Plex Mono',monospace",
+                  fontSize:12,color:"var(--gd)",borderRight:"1px solid var(--gbr)",
+                  height:42,display:"flex",alignItems:"center"}}>$</span>
+                <input type="number" value={form.orig||""}
+                  onChange={e=>setForm("orig",e.target.value)}
+                  placeholder="Vacío = sin descuento"
+                  style={{flex:1,background:"none",border:"none",padding:"11px 12px",
+                    color:"var(--gbri)",fontSize:14,fontFamily:"'IBM Plex Mono',monospace"}}/>
+              </div>
+            </div>
+          </div>
+
+          <GLbl>Categoría</GLbl>
+          <select value={form.cat} onChange={e=>setForm("cat",e.target.value)}
+            style={{width:"100%",background:"var(--gb)",border:"1px solid var(--gbr)",
+              borderRadius:10,padding:"11px 14px",color:"var(--gbri)",fontSize:14,
+              marginBottom:14}}>
+            {cats.map(c=>(
+              <option key={c.id} value={c.id}>{c.icon} {c.label}</option>
+            ))}
+          </select>
+
+          <GLbl>Etiqueta</GLbl>
+          <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:16}}>
+            {["","CHEF","NUEVO","VEG","SIN TACC","PICANTE"].map(tag=>(
+              <button key={tag} onClick={()=>setForm("tag",tag)} style={{
+                background:form.tag===tag?"rgba(201,168,76,.15)":"var(--gs)",
+                border:`1px solid ${form.tag===tag?"var(--gg2)":"var(--gbr)"}`,
+                borderRadius:8,padding:"6px 12px",
+                fontFamily:"'IBM Plex Mono',monospace",fontSize:10,fontWeight:700,
+                color:form.tag===tag?"var(--gg2)":"var(--gd)",cursor:"pointer",
+                letterSpacing:.5}}>{tag||"Ninguna"}</button>
+            ))}
+          </div>
+
+          <div style={{display:"flex",gap:10}}>
+            <button onClick={()=>setGModal(null)} className="pr" style={{
+              flex:1,background:"var(--gs)",color:"var(--gt)",
+              border:"1px solid var(--gbr)",borderRadius:10,padding:12,
+              fontFamily:"'Outfit',sans-serif",fontSize:13,cursor:"pointer"}}>
+              Cancelar
+            </button>
+            <button onClick={saveProd} className="pr" style={{
+              flex:2,background:"var(--gi)",color:"#fff",border:"none",
+              borderRadius:10,padding:12,fontFamily:"'Outfit',sans-serif",
+              fontSize:14,fontWeight:600,cursor:"pointer"}}>
+              {form.isNew?"Agregar producto":"Guardar cambios"}
+            </button>
+          </div>
+        </BottomModal>
+      );
+    }
+
+    /* Modal de nueva categoría — extraído a nivel de módulo */
+    if(gModal.type==="cat") {
+      return <CatModal local={local} cats={cats} setCats={setCats} setGModal={setGModal} toast={toast}/>;
+    }
+        return null;
+  };
+
+  /* ══════════════════════════════════════════
+     RENDER PRINCIPAL DEL ADMIN
+  ══════════════════════════════════════════ */
+  return (
+    <div className="admin-wrap" style={{maxWidth:700,margin:"0 auto",minHeight:"100vh",
+      background:"var(--ab)",paddingBottom:100,position:"relative"}}>
+      <GS/>
+      {showVentaRapida && <VentaRapidaModal/>}
+
+      {/* DESKTOP SIDEBAR */}
+      <div className="admin-sidebar" style={{display:"none"}}>
+        <div className="admin-sidebar-logo" style={{display:"none",padding:"20px 18px 12px",
+          borderBottom:"1px solid var(--abr)",flexShrink:0}}>
+          <div style={{display:"flex",alignItems:"center",gap:10}}>
+            <div style={{width:34,height:34,borderRadius:9,
+              background:"linear-gradient(135deg,#003322,rgba(0,255,136,.3))",
+              border:"1px solid rgba(0,255,136,.2)",display:"flex",
+              alignItems:"center",justifyContent:"center",fontSize:17}}>🍽️</div>
+            <div>
+              <p style={{fontFamily:"'Outfit',sans-serif",fontSize:13,fontWeight:800,
+                color:"var(--abri)",lineHeight:1}}>{local.nombre||"MenuQR"}</p>
+              <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,
+                color:"var(--am)",letterSpacing:1,marginTop:2}}>PANEL ADMIN</p>
+            </div>
+          </div>
+        </div>
+        <nav className="admin-sidebar-nav" style={{display:"none",flexDirection:"column",
+          padding:"12px 10px",flex:1,gap:2}}>
+          {TABS.map(t=>{
+            const a = tab===t.id;
+            return (
+              <button key={t.id} onClick={()=>setTab(t.id)} className="pr" style={{
+                display:"flex",alignItems:"center",gap:10,
+                padding:"10px 12px",borderRadius:10,border:"none",cursor:"pointer",
+                background:a?"rgba(61,142,255,.15)":"transparent",
+                color:a?"var(--abl)":"var(--am)",
+                fontFamily:"'IBM Plex Mono',monospace",fontSize:11,fontWeight:700,
+                letterSpacing:.5,textAlign:"left",position:"relative",transition:".15s"}}>
+                <span style={{fontSize:15,minWidth:20,textAlign:"center"}}>{t.icon}</span>
+                <span style={{flex:1}}>{t.label}</span>
+                {t.badge>0 && <span style={{background:"var(--aam)",color:"#060810",
+                  borderRadius:10,padding:"1px 6px",fontSize:9,fontWeight:700}}>{t.badge}</span>}
+                {a && <div style={{position:"absolute",left:0,top:"20%",height:"60%",
+                  width:3,borderRadius:2,background:"var(--abl)"}}/>}
+              </button>
+            );
+          })}
+        </nav>
+        <div style={{padding:"14px 18px",borderTop:"1px solid var(--abr)",flexShrink:0}}>
+          <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,
+            color:"var(--abr)",letterSpacing:1}}>MENUQR · v1.0</p>
+        </div>
+      </div>
+
+      {/* DESKTOP MAIN WRAPPER */}
+      <div className="admin-main" style={{}}>
+
+      {/* TOP BAR */}
+      <div className="admin-topbar" style={{background:"var(--as)",borderBottom:"1px solid var(--abr)",
+        padding:"14px 18px 10px",position:"sticky",top:0,zIndex:40,
+        display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <div style={{display:"flex",alignItems:"center",gap:10}}>
+          <button onClick={onBack} style={{background:"none",border:"none",
+            color:"var(--am)",fontFamily:"'IBM Plex Mono',monospace",fontSize:10,
+            cursor:"pointer",letterSpacing:1,padding:0,marginRight:2}}>←</button>
+          <div style={{width:30,height:30,borderRadius:8,
+            background:"linear-gradient(135deg,#003322,rgba(0,255,136,.3))",
+            border:"1px solid rgba(0,255,136,.2)",display:"flex",
+            alignItems:"center",justifyContent:"center",fontSize:15}}>🍽️</div>
+          <div>
+            {/* Nombre dinámico */}
+            <p style={{fontFamily:"'Outfit',sans-serif",fontWeight:800,fontSize:13,
+              color:"var(--abri)",lineHeight:1}}>{local.nombre}</p>
+            <div style={{display:"flex",alignItems:"center",gap:5,marginTop:2}}>
+              <Dot color="var(--ag)" pulse/>
+              <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,
+                color:"var(--ag)",letterSpacing:1}}>EN LÍNEA</p>
+              {local.plan && local.plan!=="free" && (
+                <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:7,
+                  fontWeight:700,letterSpacing:1,
+                  color:PLAN_COLORS_MAP[local.plan]||"var(--ag)",
+                  background:(PLAN_COLORS_MAP[local.plan]||"#6366F1")+"15",
+                  border:`1px solid ${(PLAN_COLORS_MAP[local.plan]||"#6366F1")}44`,
+                  padding:"1px 5px",borderRadius:4}}>
+                  {PLAN_LABELS[local.plan]||local.plan.toUpperCase()}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+        <div style={{textAlign:"right"}}>
+          <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:15,
+            fontWeight:700,color:"var(--abri)",
+            animation:"blink 1s step-end infinite"}}>
+            {clock.toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"})}
+          </p>
+          <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,
+            color:"var(--am)"}}>{todStr()}</p>
+        </div>
+      </div>
+      <div className="admin-content-scroll">
+
+      {/* CONTENT */}
+      {tab==="home"    && <HomeTab/>}
+      {tab==="orders"  && <OrdersTab/>}
+      {tab==="carta"   && <CartaTab/>}
+      {tab==="qr"      && <QRTabComp mesaNum={mesaNumAdmin} setMesaNum={setMesaNumAdmin} qrType={qrType} setQrType={setQrType} promoUrl={promoUrl} setPromoUrl={setPromoUrl} local={local}/>}
+      {tab==="caja"    && <CajaTab/>}
+      {tab==="gestion" && <GestionTab/>}
+      {tab==="config"  && <ConfigTab/>}
+
+      </div>{/* end admin-content-scroll */}
+      </div>{/* end admin-main */}
+
+      {/* BOTTOM NAV */}
+      <nav className="admin-bottomnav" style={{position:"fixed",bottom:0,left:"50%",
+        transform:"translateX(-50%)",width:"100%",maxWidth:700,
+        background:"var(--as)",borderTop:"2px solid var(--abr)",
+        display:"flex",padding:"10px 0 18px",zIndex:50,
+        boxShadow:"0 -4px 20px rgba(0,0,0,.4)"}}>
+        {TABS.map(t=>{
+          const a = tab===t.id;
+          return (
+            <button key={t.id} onClick={()=>setTab(t.id)} className="pr" style={{
+              flex:1,background:"none",border:"none",
+              display:"flex",flexDirection:"column",
+              alignItems:"center",gap:4,cursor:"pointer",position:"relative",
+              padding:"4px 0"}}>
+              <span style={{fontSize:24,
+                color:a?"var(--ag)":"var(--am)",
+                textShadow:a?"0 0 12px var(--ag)":"none",
+                transition:"all .2s"}}>{t.icon}</span>
+              <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,
+                fontWeight:700,letterSpacing:.4,
+                color:a?"var(--ag)":"var(--am)",
+                transition:"color .2s"}}>{t.label}</span>
+              {(t.badge||0)>0 && (
+                <span style={{position:"absolute",top:0,right:"8%",
+                  background:"var(--aam)",color:"#000",borderRadius:"50%",
+                  width:14,height:14,fontFamily:"'IBM Plex Mono',monospace",
+                  fontSize:8,fontWeight:800,display:"flex",
+                  alignItems:"center",justifyContent:"center"}}>
+                  {t.badge}
+                </span>
+              )}
+              {a && (
+                <div style={{position:"absolute",bottom:-7,left:"50%",
+                  transform:"translateX(-50%)",width:16,height:2,
+                  background:"var(--ag)",borderRadius:2,
+                  boxShadow:"0 0 6px var(--ag)"}}/>
+              )}
+            </button>
+          );
+        })}
+      </nav>
+
+      {/* ADMIN MODALS */}
+      {showArqAp && (
+        <ArqModal title="Arqueo de apertura" onConfirm={abrirTurno}
+          onCancel={()=>setArqAp(false)} btnLabel="▶ ABRIR TURNO"
+          btnColor="var(--ag)"/>
+      )}
+      {showArqCi && (
+        <ArqModal title="Arqueo de cierre" onConfirm={confirmarZ}
+          onCancel={()=>setArqCi(false)} btnLabel="GENERAR INFORME Z"
+          btnColor="var(--ar)"/>
+      )}
+      {showTkt && (
+        <TktModal tipo={showTkt.tipo} t={showTkt.turno}
+          onClose={()=>setTkt(null)} onZ={ejecutarZ}/>
+      )}
+      {qrSelected && (
+        <QRViewModal tableNum={qrSelected} onClose={()=>setQRS(null)}/>
+      )}
+
+      {/* GESTIÓN MODALS */}
+      {renderGModal()}
+
+      {/* TOAST */}
+      {toastMsg && (
+        <div style={{position:"fixed",bottom:24,left:"50%",
+          transform:"translateX(-50%)",
+          background:toastMsg.type==="err" ?"rgba(239,68,68,.15)"
+                    :toastMsg.type==="warn"?"rgba(245,158,11,.15)"
+                    :"rgba(0,255,136,.1)",
+          border:`1px solid ${toastMsg.type==="err" ?"rgba(239,68,68,.4)"
+                             :toastMsg.type==="warn"?"rgba(245,158,11,.4)"
+                             :"rgba(0,255,136,.3)"}`,
+          borderRadius:12,padding:"11px 20px",
+          fontFamily:"'Outfit',sans-serif",fontSize:14,fontWeight:600,
+          color:toastMsg.type==="err" ?"#EF4444"
+               :toastMsg.type==="warn"?"#F59E0B"
+               :"var(--ag)",
+          zIndex:400,whiteSpace:"nowrap",
+          boxShadow:"0 4px 24px rgba(0,0,0,.5)",
+          animation:"fadeUp .25s ease"}}>
+          {toastMsg.msg}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════
+   ROOT — estado compartido entre cliente y admin
+══════════════════════════════════════════════════════════════ */
+export default function MenuQR({
+  local:  localProp,   setLocal:  setLocalProp,
+  cats:   catsProp,    setCats:   setCatsProp,
+  prods:  prodsProp,   setProds:  setProdsProp,
+  forceMode,
+  mesaInicial,
+}) {
+  const [mode,      setMode]      = useState(forceMode || "landing");
+  const [authUser,  setAuthUser]  = useState(null);   // Supabase user
+  const [showLogin, setShowLogin] = useState(false);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [recoveryMode, setRecoveryMode] = useState(false);
+
+  // Estado interno como fallback
+  const [localInt,  setLocalInt]  = useState(INIT_LOCAL);
+  const [catsInt,   setCatsInt]   = useState(INIT_CATS);
+  const [prodsInt,  setProdsInt]  = useState(INIT_PRODS);
+
+  const local    = localProp  ?? localInt;
+  const setLocal = setLocalProp ?? setLocalInt;
+  const cats     = catsProp   ?? catsInt;
+  const setCats  = setCatsProp ?? setCatsInt;
+  const prods    = prodsProp  ?? prodsInt;
+  const setProds = setProdsProp ?? setProdsInt;
+
+  // ── Verificar sesión al montar
+  useEffect(() => {
+    if (!supabase) { setAuthLoading(false); return; }
+    // Detectar si el usuario llegó desde un link de recuperación de contraseña
+    const isRecovery = window.location.hash.includes("type=recovery") ||
+                       window.location.search.includes("type=recovery");
+    if (isRecovery) {
+      setRecoveryMode(true);
+      setAuthLoading(false);
+      // Limpiar el hash de la URL
+      window.history.replaceState(null, "", window.location.pathname);
+    } else {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session?.user) {
+          setAuthUser(session.user);
+          loadRestaurantData(session.user.id);
+        }
+        setAuthLoading(false);
+      });
+    }
+    // Escuchar cambios de auth
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "PASSWORD_RECOVERY") {
+        // El usuario llegó desde el link de recuperación — mostrar formulario de nueva contraseña
+        setRecoveryMode(true);
+        return;
+      }
+      if (session?.user) { setAuthUser(session.user); loadRestaurantData(session.user.id); }
+      else { setAuthUser(null); if (!forceMode) setMode("landing"); }
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // ── Cargar datos del restaurante desde Supabase
+  async function loadRestaurantData(userId) {
+    if (!supabase) return;
+    try {
+      const { data: rest } = await supabase.from("restaurantes").select("*").eq("owner_id", userId).single();
+      if (!rest) return;
+      setLocal({
+        nombre: rest.nombre, descripcion: rest.descripcion || "",
+        direccion: rest.direccion || "", telefono: rest.telefono || "",
+        email: rest.email || "", color: rest.color || "#C9A84C",
+        mesas: rest.mesas || 10, restauranteId: rest.id,
+        slug: rest.slug, baseUrl: rest.base_url || "",
+        plan: rest.plan || "free",
+        activo: rest.activo !== false,
+        ...(rest.config || {}),
+      });
+      const [categorias, productos] = await Promise.all([
+        getCategorias(rest.id),
+        getProductos(rest.id),
+      ]);
+      if (categorias.length) setCats(categorias.map(c => ({ id:c.id, label:c.label, icon:c.icon, activa:c.activa })));
+      if (productos.length)  setProds(productos.map(p => ({ id:p.id, cat:p.categoria_id, name:p.name, desc:p.desc, price:p.price, orig:p.orig, emoji:p.emoji, tag:p.tag, active:p.active })));
+    } catch(e) { console.error("loadRestaurantData:", e); }
+  }
+
+  // ── Cuando se pide ir al admin: verificar auth
+  function goAdmin() {
+    if (authUser) { setMode("admin"); }
+    else { setShowLogin(true); }
+  }
+
+  async function handleLogout() {
+    if (supabase) await supabase.auth.signOut();
+    setAuthUser(null);
+    setMode("landing");
+  }
+
+  function onLoginSuccess(user) {
+    setAuthUser(user);
+    setShowLogin(false);
+    setMode("admin");
+    loadRestaurantData(user.id);
+  }
+
+  if (authLoading) return (
+    <div style={{background:"#060810",minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center"}}>
+      <GS/>
+      <div style={{width:40,height:40,border:"3px solid #1A2230",borderTopColor:"#C9A84C",borderRadius:"50%",animation:"spin .8s linear infinite"}}/>
+    </div>
+  );
+
+  return (
+    <>
+      <GS/>
+      {recoveryMode && <ResetPasswordModal onDone={()=>{ setRecoveryMode(false); }} />}
+      {showLogin && <LoginModal onSuccess={onLoginSuccess} onClose={()=>setShowLogin(false)} />}
+      {mode==="landing" && (
+        <LandingAuth setMode={setMode} goAdmin={goAdmin} authUser={authUser} onLogout={handleLogout}/>
+      )}
+      {mode==="client" && (
+        <ClientApp onBack={()=>setMode("landing")} local={local} cats={cats} prods={prods}/>
+      )}
+      {mode==="admin" && authUser && (
+        <AdminApp
+          onBack={()=>setMode("landing")}
+          local={local}    setLocal={setLocal}
+          cats={cats}      setCats={setCats}
+          prods={prods}    setProds={setProds}
+          authUser={authUser} onLogout={handleLogout}
+        />
+      )}
+      {mode==="admin" && !authUser && null}
+    </>
+  );
+}
+
+/* ── Landing con Auth ─────────────────────────────────────── */
+function LandingAuth({ setMode, goAdmin, authUser, onLogout }) {
+  return (
+    <div style={{maxWidth:430,margin:"0 auto",minHeight:"100vh",background:"#0D0D0D",
+      display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
+      padding:28,position:"relative",overflow:"hidden"}}>
+      {/* Decorative blobs */}
+      <div style={{position:"absolute",top:-80,right:-60,width:260,height:260,
+        borderRadius:"50%",background:"rgba(249,115,22,.07)",pointerEvents:"none"}}/>
+      <div style={{position:"absolute",bottom:-60,left:-60,width:200,height:200,
+        borderRadius:"50%",background:"rgba(249,115,22,.04)",pointerEvents:"none"}}/>
+
+      <div style={{textAlign:"center",marginBottom:48,animation:"fadeUp .6s ease both",position:"relative"}}>
+        {/* Logo */}
+        <div style={{width:80,height:80,borderRadius:26,
+          background:"linear-gradient(135deg,#F97316,#FB923C)",
+          display:"flex",alignItems:"center",justifyContent:"center",
+          fontSize:38,margin:"0 auto 22px",
+          boxShadow:"0 12px 40px rgba(249,115,22,.35)"}}>🍽️</div>
+        <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,color:"#F97316",
+          letterSpacing:4,fontWeight:700,marginBottom:10}}>MENUQR</p>
+        <h1 style={{fontFamily:"'DM Sans',sans-serif",fontSize:34,fontWeight:800,
+          color:"#FFF",lineHeight:1.1,marginBottom:10}}>
+          {authUser ? "Bienvenido" : "Carta Digital"}
+        </h1>
+        {authUser
+          ? <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"#555"}}>{authUser.email}</p>
+          : <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"#555"}}>Explorá tu restaurante</p>
+        }
+      </div>
+
+      <div style={{width:"100%",display:"flex",flexDirection:"column",gap:14,
+        animation:"fadeUp .6s ease .12s both",position:"relative"}}>
+        {/* Carta */}
+        <button onClick={()=>setMode("client")} className="pr" style={{
+          background:"linear-gradient(135deg,#1A1A1A,#222)",
+          border:"1px solid #2D2D2D",
+          borderRadius:22,padding:"22px 24px",
+          display:"flex",alignItems:"center",gap:18,
+          cursor:"pointer",textAlign:"left",
+          transition:"border-color .2s, box-shadow .2s"}}
+          onMouseEnter={e=>{e.currentTarget.style.borderColor="#F97316";e.currentTarget.style.boxShadow="0 0 24px rgba(249,115,22,.15)"}}
+          onMouseLeave={e=>{e.currentTarget.style.borderColor="#2D2D2D";e.currentTarget.style.boxShadow="none"}}>
+          <div style={{width:54,height:54,borderRadius:16,
+            background:"linear-gradient(135deg,#F97316,#FB923C)",
+            display:"flex",alignItems:"center",justifyContent:"center",
+            fontSize:28,flexShrink:0,boxShadow:"0 6px 20px rgba(249,115,22,.3)"}}>📱</div>
+          <div style={{flex:1}}>
+            <p style={{fontFamily:"'DM Sans',sans-serif",fontWeight:700,fontSize:17,
+              color:"#FFF",marginBottom:5}}>Ver la carta</p>
+            <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"#555"}}>
+              Vista del cliente al escanear el QR
+            </p>
+          </div>
+          <span style={{color:"#F97316",fontSize:22,fontWeight:300}}>›</span>
+        </button>
+
+        {/* Admin */}
+        <button onClick={goAdmin} className="pr" style={{
+          background:"linear-gradient(135deg,#0F1520,#131C2A)",
+          border:"1px solid #1E2A3A",
+          borderRadius:22,padding:"22px 24px",
+          display:"flex",alignItems:"center",gap:18,
+          cursor:"pointer",textAlign:"left",
+          transition:"border-color .2s, box-shadow .2s"}}
+          onMouseEnter={e=>{e.currentTarget.style.borderColor="#00FF88";e.currentTarget.style.boxShadow="0 0 24px rgba(0,255,136,.1)"}}
+          onMouseLeave={e=>{e.currentTarget.style.borderColor="#1E2A3A";e.currentTarget.style.boxShadow="none"}}>
+          <div style={{width:54,height:54,borderRadius:16,
+            background:"linear-gradient(135deg,#003322,#004433)",
+            border:"1px solid rgba(0,255,136,.2)",
+            display:"flex",alignItems:"center",justifyContent:"center",
+            fontSize:28,flexShrink:0}}>⚙️</div>
+          <div style={{flex:1}}>
+            <p style={{fontFamily:"'DM Sans',sans-serif",fontWeight:700,fontSize:17,
+              color:"#FFF",marginBottom:5}}>Panel del dueño</p>
+            <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"#4A6080"}}>
+              {authUser ? "Pedidos, carta, QRs, caja y gestión" : "Iniciar sesión para acceder"}
+            </p>
+          </div>
+          <span style={{color:"#00FF88",fontSize:22,fontWeight:300}}>›</span>
+        </button>
+      </div>
+
+      {authUser && (
+        <button onClick={onLogout} style={{marginTop:22,background:"none",
+          border:"1px solid #222",borderRadius:10,
+          padding:"8px 20px",color:"#444",cursor:"pointer",
+          fontSize:12,fontFamily:"'DM Sans',sans-serif",transition:"color .2s"}}
+          onMouseEnter={e=>e.currentTarget.style.color="#888"}
+          onMouseLeave={e=>e.currentTarget.style.color="#444"}>
+          Cerrar sesión
+        </button>
+      )}
+      <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:9,color:"#222",
+        marginTop:28,letterSpacing:2}}>MENUQR · v1.0</p>
+    </div>
+  );
+}
