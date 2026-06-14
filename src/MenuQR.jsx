@@ -2727,6 +2727,21 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
     return (
       <div style={{padding:"18px 16px 0"}}>
 
+        {/* ── Acceso rápido a venta */}
+        <div style={{display:"flex",justifyContent:"space-between",
+          alignItems:"center",marginBottom:14}}>
+          <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,
+            color:"var(--am)",letterSpacing:2}}>CAJA</p>
+          <button onClick={()=>setShowVentaRapida(true)} className="pr" style={{
+            background:"var(--ag)",color:"#060810",border:"none",borderRadius:10,
+            padding:"8px 14px",fontFamily:"'IBM Plex Mono',monospace",fontSize:10,
+            fontWeight:800,cursor:"pointer",letterSpacing:.5,
+            display:"flex",alignItems:"center",gap:6,
+            boxShadow:"0 0 16px rgba(0,255,136,.25)"}}>
+            ⚡ NUEVA VENTA
+          </button>
+        </div>
+
         {/* ── Estado del turno */}
         <div style={{background:"var(--ac)",
           border:`1px solid ${turno?"rgba(0,255,136,.2)":"rgba(255,59,92,.2)"}`,
