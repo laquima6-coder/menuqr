@@ -4072,4 +4072,358 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
                   color:PLAN_COLORS_MAP[local.plan]||"var(--ag)",
                   background:(PLAN_COLORS_MAP[local.plan]||"#6366F1")+"15",
                   border:`1px solid ${(PLAN_COLORS_MAP[local.plan]||"#6366F1")}44`,
-              
+                  padding:"1px 5px",borderRadius:4}}>
+                  {PLAN_LABELS[local.plan]||local.plan.toUpperCase()}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+        <div style={{textAlign:"right"}}>
+          <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:15,
+            fontWeight:700,color:"var(--abri)",
+            animation:"blink 1s step-end infinite"}}>
+            {clock.toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"})}
+          </p>
+          <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,
+            color:"var(--am)"}}>{todStr()}</p>
+        </div>
+      </div>
+      <div className="admin-content-scroll">
+
+      {/* CONTENT */}
+      {tab==="home"    && <HomeTab/>}
+      {tab==="orders"  && <OrdersTab/>}
+      {tab==="carta"   && <CartaTab/>}
+      {tab==="qr"      && <QRTabComp mesaNum={mesaNumAdmin} setMesaNum={setMesaNumAdmin} qrType={qrType} setQrType={setQrType} promoUrl={promoUrl} setPromoUrl={setPromoUrl} local={local}/>}
+      {tab==="caja"    && <CajaTab/>}
+      {tab==="gestion" && <GestionTab/>}
+      {tab==="config"  && <ConfigTab/>}
+
+      </div>{/* end admin-content-scroll */}
+      </div>{/* end admin-main */}
+
+      {/* BOTTOM NAV */}
+      <nav className="admin-bottomnav" style={{position:"fixed",bottom:0,left:"50%",
+        transform:"translateX(-50%)",width:"100%",maxWidth:700,
+        background:"var(--as)",borderTop:"2px solid var(--abr)",
+        display:"flex",padding:"10px 0 18px",zIndex:50,
+        boxShadow:"0 -4px 20px rgba(0,0,0,.4)"}}>
+        {TABS.map(t=>{
+          const a = tab===t.id;
+          return (
+            <button key={t.id} onClick={()=>setTab(t.id)} className="pr" style={{
+              flex:1,background:"none",border:"none",
+              display:"flex",flexDirection:"column",
+              alignItems:"center",gap:4,cursor:"pointer",position:"relative",
+              padding:"4px 0"}}>
+              <span style={{fontSize:24,
+                color:a?"var(--ag)":"var(--am)",
+                textShadow:a?"0 0 12px var(--ag)":"none",
+                transition:"all .2s"}}>{t.icon}</span>
+              <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,
+                fontWeight:700,letterSpacing:.4,
+                color:a?"var(--ag)":"var(--am)",
+                transition:"color .2s"}}>{t.label}</span>
+              {(t.badge||0)>0 && (
+                <span style={{position:"absolute",top:0,right:"8%",
+                  background:"var(--aam)",color:"#000",borderRadius:"50%",
+                  width:14,height:14,fontFamily:"'IBM Plex Mono',monospace",
+                  fontSize:8,fontWeight:800,display:"flex",
+                  alignItems:"center",justifyContent:"center"}}>
+                  {t.badge}
+                </span>
+              )}
+              {a && (
+                <div style={{position:"absolute",bottom:-7,left:"50%",
+                  transform:"translateX(-50%)",width:16,height:2,
+                  background:"var(--ag)",borderRadius:2,
+                  boxShadow:"0 0 6px var(--ag)"}}/>
+              )}
+            </button>
+          );
+        })}
+      </nav>
+
+      {/* ADMIN MODALS */}
+      {showArqAp && (
+        <ArqModal title="Arqueo de apertura" onConfirm={abrirTurno}
+          onCancel={()=>setArqAp(false)} btnLabel="▶ ABRIR TURNO"
+          btnColor="var(--ag)"/>
+      )}
+      {showArqCi && (
+        <ArqModal title="Arqueo de cierre" onConfirm={confirmarZ}
+          onCancel={()=>setArqCi(false)} btnLabel="GENERAR INFORME Z"
+          btnColor="var(--ar)"/>
+      )}
+      {showTkt && (
+        <TktModal tipo={showTkt.tipo} t={showTkt.turno}
+          onClose={()=>setTkt(null)} onZ={ejecutarZ}/>
+      )}
+      {qrSelected && (
+        <QRViewModal tableNum={qrSelected} onClose={()=>setQRS(null)}/>
+      )}
+
+      {/* GESTIÓN MODALS */}
+      {renderGModal()}
+
+      {/* TOAST */}
+      {toastMsg && (
+        <div style={{position:"fixed",bottom:24,left:"50%",
+          transform:"translateX(-50%)",
+          background:toastMsg.type==="err" ?"rgba(239,68,68,.15)"
+                    :toastMsg.type==="warn"?"rgba(245,158,11,.15)"
+                    :"rgba(0,255,136,.1)",
+          border:`1px solid ${toastMsg.type==="err" ?"rgba(239,68,68,.4)"
+                             :toastMsg.type==="warn"?"rgba(245,158,11,.4)"
+                             :"rgba(0,255,136,.3)"}`,
+          borderRadius:12,padding:"11px 20px",
+          fontFamily:"'Outfit',sans-serif",fontSize:14,fontWeight:600,
+          color:toastMsg.type==="err" ?"#EF4444"
+               :toastMsg.type==="warn"?"#F59E0B"
+               :"var(--ag)",
+          zIndex:400,whiteSpace:"nowrap",
+          boxShadow:"0 4px 24px rgba(0,0,0,.5)",
+          animation:"fadeUp .25s ease"}}>
+          {toastMsg.msg}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════
+   ROOT — estado compartido entre cliente y admin
+══════════════════════════════════════════════════════════════ */
+export default function MenuQR({
+  local:  localProp,   setLocal:  setLocalProp,
+  cats:   catsProp,    setCats:   setCatsProp,
+  prods:  prodsProp,   setProds:  setProdsProp,
+  forceMode,
+  mesaInicial,
+}) {
+  const [mode,      setMode]      = useState(forceMode || "landing");
+  const [authUser,  setAuthUser]  = useState(null);   // Supabase user
+  const [showLogin, setShowLogin] = useState(false);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [recoveryMode, setRecoveryMode] = useState(false);
+
+  // Estado interno como fallback
+  const [localInt,  setLocalInt]  = useState(INIT_LOCAL);
+  const [catsInt,   setCatsInt]   = useState(INIT_CATS);
+  const [prodsInt,  setProdsInt]  = useState(INIT_PRODS);
+
+  const local    = localProp  ?? localInt;
+  const setLocal = setLocalProp ?? setLocalInt;
+  const cats     = catsProp   ?? catsInt;
+  const setCats  = setCatsProp ?? setCatsInt;
+  const prods    = prodsProp  ?? prodsInt;
+  const setProds = setProdsProp ?? setProdsInt;
+
+  // ── Verificar sesión al montar
+  useEffect(() => {
+    if (!supabase) { setAuthLoading(false); return; }
+    // Detectar si el usuario llegó desde un link de recuperación de contraseña
+    const isRecovery = window.location.hash.includes("type=recovery") ||
+                       window.location.search.includes("type=recovery");
+    if (isRecovery) {
+      setRecoveryMode(true);
+      setAuthLoading(false);
+      // Limpiar el hash de la URL
+      window.history.replaceState(null, "", window.location.pathname);
+    } else {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session?.user) {
+          setAuthUser(session.user);
+          loadRestaurantData(session.user.id);
+        }
+        setAuthLoading(false);
+      });
+    }
+    // Escuchar cambios de auth
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "PASSWORD_RECOVERY") {
+        // El usuario llegó desde el link de recuperación — mostrar formulario de nueva contraseña
+        setRecoveryMode(true);
+        return;
+      }
+      if (session?.user) { setAuthUser(session.user); loadRestaurantData(session.user.id); }
+      else { setAuthUser(null); if (!forceMode) setMode("landing"); }
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // ── Cargar datos del restaurante desde Supabase
+  async function loadRestaurantData(userId) {
+    if (!supabase) return;
+    try {
+      const { data: rest } = await supabase.from("restaurantes").select("*").eq("owner_id", userId).single();
+      if (!rest) return;
+      setLocal({
+        nombre: rest.nombre, descripcion: rest.descripcion || "",
+        direccion: rest.direccion || "", telefono: rest.telefono || "",
+        email: rest.email || "", color: rest.color || "#C9A84C",
+        mesas: rest.mesas || 10, restauranteId: rest.id,
+        slug: rest.slug, baseUrl: rest.base_url || "",
+        plan: rest.plan || "free",
+        activo: rest.activo !== false,
+        ...(rest.config || {}),
+      });
+      const [categorias, productos] = await Promise.all([
+        getCategorias(rest.id),
+        getProductos(rest.id),
+      ]);
+      if (categorias.length) setCats(categorias.map(c => ({ id:c.id, label:c.label, icon:c.icon, activa:c.activa })));
+      if (productos.length)  setProds(productos.map(p => ({ id:p.id, cat:p.categoria_id, name:p.name, desc:p.desc, price:p.price, orig:p.orig, emoji:p.emoji, tag:p.tag, active:p.active })));
+    } catch(e) { console.error("loadRestaurantData:", e); }
+  }
+
+  // ── Cuando se pide ir al admin: verificar auth
+  function goAdmin() {
+    if (authUser) { setMode("admin"); }
+    else { setShowLogin(true); }
+  }
+
+  async function handleLogout() {
+    if (supabase) await supabase.auth.signOut();
+    setAuthUser(null);
+    setMode("landing");
+  }
+
+  function onLoginSuccess(user) {
+    setAuthUser(user);
+    setShowLogin(false);
+    setMode("admin");
+    loadRestaurantData(user.id);
+  }
+
+  if (authLoading) return (
+    <div style={{background:"#060810",minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center"}}>
+      <GS/>
+      <div style={{width:40,height:40,border:"3px solid #1A2230",borderTopColor:"#C9A84C",borderRadius:"50%",animation:"spin .8s linear infinite"}}/>
+    </div>
+  );
+
+  return (
+    <>
+      <GS/>
+      {recoveryMode && <ResetPasswordModal onDone={()=>{ setRecoveryMode(false); }} />}
+      {showLogin && <LoginModal onSuccess={onLoginSuccess} onClose={()=>setShowLogin(false)} />}
+      {mode==="landing" && (
+        <LandingAuth setMode={setMode} goAdmin={goAdmin} authUser={authUser} onLogout={handleLogout}/>
+      )}
+      {mode==="client" && (
+        <ClientApp onBack={()=>setMode("landing")} local={local} cats={cats} prods={prods}/>
+      )}
+      {mode==="admin" && authUser && (
+        <AdminApp
+          onBack={()=>setMode("landing")}
+          local={local}    setLocal={setLocal}
+          cats={cats}      setCats={setCats}
+          prods={prods}    setProds={setProds}
+          authUser={authUser} onLogout={handleLogout}
+        />
+      )}
+      {mode==="admin" && !authUser && null}
+    </>
+  );
+}
+
+/* ── Landing con Auth ─────────────────────────────────────── */
+function LandingAuth({ setMode, goAdmin, authUser, onLogout }) {
+  return (
+    <div style={{maxWidth:430,margin:"0 auto",minHeight:"100vh",background:"#0D0D0D",
+      display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
+      padding:28,position:"relative",overflow:"hidden"}}>
+      {/* Decorative blobs */}
+      <div style={{position:"absolute",top:-80,right:-60,width:260,height:260,
+        borderRadius:"50%",background:"rgba(249,115,22,.07)",pointerEvents:"none"}}/>
+      <div style={{position:"absolute",bottom:-60,left:-60,width:200,height:200,
+        borderRadius:"50%",background:"rgba(249,115,22,.04)",pointerEvents:"none"}}/>
+
+      <div style={{textAlign:"center",marginBottom:48,animation:"fadeUp .6s ease both",position:"relative"}}>
+        {/* Logo */}
+        <div style={{width:80,height:80,borderRadius:26,
+          background:"linear-gradient(135deg,#F97316,#FB923C)",
+          display:"flex",alignItems:"center",justifyContent:"center",
+          fontSize:38,margin:"0 auto 22px",
+          boxShadow:"0 12px 40px rgba(249,115,22,.35)"}}>🍽️</div>
+        <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,color:"#F97316",
+          letterSpacing:4,fontWeight:700,marginBottom:10}}>MENUQR</p>
+        <h1 style={{fontFamily:"'DM Sans',sans-serif",fontSize:34,fontWeight:800,
+          color:"#FFF",lineHeight:1.1,marginBottom:10}}>
+          {authUser ? "Bienvenido" : "Carta Digital"}
+        </h1>
+        {authUser
+          ? <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"#555"}}>{authUser.email}</p>
+          : <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"#555"}}>Explorá tu restaurante</p>
+        }
+      </div>
+
+      <div style={{width:"100%",display:"flex",flexDirection:"column",gap:14,
+        animation:"fadeUp .6s ease .12s both",position:"relative"}}>
+        {/* Carta */}
+        <button onClick={()=>setMode("client")} className="pr" style={{
+          background:"linear-gradient(135deg,#1A1A1A,#222)",
+          border:"1px solid #2D2D2D",
+          borderRadius:22,padding:"22px 24px",
+          display:"flex",alignItems:"center",gap:18,
+          cursor:"pointer",textAlign:"left",
+          transition:"border-color .2s, box-shadow .2s"}}
+          onMouseEnter={e=>{e.currentTarget.style.borderColor="#F97316";e.currentTarget.style.boxShadow="0 0 24px rgba(249,115,22,.15)"}}
+          onMouseLeave={e=>{e.currentTarget.style.borderColor="#2D2D2D";e.currentTarget.style.boxShadow="none"}}>
+          <div style={{width:54,height:54,borderRadius:16,
+            background:"linear-gradient(135deg,#F97316,#FB923C)",
+            display:"flex",alignItems:"center",justifyContent:"center",
+            fontSize:28,flexShrink:0,boxShadow:"0 6px 20px rgba(249,115,22,.3)"}}>📱</div>
+          <div style={{flex:1}}>
+            <p style={{fontFamily:"'DM Sans',sans-serif",fontWeight:700,fontSize:17,
+              color:"#FFF",marginBottom:5}}>Ver la carta</p>
+            <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"#555"}}>
+              Vista del cliente al escanear el QR
+            </p>
+          </div>
+          <span style={{color:"#F97316",fontSize:22,fontWeight:300}}>›</span>
+        </button>
+
+        {/* Admin */}
+        <button onClick={goAdmin} className="pr" style={{
+          background:"linear-gradient(135deg,#0F1520,#131C2A)",
+          border:"1px solid #1E2A3A",
+          borderRadius:22,padding:"22px 24px",
+          display:"flex",alignItems:"center",gap:18,
+          cursor:"pointer",textAlign:"left",
+          transition:"border-color .2s, box-shadow .2s"}}
+          onMouseEnter={e=>{e.currentTarget.style.borderColor="#00FF88";e.currentTarget.style.boxShadow="0 0 24px rgba(0,255,136,.1)"}}
+          onMouseLeave={e=>{e.currentTarget.style.borderColor="#1E2A3A";e.currentTarget.style.boxShadow="none"}}>
+          <div style={{width:54,height:54,borderRadius:16,
+            background:"linear-gradient(135deg,#003322,#004433)",
+            border:"1px solid rgba(0,255,136,.2)",
+            display:"flex",alignItems:"center",justifyContent:"center",
+            fontSize:28,flexShrink:0}}>⚙️</div>
+          <div style={{flex:1}}>
+            <p style={{fontFamily:"'DM Sans',sans-serif",fontWeight:700,fontSize:17,
+              color:"#FFF",marginBottom:5}}>Panel del dueño</p>
+            <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"#4A6080"}}>
+              {authUser ? "Pedidos, carta, QRs, caja y gestión" : "Iniciar sesión para acceder"}
+            </p>
+          </div>
+          <span style={{color:"#00FF88",fontSize:22,fontWeight:300}}>›</span>
+        </button>
+      </div>
+
+      {authUser && (
+        <button onClick={onLogout} style={{marginTop:22,background:"none",
+          border:"1px solid #222",borderRadius:10,
+          padding:"8px 20px",color:"#444",cursor:"pointer",
+          fontSize:12,fontFamily:"'DM Sans',sans-serif",transition:"color .2s"}}
+          onMouseEnter={e=>e.currentTarget.style.color="#888"}
+          onMouseLeave={e=>e.currentTarget.style.color="#444"}>
+          Cerrar sesión
+        </button>
+      )}
+      <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:9,color:"#222",
+        marginTop:28,letterSpacing:2}}>MENUQR · v1.0</p>
+    </div>
+  );
+}
