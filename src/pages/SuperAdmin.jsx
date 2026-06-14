@@ -26,24 +26,49 @@ const css = `
   input:focus,select:focus{outline:none;border-color:#6366F1!important}
 `
 
+const MAX_ATTEMPTS = 5;
+const LOCKOUT_MS   = 10 * 60 * 1000; // 10 minutos
+
 export default function SuperAdmin() {
-  const [auth,     setAuth]     = useState(() => sessionStorage.getItem('sa_auth') === '1')
-  const [pin,      setPin]      = useState('')
-  const [pinErr,   setPinErr]   = useState(false)
-  const [showPin,  setShowPin]  = useState(false)
-  const [tab,      setTab]      = useState('restaurantes')
-  const [data,     setData]     = useState({ restaurantes:[], stats:{} })
-  const [loading,  setLoading]  = useState(false)
-  const [search,   setSearch]   = useState('')
-  const [planFilter, setPlanFilter] = useState('')
-  const [editRest, setEditRest] = useState(null)
-  const [saving,   setSaving]   = useState(false)
+  const [auth,      setAuth]      = useState(() => sessionStorage.getItem('sa_auth') === '1')
+  const [pin,       setPin]       = useState('')
+  const [pinErr,    setPinErr]    = useState(false)
+  const [showPin,   setShowPin]   = useState(false)
+  const [tab,       setTab]       = useState('restaurantes')
+  const [data,      setData]      = useState({ restaurantes:[], stats:{} })
+  const [loading,   setLoading]   = useState(false)
+  const [search,    setSearch]    = useState('')
+  const [planFilter,setPlanFilter]= useState('')
+  const [editRest,  setEditRest]  = useState(null)
+  const [saving,    setSaving]    = useState(false)
+  const [attempts,  setAttempts]  = useState(() => {
+    const s = JSON.parse(localStorage.getItem('sa_attempts')||'{}');
+    return s.count||0;
+  })
+  const [lockedUntil, setLockedUntil] = useState(() => {
+    const s = JSON.parse(localStorage.getItem('sa_attempts')||'{}');
+    return s.until||0;
+  })
 
   useEffect(() => { if (auth) loadAll() }, [auth])
 
+  const isLocked = () => Date.now() < lockedUntil;
+  const lockMins = () => Math.ceil((lockedUntil - Date.now()) / 60000);
+
   function checkPin() {
-    if (pin === SUPER_PIN) { sessionStorage.setItem('sa_auth','1'); setAuth(true) }
-    else { setPinErr(true); setPin(''); setTimeout(()=>setPinErr(false),2000) }
+    if (isLocked()) return;
+    if (pin === SUPER_PIN) {
+      sessionStorage.setItem('sa_auth','1');
+      localStorage.removeItem('sa_attempts');
+      setAttempts(0); setLockedUntil(0); setAuth(true);
+    } else {
+      const next = attempts + 1;
+      const until = next >= MAX_ATTEMPTS ? Date.now() + LOCKOUT_MS : 0;
+      setAttempts(next); setLockedUntil(until);
+      localStorage.setItem('sa_attempts', JSON.stringify({count:next, until}));
+      setPinErr(true); setPin('');
+      setTimeout(()=>setPinErr(false), 2500);
+    }
   }
 
   async function loadAll() {
@@ -140,9 +165,24 @@ export default function SuperAdmin() {
               {showPin ? '🙈' : '👁️'}
             </button>
           </div>
-          {pinErr && <div style={{color:'#f87171',fontSize:'.82rem',marginBottom:10}}>PIN incorrecto</div>}
-          <button onClick={checkPin} style={{width:'100%',padding:13,background:'linear-gradient(135deg,#6366F1,#818CF8)',border:'none',borderRadius:8,color:'#fff',fontSize:'1rem',fontWeight:700,cursor:'pointer'}}>
-            Ingresar
+          {pinErr && !isLocked() && (
+            <div style={{color:'#f87171',fontSize:'.82rem',marginBottom:10}}>
+              PIN incorrecto — {MAX_ATTEMPTS - attempts} intentos restantes
+            </div>
+          )}
+          {isLocked() && (
+            <div style={{color:'#f87171',fontSize:'.82rem',marginBottom:10,
+              background:'rgba(127,29,29,.15)',border:'1px solid #7f1d1d',
+              borderRadius:6,padding:'8px 12px'}}>
+              🔒 Bloqueado por {lockMins()} min por demasiados intentos
+            </div>
+          )}
+          <button onClick={checkPin} disabled={isLocked()} style={{
+            width:'100%',padding:13,
+            background:isLocked()?'#1E2A3A':'linear-gradient(135deg,#6366F1,#818CF8)',
+            border:'none',borderRadius:8,color:isLocked()?'#4A6080':'#fff',
+            fontSize:'1rem',fontWeight:700,cursor:isLocked()?'not-allowed':'pointer'}}>
+            {isLocked()?'Bloqueado':'Ingresar'}
           </button>
           <div style={{marginTop:16,fontSize:'.8rem',color:'#2A3A50'}}>
             <a href="/" style={{color:'#4A6080',textDecoration:'none'}}>← Volver a la app</a>

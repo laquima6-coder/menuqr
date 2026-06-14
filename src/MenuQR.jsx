@@ -1200,7 +1200,12 @@ function ClientApp({onBack, local, cats, prods}) {
                         color:"#555",textDecoration:"line-through"}}>$ {fmt(item.orig)}</div>
                     )}
                   </div>
-                  {inCart===0 ? (
+                  {item.sin_stock ? (
+                    <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,
+                      fontWeight:700,color:"#888",background:"#222",
+                      border:"1px solid #333",borderRadius:8,
+                      padding:"6px 10px",whiteSpace:"nowrap"}}>Sin stock</span>
+                  ) : inCart===0 ? (
                     <button onClick={()=>add(item)} className="pr" style={{
                       width:34,height:34,borderRadius:12,
                       background:ac,border:"none",color:"#FFF",
@@ -1485,11 +1490,10 @@ function CatModal({local, cats, setCats, setGModal, toast}) {
 function playSound(type) {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    // [frecuencia, inicio_seg, duración_seg]
     const tonos = {
-      nuevo:  [[880,0,.08],[880,.12,.08],[1100,.26,.12]],   // 3 beeps agudos — pedido nuevo
-      cocina: [[660,0,.10],[880,.18,.10]],                   // 2 tonos medios — pasa a cocina
-      listo:  [[523,0,.09],[659,.12,.09],[784,.25,.14]],     // acorde suave — pedido listo
+      nuevo:  [[880,0,.08],[880,.12,.08],[1100,.26,.12]],
+      cocina: [[660,0,.10],[880,.18,.10]],
+      listo:  [[523,0,.09],[659,.12,.09],[784,.25,.14]],
     };
     (tonos[type] || tonos.nuevo).forEach(([freq, delay, dur]) => {
       const osc  = ctx.createOscillator();
@@ -1505,6 +1509,20 @@ function playSound(type) {
       osc.stop(t + dur + 0.05);
     });
   } catch(e) { /* audio no disponible */ }
+}
+
+function pushNotify(title, body) {
+  try {
+    if (!("Notification" in window)) return;
+    const send = () => new Notification(title, {
+      body, icon: "/favicon.ico", badge: "/favicon.ico",
+      tag: "menuqr-pedido", renotify: true,
+    });
+    if (Notification.permission === "granted") { send(); }
+    else if (Notification.permission !== "denied") {
+      Notification.requestPermission().then(p => { if (p === "granted") send(); });
+    }
+  } catch(e) { /* notificaciones no disponibles */ }
 }
 
 function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
@@ -1563,6 +1581,13 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
   const vrSub  = (prod) => setVrCart(c=>{const qty=(c[prod.id]?.qty||0)-1;if(qty<=0){const n={...c};delete n[prod.id];return n;}return{...c,[prod.id]:{...prod,qty}};});
   const cajaAdd= (prod) => setCajaCart(c=>({...c,[prod.id]:{...prod,qty:(c[prod.id]?.qty||0)+1}}));
   const cajaSub= (prod) => setCajaCart(c=>{const qty=(c[prod.id]?.qty||0)-1;if(qty<=0){const n={...c};delete n[prod.id];return n;}return{...c,[prod.id]:{...prod,qty}};});
+
+  /* ── Pedir permiso de notificaciones al entrar */
+  useEffect(()=>{
+    if("Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+  },[]);
 
   /* ── Print ticket (recibo para el cliente) */
   const printTicket = (o) => {
@@ -1734,6 +1759,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
           setOrders(os=>[mapPedido({...p,pedido_items:[]}), ...os]);
           toast(`🔔 Nuevo pedido · Mesa ${p.mesa_numero}`);
           playSound('nuevo');
+          pushNotify("🔔 Nuevo pedido", `Mesa ${p.mesa_numero} · $${p.total?.toLocaleString('es-AR')||''}`);
         })
       .on("postgres_changes",{event:"UPDATE",schema:"public",table:"pedidos",filter:`restaurante_id=eq.${local.restauranteId}`},
         payload=>{
@@ -1755,10 +1781,14 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
             knownIds.add(p.id);
             toast(`🔔 Nuevo pedido · Mesa ${p.table}`);
             playSound('nuevo');
+            pushNotify("🔔 Nuevo pedido", `Mesa ${p.table} · $${p.total?.toLocaleString('es-AR')||''}`);
           } else if(prevStatuses[p.id] && prevStatuses[p.id]!==p.status) {
             // Detectar cambio de estado
             if(p.status==="preparando") playSound('cocina');
-            if(p.status==="listo")      playSound('listo');
+            if(p.status==="listo") {
+              playSound('listo');
+              pushNotify("✅ Pedido listo", `Mesa ${p.table} — pedido para entregar`);
+            }
           }
         });
         // Actualizar estados sin perder datos locales
@@ -1785,6 +1815,13 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
       await supabase.from("pedidos").update({status:next}).eq("id",id);
     }
     toast("Estado actualizado ✓");
+    // WhatsApp al restaurante cuando el pedido está listo para entregar
+    if(next==="listo" && local.whatsapp) {
+      const mesa = o.table || "Mostrador";
+      const items = (o.items||[]).map(i=>`• ${i.qty}x ${i.name}`).join("\n");
+      const msg = `✅ *Pedido listo para entregar*\n📍 Mesa ${mesa}\n${items}\n💰 Total: $${fmt(o.total)}`;
+      window.open(`https://wa.me/${local.whatsapp}?text=${encodeURIComponent(msg)}`,"_blank");
+    }
   };
 
   const newCount  = orders.filter(o=>o.status==="nuevo").length;
@@ -2664,13 +2701,38 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
               borderBottom:i<visProds.length-1?"1px solid var(--abr)":"none",
               opacity:p.active?1:.4,transition:"opacity .3s"}}>
               <span style={{fontSize:22,flexShrink:0}}>{p.emoji}</span>
-              <Dot color={p.active?"var(--ag)":"var(--am)"} pulse={p.active}/>
+              <Dot color={p.active?(p.sin_stock?"var(--aam)":"var(--ag)"):"var(--am)"}
+                pulse={p.active&&!p.sin_stock}/>
               <div style={{flex:1}}>
                 <p style={{fontFamily:"'Outfit',sans-serif",fontWeight:600,
-                  fontSize:14,color:"var(--abri)"}}>{p.name}</p>
+                  fontSize:14,color:"var(--abri)"}}>{p.name}
+                  {p.sin_stock && (
+                    <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,
+                      color:"var(--aam)",background:"rgba(255,176,32,.1)",
+                      border:"1px solid rgba(255,176,32,.3)",borderRadius:4,
+                      padding:"1px 5px",marginLeft:6,verticalAlign:"middle"}}>
+                      SIN STOCK
+                    </span>
+                  )}
+                </p>
                 <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:11,
                   color:"var(--ag)",marginTop:1}}>$ {fmt(p.price)}</p>
               </div>
+              {/* Sin stock toggle */}
+              <button onClick={async()=>{
+                const next = !p.sin_stock;
+                setProds(ps=>ps.map(x=>x.id===p.id?{...x,sin_stock:next}:x));
+                if(supabase) await supabase.from("productos").update({sin_stock:next}).eq("id",p.id);
+                toast(next?`"${p.name}" marcado sin stock`:`"${p.name}" con stock`);
+              }} style={{
+                background:p.sin_stock?"rgba(255,176,32,.15)":"var(--as)",
+                border:`1px solid ${p.sin_stock?"rgba(255,176,32,.4)":"var(--abr)"}`,
+                borderRadius:7,padding:"4px 8px",cursor:"pointer",
+                fontFamily:"'IBM Plex Mono',monospace",fontSize:8,fontWeight:700,
+                color:p.sin_stock?"var(--aam)":"var(--am)",letterSpacing:.5,
+                flexShrink:0}}>
+                {p.sin_stock?"✓ SIN STOCK":"STOCK"}
+              </button>
               <ToggleA on={p.active} onChange={()=>{
                 setProds(ps=>ps.map(x=>x.id===p.id?{...x,active:!x.active}:x));
                 toast(p.active?`"${p.name}" ocultado`:`"${p.name}" visible`);
@@ -3081,6 +3143,37 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
               );
             })}
           </div>
+        )}
+
+        {/* ── Exportar ventas del día a CSV */}
+        {orders.filter(o=>o.status==="entregado").length > 0 && (
+          <button onClick={()=>{
+            const hoy = new Date().toLocaleDateString("es-AR");
+            const rows = [["Hora","Mesa","Items","Total","Método","Propina"]];
+            orders.filter(o=>o.status==="entregado").forEach(o=>{
+              rows.push([
+                o.time,
+                o.table||"Mostrador",
+                (o.items||[]).map(i=>`${i.qty}x ${i.name}`).join(" | "),
+                o.total,
+                o.pay||"",
+                o.tip||0
+              ]);
+            });
+            const csv = rows.map(r=>r.map(c=>`"${c}"`).join(",")).join("\n");
+            const blob = new Blob(["﻿"+csv],{type:"text/csv;charset=utf-8;"});
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(blob);
+            a.download = `ventas_${hoy.replace(/\//g,"-")}.csv`;
+            a.click();
+          }} style={{
+            width:"100%",background:"var(--ac)",border:"1px solid var(--abr)",
+            borderRadius:12,padding:"12px 16px",cursor:"pointer",
+            display:"flex",alignItems:"center",justifyContent:"center",gap:8,
+            fontFamily:"'IBM Plex Mono',monospace",fontSize:10,fontWeight:700,
+            color:"var(--at)",letterSpacing:1,marginBottom:8}}>
+            ⬇ EXPORTAR VENTAS HOY (CSV)
+          </button>
         )}
       </div>
     );
