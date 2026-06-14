@@ -986,7 +986,10 @@ function ClientApp({onBack, local, cats, prods}) {
           else if(!local.restauranteId) errorMsg = "Sin restauranteId";
           else {
             try {
-              const {data:pedido,error} = await supabase.from("pedidos").insert({
+              // Generar UUID en el cliente para no necesitar SELECT después del INSERT
+              const pedidoId = crypto.randomUUID();
+              const {error} = await supabase.from("pedidos").insert({
+                id:             pedidoId,
                 restaurante_id: local.restauranteId,
                 mesa_numero:    mesa,
                 status:         "nuevo",
@@ -995,18 +998,19 @@ function ClientApp({onBack, local, cats, prods}) {
                 total:          totalFinal,
                 nota:           note||null,
                 idioma:         lang||"es",
-              }).select().single();
+              });
               if(error){ errorMsg = error.message; }
-              else if(pedido){
+              else {
                 pedidoGuardado = true;
                 const items = cartItems.map(i=>({
-                  pedido_id:   pedido.id,
+                  pedido_id:   pedidoId,
                   producto_id: i.id,
                   nombre:      i.name,
                   precio:      i.price,
                   cantidad:    i.qty,
                 }));
-                await supabase.from("pedido_items").insert(items);
+                const {error:itemsErr} = await supabase.from("pedido_items").insert(items);
+                if(itemsErr) console.warn("items error:", itemsErr.message);
               }
             } catch(e){ errorMsg = e.message; }
           }
@@ -1016,12 +1020,12 @@ function ClientApp({onBack, local, cats, prods}) {
           setView("done");
         }} className="pr" style={{
           width:"100%",
-          background:pay?"var(--cg)":"var(--cc)",
-          color:pay?"#0A0806":"var(--cm)",
+          background:pay?"#F97316":"#1F1F1F",
+          color:pay?"#FFF":"#555",
           border:"none",borderRadius:16,padding:17,
           fontFamily:"'DM Sans',sans-serif",fontSize:15,fontWeight:700,
           cursor:pay?"pointer":"not-allowed",
-          boxShadow:pay?"0 8px 28px rgba(201,168,76,.25)":"none",
+          boxShadow:pay?"0 8px 28px rgba(249,115,22,.3)":"none",
           transition:"all .25s"}}>
           {pay?T('confirm'):T('choosePay')}
         </button>
