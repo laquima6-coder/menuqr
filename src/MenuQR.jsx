@@ -9,10 +9,10 @@ const GS = () => (
     @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,400&family=Outfit:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600&display=swap');
 
     :root {
-      /* Cliente — luxury gastronómico */
-      --cb:  #0A0806; --cs: #141008; --cc: #1A140C; --cbr: #2C2010;
-      --cm:  #5A4A30; --cd: #7A6A50; --ct: #C8B898; --cbri:#EDE0C8;
-      --cg:  #C9A84C; --cg2:#E8C46A; --cgr:#4A9A5A; --crd:#C84040;
+      /* Cliente — dark + naranja */
+      --cb:  #0D0D0D; --cs: #171717; --cc: #1F1F1F; --cbr: #2D2D2D;
+      --cm:  #6B6B6B; --cd: #8A8A8A; --ct: #AAAAAA; --cbri:#FFFFFF;
+      --cg:  #F97316; --cg2:#FB923C; --cgr:#22C55E; --crd:#EF4444;
       /* Admin — cockpit técnico */
       --ab:  #0d1117; --as: #161b22; --ac: #1c2128; --abr:#2a3441;
       --am:  #4a5a6a; --ad: #6a8090; --at: #a0b8c8; --abri:#d8ecf8;
@@ -1039,23 +1039,24 @@ function ClientApp({onBack, local, cats, prods}) {
       <div style={{display:"flex",gap:4,flexWrap:"wrap",justifyContent:"flex-end",marginBottom:12}}>
         {LANGS.map(l=>(
           <button key={l.code} onClick={()=>changeLang(l.code)} style={{
-            background:lang===l.code?"rgba(201,168,76,.25)":"rgba(10,8,6,.7)",
-            border:`1px solid ${lang===l.code?"var(--cg)":"rgba(255,255,255,.12)"}`,
+            background:lang===l.code?"rgba(249,115,22,.2)":"rgba(30,30,30,.9)",
+            border:`1px solid ${lang===l.code?"#F97316":"rgba(255,255,255,.1)"}`,
             borderRadius:6,padding:"5px 8px",cursor:"pointer",
-            fontFamily:"'IBM Plex Mono',monospace",fontSize:10,fontWeight:700,
-            color:lang===l.code?"var(--cg)":"rgba(255,255,255,.6)",
+            fontFamily:"'DM Sans',sans-serif",fontSize:10,fontWeight:600,
+            color:lang===l.code?"#F97316":"rgba(255,255,255,.5)",
             backdropFilter:"blur(8px)",lineHeight:1.2,minWidth:36,textAlign:"center"}}>
             {l.flag} {l.name}
           </button>
         ))}
       </div>
 
-      {/* Header con grain texture */}
-      <div style={{background:"linear-gradient(160deg,#1a1208,var(--cb))",
+      {/* Header */}
+      <div style={{background:"linear-gradient(160deg,#1A0800,#0D0D0D)",
         padding:"26px 20px 0",position:"relative",overflow:"hidden"}}>
-        <div style={{position:"absolute",inset:0,opacity:.03,
-          backgroundImage:`url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
-          backgroundSize:"180px"}}/>
+        <div style={{position:"absolute",top:-60,right:-40,width:180,height:180,
+          borderRadius:"50%",background:"rgba(249,115,22,.08)",pointerEvents:"none"}}/>
+        <div style={{position:"absolute",bottom:-40,left:-30,width:120,height:120,
+          borderRadius:"50%",background:"rgba(249,115,22,.05)",pointerEvents:"none"}}/>
 
         <div style={{display:"flex",justifyContent:"space-between",
           alignItems:"flex-start",marginBottom:14}}>
@@ -1063,7 +1064,7 @@ function ClientApp({onBack, local, cats, prods}) {
             <button onClick={onBack} style={{background:"none",border:"none",
               color:"var(--cm)",fontSize:11,fontFamily:"'IBM Plex Mono',monospace",
               letterSpacing:1,cursor:"pointer",marginBottom:8,padding:0}}>{T('backHome')}</button>
-            <div style={{width:26,height:2,background:"var(--cg)",marginBottom:8,borderRadius:1}}/>
+            <div style={{width:32,height:3,background:"linear-gradient(90deg,#F97316,#FB923C)",marginBottom:8,borderRadius:2}}/>
             <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:"var(--cg)",
               letterSpacing:3,marginBottom:4}}>{T('welcome')}</p>
             {/* Nombre dinámico del local */}
@@ -1107,30 +1108,37 @@ function ClientApp({onBack, local, cats, prods}) {
         )}
 
         {/* Category tabs */}
-        <div style={{display:"flex",gap:6,overflowX:"auto",
-          margin:"0 -20px",padding:"0 20px 16px",scrollbarWidth:"none"}}>
-          {activeCats.map(cat=>(
+        <div style={{display:"flex",gap:8,overflowX:"auto",
+          margin:"0 -20px",padding:"12px 20px 20px",scrollbarWidth:"none"}}>
+          {activeCats.map(cat=>{
+            const isActive = activeCat===cat.id;
+            const ac = local.color||"#F97316";
+            return (
             <button key={cat.id} onClick={()=>setAC(cat.id)} style={{
-              fontFamily:"'DM Sans',sans-serif",fontSize:12,
-              fontWeight:activeCat===cat.id?600:400,
-              background:activeCat===cat.id?local.color||"var(--cg)":"transparent",
-              color:activeCat===cat.id?"#0A0806":"var(--cm)",
-              border:`1px solid ${activeCat===cat.id?local.color||"var(--cg)":"var(--cbr)"}`,
-              borderRadius:20,padding:"7px 16px",
-              cursor:"pointer",whiteSpace:"nowrap",flexShrink:0,transition:"all .2s",
+              fontFamily:"'DM Sans',sans-serif",fontSize:13,
+              fontWeight:isActive?700:500,
+              background:isActive?ac:"#1F1F1F",
+              color:isActive?"#FFF":"#888",
+              border:`1px solid ${isActive?ac:"#2D2D2D"}`,
+              borderRadius:100,padding:"9px 18px",
+              cursor:"pointer",whiteSpace:"nowrap",flexShrink:0,
+              transition:"all .2s",
+              boxShadow:isActive?`0 0 18px ${ac}44`:"none",
               touchAction:"manipulation",WebkitTapHighlightColor:"transparent"}}>
               {cat.icon} {tCat(cat.label,lang)}
             </button>
-          ))}
+          )})}
         </div>
       </div>
 
-      {/* Items */}
-      <div className="cf" style={{padding:"14px 16px 0"}} key={activeCat}>
+      {/* Items — grilla 2 columnas */}
+      <div className="cf" style={{
+        display:"grid",gridTemplateColumns:"1fr 1fr",
+        gap:12,padding:"0 16px 16px"}} key={activeCat}>
         {catItems.length===0 && (
-          <div style={{textAlign:"center",padding:"40px 0",color:"var(--cbr)"}}>
-            <p style={{fontSize:32,marginBottom:8}}>🍽️</p>
-            <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:14,color:"var(--cm)"}}>
+          <div style={{gridColumn:"1/-1",textAlign:"center",padding:"50px 0"}}>
+            <p style={{fontSize:40,marginBottom:10}}>🍽️</p>
+            <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:14,color:"#555"}}>
               Sin productos en esta categoría
             </p>
           </div>
@@ -1138,70 +1146,80 @@ function ClientApp({onBack, local, cats, prods}) {
         {catItems.map(item=>{
           const inCart = cart[item.id]?.qty || 0;
           const disc   = item.orig ? Math.round((1-item.price/item.orig)*100) : null;
+          const ac     = local.color||"#F97316";
           return (
             <div key={item.id} className="ci" style={{
-              background:"var(--cc)",
-              border:`1px solid ${inCart>0?"rgba(201,168,76,.3)":"var(--cbr)"}`,
-              borderRadius:18,marginBottom:10,overflow:"hidden",
-              transition:"border-color .3s"}}>
-              <div style={{display:"flex",gap:12,padding:"14px",alignItems:"center"}}>
-                <div style={{width:52,height:52,borderRadius:13,flexShrink:0,
-                  background:"var(--cs)",border:"1px solid var(--cbr)",
-                  display:"flex",alignItems:"center",justifyContent:"center",
-                  fontSize:25}}>{item.emoji}</div>
-                <div style={{flex:1,minWidth:0}}>
-                  <div style={{display:"flex",alignItems:"center",gap:6,
-                    marginBottom:3,flexWrap:"wrap"}}>
-                    <span style={{fontFamily:"'Playfair Display',serif",fontSize:14,
-                      fontWeight:700,color:"var(--cbri)",lineHeight:1.2}}>{item.name}</span>
+              background:"#1A1A1A",
+              border:`2px solid ${inCart>0?ac:"#272727"}`,
+              borderRadius:20,overflow:"hidden",
+              transition:"border-color .25s",
+              display:"flex",flexDirection:"column"}}>
+              {/* Imagen / emoji */}
+              <div style={{
+                background:`linear-gradient(135deg,#222,#1A1A1A)`,
+                height:110,
+                display:"flex",alignItems:"center",justifyContent:"center",
+                fontSize:52,position:"relative"}}>
+                {item.emoji||"🍽️"}
+                {item.tag && (
+                  <div style={{position:"absolute",top:8,right:8}}>
                     <Tag tag={item.tag}/>
                   </div>
-                  <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:3}}>
-                    <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:15,
-                      fontWeight:600,color:local.color||"var(--cg)"}}>
-                      $ {fmt(item.price)}
-                    </span>
+                )}
+                {disc && (
+                  <div style={{position:"absolute",top:8,left:8,
+                    background:"#22C55E",color:"#FFF",borderRadius:6,
+                    fontSize:9,fontWeight:800,padding:"2px 6px",
+                    fontFamily:"'DM Sans',sans-serif"}}>-{disc}%</div>
+                )}
+              </div>
+              {/* Info */}
+              <div style={{padding:"10px 12px 12px",flex:1,display:"flex",
+                flexDirection:"column",justifyContent:"space-between",gap:6}}>
+                <div>
+                  <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,
+                    color:"#FFF",lineHeight:1.25,marginBottom:3}}>{item.name}</div>
+                  {item.desc && (
+                    <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,
+                      color:"#666",lineHeight:1.4,
+                      display:"-webkit-box",WebkitLineClamp:2,
+                      WebkitBoxOrient:"vertical",overflow:"hidden"}}>{item.desc}</div>
+                  )}
+                </div>
+                <div style={{display:"flex",alignItems:"center",
+                  justifyContent:"space-between",marginTop:4}}>
+                  <div>
+                    <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:15,
+                      fontWeight:800,color:ac}}>$ {fmt(item.price)}</div>
                     {item.orig && (
-                      <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,
-                        color:"var(--cm)",textDecoration:"line-through"}}>
-                        $ {fmt(item.orig)}
-                      </span>
-                    )}
-                    {disc && (
-                      <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,
-                        fontWeight:700,color:"var(--cgr)",
-                        background:"rgba(74,154,90,.15)",
-                        padding:"2px 6px",borderRadius:4}}>-{disc}%</span>
+                      <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,
+                        color:"#555",textDecoration:"line-through"}}>$ {fmt(item.orig)}</div>
                     )}
                   </div>
-                  <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,
-                    color:"var(--cm)",lineHeight:1.4,
-                    display:"-webkit-box",WebkitLineClamp:2,
-                    WebkitBoxOrient:"vertical",overflow:"hidden"}}>{item.desc}</p>
-                </div>
-                <div style={{flexShrink:0}}>
                   {inCart===0 ? (
                     <button onClick={()=>add(item)} className="pr" style={{
-                      width:34,height:34,borderRadius:10,
-                      background:local.color||"var(--cg)",
-                      border:"none",color:"#0A0806",
-                      fontSize:20,fontWeight:700,cursor:"pointer",
-                      display:"flex",alignItems:"center",justifyContent:"center"}}>+</button>
+                      width:34,height:34,borderRadius:12,
+                      background:ac,border:"none",color:"#FFF",
+                      fontSize:22,fontWeight:700,cursor:"pointer",
+                      display:"flex",alignItems:"center",justifyContent:"center",
+                      boxShadow:`0 4px 14px ${ac}55`,
+                      touchAction:"manipulation"}}>+</button>
                   ) : (
-                    <div style={{display:"flex",flexDirection:"column",
-                      alignItems:"center",gap:4}}>
-                      <button onClick={()=>add(item)} className="pr" style={{
-                        width:30,height:30,borderRadius:8,
-                        background:local.color||"var(--cg)",
-                        border:"none",color:"#0A0806",cursor:"pointer",fontSize:17,
-                        display:"flex",alignItems:"center",justifyContent:"center"}}>+</button>
-                      <span style={{fontFamily:"'IBM Plex Mono',monospace",
-                        fontWeight:700,fontSize:14,color:"var(--cbri)"}}>{inCart}</span>
+                    <div style={{display:"flex",alignItems:"center",gap:6}}>
                       <button onClick={()=>rem(item.id)} className="pr" style={{
-                        width:30,height:30,borderRadius:8,
-                        background:"var(--cs)",border:"1px solid var(--cbr)",
-                        color:"var(--cbri)",cursor:"pointer",fontSize:17,
-                        display:"flex",alignItems:"center",justifyContent:"center"}}>−</button>
+                        width:28,height:28,borderRadius:9,
+                        background:"#2A2A2A",border:"1px solid #333",
+                        color:"#FFF",cursor:"pointer",fontSize:17,
+                        display:"flex",alignItems:"center",justifyContent:"center",
+                        touchAction:"manipulation"}}>−</button>
+                      <span style={{fontFamily:"'DM Sans',sans-serif",
+                        fontWeight:800,fontSize:14,color:ac,minWidth:14,
+                        textAlign:"center"}}>{inCart}</span>
+                      <button onClick={()=>add(item)} className="pr" style={{
+                        width:28,height:28,borderRadius:9,
+                        background:ac,border:"none",color:"#FFF",cursor:"pointer",
+                        fontSize:17,display:"flex",alignItems:"center",
+                        justifyContent:"center",touchAction:"manipulation"}}>+</button>
                     </div>
                   )}
                 </div>
@@ -1217,20 +1235,20 @@ function ClientApp({onBack, local, cats, prods}) {
           transform:"translateX(-50%)",
           width:"calc(100% - 32px)",maxWidth:398,zIndex:50}}>
           <button onClick={()=>setView("cart")} className="pr" style={{
-            width:"100%",background:local.color||"var(--cg)",
-            border:"none",borderRadius:16,padding:"15px 20px",
+            width:"100%",background:local.color||"#F97316",
+            border:"none",borderRadius:18,padding:"15px 20px",
             display:"flex",justifyContent:"space-between",alignItems:"center",
             cursor:"pointer",
-            boxShadow:"0 8px 28px rgba(201,168,76,.28)",
+            boxShadow:`0 8px 32px ${(local.color||"#F97316")}55`,
             animation:"pulseGold 2.5s infinite"}}>
-            <div style={{background:"rgba(0,0,0,.2)",borderRadius:"50%",
-              width:28,height:28,display:"flex",alignItems:"center",
-              justifyContent:"center",fontFamily:"'IBM Plex Mono',monospace",
-              fontSize:12,fontWeight:800,color:"#0A0806"}}>{cartCount}</div>
+            <div style={{background:"rgba(0,0,0,.25)",borderRadius:"50%",
+              width:30,height:30,display:"flex",alignItems:"center",
+              justifyContent:"center",fontFamily:"'DM Sans',sans-serif",
+              fontSize:13,fontWeight:800,color:"#FFF"}}>{cartCount}</div>
             <span style={{fontFamily:"'DM Sans',sans-serif",fontWeight:700,
-              fontSize:15,color:"#0A0806"}}>{T('viewOrder')}</span>
-            <span style={{fontFamily:"'IBM Plex Mono',monospace",fontWeight:800,
-              fontSize:15,color:"#0A0806"}}>$ {fmt(subTotal)}</span>
+              fontSize:16,color:"#FFF"}}>{T('viewOrder')}</span>
+            <span style={{fontFamily:"'DM Sans',sans-serif",fontWeight:800,
+              fontSize:15,color:"#FFF"}}>$ {fmt(subTotal)}</span>
           </button>
         </div>
       )}
@@ -3976,54 +3994,98 @@ export default function MenuQR({
 /* ── Landing con Auth ─────────────────────────────────────── */
 function LandingAuth({ setMode, goAdmin, authUser, onLogout }) {
   return (
-    <div style={{maxWidth:430,margin:"0 auto",minHeight:"100vh",background:"#060810",
-      display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:28}}>
-      <div style={{textAlign:"center",marginBottom:44,animation:"fadeUp .6s ease both"}}>
-        <div style={{width:72,height:72,borderRadius:22,
-          background:"linear-gradient(135deg,#1A1408,rgba(201,168,76,.35))",
-          border:"1px solid rgba(201,168,76,.35)",
+    <div style={{maxWidth:430,margin:"0 auto",minHeight:"100vh",background:"#0D0D0D",
+      display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
+      padding:28,position:"relative",overflow:"hidden"}}>
+      {/* Decorative blobs */}
+      <div style={{position:"absolute",top:-80,right:-60,width:260,height:260,
+        borderRadius:"50%",background:"rgba(249,115,22,.07)",pointerEvents:"none"}}/>
+      <div style={{position:"absolute",bottom:-60,left:-60,width:200,height:200,
+        borderRadius:"50%",background:"rgba(249,115,22,.04)",pointerEvents:"none"}}/>
+
+      <div style={{textAlign:"center",marginBottom:48,animation:"fadeUp .6s ease both",position:"relative"}}>
+        {/* Logo */}
+        <div style={{width:80,height:80,borderRadius:26,
+          background:"linear-gradient(135deg,#F97316,#FB923C)",
           display:"flex",alignItems:"center",justifyContent:"center",
-          fontSize:36,margin:"0 auto 20px"}}>🍽️</div>
-        <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:"#C9A84C",letterSpacing:3,marginBottom:8}}>MENUQR</p>
-        <h1 style={{fontFamily:"'Playfair Display',serif",fontSize:32,fontWeight:900,color:"#EDE0C8",lineHeight:1.1,marginBottom:8}}>
+          fontSize:38,margin:"0 auto 22px",
+          boxShadow:"0 12px 40px rgba(249,115,22,.35)"}}>🍽️</div>
+        <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,color:"#F97316",
+          letterSpacing:4,fontWeight:700,marginBottom:10}}>MENUQR</p>
+        <h1 style={{fontFamily:"'DM Sans',sans-serif",fontSize:34,fontWeight:800,
+          color:"#FFF",lineHeight:1.1,marginBottom:10}}>
           {authUser ? "Bienvenido" : "Carta Digital"}
         </h1>
         {authUser
-          ? <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"#5A4A30"}}>{authUser.email}</p>
-          : <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"#5A4A30"}}>Seleccioná la vista que querés explorar</p>
+          ? <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"#555"}}>{authUser.email}</p>
+          : <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"#555"}}>Explorá tu restaurante</p>
         }
       </div>
-      <div style={{width:"100%",display:"flex",flexDirection:"column",gap:12,animation:"fadeUp .6s ease .12s both"}}>
+
+      <div style={{width:"100%",display:"flex",flexDirection:"column",gap:14,
+        animation:"fadeUp .6s ease .12s both",position:"relative"}}>
+        {/* Carta */}
         <button onClick={()=>setMode("client")} className="pr" style={{
-          background:"linear-gradient(135deg,#1A140A,#241A0E)",border:"1px solid #C9A84C33",
-          borderRadius:18,padding:"20px 22px",display:"flex",alignItems:"center",gap:16,cursor:"pointer",textAlign:"left"}}>
-          <div style={{width:50,height:50,borderRadius:14,background:"#C9A84C14",border:"1px solid #C9A84C33",display:"flex",alignItems:"center",justifyContent:"center",fontSize:26,flexShrink:0}}>📱</div>
+          background:"linear-gradient(135deg,#1A1A1A,#222)",
+          border:"1px solid #2D2D2D",
+          borderRadius:22,padding:"22px 24px",
+          display:"flex",alignItems:"center",gap:18,
+          cursor:"pointer",textAlign:"left",
+          transition:"border-color .2s, box-shadow .2s"}}
+          onMouseEnter={e=>{e.currentTarget.style.borderColor="#F97316";e.currentTarget.style.boxShadow="0 0 24px rgba(249,115,22,.15)"}}
+          onMouseLeave={e=>{e.currentTarget.style.borderColor="#2D2D2D";e.currentTarget.style.boxShadow="none"}}>
+          <div style={{width:54,height:54,borderRadius:16,
+            background:"linear-gradient(135deg,#F97316,#FB923C)",
+            display:"flex",alignItems:"center",justifyContent:"center",
+            fontSize:28,flexShrink:0,boxShadow:"0 6px 20px rgba(249,115,22,.3)"}}>📱</div>
           <div style={{flex:1}}>
-            <p style={{fontFamily:"'Outfit',sans-serif",fontWeight:700,fontSize:16,color:"#EDE0C8",marginBottom:4}}>Ver la carta</p>
-            <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"#5A6A80"}}>Vista del cliente al escanear el QR</p>
+            <p style={{fontFamily:"'DM Sans',sans-serif",fontWeight:700,fontSize:17,
+              color:"#FFF",marginBottom:5}}>Ver la carta</p>
+            <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"#555"}}>
+              Vista del cliente al escanear el QR
+            </p>
           </div>
-          <span style={{color:"#C9A84C",fontSize:20}}>→</span>
+          <span style={{color:"#F97316",fontSize:22,fontWeight:300}}>›</span>
         </button>
+
+        {/* Admin */}
         <button onClick={goAdmin} className="pr" style={{
-          background:"linear-gradient(135deg,#080C14,#0C1420)",border:"1px solid #00FF8833",
-          borderRadius:18,padding:"20px 22px",display:"flex",alignItems:"center",gap:16,cursor:"pointer",textAlign:"left"}}>
-          <div style={{width:50,height:50,borderRadius:14,background:"#00FF8814",border:"1px solid #00FF8833",display:"flex",alignItems:"center",justifyContent:"center",fontSize:26,flexShrink:0}}>⚙️</div>
+          background:"linear-gradient(135deg,#0F1520,#131C2A)",
+          border:"1px solid #1E2A3A",
+          borderRadius:22,padding:"22px 24px",
+          display:"flex",alignItems:"center",gap:18,
+          cursor:"pointer",textAlign:"left",
+          transition:"border-color .2s, box-shadow .2s"}}
+          onMouseEnter={e=>{e.currentTarget.style.borderColor="#00FF88";e.currentTarget.style.boxShadow="0 0 24px rgba(0,255,136,.1)"}}
+          onMouseLeave={e=>{e.currentTarget.style.borderColor="#1E2A3A";e.currentTarget.style.boxShadow="none"}}>
+          <div style={{width:54,height:54,borderRadius:16,
+            background:"linear-gradient(135deg,#003322,#004433)",
+            border:"1px solid rgba(0,255,136,.2)",
+            display:"flex",alignItems:"center",justifyContent:"center",
+            fontSize:28,flexShrink:0}}>⚙️</div>
           <div style={{flex:1}}>
-            <p style={{fontFamily:"'Outfit',sans-serif",fontWeight:700,fontSize:16,color:"#EDE0C8",marginBottom:4}}>Panel del dueño</p>
-            <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"#5A6A80"}}>
+            <p style={{fontFamily:"'DM Sans',sans-serif",fontWeight:700,fontSize:17,
+              color:"#FFF",marginBottom:5}}>Panel del dueño</p>
+            <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"#4A6080"}}>
               {authUser ? "Pedidos, carta, QRs, caja y gestión" : "Iniciar sesión para acceder"}
             </p>
           </div>
-          <span style={{color:"#00FF88",fontSize:20}}>→</span>
+          <span style={{color:"#00FF88",fontSize:22,fontWeight:300}}>›</span>
         </button>
       </div>
+
       {authUser && (
-        <button onClick={onLogout} style={{marginTop:20,background:"none",border:"1px solid #1A2230",borderRadius:8,
-          padding:"7px 18px",color:"#4A6080",cursor:"pointer",fontSize:".8rem",fontFamily:"Outfit,sans-serif"}}>
+        <button onClick={onLogout} style={{marginTop:22,background:"none",
+          border:"1px solid #222",borderRadius:10,
+          padding:"8px 20px",color:"#444",cursor:"pointer",
+          fontSize:12,fontFamily:"'DM Sans',sans-serif",transition:"color .2s"}}
+          onMouseEnter={e=>e.currentTarget.style.color="#888"}
+          onMouseLeave={e=>e.currentTarget.style.color="#444"}>
           Cerrar sesión
         </button>
       )}
-      <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:"#1A2A40",marginTop:24,letterSpacing:1}}>MENUQR · v1.0</p>
+      <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:9,color:"#222",
+        marginTop:28,letterSpacing:2}}>MENUQR · v1.0</p>
     </div>
   );
 }
