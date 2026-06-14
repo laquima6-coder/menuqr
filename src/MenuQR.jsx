@@ -1117,7 +1117,8 @@ function ClientApp({onBack, local, cats, prods}) {
               color:activeCat===cat.id?"#0A0806":"var(--cm)",
               border:`1px solid ${activeCat===cat.id?local.color||"var(--cg)":"var(--cbr)"}`,
               borderRadius:20,padding:"7px 16px",
-              cursor:"pointer",whiteSpace:"nowrap",flexShrink:0,transition:"all .2s"}}>
+              cursor:"pointer",whiteSpace:"nowrap",flexShrink:0,transition:"all .2s",
+              touchAction:"manipulation",WebkitTapHighlightColor:"transparent"}}>
               {cat.icon} {tCat(cat.label,lang)}
             </button>
           ))}
