@@ -1544,6 +1544,8 @@ function QRTabComp({ mesaNum, setMesaNum, qrType, setQrType, promoUrl, setPromoU
         return `https://wa.me/${local.whatsapp}?text=${encodeURIComponent(local.whatsapp_msg||'')}`;
       case "promo":
         return promoUrl || `https://${local.baseUrl}/promo`;
+      case "vitrina":
+        return `https://${(local.baseUrl||'').replace(/^https?:\/\//,'')}/vitrina`;
       default:
         return `https://${local.baseUrl}`;
     }
@@ -1553,6 +1555,7 @@ function QRTabComp({ mesaNum, setMesaNum, qrType, setQrType, promoUrl, setPromoU
     {id:"wifi",     icon:"📶", label:"WiFi",     desc:"El cliente se conecta al escanear",   color:"#10B981", bg:"#F0FFF4"},
     {id:"whatsapp", icon:"💬", label:"WhatsApp", desc:"Abre WA directo con tu número",       color:"#25D366", bg:"#F0FFF0"},
     {id:"promo",    icon:"🔥", label:"Promo",    desc:"QR para un producto o promo especial",color:"#EF4444", bg:"#FFF0F0"},
+    {id:"vitrina",  icon:"🪟", label:"Vitrina",  desc:"Carta completa para la entrada/vidrio",color:"#8B5CF6", bg:"#F5F3FF"},
   ];
   const current = QR_TYPES.find(t=>t.id===qrType);
   return (
@@ -1651,27 +1654,45 @@ function QRTabComp({ mesaNum, setMesaNum, qrType, setQrType, promoUrl, setPromoU
             </p>
           </div>
         )}
+        {qrType==="vitrina" && (
+          <div>
+            <ALbl color={current.color}>QR Vitrina — Carta de entrada</ALbl>
+            <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"var(--at)",
+              lineHeight:1.5,marginBottom:10}}>
+              Pegá este QR en la puerta o vidrio del local. El cliente lo escanea y ve
+              toda la carta con instrucciones para pedir desde su mesa o en el mostrador.
+            </p>
+            <div style={{background:"rgba(139,92,246,.08)",border:"1px solid rgba(139,92,246,.2)",
+              borderRadius:10,padding:"10px 14px"}}>
+              <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,
+                color:"#8B5CF6",letterSpacing:.5,marginBottom:4}}>URL GENERADA</p>
+              <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:11,
+                color:"var(--abri)",wordBreak:"break-all"}}>{getQRData()}</p>
+            </div>
+          </div>
+        )}
       </div>
       {/* QR Preview */}
-      <div style={{background:current.bg,borderRadius:20,padding:"20px 16px",
+      <div style={{background:current.bg,borderRadius:20,padding:"24px 16px",
         marginBottom:16,textAlign:"center",border:`2px solid ${current.color}`,
         boxShadow:`0 4px 24px rgba(0,0,0,.3)`}}>
         <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,
-          color:current.color,letterSpacing:2.5,textTransform:"uppercase",marginBottom:6}}>
+          color:current.color,letterSpacing:2.5,textTransform:"uppercase",marginBottom:8}}>
           {local.nombre}
         </p>
-        <div style={{background:"#fff",borderRadius:12,padding:8,
-          border:`3px solid ${current.color}`,display:"inline-block",marginBottom:10}}>
+        <div style={{background:"#fff",borderRadius:14,padding:10,
+          border:`3px solid ${current.color}`,display:"inline-block",marginBottom:12}}>
           <img src={qrBuild(getQRData(), current.bg.replace("#",""))}
-            width={160} height={160} alt="QR preview"
-            style={{display:"block",borderRadius:6}}/>
+            width={210} height={210} alt="QR preview"
+            style={{display:"block",borderRadius:8}}/>
         </div>
         <div style={{background:current.color,borderRadius:30,
-          padding:"5px 20px",display:"inline-block",marginBottom:6}}>
-          <p style={{fontFamily:"'Outfit',sans-serif",fontSize:14,fontWeight:700,color:"#0A0806"}}>
+          padding:"6px 24px",display:"inline-block",marginBottom:6}}>
+          <p style={{fontFamily:"'Outfit',sans-serif",fontSize:15,fontWeight:700,color:"#0A0806"}}>
             {qrType==="mesa"?`Mesa ${mesaNum}`:
              qrType==="wifi"?"WiFi Gratis":
              qrType==="whatsapp"?"Escribinos por WA":
+             qrType==="vitrina"?"Ver la Carta":
              "Promo Especial"}
           </p>
         </div>
@@ -4336,6 +4357,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
           orig:    form.orig?Number(form.orig):null,
           emoji:   form.emoji||"🍽️",
           tag:     form.tag||null,
+          foto_url: form.foto_url||null,
           active:  form.active!==false,
           orden:   form.orden||0,
         };
@@ -4383,6 +4405,27 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
             style={{width:"100%",background:"var(--gb)",border:"1px solid var(--gbr)",
               borderRadius:10,padding:"11px 14px",color:"var(--gbri)",fontSize:14,
               resize:"none",height:68,marginBottom:14}}/>
+
+          <GLbl>Foto del producto <span style={{color:"var(--gd)",fontWeight:400}}>(URL · opcional)</span></GLbl>
+          <div style={{display:"flex",alignItems:"center",background:"var(--gb)",
+            border:"1px solid var(--gbr)",borderRadius:10,overflow:"hidden",
+            marginBottom:form.foto_url?8:14}}>
+            <span style={{padding:"0 10px",fontFamily:"'IBM Plex Mono',monospace",
+              fontSize:11,color:"var(--gd)",borderRight:"1px solid var(--gbr)",
+              height:42,display:"flex",alignItems:"center",flexShrink:0}}>🖼️</span>
+            <input value={form.foto_url||""} onChange={e=>setForm("foto_url",e.target.value)}
+              placeholder="https://..."
+              style={{flex:1,background:"none",border:"none",padding:"11px 12px",
+                color:"var(--gbri)",fontFamily:"'IBM Plex Mono',monospace",fontSize:12}}/>
+          </div>
+          {form.foto_url && (
+            <div style={{marginBottom:14,borderRadius:10,overflow:"hidden",
+              border:"1px solid var(--gbr)",maxHeight:100}}>
+              <img src={form.foto_url} alt="preview"
+                style={{width:"100%",height:100,objectFit:"cover",display:"block"}}
+                onError={e=>{e.target.style.display="none";}}/>
+            </div>
+          )}
 
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:14}}>
             <div>
