@@ -158,30 +158,49 @@ export const INIT_LOCAL = {
 };
 
 export const INIT_CATS = [
-  {id:"dest",  label:"Destacados",  icon:"✦", activa:true},
-  {id:"promo", label:"Promos",      icon:"◈", activa:true},
-  {id:"ent",   label:"Entradas",    icon:"◇", activa:true},
-  {id:"pri",   label:"Principales", icon:"◉", activa:true},
-  {id:"pos",   label:"Postres",     icon:"◌", activa:true},
-  {id:"beb",   label:"Bebidas",     icon:"◎", activa:true},
+  {id:"mundo",  label:"Panchos del Mundo", icon:"🌍", activa:true},
+  {id:"clasico",label:"Clásicos",          icon:"⭐", activa:true},
+  {id:"combo",  label:"Combos",            icon:"🔥", activa:true},
+  {id:"beb",    label:"Bebidas",           icon:"🥤", activa:true},
 ];
 
 export const INIT_PRODS = [
-  {id:1, cat:"dest", name:"Ojo de Bife Madurado",   price:8200, orig:null,  desc:"60 días de maduración. Papas rústicas y chimichurri.", tag:"CHEF",  emoji:"🥩", active:true},
-  {id:2, cat:"dest", name:"Pasta Fresca al Tartufo", price:5600, orig:null,  desc:"Tagliatelle a mano, crema de trufa negra, parmesano.",  tag:"NUEVO", emoji:"🍝", active:true},
-  {id:3, cat:"dest", name:"Burrata con Tomates",     price:3800, orig:null,  desc:"Burrata fresca, tomates cherry, albahaca y EVOO.",      tag:null,    emoji:"🧀", active:true},
-  {id:4, cat:"promo",name:"Combo Parrilla para 2",   price:12400,orig:16000, desc:"Vacío+morcilla+chorizo+2 guarniciones+sangría.",         tag:"−22%",  emoji:"🔥", active:true},
-  {id:5, cat:"promo",name:"Menú Mediodía",           price:4200, orig:6000,  desc:"Entrada+principal+postre+bebida. L-V hasta 15hs.",       tag:"−30%",  emoji:"☀️", active:true},
-  {id:6, cat:"ent",  name:"Provoleta Especial",      price:2600, orig:null,  desc:"A la plancha, orégano fresco y ajo negro.",              tag:null,    emoji:"🫕", active:true},
-  {id:7, cat:"ent",  name:"Tabla de Fiambres",       price:4400, orig:null,  desc:"Selección artesanal, pickles y pan de masa madre.",      tag:null,    emoji:"🪵", active:true},
-  {id:8, cat:"pri",  name:"Bife de Chorizo",         price:6800, orig:null,  desc:"400g con papas rústicas y chimichurri.",                 tag:null,    emoji:"🥩", active:true},
-  {id:9, cat:"pri",  name:"Milanesa Napolitana",     price:5400, orig:null,  desc:"Con salsa napolitana, jamón y mozzarella.",              tag:null,    emoji:"🍖", active:true},
-  {id:10,cat:"pri",  name:"Risotto de Hongos",       price:4800, orig:null,  desc:"Carnaroli, hongos silvestres, parmesano.",               tag:"VEG",   emoji:"🍄", active:true},
-  {id:11,cat:"pos",  name:"Tiramisú Casero",         price:2400, orig:null,  desc:"Mascarpone, espresso y cacao.",                         tag:null,    emoji:"🍮", active:true},
-  {id:12,cat:"pos",  name:"Helado Artesanal",        price:2000, orig:null,  desc:"3 bochas a elección del día.",                          tag:null,    emoji:"🍨", active:true},
-  {id:13,cat:"beb",  name:"Cerveza Artesanal",       price:1600, orig:null,  desc:"Rubia o roja. Chopera 500ml.",                          tag:null,    emoji:"🍺", active:true},
-  {id:14,cat:"beb",  name:"Sangría de la Casa",      price:2200, orig:null,  desc:"Jarra individual, vino tinto y frutas.",                tag:null,    emoji:"🍷", active:true},
-  {id:15,cat:"beb",  name:"Limonada Artesanal",      price:1400, orig:null,  desc:"Limón, jengibre y menta.",                              tag:null,    emoji:"🍋", active:true},
+  // ── Panchos del Mundo ──
+  {id:1,  cat:"mundo",  name:"Chicago Dog",    price:3200, orig:null,  pais:"Estados Unidos", emoji:"🇺🇸", active:true,
+   desc:"El rey de Wrigley Field. Mostaza amarilla, pepinillos, cebolla morada, tomate fresco, chile sport y sal de apio sobre pan de amapola. En Chicago, el ketchup está prohibido."},
+  {id:2,  cat:"mundo",  name:"Frankfurt",      price:3400, orig:null,  pais:"Alemania",       emoji:"🇩🇪", active:true,
+   desc:"La original alemana. Salchicha ahumada con mostaza dulce bávara, chucrut tierno y pan tipo pretzel. Así se come en la Oktoberfest desde 1870."},
+  {id:3,  cat:"mundo",  name:"Porteño",        price:2800, orig:null,  pais:"Argentina",      emoji:"🇦🇷", active:true,
+   desc:"El nuestro, pero elevado. Chimichurri casero, papas fritas crocantes, mayonesa y limón. El sabor del asado en formato pancho."},
+  {id:4,  cat:"mundo",  name:"Sonora",         price:3600, orig:null,  pais:"México",         emoji:"🇲🇽", active:true,
+   desc:"El pancho más picante del mundo. Envuelto en bacon crocante, cargado de jalapeños, tomate, mayo y mostaza. Inspirado en los street dogs de Hermosillo."},
+  {id:5,  cat:"mundo",  name:"Romano",         price:3500, orig:null,  pais:"Italia",         emoji:"🇮🇹", active:true,
+   desc:"Mozzarella derretida, salsa marinara, albahaca fresca y un hilo de aceite de oliva extravirgen. Como una pizza, pero en pancho."},
+  {id:6,  cat:"mundo",  name:"Carioca",        price:3300, orig:null,  pais:"Brasil",         emoji:"🇧🇷", active:true,
+   desc:"Vinagrete fresco, queso prato derretido y una lluvia de farofa crocante. El pancho favorito de los puestos de Copacabana."},
+  {id:7,  cat:"mundo",  name:"Parisiense",     price:3800, orig:null,  pais:"Francia",        emoji:"🇫🇷", active:true,
+   desc:"Brie cremoso, cebolla caramelizada lentamente y mostaza de Dijon sobre pan tipo baguette. Elegante y directo, como la cocina francesa."},
+  {id:8,  cat:"mundo",  name:"Tokio Dog",      price:3900, orig:null,  pais:"Japón",          emoji:"🇯🇵", active:true,
+   desc:"Salsa teriyaki brillante, alga nori en tiras, semillas de sésamo tostado y mayonesa Kewpie japonesa. El umami en cada bocado."},
+  // ── Clásicos ──
+  {id:9,  cat:"clasico",name:"Completo Simple",price:1800, orig:null,  pais:null, emoji:"🌭", active:true,
+   desc:"Pan, salchicha, mostaza, ketchup y mayonesa. El de siempre, siempre bien."},
+  {id:10, cat:"clasico",name:"Con Todo",       price:2200, orig:null,  pais:null, emoji:"🌭", active:true,
+   desc:"Salchicha, mayonesa, ketchup, mostaza, chucrut, queso rallado y jalapeños. Sin vueltas."},
+  {id:11, cat:"clasico",name:"Cheesedog",      price:2400, orig:null,  pais:null, emoji:"🧀", active:true,
+   desc:"Doble queso cheddar derretido sobre salchicha grillada. Pan tostado con manteca. Simple y poderoso."},
+  // ── Combos ──
+  {id:12, cat:"combo",  name:"Combo Dúo",      price:5500, orig:7000,  pais:null, emoji:"🔥", active:true, tag:"−21%",
+   desc:"2 panchos a elección + 2 bebidas. El combo para compartir. Elegís los países."},
+  {id:13, cat:"combo",  name:"Combo Mundial",  price:8500, orig:11000, pais:null, emoji:"🌍", active:true, tag:"−23%",
+   desc:"4 panchos del mundo a tu elección + 2 bebidas + papas fritas. La vuelta al mundo en una mesa."},
+  // ── Bebidas ──
+  {id:14, cat:"beb",    name:"Gaseosa",        price:800,  orig:null,  pais:null, emoji:"🥤", active:true,
+   desc:"Coca-Cola, Sprite o Fanta. Lata 354ml bien fría."},
+  {id:15, cat:"beb",    name:"Agua Mineral",   price:600,  orig:null,  pais:null, emoji:"💧", active:true,
+   desc:"Con o sin gas. 500ml."},
+  {id:16, cat:"beb",    name:"Cerveza",        price:1400, orig:null,  pais:null, emoji:"🍺", active:true,
+   desc:"Lata 473ml. Rubia o negra."},
 ];
 
 const INIT_ORDERS = []; // Pedidos reales vienen de Supabase en tiempo real
@@ -1151,47 +1170,94 @@ function ClientApp({onBack, local, cats, prods}) {
           const inCart = cart[item.id]?.qty || 0;
           const disc   = item.orig ? Math.round((1-item.price/item.orig)*100) : null;
           const ac     = local.color||"#F97316";
+
+          /* Colores de bandera por país */
+          const FLAG_COLORS = {
+            "Estados Unidos": ["#B22234","#3C3B6E"],
+            "Alemania":       ["#DD0000","#FFCE00"],
+            "Argentina":      ["#74ACDF","#4E87C2"],
+            "México":         ["#006847","#CE1126"],
+            "Italia":         ["#009246","#CE2B37"],
+            "Brasil":         ["#009C3B","#FFDF00"],
+            "Francia":        ["#002395","#ED2939"],
+            "Japón":          ["#BC002D","#E8B4BC"],
+            "España":         ["#AA151B","#F1BF00"],
+            "Rusia":          ["#003087","#D52B1E"],
+          };
+          const fc = item.pais ? FLAG_COLORS[item.pais] : null;
+          const headerBg = fc
+            ? `linear-gradient(135deg, ${fc[0]}CC 0%, ${fc[1]}CC 100%)`
+            : `linear-gradient(135deg,#222,#1A1A1A)`;
+
           return (
             <div key={item.id} className="ci" style={{
               background:"#1A1A1A",
-              border:`2px solid ${inCart>0?ac:"#272727"}`,
+              border:`2px solid ${inCart>0 ? ac : (fc ? fc[0]+"44" : "#272727")}`,
               borderRadius:20,overflow:"hidden",
               transition:"border-color .25s",
-              display:"flex",flexDirection:"column"}}>
-              {/* Imagen / emoji */}
+              display:"flex",flexDirection:"column",
+              boxShadow: inCart>0 ? `0 0 16px ${ac}33` : "none",
+            }}>
+
+              {/* Header — bandera o emoji */}
               <div style={{
-                background:`linear-gradient(135deg,#222,#1A1A1A)`,
-                height:110,
-                display:"flex",alignItems:"center",justifyContent:"center",
-                fontSize:52,position:"relative"}}>
-                {item.emoji||"🍽️"}
+                background: headerBg,
+                minHeight: item.pais ? 100 : 90,
+                display:"flex",flexDirection:"column",
+                alignItems:"center",justifyContent:"center",
+                position:"relative",padding:"8px 8px 6px",
+              }}>
+                {/* Overlay oscuro para legibilidad */}
+                {fc && <div style={{position:"absolute",inset:0,
+                  background:"rgba(0,0,0,.28)",pointerEvents:"none"}}/>}
+
+                {/* Emoji / bandera grande */}
+                <span style={{fontSize:item.pais?42:48,
+                  position:"relative",zIndex:1,lineHeight:1,
+                  filter:item.pais?"drop-shadow(0 2px 6px rgba(0,0,0,.5))":"none"}}>
+                  {item.emoji||"🌭"}
+                </span>
+
+                {/* Nombre del país */}
+                {item.pais && (
+                  <span style={{
+                    position:"relative",zIndex:1,
+                    fontFamily:"'DM Sans',sans-serif",fontSize:9,fontWeight:700,
+                    color:"rgba(255,255,255,.9)",letterSpacing:1.5,
+                    textTransform:"uppercase",marginTop:5,
+                    textShadow:"0 1px 3px rgba(0,0,0,.6)",
+                  }}>{item.pais}</span>
+                )}
+
+                {/* Badges */}
                 {item.tag && (
-                  <div style={{position:"absolute",top:8,right:8}}>
+                  <div style={{position:"absolute",top:7,right:7,zIndex:2}}>
                     <Tag tag={item.tag}/>
                   </div>
                 )}
                 {disc && (
-                  <div style={{position:"absolute",top:8,left:8,
+                  <div style={{position:"absolute",top:7,left:7,zIndex:2,
                     background:"#22C55E",color:"#FFF",borderRadius:6,
                     fontSize:9,fontWeight:800,padding:"2px 6px",
                     fontFamily:"'DM Sans',sans-serif"}}>-{disc}%</div>
                 )}
               </div>
+
               {/* Info */}
               <div style={{padding:"10px 12px 12px",flex:1,display:"flex",
                 flexDirection:"column",justifyContent:"space-between",gap:6}}>
                 <div>
                   <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,
-                    color:"#FFF",lineHeight:1.25,marginBottom:3}}>{item.name}</div>
+                    color:"#FFF",lineHeight:1.25,marginBottom:4}}>{item.name}</div>
                   {item.desc && (
                     <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,
-                      color:"#666",lineHeight:1.4,
-                      display:"-webkit-box",WebkitLineClamp:2,
+                      color:"#777",lineHeight:1.5,
+                      display:"-webkit-box",WebkitLineClamp:3,
                       WebkitBoxOrient:"vertical",overflow:"hidden"}}>{item.desc}</div>
                   )}
                 </div>
                 <div style={{display:"flex",alignItems:"center",
-                  justifyContent:"space-between",marginTop:4}}>
+                  justifyContent:"space-between",marginTop:6}}>
                   <div>
                     <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:15,
                       fontWeight:800,color:ac}}>$ {fmt(item.price)}</div>
@@ -1207,7 +1273,7 @@ function ClientApp({onBack, local, cats, prods}) {
                       padding:"6px 10px",whiteSpace:"nowrap"}}>Sin stock</span>
                   ) : inCart===0 ? (
                     <button onClick={()=>add(item)} className="pr" style={{
-                      width:34,height:34,borderRadius:12,
+                      width:36,height:36,borderRadius:12,
                       background:ac,border:"none",color:"#FFF",
                       fontSize:22,fontWeight:700,cursor:"pointer",
                       display:"flex",alignItems:"center",justifyContent:"center",
@@ -1216,7 +1282,7 @@ function ClientApp({onBack, local, cats, prods}) {
                   ) : (
                     <div style={{display:"flex",alignItems:"center",gap:6}}>
                       <button onClick={()=>rem(item.id)} className="pr" style={{
-                        width:28,height:28,borderRadius:9,
+                        width:30,height:30,borderRadius:9,
                         background:"#2A2A2A",border:"1px solid #333",
                         color:"#FFF",cursor:"pointer",fontSize:17,
                         display:"flex",alignItems:"center",justifyContent:"center",
@@ -1225,7 +1291,7 @@ function ClientApp({onBack, local, cats, prods}) {
                         fontWeight:800,fontSize:14,color:ac,minWidth:14,
                         textAlign:"center"}}>{inCart}</span>
                       <button onClick={()=>add(item)} className="pr" style={{
-                        width:28,height:28,borderRadius:9,
+                        width:30,height:30,borderRadius:9,
                         background:ac,border:"none",color:"#FFF",cursor:"pointer",
                         fontSize:17,display:"flex",alignItems:"center",
                         justifyContent:"center",touchAction:"manipulation"}}>+</button>
