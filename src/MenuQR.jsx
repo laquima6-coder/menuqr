@@ -4536,7 +4536,7 @@ export default function MenuQR({
         getProductos(rest.id),
       ]);
       if (categorias.length) setCats(categorias.map(c => ({ id:c.id, label:c.label, icon:c.icon, activa:c.activa })));
-      if (productos.length)  setProds(productos.map(p => ({ id:p.id, cat:p.categoria_id, name:p.name, desc:p.desc, price:p.price, orig:p.orig, emoji:p.emoji, tag:p.tag, active:p.active })));
+      if (productos.length)  setProds(productos.map(p => ({ id:p.id, cat:p.categoria_id, name:p.name, desc:p.desc, price:p.price, orig:p.orig, emoji:p.emoji, tag:p.tag, active:p.active, pais:p.pais||null, sin_stock:p.sin_stock||false })));
     } catch(e) { console.error("loadRestaurantData:", e); }
   }
 
@@ -4630,62 +4630,4 @@ function LandingAuth({ setMode, goAdmin, authUser, onLogout }) {
           border:"1px solid #2D2D2D",
           borderRadius:22,padding:"22px 24px",
           display:"flex",alignItems:"center",gap:18,
-          cursor:"pointer",textAlign:"left",
-          transition:"border-color .2s, box-shadow .2s"}}
-          onMouseEnter={e=>{e.currentTarget.style.borderColor="#F97316";e.currentTarget.style.boxShadow="0 0 24px rgba(249,115,22,.15)"}}
-          onMouseLeave={e=>{e.currentTarget.style.borderColor="#2D2D2D";e.currentTarget.style.boxShadow="none"}}>
-          <div style={{width:54,height:54,borderRadius:16,
-            background:"linear-gradient(135deg,#F97316,#FB923C)",
-            display:"flex",alignItems:"center",justifyContent:"center",
-            fontSize:28,flexShrink:0,boxShadow:"0 6px 20px rgba(249,115,22,.3)"}}>📱</div>
-          <div style={{flex:1}}>
-            <p style={{fontFamily:"'DM Sans',sans-serif",fontWeight:700,fontSize:17,
-              color:"#FFF",marginBottom:5}}>Ver la carta</p>
-            <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"#555"}}>
-              Vista del cliente al escanear el QR
-            </p>
-          </div>
-          <span style={{color:"#F97316",fontSize:22,fontWeight:300}}>›</span>
-        </button>
-
-        {/* Admin */}
-        <button onClick={goAdmin} className="pr" style={{
-          background:"linear-gradient(135deg,#0F1520,#131C2A)",
-          border:"1px solid #1E2A3A",
-          borderRadius:22,padding:"22px 24px",
-          display:"flex",alignItems:"center",gap:18,
-          cursor:"pointer",textAlign:"left",
-          transition:"border-color .2s, box-shadow .2s"}}
-          onMouseEnter={e=>{e.currentTarget.style.borderColor="#00FF88";e.currentTarget.style.boxShadow="0 0 24px rgba(0,255,136,.1)"}}
-          onMouseLeave={e=>{e.currentTarget.style.borderColor="#1E2A3A";e.currentTarget.style.boxShadow="none"}}>
-          <div style={{width:54,height:54,borderRadius:16,
-            background:"linear-gradient(135deg,#003322,#004433)",
-            border:"1px solid rgba(0,255,136,.2)",
-            display:"flex",alignItems:"center",justifyContent:"center",
-            fontSize:28,flexShrink:0}}>⚙️</div>
-          <div style={{flex:1}}>
-            <p style={{fontFamily:"'DM Sans',sans-serif",fontWeight:700,fontSize:17,
-              color:"#FFF",marginBottom:5}}>Panel del dueño</p>
-            <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"#4A6080"}}>
-              {authUser ? "Pedidos, carta, QRs, caja y gestión" : "Iniciar sesión para acceder"}
-            </p>
-          </div>
-          <span style={{color:"#00FF88",fontSize:22,fontWeight:300}}>›</span>
-        </button>
-      </div>
-
-      {authUser && (
-        <button onClick={onLogout} style={{marginTop:22,background:"none",
-          border:"1px solid #222",borderRadius:10,
-          padding:"8px 20px",color:"#444",cursor:"pointer",
-          fontSize:12,fontFamily:"'DM Sans',sans-serif",transition:"color .2s"}}
-          onMouseEnter={e=>e.currentTarget.style.color="#888"}
-          onMouseLeave={e=>e.currentTarget.style.color="#444"}>
-          Cerrar sesión
-        </button>
-      )}
-      <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:9,color:"#222",
-        marginTop:28,letterSpacing:2}}>MENUQR · v1.0</p>
-    </div>
-  );
-}
+          cursor:"pointer",te
