@@ -692,6 +692,10 @@ function ClientApp({onBack, local, cats, prods}) {
   const [note,setNote]   = useState("");
   const [tipPct,setTipPct] = useState(null); // null | 0 | 10 | 15 | 20
   const [tipCustom,setTC]  = useState("");
+  const [showSolicitudes, setShowSolicitudes] = useState(false);
+  const [solicEnviada, setSolicEnviada]       = useState(null);
+  const [showDividir, setShowDividir]         = useState(false);
+  const [dividirN, setDividirN]               = useState(2);
   const [lang,setLang]     = useState(()=>localStorage.getItem("menuqr_lang")||"es");
   const T = (key) => t(key,lang);
   const changeLang = (code) => { setLang(code); localStorage.setItem("menuqr_lang",code); };
@@ -732,6 +736,19 @@ function ClientApp({onBack, local, cats, prods}) {
   const reset = () => {
     setCart({}); setView("menu"); setPay(null);
     setNote(""); setTipPct(null); setTC("");
+  };
+
+  const sendSolicitud = async (tipo) => {
+    setSolicEnviada(tipo);
+    setTimeout(()=>setSolicEnviada(null), 3000);
+    if(!supabase || !local.restauranteId) return;
+    try {
+      await supabase.from("solicitudes").insert({
+        restaurante_id: local.restauranteId,
+        mesa: String(local.mesa||"Mostrador"),
+        tipo, estado:"pendiente",
+      });
+    } catch(e){ console.warn("solicitud err:", e.message); }
   };
 
   const Tag = ({tag}) => {
@@ -967,6 +984,51 @@ function ClientApp({onBack, local, cats, prods}) {
           ))}
         </div>
       </div>
+
+      {/* Dividir cuenta */}
+      {subTotal>0 && (
+        <div style={{margin:"0 16px 10px",background:"var(--cc)",
+          border:"1px solid var(--cbr)",borderRadius:16,overflow:"hidden"}}>
+          <button onClick={()=>setShowDividir(s=>!s)} style={{
+            width:"100%",background:"none",border:"none",padding:"13px 16px",
+            display:"flex",justifyContent:"space-between",alignItems:"center",
+            cursor:"pointer",color:"var(--cbri)"}}>
+            <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:600,
+              display:"flex",alignItems:"center",gap:8}}>
+              <span style={{fontSize:16}}>÷</span> Dividir la cuenta
+            </span>
+            <span style={{color:"var(--cm)",fontSize:12}}>{showDividir?"▲":"▼"}</span>
+          </button>
+          {showDividir && (
+            <div style={{padding:"0 16px 14px",borderTop:"1px solid var(--cbr)"}}>
+              <div style={{display:"flex",alignItems:"center",gap:12,margin:"10px 0"}}>
+                <button onClick={()=>setDividirN(n=>Math.max(2,n-1))} style={{
+                  width:34,height:34,borderRadius:10,background:"var(--cs)",
+                  border:"1px solid var(--cbr)",color:"var(--cbri)",
+                  fontSize:20,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>−</button>
+                <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:22,
+                  fontWeight:700,color:"var(--cg)",flex:1,textAlign:"center"}}>
+                  {dividirN} personas
+                </span>
+                <button onClick={()=>setDividirN(n=>n+1)} style={{
+                  width:34,height:34,borderRadius:10,background:"var(--cs)",
+                  border:"1px solid var(--cbr)",color:"var(--cbri)",
+                  fontSize:20,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>+</button>
+              </div>
+              <div style={{background:"var(--cs)",borderRadius:10,padding:"10px 14px",
+                display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"var(--cm)"}}>
+                  Cada uno paga:
+                </span>
+                <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:18,
+                  fontWeight:700,color:"var(--cg)"}}>
+                  ${fmt(Math.ceil(grandTotal/dividirN))}
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* CTA fijo */}
       <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",
@@ -1369,6 +1431,78 @@ function ClientApp({onBack, local, cats, prods}) {
         })}
       </div>
 
+      {/* Solicitudes de mesa — solo cuando hay número de mesa */}
+      {local.mesa && (
+        <div style={{position:"fixed",bottom:cartCount>0?92:16,right:16,zIndex:49}}>
+          <button onClick={()=>setShowSolicitudes(true)} className="pr" style={{
+            width:52,height:52,borderRadius:"50%",
+            background:"linear-gradient(135deg,#1A1A2E,#16213E)",
+            border:"2px solid rgba(255,255,255,.15)",
+            boxShadow:"0 4px 20px rgba(0,0,0,.5)",
+            fontSize:22,cursor:"pointer",
+            display:"flex",alignItems:"center",justifyContent:"center"}}>
+            🛎️
+          </button>
+        </div>
+      )}
+
+      {/* Modal solicitudes */}
+      {showSolicitudes && (
+        <div style={{position:"fixed",inset:0,zIndex:200,
+          background:"rgba(0,0,0,.7)",display:"flex",alignItems:"flex-end"}}
+          onClick={()=>setShowSolicitudes(false)}>
+          <div onClick={e=>e.stopPropagation()} style={{
+            width:"100%",maxWidth:430,margin:"0 auto",
+            background:"linear-gradient(180deg,#111,#0A0A0A)",
+            borderRadius:"22px 22px 0 0",padding:"20px 16px 32px",
+            border:"1px solid rgba(255,255,255,.08)"}}>
+            <div style={{width:36,height:4,borderRadius:2,
+              background:"rgba(255,255,255,.15)",margin:"0 auto 18px"}}/>
+            <h3 style={{fontFamily:"'Outfit',sans-serif",fontSize:18,fontWeight:700,
+              color:"#FFF",marginBottom:4,textAlign:"center"}}>Solicitar al local</h3>
+            <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,
+              color:"rgba(255,255,255,.4)",textAlign:"center",marginBottom:20}}>
+              Mesa {local.mesa} · tap para enviar
+            </p>
+            {solicEnviada && (
+              <div style={{background:"rgba(0,255,136,.1)",border:"1px solid rgba(0,255,136,.3)",
+                borderRadius:10,padding:"8px 14px",marginBottom:14,textAlign:"center"}}>
+                <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,
+                  color:"#00FF88"}}>✓ Solicitud enviada</span>
+              </div>
+            )}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:14}}>
+              {[
+                {tipo:"mozo",       icon:"🙋", label:"Llamar al mozo"},
+                {tipo:"cuenta",     icon:"💳", label:"Pedir la cuenta"},
+                {tipo:"cubiertos",  icon:"🍴", label:"Cubiertos"},
+                {tipo:"hielo",      icon:"🧊", label:"Hielo"},
+                {tipo:"pan",        icon:"🍞", label:"Pan"},
+                {tipo:"servilletas",icon:"🧻", label:"Servilletas"},
+              ].map(s=>(
+                <button key={s.tipo} onClick={()=>sendSolicitud(s.tipo)} className="pr" style={{
+                  background:solicEnviada===s.tipo?"rgba(0,255,136,.1)":"rgba(255,255,255,.05)",
+                  border:`1px solid ${solicEnviada===s.tipo?"rgba(0,255,136,.4)":"rgba(255,255,255,.1)"}`,
+                  borderRadius:14,padding:"14px 10px",cursor:"pointer",textAlign:"center",
+                  transition:"all .2s"}}>
+                  <span style={{fontSize:26,display:"block",marginBottom:6}}>{s.icon}</span>
+                  <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:600,
+                    color:solicEnviada===s.tipo?"#00FF88":"rgba(255,255,255,.8)"}}>
+                    {s.label}
+                  </span>
+                </button>
+              ))}
+            </div>
+            <button onClick={()=>setShowSolicitudes(false)} style={{
+              width:"100%",background:"none",border:"1px solid rgba(255,255,255,.1)",
+              borderRadius:12,padding:"12px",fontFamily:"'DM Sans',sans-serif",
+              fontSize:13,color:"rgba(255,255,255,.4)",cursor:"pointer"}}>
+              Cerrar
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Carrito flotante */}
       {cartCount>0 && (
         <div style={{position:"fixed",bottom:16,left:"50%",
@@ -1698,6 +1832,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
   const [vrMesa, setVrMesa]                   = useState("mostrador");
   const [vrMesaNum, setVrMesaNum]             = useState(1);
   const [vrPay, setVrPay]                     = useState(null);
+  const [solicitudes, setSolicitudes]         = useState([]);
   const [vrLoading, setVrLoading]             = useState(false);
 
   /* ── State de POS embebido en Caja */
@@ -1950,11 +2085,43 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
       });
     }, 5000);
 
+    // ── Solicitudes de mesa (realtime)
+    let chSolic = null;
+    const loadSolicitudes = async () => {
+      const {data} = await supabase.from("solicitudes")
+        .select("*")
+        .eq("restaurante_id", local.restauranteId)
+        .eq("estado","pendiente")
+        .order("created_at",{ascending:false});
+      if(data) setSolicitudes(data);
+    };
+    loadSolicitudes();
+    chSolic = supabase.channel("solicitudes-admin-"+local.restauranteId)
+      .on("postgres_changes",{event:"INSERT",schema:"public",table:"solicitudes",
+          filter:`restaurante_id=eq.${local.restauranteId}`},
+        payload => {
+          const s = payload.new;
+          setSolicitudes(prev=>[s,...prev]);
+          const labels = {mozo:"🙋 Llamado al mozo",cuenta:"💳 Piden la cuenta",
+            cubiertos:"🍴 Cubiertos",hielo:"🧊 Hielo",pan:"🍞 Pan",servilletas:"🧻 Servilletas"};
+          toast(`${labels[s.tipo]||s.tipo} · Mesa ${s.mesa}`);
+          playSound('nuevo');
+          pushNotify("🛎️ Solicitud de mesa", `Mesa ${s.mesa} — ${labels[s.tipo]||s.tipo}`);
+        })
+      .subscribe();
+
     return ()=>{
       supabase.removeChannel(ch);
+      if(chSolic) supabase.removeChannel(chSolic);
       clearInterval(poll);
     };
   },[local.restauranteId]);
+
+  const markSolicitudAtendida = async (id) => {
+    setSolicitudes(prev=>prev.filter(s=>s.id!==id));
+    if(supabase) await supabase.from("solicitudes").update({estado:"atendido"}).eq("id",id);
+    toast("Solicitud atendida ✓");
+  };
 
   const advance = async id=>{
     const o = orders.find(o=>o.id===id);
@@ -2418,6 +2585,53 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
           );
         })}
       </div>
+    </div>
+
+      {/* ── Solicitudes de mesa */}
+      {solicitudes.length>0 && (
+        <div style={{background:"var(--ac)",border:"1px solid rgba(201,168,76,.3)",
+          borderRadius:16,overflow:"hidden",marginBottom:8,marginTop:4,
+          marginLeft:16,marginRight:16}}>
+          <div style={{padding:"10px 14px 7px",borderBottom:"1px solid rgba(201,168,76,.15)",
+            display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <ALbl>Solicitudes de mesa</ALbl>
+            <span style={{background:"rgba(255,176,32,.15)",
+              border:"1px solid rgba(255,176,32,.3)",borderRadius:20,
+              padding:"2px 8px",fontFamily:"'IBM Plex Mono',monospace",
+              fontSize:9,color:"#FFB020"}}>{solicitudes.length}</span>
+          </div>
+          {solicitudes.map((s,i)=>{
+            const icons = {mozo:"🙋",cuenta:"💳",cubiertos:"🍴",hielo:"🧊",pan:"🍞",servilletas:"🧻"};
+            const labels = {mozo:"Llamado al mozo",cuenta:"Piden la cuenta",
+              cubiertos:"Cubiertos",hielo:"Hielo",pan:"Pan",servilletas:"Servilletas"};
+            return (
+              <div key={s.id} style={{display:"flex",justifyContent:"space-between",
+                alignItems:"center",padding:"10px 14px",
+                borderBottom:i<solicitudes.length-1?"1px solid var(--abr)":"none"}}>
+                <div style={{display:"flex",alignItems:"center",gap:10}}>
+                  <div style={{width:36,height:36,borderRadius:10,
+                    background:"rgba(255,176,32,.1)",border:"1px solid rgba(255,176,32,.2)",
+                    display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>
+                    {icons[s.tipo]||"🛎️"}
+                  </div>
+                  <div>
+                    <p style={{fontFamily:"'Outfit',sans-serif",fontWeight:600,
+                      fontSize:13,color:"var(--abri)"}}>{labels[s.tipo]||s.tipo}</p>
+                    <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,
+                      color:"var(--ad)"}}>Mesa {s.mesa} · {new Date(s.created_at).toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"})}</p>
+                  </div>
+                </div>
+                <button onClick={()=>markSolicitudAtendida(s.id)} className="pr" style={{
+                  background:"rgba(0,255,136,.1)",border:"1px solid rgba(0,255,136,.25)",
+                  borderRadius:8,padding:"6px 12px",cursor:"pointer",
+                  fontFamily:"'IBM Plex Mono',monospace",fontSize:9,
+                  color:"#00FF88",letterSpacing:.5}}>✓ LISTO</button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
     </div>
     );
   };
