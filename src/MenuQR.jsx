@@ -1154,6 +1154,71 @@ function ClientApp({onBack, local, cats, prods}) {
         </div>
       </div>
 
+      {/* Hero Panchos del Mundo */}
+      {activeCat==="mundo" && (
+        <div style={{margin:"0 0 20px",padding:"0 20px"}}>
+          {/* Banner */}
+          <div style={{
+            background:"linear-gradient(135deg,#0D0D0D 0%,#1A0A00 50%,#0D0D0D 100%)",
+            border:"1px solid rgba(249,115,22,.18)",
+            borderRadius:22,overflow:"hidden",position:"relative",
+            padding:"24px 20px 20px",
+          }}>
+            {/* Globo decorativo */}
+            <div style={{position:"absolute",top:-30,right:-30,
+              fontSize:120,opacity:.07,pointerEvents:"none",userSelect:"none",
+              lineHeight:1}}>🌍</div>
+            <div style={{position:"absolute",bottom:-20,left:-20,
+              fontSize:80,opacity:.05,pointerEvents:"none",userSelect:"none"}}>✈️</div>
+
+            <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,
+              color:"rgba(249,115,22,.7)",letterSpacing:3,
+              textTransform:"uppercase",marginBottom:6}}>
+              Vuelta al mundo · 8 países
+            </p>
+            <h2 style={{fontFamily:"'DM Sans',sans-serif",fontSize:24,fontWeight:800,
+              color:"#FFF",lineHeight:1.1,marginBottom:6}}>
+              Panchos<br/>
+              <span style={{color:"#F97316"}}>del Mundo</span>
+            </h2>
+            <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,
+              color:"#666",lineHeight:1.5,maxWidth:260,marginBottom:18}}>
+              Cada pancho tiene su historia, su bandera y su carácter. ¿Por qué país arrancás?
+            </p>
+
+            {/* Flags strip */}
+            <div style={{display:"flex",gap:10,overflowX:"auto",
+              scrollbarWidth:"none",margin:"0 -4px",padding:"4px"}}>
+              {[
+                {flag:"🇺🇸",pais:"USA",   color:"#B22234"},
+                {flag:"🇩🇪",pais:"DEU",   color:"#DD0000"},
+                {flag:"🇦🇷",pais:"ARG",   color:"#74ACDF"},
+                {flag:"🇲🇽",pais:"MEX",   color:"#006847"},
+                {flag:"🇮🇹",pais:"ITA",   color:"#009246"},
+                {flag:"🇧🇷",pais:"BRA",   color:"#009C3B"},
+                {flag:"🇫🇷",pais:"FRA",   color:"#002395"},
+                {flag:"🇯🇵",pais:"JPN",   color:"#BC002D"},
+              ].map(({flag,pais,color})=>(
+                <div key={pais} style={{
+                  flexShrink:0,
+                  display:"flex",flexDirection:"column",alignItems:"center",gap:4,
+                }}>
+                  <div style={{
+                    width:44,height:44,borderRadius:"50%",
+                    background:`radial-gradient(circle,${color}33 0%,${color}11 100%)`,
+                    border:`1.5px solid ${color}66`,
+                    display:"flex",alignItems:"center",justifyContent:"center",
+                    fontSize:24,
+                  }}>{flag}</div>
+                  <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:7,
+                    color:"#555",letterSpacing:.5}}>{pais}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Items — grilla 2 columnas */}
       <div className="cf" style={{
         display:"grid",gridTemplateColumns:"1fr 1fr",
