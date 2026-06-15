@@ -2585,7 +2585,6 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
           );
         })}
       </div>
-    </div>
 
       {/* ── Solicitudes de mesa */}
       {solicitudes.length>0 && (
