@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import QRCodeLib from "qrcode";
 import { supabase, loginAdmin, logoutAdmin, getSession, getRestaurante, getCategorias, getProductos, createTurno, closeTurno, getTurnos } from "./lib/supabase.js";
 
 /* ══════════════════════════════════════════════════════════════
@@ -248,13 +249,10 @@ const QRImage = ({data, size=200, light="#F5ECD7", dark="#0A0806", style={}}) =>
   const [src, setSrc] = useState('');
   useEffect(() => {
     if(!data) return;
-    import('qrcode').then(mod => {
-      const QRCode = mod.default || mod;
-      QRCode.toDataURL(data, {
-        width: size, margin: 2,
-        color: { dark, light: light.startsWith('#') ? light : '#'+light }
-      }).then(url => setSrc(url)).catch(()=>{});
-    }).catch(()=>{});
+    QRCodeLib.toDataURL(data, {
+      width: size, margin: 2,
+      color: { dark, light: light.startsWith('#') ? light : '#'+light }
+    }).then(url => setSrc(url)).catch(()=>{});
   }, [data, size, light, dark]);
   if(!src) return (
     <div style={{width:size,height:size,background:"#f0f0f0",borderRadius:8,
