@@ -243,8 +243,27 @@ const fmt    = n => Number(n||0).toLocaleString("es-AR");
 const nowStr = () => new Date().toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"});
 const todStr = () => new Date().toLocaleDateString("es-AR",{day:"2-digit",month:"2-digit",year:"numeric"});
 const emptyArq = () => Object.fromEntries(BILLETES.map(b=>[b.val,""]));
-const qrBuild = (data, bgColor="#F5ECD7") =>
-  `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(data)}&color=0A0806&bgcolor=${bgColor.replace("#","")}&margin=12&ecc=M`;
+// QR client-side — no external API dependency
+const QRImage = ({data, size=200, light="#F5ECD7", dark="#0A0806", style={}}) => {
+  const [src, setSrc] = useState('');
+  useEffect(() => {
+    if(!data) return;
+    import('qrcode').then(mod => {
+      const QRCode = mod.default || mod;
+      QRCode.toDataURL(data, {
+        width: size, margin: 2,
+        color: { dark, light: light.startsWith('#') ? light : '#'+light }
+      }).then(url => setSrc(url)).catch(()=>{});
+    }).catch(()=>{});
+  }, [data, size, light, dark]);
+  if(!src) return (
+    <div style={{width:size,height:size,background:"#f0f0f0",borderRadius:8,
+      display:"flex",alignItems:"center",justifyContent:"center",...style}}>
+      <span style={{fontSize:10,color:"#aaa",fontFamily:"monospace"}}>QR...</span>
+    </div>
+  );
+  return <img src={src} width={size} height={size} alt="QR" style={{display:"block",borderRadius:8,...style}}/>;
+};
 
 /* ══════════════════════════════════════════════════════════════
    SHARED ATOMS
@@ -1682,9 +1701,7 @@ function QRTabComp({ mesaNum, setMesaNum, qrType, setQrType, promoUrl, setPromoU
         </p>
         <div style={{background:"#fff",borderRadius:14,padding:10,
           border:`3px solid ${current.color}`,display:"inline-block",marginBottom:12}}>
-          <img src={qrBuild(getQRData(), current.bg.replace("#",""))}
-            width={210} height={210} alt="QR preview"
-            style={{display:"block",borderRadius:8}}/>
+          <QRImage data={getQRData()} size={210} light={current.bg}/>
         </div>
         <div style={{background:current.color,borderRadius:30,
           padding:"6px 24px",display:"inline-block",marginBottom:6}}>
@@ -2383,8 +2400,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
             <div style={{width:32,height:2,background:"#C9A84C",margin:"0 auto 12px",borderRadius:1}}/>
             <div style={{background:"#fff",borderRadius:12,padding:8,
               border:"3px solid #C9A84C",display:"inline-block"}}>
-              <img src={qrBuild(data)} width={160} height={160}
-                alt={`QR Mesa ${tableNum}`} style={{display:"block",borderRadius:6}}/>
+              <QRImage data={data} size={160}/>
             </div>
             <div style={{background:"#C9A84C",borderRadius:30,padding:"6px 24px",
               display:"inline-block",marginTop:12}}>
