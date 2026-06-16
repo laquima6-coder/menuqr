@@ -1398,7 +1398,7 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
                       color:"#777",lineHeight:1.5,
                       display:"-webkit-box",WebkitLineClamp:3,
                       WebkitBoxOrient:"vertical",overflow:"hidden"}}>{item.desc}</div>
-                  ))}
+                  )}
                 </div>
                 <div style={{display:"flex",alignItems:"center",
                   justifyContent:"space-between",marginTop:6}}>
@@ -1440,7 +1440,7 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
                         fontSize:17,display:"flex",alignItems:"center",
                         justifyContent:"center",touchAction:"manipulation"}}>+</button>
                     </div>
-                  )}
+                  ))}
                 </div>
               </div>
             </div>
