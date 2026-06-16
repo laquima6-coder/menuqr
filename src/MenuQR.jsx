@@ -1503,12 +1503,13 @@ function QRTabComp({ mesaNum, setMesaNum, qrType, setQrType, promoUrl, setPromoU
 /* ══════════════════════════════════════════════════════════════
    CAT MODAL — nivel de módulo (evita useState condicional)
 ══════════════════════════════════════════════════════════════ */
-function CatModal({local, cats, setCats, setGModal, toast, onCreated}) {
+function CatModal({local, cats, setCats, setGModal, toast, onCreated, editData}) {
   const ICONOS = ["◇","◉","◌","◎","✦","★","◈","▶","♦","❋","🍕","🥩","🍹","☕"];
-  const [nNombre,setNN] = useState("");
-  const [nIcono, setNI] = useState("◇");
+  const [nNombre,setNN] = useState(editData?.label || "");
+  const [nIcono, setNI] = useState(editData?.icon || "◇");
+  const isEdit = !!editData;
   return (
-    <BottomModal title="Nueva categoría" onClose={()=>setGModal(null)}>
+    <BottomModal title={isEdit?"Editar categoría":"Nueva categoría"} onClose={()=>setGModal(null)}>
       <GLbl>Ícono</GLbl>
       <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:14}}>
         {ICONOS.map(ic=>(
@@ -1532,25 +1533,34 @@ function CatModal({local, cats, setCats, setGModal, toast, onCreated}) {
         </button>
         <button onClick={async ()=>{
           if(!nNombre) return toast("Ingresá un nombre","err");
-          if(local.restauranteId && supabase){
-            const {data:cat,error} = await supabase.from("categorias")
-              .insert({restaurante_id:local.restauranteId, label:nNombre, icon:nIcono, activa:true, orden:cats.length})
-              .select().single();
-            if(error){ toast("Error: "+error.message,"err"); return; }
-            setCats(cs=>[...cs,{id:cat.id,label:cat.label,icon:cat.icon,activa:cat.activa}]);
-            onCreated?.(cat.id);
+          if(isEdit){
+            setCats(cs=>cs.map(c=>c.id===editData.id?{...c,label:nNombre,icon:nIcono}:c));
+            if(local.restauranteId && supabase){
+              await supabase.from("categorias").update({label:nNombre,icon:nIcono}).eq("id",editData.id);
+            }
+            setGModal(null);
+            toast("Categoría actualizada");
           } else {
-            const newId=nNombre.toLowerCase().replace(/\s+/g,"_")+Date.now();
-            setCats(cs=>[...cs,{id:newId,label:nNombre,icon:nIcono,activa:true}]);
-            onCreated?.(newId);
+            if(local.restauranteId && supabase){
+              const {data:cat,error} = await supabase.from("categorias")
+                .insert({restaurante_id:local.restauranteId, label:nNombre, icon:nIcono, activa:true, orden:cats.length})
+                .select().single();
+              if(error){ toast("Error: "+error.message,"err"); return; }
+              setCats(cs=>[...cs,{id:cat.id,label:cat.label,icon:cat.icon,activa:cat.activa}]);
+              onCreated?.(cat.id);
+            } else {
+              const newId=nNombre.toLowerCase().replace(/\s+/g,"_")+Date.now();
+              setCats(cs=>[...cs,{id:newId,label:nNombre,icon:nIcono,activa:true}]);
+              onCreated?.(newId);
+            }
+            setGModal(null);
+            toast("Categoria creada - ahora agrega productos");
           }
-          setGModal(null);
-          toast("Categoria creada - ahora agrega productos");
         }} className="pr" style={{
           flex:2,background:"var(--gi)",color:"#fff",border:"none",
           borderRadius:10,padding:12,fontFamily:"'Outfit',sans-serif",
           fontSize:14,fontWeight:600,cursor:"pointer"}}>
-          Crear categoría
+          {isEdit?"Guardar cambios":"Crear categoría"}
         </button>
       </div>
     </BottomModal>
@@ -3732,6 +3742,63 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
     /* ── Subcomponents inline */
     const LocalSection = () => (
       <div>
+        {/* Logo del local */}
+        <div style={{background:"var(--gc)",border:"1px solid var(--gbr)",
+          borderRadius:16,padding:18,marginBottom:12}}>
+          <GLbl c="var(--gi2)">Logo</GLbl>
+          <div style={{display:"flex",alignItems:"center",gap:14,marginBottom:10}}>
+            <div style={{width:72,height:72,borderRadius:14,background:"var(--gb)",
+              border:"1px solid var(--gbr)",display:"flex",alignItems:"center",
+              justifyContent:"center",overflow:"hidden",flexShrink:0}}>
+              {local.logo_url
+                ? <img src={local.logo_url} alt="logo" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                : <span style={{fontSize:28}}>🍽️</span>}
+            </div>
+            <div style={{flex:1}}>
+              <label style={{display:"flex",alignItems:"center",gap:8,
+                background:"rgba(99,102,241,.08)",border:"1px dashed rgba(99,102,241,.4)",
+                borderRadius:10,padding:"10px 14px",cursor:"pointer"}}>
+                <span style={{fontSize:18}}>📷</span>
+                <div style={{flex:1}}>
+                  <div style={{fontFamily:"'Outfit',sans-serif",fontSize:13,fontWeight:600,
+                    color:"var(--gi2)"}}>Subir logo</div>
+                  <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,color:"var(--gd)"}}>
+                    JPG, PNG o WebP
+                  </div>
+                </div>
+                <input type="file" accept="image/*" style={{display:"none"}}
+                  onChange={async e=>{
+                    const file = e.target.files?.[0];
+                    if(!file || !supabase) return;
+                    const ext = file.name.split(".").pop();
+                    const path = `logos/${local.restauranteId}/logo.${ext}`;
+                    const {error:upErr} = await supabase.storage.from("fotos").upload(path, file, {upsert:true});
+                    if(upErr){ toast("Error al subir: "+upErr.message,"err"); return; }
+                    const {data:{publicUrl}} = supabase.storage.from("fotos").getPublicUrl(path);
+                    setLocal(l=>({...l,logo_url:publicUrl}));
+                    if(local.restauranteId){
+                      await supabase.from("restaurantes").update({logo_url:publicUrl}).eq("id",local.restauranteId);
+                    }
+                    toast("Logo subido");
+                  }}/>
+              </label>
+              {local.logo_url && (
+                <button onClick={async()=>{
+                  setLocal(l=>({...l,logo_url:""}));
+                  if(local.restauranteId){
+                    await supabase.from("restaurantes").update({logo_url:""}).eq("id",local.restauranteId);
+                  }
+                  toast("Logo eliminado","warn");
+                }} style={{background:"none",border:"none",color:"var(--gr)",
+                  fontSize:11,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",
+                  marginTop:6,padding:0}}>
+                  Quitar logo ×
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+
         <div style={{background:"var(--gc)",border:"1px solid var(--gbr)",
           borderRadius:16,padding:18,marginBottom:12}}>
           <GLbl c="var(--gi2)">Datos del restaurante</GLbl>
@@ -3958,6 +4025,12 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
                     color:cat.activa?"var(--gd)":"var(--gr)",fontSize:10,
                     padding:0,lineHeight:1}}>
                     {cat.activa?"👁":"🙈"}
+                  </button>
+                  <button onClick={()=>setGModal({type:"cat",editData:{...cat}})}
+                    style={{background:"none",border:"none",cursor:"pointer",
+                    color:"rgba(99,102,241,.7)",fontSize:11,
+                    padding:"0 2px",lineHeight:1}} title="Editar categoría">
+                    ✏
                   </button>
                   <button onClick={async()=>{
                     const hasProd = prods.some(p=>p.cat===cat.id);
@@ -4372,7 +4445,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
 
     /* Modal de nueva categoría — extraído a nivel de módulo */
     if(gModal.type==="cat") {
-      return <CatModal local={local} cats={cats} setCats={setCats} setGModal={setGModal} toast={toast} onCreated={id=>setGActiveCat(id)}/>;
+      return <CatModal local={local} cats={cats} setCats={setCats} setGModal={setGModal} toast={toast} onCreated={id=>setGActiveCat(id)} editData={gModal.editData}/>;
     }
         return null;
   };

@@ -46,6 +46,7 @@ export default function MenuPublico({ vitrina = false }) {
         email:       restaurante.email       || '',
         color:       restaurante.color       || '#C9A84C',
         mesas:       restaurante.mesas       || 10,
+        logo_url:    restaurante.logo_url    || '',
         restauranteId: restaurante.id,
         slug,
         mesa: mesa ? parseInt(mesa) : null,
