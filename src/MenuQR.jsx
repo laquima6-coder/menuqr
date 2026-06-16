@@ -1135,78 +1135,6 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
   return (
     <div style={{maxWidth:430,margin:"0 auto",minHeight:"100vh",background:"#0A0806",display:"flex",position:"relative",overflow:"hidden"}}>
       <GS/>
-      {/* ── SIDEBAR ── */}
-      <div style={{width:74,flexShrink:0,background:"#0C0C0C",borderRight:"1px solid #1C1C1C",position:"sticky",top:0,height:"100vh",overflowY:"auto",display:"flex",flexDirection:"column",alignItems:"center",zIndex:20,scrollbarWidth:"none"}}>
-        {/* Logo + Name */}
-        <div style={{width:"100%",padding:"10px 4px 8px",borderBottom:"1px solid #1C1C1C",textAlign:"center"}}>
-          {local.logo_url?(
-            <img src={local.logo_url} alt="" style={{width:44,height:44,borderRadius:"50%",objectFit:"cover",border:"2px solid #C9A84C",marginBottom:4}}/>
-          ):(
-            <div style={{width:44,height:44,borderRadius:"50%",background:"linear-gradient(135deg,#1A0D00,#2A1A00)",border:"2px solid #C9A84C",margin:"0 auto 4px",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}>{local.emoji||"🍽️"}</div>
-          )}
-          <div style={{fontFamily:"'Outfit',sans-serif",fontSize:7,color:"#C9A84C",fontWeight:800,textTransform:"uppercase",letterSpacing:.5,lineHeight:1.2,padding:"0 3px",overflow:"hidden",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical"}}>{(local.nombre||"").toUpperCase()}</div>
-        </div>
-        {/* Category Nav */}
-        <div style={{width:"100%",flex:1,padding:"4px 0"}}>
-          {activeCats.map(cat=>{
-            const isAct=activeCat===cat.id;
-            return(
-              <button key={cat.id} onClick={()=>{setAC(cat.id);document.getElementById(`cat-${cat.id}`)?.scrollIntoView({behavior:"smooth",block:"start"});}} style={{
-                width:"100%",padding:"8px 2px",background:isAct?"rgba(201,168,76,.1)":"none",
-                border:"none",borderLeft:`2px solid ${isAct?"#C9A84C":"transparent"}`,
-                cursor:"pointer",textAlign:"center",display:"flex",flexDirection:"column",alignItems:"center",gap:2,transition:"all .15s"}}>
-                <span style={{fontSize:18,lineHeight:1}}>{cat.icon}</span>
-                <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:7.5,fontWeight:700,color:isAct?"#C9A84C":"#383838",lineHeight:1.2,maxWidth:68,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",textTransform:"uppercase",letterSpacing:.3}}>{cat.label}</span>
-              </button>
-            );
-          })}
-        </div>
-        {/* Mesa info or table-QR */}
-        {local.mesa?(
-          <div style={{width:"100%",padding:"8px 6px",borderTop:"1px solid #1C1C1C",textAlign:"center"}}>
-            <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:7,color:"#3A3A3A",letterSpacing:1,textTransform:"uppercase",marginBottom:3}}>Mesa</div>
-            <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,color:"#FFF",fontWeight:900,lineHeight:1,marginBottom:4}}>{local.mesa}</div>
-            {!vitrina&&(
-              <button onClick={()=>setShowSolicitudes(true)} style={{width:"100%",background:"rgba(201,168,76,.07)",border:"1px solid #1E1E1E",borderRadius:8,padding:"5px 0",cursor:"pointer",fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"}}>🛎️</button>
-            )}
-          </div>
-        ):(
-          local.baseUrl&&(
-            <div style={{width:"100%",padding:"8px 4px",borderTop:"1px solid #1C1C1C",textAlign:"center"}}>
-              <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:6,color:"#2E2E2E",letterSpacing:.8,textTransform:"uppercase",lineHeight:1.4,marginBottom:5}}>Pedí desde<br/>tu mesa</div>
-              <div style={{background:"#FFF",borderRadius:6,padding:3,display:"inline-block",marginBottom:4}}>
-                <QRImage data={`https://${(local.baseUrl||"").replace(/^https?:\/\//,"")}/mesa/1`} size={52} light="#FFFFFF" dark="#0A0806"/>
-              </div>
-              <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:6,color:"#2A2A2A",lineHeight:1.3,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",padding:"0 4px"}}>{(local.baseUrl||"").replace(/^https?:\/\//,"")}</div>
-            </div>
-          )
-        )}
-        {/* Cart summary in sidebar */}
-        {!vitrina&&cartCount>0&&(
-          <button onClick={()=>setView("cart")} style={{width:"100%",padding:"8px 6px",borderTop:"1px solid #1C1C1C",background:"rgba(201,168,76,.05)",border:"none",cursor:"pointer",textAlign:"center"}}>
-            <div style={{marginBottom:4}}>
-              {items.slice(0,2).map(i=>(
-                <div key={i.id} style={{fontFamily:"'DM Sans',sans-serif",fontSize:7,color:"#444",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{i.qty}× {i.name}</div>
-              ))}
-              {items.length>2&&<div style={{fontSize:7,color:"#333"}}>+{items.length-2} más</div>}
-            </div>
-            <div style={{fontFamily:"'Outfit',sans-serif",fontSize:12,fontWeight:800,color:"#C9A84C",marginBottom:5}}>$ {fmt(grandTotal)}</div>
-            <div style={{background:"#C9A84C",borderRadius:7,padding:"5px 4px",fontFamily:"'DM Sans',sans-serif",fontSize:8,fontWeight:800,color:"#0A0806",letterSpacing:.5}}>VER PEDIDO</div>
-          </button>
-        )}
-        {/* Lang switcher */}
-        <div style={{width:"100%",padding:"6px 4px",borderTop:"1px solid #1C1C1C",display:"flex",flexWrap:"wrap",gap:2,justifyContent:"center"}}>
-          {LANGS.map(l=>(
-            <button key={l.code} onClick={()=>changeLang(l.code)} style={{
-              background:lang===l.code?"rgba(201,168,76,.12)":"none",
-              border:`1px solid ${lang===l.code?"rgba(201,168,76,.4)":"transparent"}`,
-              borderRadius:5,padding:"3px 2px",cursor:"pointer",fontSize:12,lineHeight:1}}>
-              {l.flag}
-            </button>
-          ))}
-        </div>
-      </div>
-
       {/* ── MAIN CONTENT ── */}
       <div style={{flex:1,overflowX:"hidden",overflowY:"auto",maxHeight:"100vh"}}>
         {/* Header */}
@@ -4821,6 +4749,79 @@ function LandingAuth({ setMode, goAdmin, authUser, onLogout }) {
       )}
       <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:9,color:"#222",
         marginTop:28,letterSpacing:2}}>MENUQR · v1.0</p>
+
+      {/* ── SIDEBAR ── */}
+      <div style={{width:74,flexShrink:0,background:"#0C0C0C",borderRight:"1px solid #1C1C1C",position:"sticky",top:0,height:"100vh",overflowY:"auto",display:"flex",flexDirection:"column",alignItems:"center",zIndex:20,scrollbarWidth:"none"}}>
+        {/* Logo + Name */}
+        <div style={{width:"100%",padding:"10px 4px 8px",borderBottom:"1px solid #1C1C1C",textAlign:"center"}}>
+          {local.logo_url?(
+            <img src={local.logo_url} alt="" style={{width:44,height:44,borderRadius:"50%",objectFit:"cover",border:"2px solid #C9A84C",marginBottom:4}}/>
+          ):(
+            <div style={{width:44,height:44,borderRadius:"50%",background:"linear-gradient(135deg,#1A0D00,#2A1A00)",border:"2px solid #C9A84C",margin:"0 auto 4px",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}>{local.emoji||"🍽️"}</div>
+          )}
+          <div style={{fontFamily:"'Outfit',sans-serif",fontSize:7,color:"#C9A84C",fontWeight:800,textTransform:"uppercase",letterSpacing:.5,lineHeight:1.2,padding:"0 3px",overflow:"hidden",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical"}}>{(local.nombre||"").toUpperCase()}</div>
+        </div>
+        {/* Category Nav */}
+        <div style={{width:"100%",flex:1,padding:"4px 0"}}>
+          {activeCats.map(cat=>{
+            const isAct=activeCat===cat.id;
+            return(
+              <button key={cat.id} onClick={()=>{setAC(cat.id);document.getElementById(`cat-${cat.id}`)?.scrollIntoView({behavior:"smooth",block:"start"});}} style={{
+                width:"100%",padding:"8px 2px",background:isAct?"rgba(201,168,76,.1)":"none",
+                border:"none",borderLeft:`2px solid ${isAct?"#C9A84C":"transparent"}`,
+                cursor:"pointer",textAlign:"center",display:"flex",flexDirection:"column",alignItems:"center",gap:2,transition:"all .15s"}}>
+                <span style={{fontSize:18,lineHeight:1}}>{cat.icon}</span>
+                <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:7.5,fontWeight:700,color:isAct?"#C9A84C":"#383838",lineHeight:1.2,maxWidth:68,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",textTransform:"uppercase",letterSpacing:.3}}>{cat.label}</span>
+              </button>
+            );
+          })}
+        </div>
+        {/* Mesa info or table-QR */}
+        {local.mesa?(
+          <div style={{width:"100%",padding:"8px 6px",borderTop:"1px solid #1C1C1C",textAlign:"center"}}>
+            <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:7,color:"#3A3A3A",letterSpacing:1,textTransform:"uppercase",marginBottom:3}}>Mesa</div>
+            <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,color:"#FFF",fontWeight:900,lineHeight:1,marginBottom:4}}>{local.mesa}</div>
+            {!vitrina&&(
+              <button onClick={()=>setShowSolicitudes(true)} style={{width:"100%",background:"rgba(201,168,76,.07)",border:"1px solid #1E1E1E",borderRadius:8,padding:"5px 0",cursor:"pointer",fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"}}>🛎️</button>
+            )}
+          </div>
+        ):(
+          local.baseUrl&&(
+            <div style={{width:"100%",padding:"8px 4px",borderTop:"1px solid #1C1C1C",textAlign:"center"}}>
+              <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:6,color:"#2E2E2E",letterSpacing:.8,textTransform:"uppercase",lineHeight:1.4,marginBottom:5}}>Pedí desde<br/>tu mesa</div>
+              <div style={{background:"#FFF",borderRadius:6,padding:3,display:"inline-block",marginBottom:4}}>
+                <QRImage data={`https://${(local.baseUrl||"").replace(/^https?:\/\//,"")}/mesa/1`} size={52} light="#FFFFFF" dark="#0A0806"/>
+              </div>
+              <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:6,color:"#2A2A2A",lineHeight:1.3,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",padding:"0 4px"}}>{(local.baseUrl||"").replace(/^https?:\/\//,"")}</div>
+            </div>
+          )
+        )}
+        {/* Cart summary in sidebar */}
+        {!vitrina&&cartCount>0&&(
+          <button onClick={()=>setView("cart")} style={{width:"100%",padding:"8px 6px",borderTop:"1px solid #1C1C1C",background:"rgba(201,168,76,.05)",border:"none",cursor:"pointer",textAlign:"center"}}>
+            <div style={{marginBottom:4}}>
+              {items.slice(0,2).map(i=>(
+                <div key={i.id} style={{fontFamily:"'DM Sans',sans-serif",fontSize:7,color:"#444",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{i.qty}× {i.name}</div>
+              ))}
+              {items.length>2&&<div style={{fontSize:7,color:"#333"}}>+{items.length-2} más</div>}
+            </div>
+            <div style={{fontFamily:"'Outfit',sans-serif",fontSize:12,fontWeight:800,color:"#C9A84C",marginBottom:5}}>$ {fmt(grandTotal)}</div>
+            <div style={{background:"#C9A84C",borderRadius:7,padding:"5px 4px",fontFamily:"'DM Sans',sans-serif",fontSize:8,fontWeight:800,color:"#0A0806",letterSpacing:.5}}>VER PEDIDO</div>
+          </button>
+        )}
+        {/* Lang switcher */}
+        <div style={{width:"100%",padding:"6px 4px",borderTop:"1px solid #1C1C1C",display:"flex",flexWrap:"wrap",gap:2,justifyContent:"center"}}>
+          {LANGS.map(l=>(
+            <button key={l.code} onClick={()=>changeLang(l.code)} style={{
+              background:lang===l.code?"rgba(201,168,76,.12)":"none",
+              border:`1px solid ${lang===l.code?"rgba(201,168,76,.4)":"transparent"}`,
+              borderRadius:5,padding:"3px 2px",cursor:"pointer",fontSize:12,lineHeight:1}}>
+              {l.flag}
+            </button>
+          ))}
+        </div>
+      </div>
+
     </div>
   );
 }
