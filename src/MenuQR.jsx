@@ -1133,593 +1133,367 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
 
   /* ── MENU VIEW */
   return (
-    <div style={{maxWidth:430,margin:"0 auto",minHeight:"100vh",
-      background:"var(--cb)",paddingBottom:cartCount>0?96:36}}>
+    <div style={{maxWidth:430,margin:"0 auto",minHeight:"100vh",background:"#0A0806",display:"flex",position:"relative",overflow:"hidden"}}>
       <GS/>
-
-      {/* Language switcher */}
-      <div style={{display:"flex",gap:4,flexWrap:"wrap",justifyContent:"flex-end",marginBottom:12}}>
-        {LANGS.map(l=>(
-          <button key={l.code} onClick={()=>changeLang(l.code)} style={{
-            background:lang===l.code?"rgba(249,115,22,.2)":"rgba(30,30,30,.9)",
-            border:`1px solid ${lang===l.code?"#F97316":"rgba(255,255,255,.1)"}`,
-            borderRadius:6,padding:"5px 8px",cursor:"pointer",
-            fontFamily:"'DM Sans',sans-serif",fontSize:10,fontWeight:600,
-            color:lang===l.code?"#F97316":"rgba(255,255,255,.5)",
-            backdropFilter:"blur(8px)",lineHeight:1.2,minWidth:36,textAlign:"center"}}>
-            {l.flag} {l.name}
-          </button>
-        ))}
-      </div>
-
-      {/* Header */}
-      <div style={{background:"linear-gradient(160deg,#1A0800,#0D0D0D)",
-        padding:"26px 20px 0",position:"relative",overflow:"hidden"}}>
-        <div style={{position:"absolute",top:-60,right:-40,width:180,height:180,
-          borderRadius:"50%",background:"rgba(249,115,22,.08)",pointerEvents:"none"}}/>
-        <div style={{position:"absolute",bottom:-40,left:-30,width:120,height:120,
-          borderRadius:"50%",background:"rgba(249,115,22,.05)",pointerEvents:"none"}}/>
-
-        <div style={{display:"flex",justifyContent:"space-between",
-          alignItems:"flex-start",marginBottom:14}}>
-          <div>
-            <button onClick={onBack} style={{background:"none",border:"none",
-              color:"var(--cm)",fontSize:11,fontFamily:"'IBM Plex Mono',monospace",
-              letterSpacing:1,cursor:"pointer",marginBottom:8,padding:0}}>{T('backHome')}</button>
-            <div style={{width:32,height:3,background:"linear-gradient(90deg,#F97316,#FB923C)",marginBottom:8,borderRadius:2}}/>
-            <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:"var(--cg)",
-              letterSpacing:3,marginBottom:4}}>{T('welcome')}</p>
-            {/* Nombre dinámico del local */}
-            <h1 style={{fontFamily:"'Playfair Display',serif",fontSize:30,fontWeight:900,
-              color:"var(--cbri)",lineHeight:1.1}}>{local.nombre}</h1>
-            <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,color:"var(--cm)",marginTop:4}}>
-              {local.mesa?`Mesa ${local.mesa} · `:""}{nowStr()}
-            </p>
-          </div>
-          <button onClick={()=>setView("cart")} style={{position:"relative",
-            background:"var(--cc)",border:"1px solid var(--cbr)",borderRadius:12,
-            padding:"10px 13px",cursor:"pointer",color:"var(--cbri)",
-            fontSize:20,marginTop:26}}>
-            🛒
-            {cartCount>0 && (
-              <span style={{position:"absolute",top:-6,right:-6,
-                background:"var(--cg)",color:"#0A0806",borderRadius:"50%",
-                width:20,height:20,fontSize:10,fontWeight:800,
-                display:"flex",alignItems:"center",justifyContent:"center",
-                animation:"pulseGold 2s infinite"}}>{cartCount}</span>
-            )}
-          </button>
+      {/* ── SIDEBAR ── */}
+      <div style={{width:74,flexShrink:0,background:"#0C0C0C",borderRight:"1px solid #1C1C1C",position:"sticky",top:0,height:"100vh",overflowY:"auto",display:"flex",flexDirection:"column",alignItems:"center",zIndex:20,scrollbarWidth:"none"}}>
+        {/* Logo + Name */}
+        <div style={{width:"100%",padding:"10px 4px 8px",borderBottom:"1px solid #1C1C1C",textAlign:"center"}}>
+          {local.logo_url?(
+            <img src={local.logo_url} alt="" style={{width:44,height:44,borderRadius:"50%",objectFit:"cover",border:"2px solid #C9A84C",marginBottom:4}}/>
+          ):(
+            <div style={{width:44,height:44,borderRadius:"50%",background:"linear-gradient(135deg,#1A0D00,#2A1A00)",border:"2px solid #C9A84C",margin:"0 auto 4px",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}>{local.emoji||"🍽️"}</div>
+          )}
+          <div style={{fontFamily:"'Outfit',sans-serif",fontSize:7,color:"#C9A84C",fontWeight:800,textTransform:"uppercase",letterSpacing:.5,lineHeight:1.2,padding:"0 3px",overflow:"hidden",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical"}}>{(local.nombre||"").toUpperCase()}</div>
         </div>
-
-        {/* Happy Hour — solo si está activo */}
-        {local.happyHour && secs>0 && (
-          <div style={{background:"linear-gradient(90deg,#2A1400,#1A0D00)",
-            border:"1px solid rgba(201,168,76,.2)",
-            borderRadius:12,padding:"10px 14px",marginBottom:18,
-            display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-            <div>
-              <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,
-                color:"var(--cg)",fontWeight:600,marginBottom:1}}>{T('happyHour')}</p>
-              <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,color:"var(--cm)"}}>
-                Promos hasta las {local.happyHasta} hs
-              </p>
-            </div>
-            <span style={{fontFamily:"monospace",fontSize:18,fontWeight:900,
-              color:"var(--cg)",letterSpacing:2}}>{fmtTimer(secs)}</span>
-          </div>
-        )}
-
-        {/* Category tabs */}
-        <div style={{display:"flex",gap:8,overflowX:"auto",
-          margin:"0 -20px",padding:"12px 20px 20px",scrollbarWidth:"none"}}>
+        {/* Category Nav */}
+        <div style={{width:"100%",flex:1,padding:"4px 0"}}>
           {activeCats.map(cat=>{
-            const isActive = activeCat===cat.id;
-            const ac = local.color||"#F97316";
-            return (
-            <button key={cat.id} onClick={()=>setAC(cat.id)} style={{
-              fontFamily:"'DM Sans',sans-serif",fontSize:13,
-              fontWeight:isActive?700:500,
-              background:isActive?ac:"#1F1F1F",
-              color:isActive?"#FFF":"#888",
-              border:`1px solid ${isActive?ac:"#2D2D2D"}`,
-              borderRadius:100,padding:"9px 18px",
-              cursor:"pointer",whiteSpace:"nowrap",flexShrink:0,
-              transition:"all .2s",
-              boxShadow:isActive?`0 0 18px ${ac}44`:"none",
-              touchAction:"manipulation",WebkitTapHighlightColor:"transparent"}}>
-              {cat.icon} {tCat(cat.label,lang)}
+            const isAct=activeCat===cat.id;
+            return(
+              <button key={cat.id} onClick={()=>{setAC(cat.id);document.getElementById(`cat-${cat.id}`)?.scrollIntoView({behavior:"smooth",block:"start"});}} style={{
+                width:"100%",padding:"8px 2px",background:isAct?"rgba(201,168,76,.1)":"none",
+                border:"none",borderLeft:`2px solid ${isAct?"#C9A84C":"transparent"}`,
+                cursor:"pointer",textAlign:"center",display:"flex",flexDirection:"column",alignItems:"center",gap:2,transition:"all .15s"}}>
+                <span style={{fontSize:18,lineHeight:1}}>{cat.icon}</span>
+                <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:7.5,fontWeight:700,color:isAct?"#C9A84C":"#383838",lineHeight:1.2,maxWidth:68,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",textTransform:"uppercase",letterSpacing:.3}}>{cat.label}</span>
+              </button>
+            );
+          })}
+        </div>
+        {/* Mesa info or table-QR */}
+        {local.mesa?(
+          <div style={{width:"100%",padding:"8px 6px",borderTop:"1px solid #1C1C1C",textAlign:"center"}}>
+            <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:7,color:"#3A3A3A",letterSpacing:1,textTransform:"uppercase",marginBottom:3}}>Mesa</div>
+            <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,color:"#FFF",fontWeight:900,lineHeight:1,marginBottom:4}}>{local.mesa}</div>
+            {!vitrina&&(
+              <button onClick={()=>setShowSolicitudes(true)} style={{width:"100%",background:"rgba(201,168,76,.07)",border:"1px solid #1E1E1E",borderRadius:8,padding:"5px 0",cursor:"pointer",fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"}}>🛎️</button>
+            )}
+          </div>
+        ):(
+          local.baseUrl&&(
+            <div style={{width:"100%",padding:"8px 4px",borderTop:"1px solid #1C1C1C",textAlign:"center"}}>
+              <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:6,color:"#2E2E2E",letterSpacing:.8,textTransform:"uppercase",lineHeight:1.4,marginBottom:5}}>Pedí desde<br/>tu mesa</div>
+              <div style={{background:"#FFF",borderRadius:6,padding:3,display:"inline-block",marginBottom:4}}>
+                <QRImage data={`https://${(local.baseUrl||"").replace(/^https?:\/\//,"")}/mesa/1`} size={52} light="#FFFFFF" dark="#0A0806"/>
+              </div>
+              <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:6,color:"#2A2A2A",lineHeight:1.3,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",padding:"0 4px"}}>{(local.baseUrl||"").replace(/^https?:\/\//,"")}</div>
+            </div>
+          )
+        )}
+        {/* Cart summary in sidebar */}
+        {!vitrina&&cartCount>0&&(
+          <button onClick={()=>setView("cart")} style={{width:"100%",padding:"8px 6px",borderTop:"1px solid #1C1C1C",background:"rgba(201,168,76,.05)",border:"none",cursor:"pointer",textAlign:"center"}}>
+            <div style={{marginBottom:4}}>
+              {items.slice(0,2).map(i=>(
+                <div key={i.id} style={{fontFamily:"'DM Sans',sans-serif",fontSize:7,color:"#444",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{i.qty}× {i.name}</div>
+              ))}
+              {items.length>2&&<div style={{fontSize:7,color:"#333"}}>+{items.length-2} más</div>}
+            </div>
+            <div style={{fontFamily:"'Outfit',sans-serif",fontSize:12,fontWeight:800,color:"#C9A84C",marginBottom:5}}>$ {fmt(grandTotal)}</div>
+            <div style={{background:"#C9A84C",borderRadius:7,padding:"5px 4px",fontFamily:"'DM Sans',sans-serif",fontSize:8,fontWeight:800,color:"#0A0806",letterSpacing:.5}}>VER PEDIDO</div>
+          </button>
+        )}
+        {/* Lang switcher */}
+        <div style={{width:"100%",padding:"6px 4px",borderTop:"1px solid #1C1C1C",display:"flex",flexWrap:"wrap",gap:2,justifyContent:"center"}}>
+          {LANGS.map(l=>(
+            <button key={l.code} onClick={()=>changeLang(l.code)} style={{
+              background:lang===l.code?"rgba(201,168,76,.12)":"none",
+              border:`1px solid ${lang===l.code?"rgba(201,168,76,.4)":"transparent"}`,
+              borderRadius:5,padding:"3px 2px",cursor:"pointer",fontSize:12,lineHeight:1}}>
+              {l.flag}
             </button>
-          )})}
+          ))}
         </div>
       </div>
 
-      {/* Hero Panchos del Mundo */}
-      {activeCat==="mundo" && (
-        <div style={{margin:"0 0 20px",padding:"0 20px"}}>
-          {/* Banner */}
-          <div style={{
-            background:"linear-gradient(135deg,#0D0D0D 0%,#1A0A00 50%,#0D0D0D 100%)",
-            border:"1px solid rgba(249,115,22,.18)",
-            borderRadius:22,overflow:"hidden",position:"relative",
-            padding:"24px 20px 20px",
-          }}>
-            {/* Globo decorativo */}
-            <div style={{position:"absolute",top:-30,right:-30,
-              fontSize:120,opacity:.07,pointerEvents:"none",userSelect:"none",
-              lineHeight:1}}>🌍</div>
-            <div style={{position:"absolute",bottom:-20,left:-20,
-              fontSize:80,opacity:.05,pointerEvents:"none",userSelect:"none"}}>✈️</div>
-
-            <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,
-              color:"rgba(249,115,22,.7)",letterSpacing:3,
-              textTransform:"uppercase",marginBottom:6}}>
-              Vuelta al mundo · 8 países
-            </p>
-            <h2 style={{fontFamily:"'DM Sans',sans-serif",fontSize:24,fontWeight:800,
-              color:"#FFF",lineHeight:1.1,marginBottom:6}}>
-              Panchos<br/>
-              <span style={{color:"#F97316"}}>del Mundo</span>
-            </h2>
-            <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,
-              color:"#666",lineHeight:1.5,maxWidth:260,marginBottom:18}}>
-              Cada pancho tiene su historia, su bandera y su carácter. ¿Por qué país arrancás?
-            </p>
-
-            {/* Flags strip */}
-            <div style={{display:"flex",gap:10,overflowX:"auto",
-              scrollbarWidth:"none",margin:"0 -4px",padding:"4px"}}>
-              {[
-                {flag:"🇺🇸",pais:"USA",   color:"#B22234"},
-                {flag:"🇩🇪",pais:"DEU",   color:"#DD0000"},
-                {flag:"🇦🇷",pais:"ARG",   color:"#74ACDF"},
-                {flag:"🇲🇽",pais:"MEX",   color:"#006847"},
-                {flag:"🇮🇹",pais:"ITA",   color:"#009246"},
-                {flag:"🇧🇷",pais:"BRA",   color:"#009C3B"},
-                {flag:"🇫🇷",pais:"FRA",   color:"#002395"},
-                {flag:"🇯🇵",pais:"JPN",   color:"#BC002D"},
-              ].map(({flag,pais,color})=>(
-                <div key={pais} style={{
-                  flexShrink:0,
-                  display:"flex",flexDirection:"column",alignItems:"center",gap:4,
-                }}>
-                  <div style={{
-                    width:44,height:44,borderRadius:"50%",
-                    background:`radial-gradient(circle,${color}33 0%,${color}11 100%)`,
-                    border:`1.5px solid ${color}66`,
-                    display:"flex",alignItems:"center",justifyContent:"center",
-                    fontSize:24,
-                  }}>{flag}</div>
-                  <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:7,
-                    color:"#555",letterSpacing:.5}}>{pais}</span>
-                </div>
-              ))}
-            </div>
-          </div>
+      {/* ── MAIN CONTENT ── */}
+      <div style={{flex:1,overflowX:"hidden",overflowY:"auto",maxHeight:"100vh"}}>
+        {/* Header */}
+        <div style={{background:"linear-gradient(135deg,#1A0800 0%,#0D0D0D 100%)",padding:"14px 10px 12px",textAlign:"center",borderBottom:"1px solid #1A1A1A"}}>
+          <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:7,color:"#3A2A10",letterSpacing:2,textTransform:"uppercase",marginBottom:3}}>Bienvenido a</div>
+          <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:900,color:"#FFF",lineHeight:1.1,marginBottom:2}}>{local.nombre}</div>
+          {local.descripcion&&<div style={{fontFamily:"'DM Sans',sans-serif",fontSize:9,color:"#444",lineHeight:1.3,marginTop:2}}>{local.descripcion}</div>}
+          <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,color:"#2A2A2A",marginTop:4}}>{local.mesa?`Mesa ${local.mesa} · `:""}{nowStr()}</div>
         </div>
-      )}
-
-      {/* Items — grilla 2 columnas */}
-      <div className="cf" style={{
-        display:"grid",gridTemplateColumns:"1fr 1fr",
-        gap:12,padding:"0 16px 16px"}} key={activeCat}>
-        {catItems.length===0 && (
-          <div style={{gridColumn:"1/-1",textAlign:"center",padding:"50px 0"}}>
-            <p style={{fontSize:40,marginBottom:10}}>🍽️</p>
-            <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:14,color:"#555"}}>
-              Sin productos en esta categoría
-            </p>
+        {/* Happy Hour banner */}
+        {local.happyHour&&secs>0&&(
+          <div style={{background:"linear-gradient(90deg,#1A0D00,#120900)",borderBottom:"1px solid rgba(201,168,76,.15)",padding:"7px 10px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,color:"#C9A84C",fontWeight:600}}>{T("happyHour")} · hasta {local.happyHasta}hs</div>
+            <span style={{fontFamily:"monospace",fontSize:14,fontWeight:900,color:"#C9A84C",letterSpacing:2}}>{fmtTimer(secs)}</span>
           </div>
         )}
-        {catItems.map(item=>{
-          const inCart = cart[item.id]?.qty || 0;
-          const disc   = item.orig ? Math.round((1-item.price/item.orig)*100) : null;
-          const ac     = local.color||"#F97316";
-
-          /* Colores de bandera por país */
-          const FLAG_COLORS = {
-            "Estados Unidos": ["#B22234","#3C3B6E"],
-            "Alemania":       ["#DD0000","#FFCE00"],
-            "Argentina":      ["#74ACDF","#4E87C2"],
-            "México":         ["#006847","#CE1126"],
-            "Italia":         ["#009246","#CE2B37"],
-            "Brasil":         ["#009C3B","#FFDF00"],
-            "Francia":        ["#002395","#ED2939"],
-            "Japón":          ["#BC002D","#E8B4BC"],
-            "España":         ["#AA151B","#F1BF00"],
-            "Rusia":          ["#003087","#D52B1E"],
-          };
-          const fc = item.pais ? FLAG_COLORS[item.pais] : null;
-          const headerBg = fc
-            ? `linear-gradient(135deg, ${fc[0]}CC 0%, ${fc[1]}CC 100%)`
-            : `linear-gradient(135deg,#222,#1A1A1A)`;
-
-          return (
-            <div key={item.id} className="ci" style={{
-              background:"#1A1A1A",
-              border:`2px solid ${inCart>0 ? ac : (fc ? fc[0]+"44" : "#272727")}`,
-              borderRadius:20,overflow:"hidden",
-              transition:"border-color .25s",
-              display:"flex",flexDirection:"column",
-              boxShadow: inCart>0 ? `0 0 16px ${ac}33` : "none",
-            }}>
-
-              {/* Header — bandera o emoji */}
-              <div style={{
-                background: headerBg,
-                minHeight: item.pais ? 100 : 90,
-                display:"flex",flexDirection:"column",
-                alignItems:"center",justifyContent:"center",
-                position:"relative",padding:"8px 8px 6px",
-              }}>
-                {/* Overlay oscuro para legibilidad */}
-                {fc && <div style={{position:"absolute",inset:0,
-                  background:"rgba(0,0,0,.28)",pointerEvents:"none"}}/>}
-
-                {/* Emoji / bandera grande */}
-                <span style={{fontSize:item.pais?42:48,
-                  position:"relative",zIndex:1,lineHeight:1,
-                  filter:item.pais?"drop-shadow(0 2px 6px rgba(0,0,0,.5))":"none"}}>
-                  {item.emoji||"🌭"}
-                </span>
-
-                {/* Nombre del país */}
-                {item.pais && (
-                  <span style={{
-                    position:"relative",zIndex:1,
-                    fontFamily:"'DM Sans',sans-serif",fontSize:9,fontWeight:700,
-                    color:"rgba(255,255,255,.9)",letterSpacing:1.5,
-                    textTransform:"uppercase",marginTop:5,
-                    textShadow:"0 1px 3px rgba(0,0,0,.6)",
-                  }}>{item.pais}</span>
-                )}
-
-                {/* Badges */}
-                {item.tag && (
-                  <div style={{position:"absolute",top:7,right:7,zIndex:2}}>
-                    <Tag tag={item.tag}/>
-                  </div>
-                )}
-                {disc && (
-                  <div style={{position:"absolute",top:7,left:7,zIndex:2,
-                    background:"#22C55E",color:"#FFF",borderRadius:6,
-                    fontSize:9,fontWeight:800,padding:"2px 6px",
-                    fontFamily:"'DM Sans',sans-serif"}}>-{disc}%</div>
-                )}
-              </div>
-
-              {/* Info */}
-              <div style={{padding:"10px 12px 12px",flex:1,display:"flex",
-                flexDirection:"column",justifyContent:"space-between",gap:6}}>
-                <div>
-                  <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,
-                    color:"#FFF",lineHeight:1.25,marginBottom:4}}>{item.name}</div>
-                  {item.desc && (
-                    <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,
-                      color:"#777",lineHeight:1.5,
-                      display:"-webkit-box",WebkitLineClamp:3,
-                      WebkitBoxOrient:"vertical",overflow:"hidden"}}>{item.desc}</div>
-                  )}
+        {/* All categories */}
+        {activeCats.map(cat=>{
+          const catProds=prods.filter(p=>p.cat===cat.id&&(p.active||p.active==null));
+          if(!catProds.length) return null;
+          const ac=local.color||"#C9A84C";
+          return(
+            <section key={cat.id} id={`cat-${cat.id}`} style={{marginBottom:2}}>
+              {/* Section header */}
+              <div style={{display:"flex",alignItems:"center",gap:5,padding:"14px 8px 8px"}}>
+                <div style={{flex:1,height:1,background:"linear-gradient(to right,transparent,#1E1E1E)"}}/>
+                <div style={{display:"flex",alignItems:"center",gap:4,whiteSpace:"nowrap"}}>
+                  <span style={{color:ac,fontSize:8}}>◆</span>
+                  <span style={{fontFamily:"'Outfit',sans-serif",fontSize:9,fontWeight:800,color:"#FFF",letterSpacing:1.5,textTransform:"uppercase"}}>{cat.icon} {cat.label.toUpperCase()}</span>
+                  <span style={{color:ac,fontSize:8}}>◆</span>
                 </div>
-                <div style={{display:"flex",alignItems:"center",
-                  justifyContent:"space-between",marginTop:6}}>
-                  <div>
-                    <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:15,
-                      fontWeight:800,color:ac}}>$ {fmt(item.price)}</div>
-                    {item.orig && (
-                      <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,
-                        color:"#555",textDecoration:"line-through"}}>$ {fmt(item.orig)}</div>
-                    )}
-                  </div>
-                  {!vitrina && (item.sin_stock ? (
-                    <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,
-                      fontWeight:700,color:"#888",background:"#222",
-                      border:"1px solid #333",borderRadius:8,
-                      padding:"6px 10px",whiteSpace:"nowrap"}}>Sin stock</span>
-                  ) : inCart===0 ? (
-                    <button onClick={()=>add(item)} className="pr" style={{
-                      width:36,height:36,borderRadius:12,
-                      background:ac,border:"none",color:"#FFF",
-                      fontSize:22,fontWeight:700,cursor:"pointer",
-                      display:"flex",alignItems:"center",justifyContent:"center",
-                      boxShadow:`0 4px 14px ${ac}55`,
-                      touchAction:"manipulation"}}>+</button>
-                  ) : (
-                    <div style={{display:"flex",alignItems:"center",gap:6}}>
-                      <button onClick={()=>rem(item.id)} className="pr" style={{
-                        width:30,height:30,borderRadius:9,
-                        background:"#2A2A2A",border:"1px solid #333",
-                        color:"#FFF",cursor:"pointer",fontSize:17,
-                        display:"flex",alignItems:"center",justifyContent:"center",
-                        touchAction:"manipulation"}}>−</button>
-                      <span style={{fontFamily:"'DM Sans',sans-serif",
-                        fontWeight:800,fontSize:14,color:ac,minWidth:14,
-                        textAlign:"center"}}>{inCart}</span>
-                      <button onClick={()=>add(item)} className="pr" style={{
-                        width:30,height:30,borderRadius:9,
-                        background:ac,border:"none",color:"#FFF",cursor:"pointer",
-                        fontSize:17,display:"flex",alignItems:"center",
-                        justifyContent:"center",touchAction:"manipulation"}}>+</button>
+                <div style={{flex:1,height:1,background:"linear-gradient(to left,transparent,#1E1E1E)"}}/>
+              </div>
+              {/* 3-col grid */}
+              <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:5,padding:"0 5px 5px"}}>
+                {catProds.map(item=>{
+                  const inCart=cart[item.id]?.qty||0;
+                  const disc=item.orig?Math.round((1-item.price/item.orig)*100):null;
+                  return(
+                    <div key={item.id} style={{
+                      background:"#111",borderRadius:10,overflow:"hidden",
+                      border:`1px solid ${inCart>0?ac+"55":"#1C1C1C"}`,
+                      display:"flex",flexDirection:"column",
+                      boxShadow:inCart>0?`0 0 8px ${ac}20`:"none",
+                      transition:"border-color .2s,box-shadow .2s"}}>
+                      {/* Photo or emoji */}
+                      {item.foto_url?(
+                        <div style={{position:"relative",aspectRatio:"1",overflow:"hidden",flexShrink:0}}>
+                          <img src={item.foto_url} alt={item.name} style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}}
+                            onError={e=>{const p=e.target.parentElement;p.style.cssText="aspect-ratio:1;background:#1A1A1A;display:flex;align-items:center;justify-content:center;";e.target.remove();const s=document.createElement("span");s.style.fontSize="30px";s.textContent=item.emoji||"🍽️";p.appendChild(s);}}/>
+                          {disc&&<div style={{position:"absolute",top:3,left:3,background:"#22C55E",color:"#FFF",borderRadius:3,fontSize:7,fontWeight:800,padding:"1px 3px",fontFamily:"'DM Sans',sans-serif"}}>-{disc}%</div>}
+                          {item.tag&&<div style={{position:"absolute",top:3,right:3}}><Tag tag={item.tag}/></div>}
+                        </div>
+                      ):(
+                        <div style={{aspectRatio:"1",background:"linear-gradient(135deg,#181818,#101010)",display:"flex",alignItems:"center",justifyContent:"center",position:"relative",flexShrink:0}}>
+                          <span style={{fontSize:30}}>{item.emoji||"🍽️"}</span>
+                          {disc&&<div style={{position:"absolute",top:3,left:3,background:"#22C55E",color:"#FFF",borderRadius:3,fontSize:7,fontWeight:800,padding:"1px 3px",fontFamily:"'DM Sans',sans-serif"}}>-{disc}%</div>}
+                          {item.tag&&<div style={{position:"absolute",top:3,right:3}}><Tag tag={item.tag}/></div>}
+                        </div>
+                      )}
+                      {/* Product info */}
+                      <div style={{padding:"5px 5px 6px",flex:1,display:"flex",flexDirection:"column",justifyContent:"space-between"}}>
+                        <div>
+                          <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:9,fontWeight:700,color:"#EEE",lineHeight:1.2,marginBottom:2}}>{item.name}</div>
+                          {item.desc&&<div style={{fontFamily:"'DM Sans',sans-serif",fontSize:7.5,color:"#333",lineHeight:1.3,display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",overflow:"hidden"}}>{item.desc}</div>}
+                        </div>
+                        <div style={{marginTop:4}}>
+                          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end"}}>
+                            <div>
+                              <div style={{fontFamily:"'Outfit',sans-serif",fontSize:11,fontWeight:800,color:ac,lineHeight:1}}>$ {fmt(item.price)}</div>
+                              {item.orig&&<div style={{fontFamily:"'DM Sans',sans-serif",fontSize:7,color:"#2A2A2A",textDecoration:"line-through"}}>$ {fmt(item.orig)}</div>}
+                            </div>
+                            {!vitrina&&(item.sin_stock?(
+                              <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:6,fontWeight:700,color:"#444",background:"#1A1A1A",border:"1px solid #222",borderRadius:3,padding:"1px 3px"}}>Agotado</span>
+                            ):inCart===0?(
+                              <button onClick={()=>add(item)} className="pr" style={{width:22,height:22,borderRadius:6,background:ac,border:"none",color:"#0A0806",fontSize:17,fontWeight:900,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,touchAction:"manipulation",lineHeight:1}}>+</button>
+                            ):(
+                              <div style={{display:"flex",alignItems:"center",gap:2,flexShrink:0}}>
+                                <button onClick={()=>rem(item.id)} className="pr" style={{width:19,height:19,borderRadius:5,background:"#1E1E1E",border:"1px solid #2A2A2A",color:"#AAA",fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",padding:0,touchAction:"manipulation",lineHeight:1}}>−</button>
+                                <span style={{fontFamily:"'DM Sans',sans-serif",fontWeight:800,fontSize:10,color:ac,minWidth:10,textAlign:"center"}}>{inCart}</span>
+                                <button onClick={()=>add(item)} className="pr" style={{width:19,height:19,borderRadius:5,background:ac,border:"none",color:"#0A0806",fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",padding:0,touchAction:"manipulation",lineHeight:1}}>+</button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                  ))}
-                </div>
+                  );
+                })}
               </div>
-            </div>
+            </section>
           );
         })}
+        <div style={{textAlign:"center",padding:"16px 0 8px"}}>
+          <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:7,color:"#1A1A1A",letterSpacing:2}}>MENUQR</div>
+        </div>
       </div>
 
-      {/* Solicitudes de mesa — solo cuando hay número de mesa */}
-      {!vitrina && local.mesa && (
-        <div style={{position:"fixed",bottom:cartCount>0?92:16,right:16,zIndex:49}}>
-          <button onClick={()=>setShowSolicitudes(true)} className="pr" style={{
-            width:52,height:52,borderRadius:"50%",
-            background:"linear-gradient(135deg,#1A1A2E,#16213E)",
-            border:"2px solid rgba(255,255,255,.15)",
-            boxShadow:"0 4px 20px rgba(0,0,0,.5)",
-            fontSize:22,cursor:"pointer",
-            display:"flex",alignItems:"center",justifyContent:"center"}}>
-            🛎️
-          </button>
-        </div>
-      )}
-
-      {/* Modal solicitudes */}
-      {showSolicitudes && (
-        <div style={{position:"fixed",inset:0,zIndex:200,
-          background:"rgba(0,0,0,.7)",display:"flex",alignItems:"flex-end"}}
-          onClick={()=>setShowSolicitudes(false)}>
-          <div onClick={e=>e.stopPropagation()} style={{
-            width:"100%",maxWidth:430,margin:"0 auto",
-            background:"linear-gradient(180deg,#111,#0A0A0A)",
-            borderRadius:"22px 22px 0 0",padding:"20px 16px 32px",
-            border:"1px solid rgba(255,255,255,.08)"}}>
-            <div style={{width:36,height:4,borderRadius:2,
-              background:"rgba(255,255,255,.15)",margin:"0 auto 18px"}}/>
-            <h3 style={{fontFamily:"'Outfit',sans-serif",fontSize:18,fontWeight:700,
-              color:"#FFF",marginBottom:4,textAlign:"center"}}>Solicitar al local</h3>
-            <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,
-              color:"rgba(255,255,255,.4)",textAlign:"center",marginBottom:20}}>
-              Mesa {local.mesa} · tap para enviar
-            </p>
-            {solicEnviada && (
-              <div style={{background:"rgba(0,255,136,.1)",border:"1px solid rgba(0,255,136,.3)",
-                borderRadius:10,padding:"8px 14px",marginBottom:14,textAlign:"center"}}>
-                <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,
-                  color:"#00FF88"}}>✓ Solicitud enviada</span>
+      {/* ── SOLICITUDES MODAL ── */}
+      {!vitrina&&showSolicitudes&&(
+        <div style={{position:"fixed",inset:0,zIndex:200,background:"rgba(0,0,0,.75)",display:"flex",alignItems:"flex-end"}} onClick={()=>setShowSolicitudes(false)}>
+          <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:430,margin:"0 auto",background:"linear-gradient(180deg,#111,#0A0A0A)",borderRadius:"22px 22px 0 0",padding:"20px 16px 32px",border:"1px solid rgba(255,255,255,.08)"}}>
+            <div style={{width:36,height:4,borderRadius:2,background:"rgba(255,255,255,.15)",margin:"0 auto 18px"}}/>
+            <h3 style={{fontFamily:"'Outfit',sans-serif",fontSize:18,fontWeight:700,color:"#FFF",marginBottom:4,textAlign:"center"}}>Solicitar al local</h3>
+            <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"rgba(255,255,255,.4)",textAlign:"center",marginBottom:20}}>Mesa {local.mesa} · tap para enviar</p>
+            {solicEnviada&&(
+              <div style={{background:"rgba(0,255,136,.1)",border:"1px solid rgba(0,255,136,.3)",borderRadius:10,padding:"8px 14px",marginBottom:14,textAlign:"center"}}>
+                <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"#00FF88"}}>✓ Solicitud enviada</span>
               </div>
             )}
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:14}}>
               {[
-                {tipo:"mozo",       icon:"🙋", label:"Llamar al mozo"},
-                {tipo:"cuenta",     icon:"💳", label:"Pedir la cuenta"},
-                {tipo:"cubiertos",  icon:"🍴", label:"Cubiertos"},
-                {tipo:"hielo",      icon:"🧊", label:"Hielo"},
-                {tipo:"pan",        icon:"🍞", label:"Pan"},
-                {tipo:"servilletas",icon:"🧻", label:"Servilletas"},
+                {tipo:"mozo",     icon:"🙋", label:"Llamar al mozo"},
+                {tipo:"cuenta",   icon:"💳", label:"Pedir la cuenta"},
+                {tipo:"cubiertos",icon:"🍴", label:"Cubiertos"},
+                {tipo:"hielo",    icon:"🧊", label:"Hielo"},
+                {tipo:"pan",      icon:"🍞", label:"Pan"},
+                {tipo:"servilletas",icon:"🧻",label:"Servilletas"},
               ].map(s=>(
                 <button key={s.tipo} onClick={()=>sendSolicitud(s.tipo)} className="pr" style={{
                   background:solicEnviada===s.tipo?"rgba(0,255,136,.1)":"rgba(255,255,255,.05)",
                   border:`1px solid ${solicEnviada===s.tipo?"rgba(0,255,136,.4)":"rgba(255,255,255,.1)"}`,
-                  borderRadius:14,padding:"14px 10px",cursor:"pointer",textAlign:"center",
-                  transition:"all .2s"}}>
+                  borderRadius:14,padding:"14px 10px",cursor:"pointer",textAlign:"center",transition:"all .2s"}}>
                   <span style={{fontSize:26,display:"block",marginBottom:6}}>{s.icon}</span>
-                  <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:600,
-                    color:solicEnviada===s.tipo?"#00FF88":"rgba(255,255,255,.8)"}}>
-                    {s.label}
-                  </span>
+                  <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:600,color:solicEnviada===s.tipo?"#00FF88":"rgba(255,255,255,.8)"}}>{s.label}</span>
                 </button>
               ))}
             </div>
-            <button onClick={()=>setShowSolicitudes(false)} style={{
-              width:"100%",background:"none",border:"1px solid rgba(255,255,255,.1)",
-              borderRadius:12,padding:"12px",fontFamily:"'DM Sans',sans-serif",
-              fontSize:13,color:"rgba(255,255,255,.4)",cursor:"pointer"}}>
-              Cerrar
-            </button>
+            <button onClick={()=>setShowSolicitudes(false)} style={{width:"100%",background:"none",border:"1px solid rgba(255,255,255,.1)",borderRadius:12,padding:"12px",fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"rgba(255,255,255,.4)",cursor:"pointer"}}>Cerrar</button>
           </div>
-        </div>
-      )}
-
-      {/* Carrito flotante */}
-      {!vitrina && cartCount>0 && (
-        <div style={{position:"fixed",bottom:16,left:"50%",
-          transform:"translateX(-50%)",
-          width:"calc(100% - 32px)",maxWidth:398,zIndex:50}}>
-          <button onClick={()=>setView("cart")} className="pr" style={{
-            width:"100%",background:local.color||"#F97316",
-            border:"none",borderRadius:18,padding:"15px 20px",
-            display:"flex",justifyContent:"space-between",alignItems:"center",
-            cursor:"pointer",
-            boxShadow:`0 8px 32px ${(local.color||"#F97316")}55`,
-            animation:"pulseGold 2.5s infinite"}}>
-            <div style={{background:"rgba(0,0,0,.25)",borderRadius:"50%",
-              width:30,height:30,display:"flex",alignItems:"center",
-              justifyContent:"center",fontFamily:"'DM Sans',sans-serif",
-              fontSize:13,fontWeight:800,color:"#FFF"}}>{cartCount}</div>
-            <span style={{fontFamily:"'DM Sans',sans-serif",fontWeight:700,
-              fontSize:16,color:"#FFF"}}>{T('viewOrder')}</span>
-            <span style={{fontFamily:"'DM Sans',sans-serif",fontWeight:800,
-              fontSize:15,color:"#FFF"}}>$ {fmt(subTotal)}</span>
-          </button>
         </div>
       )}
     </div>
   );
 }
 
+
 /* ══════════════════════════════════════════════════════════════
    QR TAB — componente a nivel de módulo para evitar remounts
 ══════════════════════════════════════════════════════════════ */
 function QRTabComp({ mesaNum, setMesaNum, qrType, setQrType, promoUrl, setPromoUrl, local }) {
+  const baseUrl = (local.baseUrl||"").replace(/^https?:\/\//,"");
   const getQRData = () => {
     switch(qrType){
-      case "mesa":
-        return `https://${(local.baseUrl||'').replace(/^https?:\/\//,'')}/mesa/${mesaNum}`;
-      case "wifi":
-        return `WIFI:T:WPA;S:${local.wifi_nombre};P:${local.wifi_pass};;`;
-      case "whatsapp":
-        return `https://wa.me/${local.whatsapp}?text=${encodeURIComponent(local.whatsapp_msg||'')}`;
-      case "promo":
-        return promoUrl || `https://${local.baseUrl}/promo`;
-      case "vitrina":
-        return `https://${(local.baseUrl||'').replace(/^https?:\/\//,'')}/vitrina`;
-      default:
-        return `https://${local.baseUrl}`;
+      case "mesa":      return `https://${baseUrl}/mesa/${mesaNum}`;
+      case "wifi":      return `WIFI:T:WPA;S:${local.wifi_nombre};P:${local.wifi_pass};;`;
+      case "whatsapp":  return `https://wa.me/${local.whatsapp}?text=${encodeURIComponent(local.whatsapp_msg||"")}`;
+      case "promo":     return promoUrl || `https://${baseUrl}/promo`;
+      case "vitrina":   return `https://${baseUrl}/vitrina`;
+      case "cocina":    return `https://${baseUrl}/cocina`;
+      default:          return `https://${baseUrl}`;
     }
   };
   const QR_TYPES = [
-    {id:"mesa",     icon:"🪑", label:"Mesa",     desc:"Un QR único por cada mesa",           color:"#C9A84C", bg:"#F5ECD7"},
-    {id:"wifi",     icon:"📶", label:"WiFi",     desc:"El cliente se conecta al escanear",   color:"#10B981", bg:"#F0FFF4"},
-    {id:"whatsapp", icon:"💬", label:"WhatsApp", desc:"Abre WA directo con tu número",       color:"#25D366", bg:"#F0FFF0"},
-    {id:"promo",    icon:"🔥", label:"Promo",    desc:"QR para un producto o promo especial",color:"#EF4444", bg:"#FFF0F0"},
-    {id:"vitrina",  icon:"🪟", label:"Vitrina",  desc:"Carta completa para la entrada/vidrio",color:"#8B5CF6", bg:"#F5F3FF"},
+    {id:"mesa",     icon:"🪑", label:"Mesa",      desc:"Un QR único por mesa",               color:"#C9A84C"},
+    {id:"vitrina",  icon:"🪟", label:"Vitrina",   desc:"Carta en la puerta / vidrio",        color:"#8B5CF6"},
+    {id:"cocina",   icon:"👨‍🍳", label:"Cocina",    desc:"Pantalla de pedidos en cocina",      color:"#F97316"},
+    {id:"wifi",     icon:"📶", label:"WiFi",      desc:"Conectarse al escanear",             color:"#10B981"},
+    {id:"whatsapp", icon:"💬", label:"WhatsApp",  desc:"Abre WA directo con tu número",      color:"#25D366"},
+    {id:"promo",    icon:"🔥", label:"Promo",     desc:"URL personalizada de promo",         color:"#EF4444"},
   ];
-  const current = QR_TYPES.find(t=>t.id===qrType);
+  const current = QR_TYPES.find(t=>t.id===qrType) || QR_TYPES[0];
+  const qrData  = getQRData();
+
   return (
-    <div style={{padding:"18px 16px 0"}}>
-      <div style={{marginBottom:14}}>
-        <ALbl>Generador</ALbl>
-        <h2 style={{fontFamily:"'Outfit',sans-serif",fontSize:20,fontWeight:800,color:"var(--abri)"}}>QRs</h2>
+    <div style={{background:"#0A0806",minHeight:"100%",padding:"18px 14px 32px"}}>
+      {/* Header */}
+      <div style={{marginBottom:18}}>
+        <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:"#3A2A10",letterSpacing:2,textTransform:"uppercase",marginBottom:4}}>Panel del dueño</div>
+        <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:900,color:"#FFF",lineHeight:1}}>Generador de QRs</h2>
       </div>
-      {/* Type selector */}
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:16}}>
+
+      {/* Type selector grid */}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:18}}>
         {QR_TYPES.map(t=>(
           <button key={t.id} type="button" onClick={()=>setQrType(t.id)} className="pr" style={{
-            background:qrType===t.id?`${t.color}12`:"var(--ac)",
-            border:`1px solid ${qrType===t.id?`${t.color}55`:"var(--abr)"}`,
-            borderRadius:14,padding:"13px 12px",cursor:"pointer",textAlign:"left",transition:"all .2s"}}>
-            <p style={{fontSize:22,marginBottom:5}}>{t.icon}</p>
-            <p style={{fontFamily:"'Outfit',sans-serif",fontSize:14,fontWeight:700,
-              color:qrType===t.id?t.color:"var(--abri)",marginBottom:2}}>{t.label}</p>
-            <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,color:"var(--ad)",lineHeight:1.3}}>{t.desc}</p>
+            background:qrType===t.id?`${t.color}18`:"#111",
+            border:`1px solid ${qrType===t.id?t.color+"88":"#1E1E1E"}`,
+            borderRadius:12,padding:"12px 10px",cursor:"pointer",textAlign:"left",
+            transition:"all .2s",boxShadow:qrType===t.id?`0 0 12px ${t.color}22`:"none"}}>
+            <span style={{fontSize:22,display:"block",marginBottom:5}}>{t.icon}</span>
+            <div style={{fontFamily:"'Outfit',sans-serif",fontSize:13,fontWeight:700,color:qrType===t.id?t.color:"#CCC",marginBottom:2,lineHeight:1}}>{t.label}</div>
+            <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,color:"#3A3A3A",lineHeight:1.3}}>{t.desc}</div>
           </button>
         ))}
       </div>
+
       {/* Config por tipo */}
-      <div style={{background:"var(--ac)",border:"1px solid var(--abr)",borderRadius:16,padding:16,marginBottom:16}}>
-        {qrType==="mesa" && (
+      <div style={{background:"#111",border:"1px solid #1C1C1C",borderRadius:14,padding:"14px 14px",marginBottom:16}}>
+        {qrType==="mesa"&&(
           <div>
-            <ALbl color={current.color}>Número de mesa</ALbl>
-            <div style={{display:"flex",alignItems:"center",gap:14,marginBottom:10}}>
+            <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:current.color,letterSpacing:1.5,textTransform:"uppercase",marginBottom:10}}>Número de mesa</div>
+            <div style={{display:"flex",alignItems:"center",gap:14,marginBottom:12}}>
               <input type="range" min={1} max={local.mesas||10} value={mesaNum}
                 onChange={e=>setMesaNum(Number(e.target.value))}
                 style={{flex:1,accentColor:current.color}}/>
-              <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:22,
-                fontWeight:700,color:current.color,minWidth:32,textAlign:"center"}}>
-                {mesaNum}
-              </span>
+              <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:24,fontWeight:700,color:current.color,minWidth:32,textAlign:"center"}}>{mesaNum}</span>
             </div>
-            {/* Grilla de mesas */}
-            <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:6}}>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:5}}>
               {Array.from({length:Math.min(local.mesas||10,15)},(_,i)=>i+1).map(n=>(
                 <button key={n} type="button" onClick={()=>setMesaNum(n)} className="pr" style={{
-                  background:mesaNum===n?"rgba(201,168,76,.15)":"var(--as)",
-                  border:`1px solid ${mesaNum===n?"#C9A84C":"var(--abr)"}`,
-                  borderRadius:8,padding:"8px 4px",fontFamily:"'IBM Plex Mono',monospace",
-                  fontWeight:700,fontSize:13,color:mesaNum===n?"#C9A84C":"var(--at)",cursor:"pointer"}}>
+                  background:mesaNum===n?`${current.color}18`:"#1A1A1A",
+                  border:`1px solid ${mesaNum===n?current.color+"88":"#2A2A2A"}`,
+                  borderRadius:8,padding:"7px 4px",fontFamily:"'IBM Plex Mono',monospace",
+                  fontWeight:700,fontSize:13,color:mesaNum===n?current.color:"#555",cursor:"pointer"}}>
                   {n}
                 </button>
               ))}
-              {(local.mesas||10)>15 && (
-                <div style={{gridColumn:"1/-1",textAlign:"center",
-                  fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:"var(--am)",padding:"4px 0"}}>
-                  + {(local.mesas||10)-15} mesas más
-                </div>
+              {(local.mesas||10)>15&&(
+                <div style={{gridColumn:"1/-1",textAlign:"center",fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:"#333",padding:"4px 0"}}>+{(local.mesas||10)-15} más</div>
               )}
             </div>
           </div>
         )}
-        {qrType==="wifi" && (
+        {qrType==="vitrina"&&(
           <div>
-            <ALbl color={current.color}>Datos del WiFi</ALbl>
-            <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"var(--at)",marginBottom:4}}>
-              Red: <b style={{color:"var(--abri)"}}>{local.wifi_nombre||"Sin configurar"}</b>
-            </p>
-            <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"var(--at)",marginBottom:8}}>
-              Contraseña: <b style={{color:"var(--abri)"}}>{local.wifi_pass||"Sin configurar"}</b>
-            </p>
-            <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:"var(--am)"}}>Editá estos datos en la pestaña Gestión →</p>
+            <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:current.color,letterSpacing:1.5,textTransform:"uppercase",marginBottom:8}}>Vitrina — carta de entrada</div>
+            <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"#666",lineHeight:1.5,marginBottom:10}}>Pegá este QR en la puerta o vidrio. El cliente ve toda la carta sin poder hacer pedidos.</p>
+            <div style={{background:"rgba(139,92,246,.06)",border:"1px solid rgba(139,92,246,.2)",borderRadius:10,padding:"10px 12px"}}>
+              <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:"#8B5CF6",letterSpacing:.5,marginBottom:4}}>URL</div>
+              <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:"#888",wordBreak:"break-all"}}>{qrData}</div>
+            </div>
           </div>
         )}
-        {qrType==="whatsapp" && (
+        {qrType==="cocina"&&(
           <div>
-            <ALbl color={current.color}>Datos de WhatsApp</ALbl>
-            <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"var(--at)",marginBottom:4}}>
-              Número: <b style={{color:"var(--abri)"}}>+{local.whatsapp||"Sin configurar"}</b>
-            </p>
-            <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"var(--at)",marginBottom:8}}>
-              Mensaje: <i style={{color:"var(--ad)"}}>{local.whatsapp_msg||"Sin mensaje"}</i>
-            </p>
-            <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:"var(--am)"}}>Editá estos datos en la pestaña Gestión →</p>
+            <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:current.color,letterSpacing:1.5,textTransform:"uppercase",marginBottom:8}}>Pantalla de cocina</div>
+            <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"#666",lineHeight:1.5,marginBottom:10}}>Abre la pantalla de cocina para que el equipo vea y gestione los pedidos en tiempo real.</p>
+            <div style={{background:"rgba(249,115,22,.06)",border:"1px solid rgba(249,115,22,.2)",borderRadius:10,padding:"10px 12px"}}>
+              <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:"#F97316",letterSpacing:.5,marginBottom:4}}>URL</div>
+              <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:"#888",wordBreak:"break-all"}}>{qrData}</div>
+            </div>
           </div>
         )}
-        {qrType==="promo" && (
+        {qrType==="wifi"&&(
           <div>
-            <ALbl color={current.color}>URL de la promo</ALbl>
-            <div style={{display:"flex",alignItems:"center",background:"var(--as)",
-              border:"1px solid var(--abr)",borderRadius:10,overflow:"hidden",marginBottom:8}}>
-              <span style={{padding:"0 10px",fontFamily:"'IBM Plex Mono',monospace",
-                fontSize:11,color:"var(--ad)",borderRight:"1px solid var(--abr)",
-                height:40,display:"flex",alignItems:"center",flexShrink:0}}>URL</span>
+            <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:current.color,letterSpacing:1.5,textTransform:"uppercase",marginBottom:8}}>Datos del WiFi</div>
+            <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"#777",marginBottom:4}}>Red: <b style={{color:"#CCC"}}>{local.wifi_nombre||"Sin configurar"}</b></div>
+            <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"#777",marginBottom:8}}>Contraseña: <b style={{color:"#CCC"}}>{local.wifi_pass||"Sin configurar"}</b></div>
+            <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:"#2E2E2E"}}>Editá estos datos en Gestión →</div>
+          </div>
+        )}
+        {qrType==="whatsapp"&&(
+          <div>
+            <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:current.color,letterSpacing:1.5,textTransform:"uppercase",marginBottom:8}}>Datos de WhatsApp</div>
+            <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"#777",marginBottom:4}}>Número: <b style={{color:"#CCC"}}>+{local.whatsapp||"Sin configurar"}</b></div>
+            <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"#777",marginBottom:8}}>Mensaje: <i style={{color:"#555"}}>{local.whatsapp_msg||"Sin mensaje"}</i></div>
+            <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:"#2E2E2E"}}>Editá estos datos en Gestión →</div>
+          </div>
+        )}
+        {qrType==="promo"&&(
+          <div>
+            <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:current.color,letterSpacing:1.5,textTransform:"uppercase",marginBottom:8}}>URL de la promo</div>
+            <div style={{display:"flex",alignItems:"center",background:"#1A1A1A",border:"1px solid #2A2A2A",borderRadius:10,overflow:"hidden",marginBottom:8}}>
+              <span style={{padding:"0 10px",fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:"#333",borderRight:"1px solid #2A2A2A",height:40,display:"flex",alignItems:"center",flexShrink:0}}>URL</span>
               <input value={promoUrl} onChange={e=>setPromoUrl(e.target.value)}
-                placeholder="https://instagram.com/tu_promo_especial"
-                style={{flex:1,background:"none",border:"none",padding:"10px 12px",
-                  color:"var(--abri)",fontFamily:"'IBM Plex Mono',monospace",fontSize:12}}/>
+                placeholder="https://instagram.com/tu_promo"
+                style={{flex:1,background:"none",border:"none",padding:"10px 12px",color:"#CCC",fontFamily:"'IBM Plex Mono',monospace",fontSize:11}}/>
             </div>
-            <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,color:"var(--am)"}}>
-              Puede ser cualquier URL — Instagram, producto, promo del mes, etc.
-            </p>
-          </div>
-        )}
-        {qrType==="vitrina" && (
-          <div>
-            <ALbl color={current.color}>QR Vitrina — Carta de entrada</ALbl>
-            <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"var(--at)",
-              lineHeight:1.5,marginBottom:10}}>
-              Pegá este QR en la puerta o vidrio del local. El cliente lo escanea y ve
-              toda la carta con instrucciones para pedir desde su mesa o en el mostrador.
-            </p>
-            <div style={{background:"rgba(139,92,246,.08)",border:"1px solid rgba(139,92,246,.2)",
-              borderRadius:10,padding:"10px 14px"}}>
-              <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,
-                color:"#8B5CF6",letterSpacing:.5,marginBottom:4}}>URL GENERADA</p>
-              <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:11,
-                color:"var(--abri)",wordBreak:"break-all"}}>{getQRData()}</p>
-            </div>
+            <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,color:"#333"}}>Puede ser cualquier URL — Instagram, promo especial, etc.</div>
           </div>
         )}
       </div>
+
       {/* QR Preview */}
-      <div style={{background:current.bg,borderRadius:20,padding:"24px 16px",
-        marginBottom:16,textAlign:"center",border:`2px solid ${current.color}`,
-        boxShadow:`0 4px 24px rgba(0,0,0,.3)`}}>
-        <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,
-          color:current.color,letterSpacing:2.5,textTransform:"uppercase",marginBottom:8}}>
-          {local.nombre}
-        </p>
-        <div style={{background:"#fff",borderRadius:14,padding:10,
-          border:`3px solid ${current.color}`,display:"inline-block",marginBottom:12}}>
-          <QRImage data={getQRData()} size={210} light={current.bg}/>
+      <div style={{background:"#0F0F0F",borderRadius:20,padding:"24px 16px",marginBottom:16,textAlign:"center",border:`1px solid ${current.color}44`,boxShadow:`0 4px 32px ${current.color}11`}}>
+        <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,color:current.color,letterSpacing:2.5,textTransform:"uppercase",marginBottom:10}}>{local.nombre}</div>
+        <div style={{background:"#FFF",borderRadius:14,padding:10,border:`3px solid ${current.color}`,display:"inline-block",marginBottom:14}}>
+          <QRImage data={qrData} size={200} light="#FFFFFF" dark="#0A0806"/>
         </div>
-        <div style={{background:current.color,borderRadius:30,
-          padding:"6px 24px",display:"inline-block",marginBottom:6}}>
-          <p style={{fontFamily:"'Outfit',sans-serif",fontSize:15,fontWeight:700,color:"#0A0806"}}>
+        <div style={{background:current.color,borderRadius:30,padding:"7px 24px",display:"inline-block",marginBottom:6}}>
+          <div style={{fontFamily:"'Outfit',sans-serif",fontSize:14,fontWeight:700,color:"#0A0806"}}>
             {qrType==="mesa"?`Mesa ${mesaNum}`:
              qrType==="wifi"?"WiFi Gratis":
              qrType==="whatsapp"?"Escribinos por WA":
              qrType==="vitrina"?"Ver la Carta":
+             qrType==="cocina"?"Pantalla Cocina":
              "Promo Especial"}
-          </p>
+          </div>
         </div>
-        <p style={{fontFamily:"monospace",fontSize:8,color:current.color,
-          opacity:.6,marginTop:4,wordBreak:"break-all",padding:"0 8px"}}>
-          {getQRData()}
-        </p>
+        <div style={{fontFamily:"monospace",fontSize:8,color:current.color,opacity:.4,marginTop:6,wordBreak:"break-all",padding:"0 8px"}}>{qrData}</div>
       </div>
+
       <button type="button" onClick={()=>window.print()} className="pr" style={{
         width:"100%",background:current.color,color:"#0A0806",border:"none",
         borderRadius:14,padding:14,fontFamily:"'IBM Plex Mono',monospace",
-        fontSize:13,fontWeight:700,cursor:"pointer",letterSpacing:1,marginBottom:8}}>
+        fontSize:13,fontWeight:700,cursor:"pointer",letterSpacing:1}}>
         🖨️ IMPRIMIR ESTE QR
       </button>
     </div>

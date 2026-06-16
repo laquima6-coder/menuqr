@@ -64,7 +64,7 @@ export default function MenuPublico({ vitrina = false }) {
       setProds(productos.map(p => ({
         id: p.id, cat: p.categoria_id, name: p.name,
         desc: p.desc, price: p.price, orig: p.orig,
-        emoji: p.emoji, tag: p.tag, active: p.active,
+        emoji: p.emoji, tag: p.tag, active: p.active, foto_url: p.foto_url,
       })))
     } catch (e) {
       setError('Error al cargar el menú')
