@@ -701,7 +701,7 @@ const tCat = (label,lang) => { if(!lang||lang==="es") return label; const k=labe
 /* ══════════════════════════════════════════════════════════════
    CLIENT APP — carta del cliente
 ══════════════════════════════════════════════════════════════ */
-function ClientApp({onBack, local, cats, prods}) {
+function ClientApp({onBack, local, cats, prods, vitrina=false}) {
   const [view,setView]   = useState("menu"); // menu | cart | done
   const [cart,setCart]   = useState({});
   const [activeCat,setAC]= useState(cats.find(c=>c.activa)?.id || "dest");
@@ -1398,7 +1398,7 @@ function ClientApp({onBack, local, cats, prods}) {
                       color:"#777",lineHeight:1.5,
                       display:"-webkit-box",WebkitLineClamp:3,
                       WebkitBoxOrient:"vertical",overflow:"hidden"}}>{item.desc}</div>
-                  )}
+                  ))}
                 </div>
                 <div style={{display:"flex",alignItems:"center",
                   justifyContent:"space-between",marginTop:6}}>
@@ -1410,7 +1410,7 @@ function ClientApp({onBack, local, cats, prods}) {
                         color:"#555",textDecoration:"line-through"}}>$ {fmt(item.orig)}</div>
                     )}
                   </div>
-                  {item.sin_stock ? (
+                  {!vitrina && (item.sin_stock ? (
                     <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,
                       fontWeight:700,color:"#888",background:"#222",
                       border:"1px solid #333",borderRadius:8,
@@ -1449,7 +1449,7 @@ function ClientApp({onBack, local, cats, prods}) {
       </div>
 
       {/* Solicitudes de mesa — solo cuando hay número de mesa */}
-      {local.mesa && (
+      {!vitrina && local.mesa && (
         <div style={{position:"fixed",bottom:cartCount>0?92:16,right:16,zIndex:49}}>
           <button onClick={()=>setShowSolicitudes(true)} className="pr" style={{
             width:52,height:52,borderRadius:"50%",
@@ -1521,7 +1521,7 @@ function ClientApp({onBack, local, cats, prods}) {
       )}
 
       {/* Carrito flotante */}
-      {cartCount>0 && (
+      {!vitrina && cartCount>0 && (
         <div style={{position:"fixed",bottom:16,left:"50%",
           transform:"translateX(-50%)",
           width:"calc(100% - 32px)",maxWidth:398,zIndex:50}}>
@@ -1562,7 +1562,7 @@ function QRTabComp({ mesaNum, setMesaNum, qrType, setQrType, promoUrl, setPromoU
       case "promo":
         return promoUrl || `https://${local.baseUrl}/promo`;
       case "vitrina":
-        return `https://${(local.baseUrl||'').replace(/^https?:\/\//,'')}/vitrina`;
+        return `https://${(local.baseUrl||'').replace(/^https?:\/\//,'')}/${local.slug||''}/vitrina`;
       default:
         return `https://${local.baseUrl}`;
     }
@@ -4846,6 +4846,9 @@ export default function MenuQR({
       )}
       {mode==="client" && (
         <ClientApp onBack={()=>setMode("landing")} local={local} cats={cats} prods={prods}/>
+      )}
+      {mode==="vitrina" && (
+        <ClientApp local={local} cats={cats} prods={prods} vitrina={true}/>
       )}
       {mode==="admin" && authUser && (
         <AdminApp

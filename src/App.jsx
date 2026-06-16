@@ -37,6 +37,7 @@ export default function App() {
         {/* Carta pública por slug corto — clientes escanean /:slug */}
         <Route path="/:slug" element={<MenuPublico />} />
         <Route path="/:slug/mesa/:mesa" element={<MenuPublico />} />
+        <Route path="/:slug/vitrina" element={<MenuPublico vitrina />} />
 
         {/* Panel del dueño + landing (solo en raíz /) */}
         <Route path="/*" element={

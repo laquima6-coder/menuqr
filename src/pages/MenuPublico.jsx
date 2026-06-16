@@ -11,7 +11,7 @@ import MenuQR from '../MenuQR.jsx'
    URL: /menu/:slug  o  /menu/:slug/mesa/:mesa
    El cliente llega acá al escanear el QR de la mesa
 ══════════════════════════════════════════════════════════ */
-export default function MenuPublico() {
+export default function MenuPublico({ vitrina = false }) {
   const { slug, mesa } = useParams()
   const [local, setLocal]   = useState(null)
   const [cats,  setCats]    = useState([])
@@ -95,7 +95,7 @@ export default function MenuPublico() {
       local={local}   setLocal={setLocal}
       cats={cats}     setCats={setCats}
       prods={prods}   setProds={setProds}
-      forceMode="client"
+      forceMode={vitrina ? "vitrina" : "client"}
       mesaInicial={mesa ? parseInt(mesa) : null}
     />
   )
