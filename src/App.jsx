@@ -5,6 +5,7 @@ import MenuPublico from './pages/MenuPublico.jsx'
 import Registro from './pages/Registro.jsx'
 import SuperAdmin from './pages/SuperAdmin.jsx'
 import LandingPage from './pages/LandingPage.jsx'
+import CocinaScreen from './pages/CocinaScreen.jsx'
 
 export default function App() {
   const [local, setLocal] = useState(() => {
@@ -37,6 +38,8 @@ export default function App() {
         <Route path="/superadmin/:section" element={<SuperAdmin />} />
 
         {/* Carta publica por slug corto */}
+        <Route path="/:slug/cocina" element={<CocinaScreen />} />
+        <Route path="/menu/:slug/cocina" element={<CocinaScreen />} />
         <Route path="/:slug" element={<MenuPublico />} />
         <Route path="/:slug/mesa/:mesa" element={<MenuPublico />} />
         <Route path="/:slug/vitrina" element={<MenuPublico vitrina />} />
