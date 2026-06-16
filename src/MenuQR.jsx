@@ -1562,7 +1562,7 @@ function QRTabComp({ mesaNum, setMesaNum, qrType, setQrType, promoUrl, setPromoU
       case "promo":
         return promoUrl || `https://${local.baseUrl}/promo`;
       case "vitrina":
-        return `https://${(local.baseUrl||'').replace(/^https?:\/\//,'')}/${local.slug||''}/vitrina`;
+        return `https://${(local.baseUrl||'').replace(/^https?:\/\//,'')}/vitrina`;
       default:
         return `https://${local.baseUrl}`;
     }

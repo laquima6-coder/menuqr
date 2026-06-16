@@ -26,6 +26,7 @@ export default function App() {
         {/* Carta pública — clientes escanean el QR */}
         <Route path="/menu/:slug" element={<MenuPublico />} />
         <Route path="/menu/:slug/mesa/:mesa" element={<MenuPublico />} />
+        <Route path="/menu/:slug/vitrina" element={<MenuPublico vitrina />} />
 
         {/* Registro de nuevo restaurante */}
         <Route path="/registro" element={<Registro />} />
