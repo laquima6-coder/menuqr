@@ -1503,7 +1503,7 @@ function QRTabComp({ mesaNum, setMesaNum, qrType, setQrType, promoUrl, setPromoU
 /* ══════════════════════════════════════════════════════════════
    CAT MODAL — nivel de módulo (evita useState condicional)
 ══════════════════════════════════════════════════════════════ */
-function CatModal({local, cats, setCats, setGModal, toast}) {
+function CatModal({local, cats, setCats, setGModal, toast, onCreated}) {
   const ICONOS = ["◇","◉","◌","◎","✦","★","◈","▶","♦","❋","🍕","🥩","🍹","☕"];
   const [nNombre,setNN] = useState("");
   const [nIcono, setNI] = useState("◇");
@@ -1538,14 +1538,14 @@ function CatModal({local, cats, setCats, setGModal, toast}) {
               .select().single();
             if(error){ toast("Error: "+error.message,"err"); return; }
             setCats(cs=>[...cs,{id:cat.id,label:cat.label,icon:cat.icon,activa:cat.activa}]);
+            onCreated?.(cat.id);
           } else {
-            setCats(cs=>[...cs,{
-              id:nNombre.toLowerCase().replace(/\s+/g,"_")+Date.now(),
-              label:nNombre,icon:nIcono,activa:true
-            }]);
+            const newId=nNombre.toLowerCase().replace(/\s+/g,"_")+Date.now();
+            setCats(cs=>[...cs,{id:newId,label:nNombre,icon:nIcono,activa:true}]);
+            onCreated?.(newId);
           }
           setGModal(null);
-          toast("Categoría creada ✓");
+          toast("Categoria creada - ahora agrega productos");
         }} className="pr" style={{
           flex:2,background:"var(--gi)",color:"#fff",border:"none",
           borderRadius:10,padding:12,fontFamily:"'Outfit',sans-serif",
@@ -1617,6 +1617,23 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
   const [showArqCi,setArqCi] = useState(false);
   const [showTkt,setTkt]     = useState(null);
   const [arqVals,setArqV]    = useState(emptyArq());
+
+  /* ── Draft para formulario local (evita perdida de foco en inputs) */
+  const [localDraft, setLocalDraft] = useState({});
+  useEffect(()=>{
+    if(local.restauranteId) setLocalDraft({
+      nombre:       local.nombre       || '',
+      descripcion:  local.descripcion  || '',
+      direccion:    local.direccion    || '',
+      telefono:     local.telefono     || '',
+      email:        local.email        || '',
+      baseUrl:      local.baseUrl      || '',
+      wifi_nombre:  local.wifi_nombre  || '',
+      wifi_pass:    local.wifi_pass    || '',
+      whatsapp:     local.whatsapp     || '',
+      whatsapp_msg: local.whatsapp_msg || '',
+    });
+  },[local.restauranteId]);
 
   /* ── State de QR */
   const [qrSelected,setQRS]  = useState(null);
@@ -3718,20 +3735,20 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
         <div style={{background:"var(--gc)",border:"1px solid var(--gbr)",
           borderRadius:16,padding:18,marginBottom:12}}>
           <GLbl c="var(--gi2)">Datos del restaurante</GLbl>
-          <GInput label="Nombre del local" value={local.nombre}
-            onChange={v=>setLocal(l=>({...l,nombre:v}))} placeholder="La Trattoria"/>
-          <GInput label="Dirección" value={local.direccion}
-            onChange={v=>setLocal(l=>({...l,direccion:v}))} placeholder="Av. Corrientes 1234"/>
-          <GInput label="Teléfono" value={local.telefono}
-            onChange={v=>setLocal(l=>({...l,telefono:v}))} placeholder="+54 11 1234-5678"/>
-          <GInput label="Email" value={local.email}
-            onChange={v=>setLocal(l=>({...l,email:v}))} placeholder="hola@tu-local.com"/>
-          <GInput label="URL de tu carta (para QRs)" value={local.baseUrl}
-            onChange={v=>setLocal(l=>({...l,baseUrl:v}))} placeholder="latrattoria.menuqr.app"/>
+          <GInput label="Nombre del local" value={localDraft.nombre||""}
+            onChange={v=>setLocalDraft(d=>({...d,nombre:v}))} placeholder="La Trattoria"/>
+          <GInput label="Dirección" value={localDraft.direccion||""}
+            onChange={v=>setLocalDraft(d=>({...d,direccion:v}))} placeholder="Av. Corrientes 1234"/>
+          <GInput label="Teléfono" value={localDraft.telefono||""}
+            onChange={v=>setLocalDraft(d=>({...d,telefono:v}))} placeholder="+54 11 1234-5678"/>
+          <GInput label="Email" value={localDraft.email||""}
+            onChange={v=>setLocalDraft(d=>({...d,email:v}))} placeholder="hola@tu-local.com"/>
+          <GInput label="URL de tu carta (para QRs)" value={localDraft.baseUrl||""}
+            onChange={v=>setLocalDraft(d=>({...d,baseUrl:v}))} placeholder="latrattoria.menuqr.app"/>
           <div style={{marginBottom:0}}>
             <GLbl>Descripción breve</GLbl>
-            <textarea value={local.descripcion}
-              onChange={e=>setLocal(l=>({...l,descripcion:e.target.value}))}
+            <textarea value={localDraft.descripcion||""}
+              onChange={e=>setLocalDraft(d=>({...d,descripcion:e.target.value}))}
               placeholder="Una frase que describa tu restaurante..."
               style={{width:"100%",background:"var(--gb)",border:"1px solid var(--gbr)",
                 borderRadius:10,padding:"11px 14px",color:"var(--gbri)",fontSize:14,
@@ -3814,21 +3831,21 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
         <div style={{background:"var(--gc)",border:"1px solid var(--gbr)",
           borderRadius:16,padding:18,marginBottom:12}}>
           <GLbl c="var(--gi2)">QR WiFi</GLbl>
-          <GInput label="Nombre de la red (SSID)" value={local.wifi_nombre}
-            onChange={v=>setLocal(l=>({...l,wifi_nombre:v}))} placeholder="MiRed_WiFi"/>
-          <GInput label="Contraseña" value={local.wifi_pass}
-            onChange={v=>setLocal(l=>({...l,wifi_pass:v}))} placeholder="contraseña123"/>
+          <GInput label="Nombre de la red (SSID)" value={localDraft.wifi_nombre||""}
+            onChange={v=>setLocalDraft(d=>({...d,wifi_nombre:v}))} placeholder="MiRed_WiFi"/>
+          <GInput label="Contraseña" value={localDraft.wifi_pass||""}
+            onChange={v=>setLocalDraft(d=>({...d,wifi_pass:v}))} placeholder="contraseña123"/>
         </div>
 
         <div style={{background:"var(--gc)",border:"1px solid var(--gbr)",
           borderRadius:16,padding:18,marginBottom:16}}>
           <GLbl c="var(--gi2)">QR WhatsApp</GLbl>
-          <GInput label="Número (con código de país, sin +)" value={local.whatsapp}
-            onChange={v=>setLocal(l=>({...l,whatsapp:v}))}
+          <GInput label="Número (con código de país, sin +)" value={localDraft.whatsapp||""}
+            onChange={v=>setLocalDraft(d=>({...d,whatsapp:v}))}
             placeholder="5491112345678" prefix="+"/>
           <GLbl>Mensaje predeterminado</GLbl>
-          <textarea value={local.whatsapp_msg}
-            onChange={e=>setLocal(l=>({...l,whatsapp_msg:e.target.value}))}
+          <textarea value={localDraft.whatsapp_msg||""}
+            onChange={e=>setLocalDraft(d=>({...d,whatsapp_msg:e.target.value}))}
             placeholder="Mensaje que verá el cliente al escanear el QR de WhatsApp..."
             style={{width:"100%",background:"var(--gb)",border:"1px solid var(--gbr)",
               borderRadius:10,padding:"11px 14px",color:"var(--gbri)",fontSize:14,
@@ -3836,25 +3853,26 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
         </div>
 
         <button onClick={async ()=>{
+          setLocal(l=>({...l,...localDraft}));
           if(local.restauranteId && supabase){
             const {error} = await supabase.from("restaurantes").update({
-              nombre:    local.nombre,
-              descripcion: local.descripcion,
-              direccion: local.direccion,
-              telefono:  local.telefono,
-              email:     local.email,
+              nombre:    localDraft.nombre,
+              descripcion: localDraft.descripcion,
+              direccion: localDraft.direccion,
+              telefono:  localDraft.telefono,
+              email:     localDraft.email,
               color:     local.color,
               mesas:     local.mesas,
-              base_url:  (local.baseUrl||"").replace(/^https?:\/\//,""),
+              base_url:  (localDraft.baseUrl||"").replace(/^https?:\/\//,""),
               config: {
                 propina:     local.propina,
                 happyHour:   local.happyHour,
                 happyDesde:  local.happyDesde,
                 happyHasta:  local.happyHasta,
-                wifi_nombre: local.wifi_nombre,
-                wifi_pass:   local.wifi_pass,
-                whatsapp:    local.whatsapp,
-                whatsapp_msg:local.whatsapp_msg,
+                wifi_nombre: localDraft.wifi_nombre,
+                wifi_pass:   localDraft.wifi_pass,
+                whatsapp:    localDraft.whatsapp,
+                whatsapp_msg:localDraft.whatsapp_msg,
               }
             }).eq("id", local.restauranteId);
             if(error) toast("Error al guardar: "+error.message,"err");
@@ -4210,17 +4228,45 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
               borderRadius:10,padding:"11px 14px",color:"var(--gbri)",fontSize:14,
               resize:"none",height:68,marginBottom:14}}/>
 
-          <GLbl>Foto del producto <span style={{color:"var(--gd)",fontWeight:400}}>(URL · opcional)</span></GLbl>
+          <GLbl>Foto del producto <span style={{color:"var(--gd)",fontWeight:400}}>(opcional)</span></GLbl>
+          {/* Upload desde celular */}
+          <label style={{display:"flex",alignItems:"center",gap:10,
+            background:"rgba(99,102,241,.08)",border:"1px dashed rgba(99,102,241,.4)",
+            borderRadius:10,padding:"11px 14px",cursor:"pointer",marginBottom:8}}>
+            <span style={{fontSize:20}}>📷</span>
+            <div style={{flex:1}}>
+              <div style={{fontFamily:"'Outfit',sans-serif",fontSize:13,fontWeight:600,color:"var(--gi2)"}}>Subir foto</div>
+              <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,color:"var(--gd)"}}>Desde tu camara o galeria</div>
+            </div>
+            <input type="file" accept="image/*" capture="environment"
+              style={{display:"none"}}
+              onChange={async e=>{
+                const file = e.target.files?.[0];
+                if(!file || !supabase) return;
+                const ext = file.name.split(".").pop();
+                const path = `productos/${local.restauranteId}/${Date.now()}.${ext}`;
+                const {error:upErr} = await supabase.storage.from("fotos").upload(path, file, {upsert:true});
+                if(upErr){ toast("Error al subir: "+upErr.message,"err"); return; }
+                const {data:{publicUrl}} = supabase.storage.from("fotos").getPublicUrl(path);
+                setForm("foto_url", publicUrl);
+                toast("Foto subida");
+              }}/>
+          </label>
+          {/* O pegar URL */}
           <div style={{display:"flex",alignItems:"center",background:"var(--gb)",
             border:"1px solid var(--gbr)",borderRadius:10,overflow:"hidden",
             marginBottom:form.foto_url?8:14}}>
             <span style={{padding:"0 10px",fontFamily:"'IBM Plex Mono',monospace",
               fontSize:11,color:"var(--gd)",borderRight:"1px solid var(--gbr)",
-              height:42,display:"flex",alignItems:"center",flexShrink:0}}>🖼️</span>
+              height:42,display:"flex",alignItems:"center",flexShrink:0}}>🔗</span>
             <input value={form.foto_url||""} onChange={e=>setForm("foto_url",e.target.value)}
-              placeholder="https://..."
+              placeholder="O pegar URL de imagen..."
               style={{flex:1,background:"none",border:"none",padding:"11px 12px",
                 color:"var(--gbri)",fontFamily:"'IBM Plex Mono',monospace",fontSize:12}}/>
+            {form.foto_url && (
+              <button onClick={()=>setForm("foto_url","")} style={{background:"none",border:"none",
+                color:"var(--ar)",padding:"0 10px",cursor:"pointer",fontSize:14}}>✕</button>
+            )}
           </div>
           {form.foto_url && (
             <div style={{marginBottom:14,borderRadius:10,overflow:"hidden",
@@ -4306,7 +4352,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
 
     /* Modal de nueva categoría — extraído a nivel de módulo */
     if(gModal.type==="cat") {
-      return <CatModal local={local} cats={cats} setCats={setCats} setGModal={setGModal} toast={toast}/>;
+      return <CatModal local={local} cats={cats} setCats={setCats} setGModal={setGModal} toast={toast} onCreated={id=>setGActiveCat(id)}/>;
     }
         return null;
   };
