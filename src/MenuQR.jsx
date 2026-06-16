@@ -3959,6 +3959,26 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
                     padding:0,lineHeight:1}}>
                     {cat.activa?"👁":"🙈"}
                   </button>
+                  <button onClick={async()=>{
+                    const hasProd = prods.some(p=>p.cat===cat.id);
+                    if(hasProd){
+                      const ok = window.confirm(`"${cat.label}" tiene productos. ¿Borrar igual? Los productos quedarán sin categoría.`);
+                      if(!ok) return;
+                    }
+                    setCats(cs=>cs.filter(c=>c.id!==cat.id));
+                    if(activeCat===cat.id){
+                      const rest = cats.filter(c=>c.id!==cat.id);
+                      setAC(rest[0]?.id||"");
+                    }
+                    if(local.restauranteId && supabase){
+                      await supabase.from("categorias").delete().eq("id",cat.id);
+                    }
+                    toast(`Categoría "${cat.label}" eliminada`,"warn");
+                  }} style={{background:"none",border:"none",cursor:"pointer",
+                    color:"rgba(239,68,68,.7)",fontSize:12,
+                    padding:"0 2px",lineHeight:1}} title="Borrar categoría">
+                    ×
+                  </button>
                 </div>
               ))}
             </div>
