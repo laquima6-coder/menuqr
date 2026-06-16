@@ -1,16 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { supabase, getRestaurante, getCategorias, getProductos, createPedido } from '../lib/supabase.js'
+import { supabase, getRestaurante, getCategorias, getProductos } from '../lib/supabase.js'
 import { INIT_LOCAL, INIT_CATS, INIT_PRODS } from '../MenuQR.jsx'
-
-// Importar ClientApp directamente desde MenuQR
 import MenuQR from '../MenuQR.jsx'
 
-/* ══════════════════════════════════════════════════════════
-   MENU PÚBLICO
-   URL: /menu/:slug  o  /menu/:slug/mesa/:mesa
-   El cliente llega acá al escanear el QR de la mesa
-══════════════════════════════════════════════════════════ */
 export default function MenuPublico({ vitrina = false }) {
   const { slug, mesa } = useParams()
   const [local, setLocal]   = useState(null)
@@ -28,7 +21,6 @@ export default function MenuPublico({ vitrina = false }) {
     setError(null)
 
     if (!supabase) {
-      // Sin Supabase configurado → usar datos de demo
       setLocal({ ...INIT_LOCAL, slug })
       setCats(INIT_CATS)
       setProds(INIT_PRODS)
@@ -39,14 +31,13 @@ export default function MenuPublico({ vitrina = false }) {
     try {
       const restaurante = await getRestaurante(slug)
       if (!restaurante) { setError('Restaurante no encontrado'); setLoading(false); return }
-      if (!restaurante.activo) { setError('Este menú no está disponible en este momento'); setLoading(false); return }
+      if (!restaurante.activo) { setError('Este menu no esta disponible en este momento'); setLoading(false); return }
 
       const [categorias, productos] = await Promise.all([
         getCategorias(restaurante.id),
         getProductos(restaurante.id),
       ])
 
-      // Adaptar formato de DB al formato que espera ClientApp
       setLocal({
         nombre:      restaurante.nombre,
         descripcion: restaurante.descripcion || '',
@@ -67,7 +58,7 @@ export default function MenuPublico({ vitrina = false }) {
         emoji: p.emoji, tag: p.tag, active: p.active, foto_url: p.foto_url,
       })))
     } catch (e) {
-      setError('Error al cargar el menú')
+      setError('Error al cargar el menu')
     } finally {
       setLoading(false)
     }
@@ -76,7 +67,7 @@ export default function MenuPublico({ vitrina = false }) {
   if (loading) return (
     <div style={{background:'#0A0806',minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:16}}>
       <div style={{width:48,height:48,border:'4px solid #2C2010',borderTopColor:'#C9A84C',borderRadius:'50%',animation:'spin .8s linear infinite'}}></div>
-      <div style={{color:'#7A6A50',fontFamily:'Outfit,sans-serif'}}>Cargando menú...</div>
+      <div style={{color:'#7A6A50',fontFamily:'Outfit,sans-serif'}}>Cargando menu...</div>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   )
@@ -89,11 +80,13 @@ export default function MenuPublico({ vitrina = false }) {
     </div>
   )
 
-  // Renderizar directamente en modo cliente (sin landing ni admin)
   return (
     <MenuQR
       local={local}   setLocal={setLocal}
       cats={cats}     setCats={setCats}
       prods={prods}   setProds={setProds}
       forceMode={vitrina ? "vitrina" : "client"}
- 
+      mesaInicial={mesa ? parseInt(mesa) : null}
+    />
+  )
+}
