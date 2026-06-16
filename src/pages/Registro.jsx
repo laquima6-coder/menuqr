@@ -81,7 +81,7 @@ export default function Registro() {
       if (restErr) { setErr(restErr.message); return }
 
       setOk(`¡Listo! Tu carta estará en: ${location.origin}/menu/${form.slug}`)
-      setTimeout(() => { window.location.href = '/' }, 3000)
+      setTimeout(() => { window.location.href = '/panel?nuevo=1&slug=' + form.slug }, 3000)
     } catch(e) {
       setErr('Error inesperado: ' + e.message)
     } finally {
@@ -149,7 +149,4 @@ export default function Registro() {
         </button>
 
         <div style={S.link}>¿Ya tenés cuenta? <a href="/" style={{color:'#6366F1',textDecoration:'none'}}>Iniciá sesión</a></div>
-      </div>
-    </div>
-  )
-}
+   

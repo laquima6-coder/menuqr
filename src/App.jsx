@@ -4,6 +4,7 @@ import MenuQR, { INIT_LOCAL, INIT_CATS, INIT_PRODS } from './MenuQR.jsx'
 import MenuPublico from './pages/MenuPublico.jsx'
 import Registro from './pages/Registro.jsx'
 import SuperAdmin from './pages/SuperAdmin.jsx'
+import LandingPage from './pages/LandingPage.jsx'
 
 export default function App() {
   const [local, setLocal] = useState(() => {
@@ -40,15 +41,7 @@ export default function App() {
         <Route path="/:slug/mesa/:mesa" element={<MenuPublico />} />
         <Route path="/:slug/vitrina" element={<MenuPublico vitrina />} />
 
-        {/* Panel del dueño + landing (solo en raíz /) */}
-        <Route path="/*" element={
+        {/* Panel del dueño — acceso directo */}
+        <Route path="/panel" element={
           <MenuQR
-            local={local}   setLocal={setLocal}
-            cats={cats}     setCats={setCats}
-            prods={prods}   setProds={setProds}
-          />
-        } />
-      </Routes>
-    </BrowserRouter>
-  )
-}
+            local={

@@ -96,7 +96,4 @@ export default function MenuPublico({ vitrina = false }) {
       cats={cats}     setCats={setCats}
       prods={prods}   setProds={setProds}
       forceMode={vitrina ? "vitrina" : "client"}
-      mesaInicial={mesa ? parseInt(mesa) : null}
-    />
-  )
-}
+ 

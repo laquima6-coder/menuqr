@@ -1645,6 +1645,10 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
   const [solicitudes, setSolicitudes]         = useState([]);
   const [vrLoading, setVrLoading]             = useState(false);
 
+  /* ── Onboarding para nuevos usuarios */
+  const [showWelcome, setShowWelcome] = useState(false);
+  const [welcomeStep, setWelcomeStep] = useState(0);
+
   /* ── State de POS embebido en Caja */
   const [cajaCart, setCajaCart]         = useState({});
   const [cajaPay, setCajaPay]           = useState(null);
@@ -1665,6 +1669,18 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
   useEffect(()=>{
     if("Notification" in window && Notification.permission === "default") {
       Notification.requestPermission();
+    }
+  },[]);
+
+  /* ── Mostrar bienvenida si viene de registro (?nuevo=1) */
+  useEffect(()=>{
+    const params = new URLSearchParams(window.location.search);
+    if(params.get('nuevo')==='1'){
+      setShowWelcome(true);
+      // Limpiar el param de la URL sin recargar
+      const url = new URL(window.location.href);
+      url.searchParams.delete('nuevo');
+      window.history.replaceState({}, '', url.toString());
     }
   },[]);
 
@@ -4472,6 +4488,78 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
 
       {/* GESTIÓN MODALS */}
       {renderGModal()}
+
+      {/* ONBOARDING WELCOME MODAL */}
+      {showWelcome && (
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.85)",
+          zIndex:600,display:"flex",alignItems:"center",justifyContent:"center",
+          padding:20,backdropFilter:"blur(6px)"}}>
+          <div style={{background:"#0F1320",border:"1px solid #2A3A54",
+            borderRadius:20,padding:"28px 24px",width:"100%",maxWidth:420,
+            fontFamily:"'Outfit',sans-serif",position:"relative"}}>
+            {/* Cerrar */}
+            <button onClick={()=>setShowWelcome(false)}
+              style={{position:"absolute",top:14,right:16,background:"none",
+                border:"none",color:"#4A6080",fontSize:20,cursor:"pointer",lineHeight:1}}>✕</button>
+
+            {/* Header */}
+            <div style={{textAlign:"center",marginBottom:24}}>
+              <div style={{fontSize:40,marginBottom:8}}>🎉</div>
+              <h2 style={{margin:0,fontSize:"1.35rem",fontWeight:800,
+                background:"linear-gradient(135deg,#6366F1,#C9A84C)",
+                WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>
+                ¡Bienvenido a MenuQR!
+              </h2>
+              <p style={{margin:"6px 0 0",color:"#4A6080",fontSize:".9rem"}}>
+                Seguí estos 3 pasos para arrancar
+              </p>
+            </div>
+
+            {/* Steps */}
+            {[
+              {icon:"⚙️", title:"Configurá tu local", desc:"Subí tu logo, nombre y colores de marca.", tab:"gestion", sub:"local"},
+              {icon:"🍽️", title:"Cargá tu carta",     desc:"Creá categorías y agregá tus productos con fotos.", tab:"carta"},
+              {icon:"📲", title:"Descargá tu QR",     desc:"Generá el QR para tus mesas y comenzá a recibir pedidos.", tab:"qr"},
+            ].map((step,i) => (
+              <div key={i} onClick={()=>{
+                  setTab(step.tab);
+                  if(step.sub) setGSubTab(step.sub);
+                  setShowWelcome(false);
+                }}
+                style={{display:"flex",alignItems:"center",gap:14,
+                  background: welcomeStep===i ? "rgba(99,102,241,.12)" : "#060810",
+                  border:`1px solid ${welcomeStep===i ? "#6366F1" : "#1E2A3A"}`,
+                  borderRadius:12,padding:"13px 14px",marginBottom:10,cursor:"pointer",
+                  transition:"all .2s"}}
+                onMouseEnter={()=>setWelcomeStep(i)}
+                onMouseLeave={()=>setWelcomeStep(-1)}>
+                <div style={{width:40,height:40,borderRadius:10,
+                  background: welcomeStep===i ? "rgba(99,102,241,.2)" : "#0F1320",
+                  border:`1px solid ${welcomeStep===i ? "#6366F1" : "#1E2A3A"}`,
+                  display:"flex",alignItems:"center",justifyContent:"center",
+                  fontSize:20,flexShrink:0}}>{step.icon}</div>
+                <div style={{flex:1}}>
+                  <div style={{fontWeight:700,fontSize:".95rem",color:"#B8D0E8",
+                    marginBottom:2}}>{step.title}</div>
+                  <div style={{fontSize:".78rem",color:"#4A6080",lineHeight:1.4}}>
+                    {step.desc}</div>
+                </div>
+                <span style={{color: welcomeStep===i ? "#6366F1" : "#1E2A3A",
+                  fontSize:18,flexShrink:0}}>›</span>
+              </div>
+            ))}
+
+            <button onClick={()=>setShowWelcome(false)}
+              style={{width:"100%",padding:"11px",marginTop:6,
+                background:"linear-gradient(135deg,#6366F1,#818CF8)",
+                border:"none",borderRadius:10,color:"#fff",
+                fontFamily:"'Outfit',sans-serif",fontSize:"1rem",
+                fontWeight:700,cursor:"pointer"}}>
+              Empezar ahora →
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* TOAST */}
       {toastMsg && (
