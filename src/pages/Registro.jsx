@@ -25,9 +25,9 @@ const S = {
 }
 
 const PLANES = [
-  { id:'free',    nombre:'Gratis',  precio:'$0',   features:'1 menu · 10 productos · Sin pedidos online' },
-  { id:'basico',  nombre:'Basico',  precio:'$15',  features:'1 menu · Ilimitados · Pedidos online', popular:false },
-  { id:'pro',     nombre:'Pro',     precio:'$35',  features:'3 menus · Ilimitados · Realtime · Caja', popular:true },
+  { id:'free',    nombre:'Gratis',  precio:'$0',   features:'1 menú · 10 productos · Sin pedidos online' },
+  { id:'basico',  nombre:'Básico',  precio:'$15',  features:'1 menú · Ilimitados · Pedidos online', popular:false },
+  { id:'pro',     nombre:'Pro',     precio:'$35',  features:'3 menús · Ilimitados · Realtime · Caja', popular:true },
   { id:'empresa', nombre:'Empresa', precio:'$89',  features:'Ilimitados · Multi-local · Soporte priority' },
 ]
 
@@ -52,13 +52,14 @@ export default function Registro() {
 
   async function registrar() {
     setErr(''); setOk('')
-    if (!form.nombre || !form.email || !form.password) { setErr('Completa nombre, email y contrasena'); return }
-    if (form.password.length < 6) { setErr('La contrasena debe tener al menos 6 caracteres'); return }
-    if (!form.slug) { setErr('Genera un slug para la URL'); return }
+    if (!form.nombre || !form.email || !form.password) { setErr('Completá nombre, email y contraseña'); return }
+    if (form.password.length < 6) { setErr('La contraseña debe tener al menos 6 caracteres'); return }
+    if (!form.slug) { setErr('Generá un slug para la URL'); return }
     setLoading(true)
     try {
-      if (!supabase) { setErr('Supabase no configurado. Contacta al administrador.'); return }
+      if (!supabase) { setErr('Supabase no configurado. Contactá al administrador.'); return }
 
+      // 1. Crear usuario en Supabase Auth
       const { data: authData, error: authErr } = await supabase.auth.signUp({
         email: form.email,
         password: form.password,
@@ -66,6 +67,7 @@ export default function Registro() {
       })
       if (authErr) { setErr(authErr.message); return }
 
+      // 2. Crear restaurante en DB
       const { error: restErr } = await supabase.from('restaurantes').insert({
         owner_id:    authData.user.id,
         nombre:      form.nombre,
@@ -78,8 +80,8 @@ export default function Registro() {
       })
       if (restErr) { setErr(restErr.message); return }
 
-      setOk(`Listo! Tu carta estara en: ${location.origin}/menu/${form.slug}`)
-      setTimeout(() => { window.location.href = '/panel?nuevo=1&slug=' + form.slug }, 3000)
+      setOk(`¡Listo! Tu carta estará en: ${location.origin}/menu/${form.slug}`)
+      setTimeout(() => { window.location.href = '/' }, 3000)
     } catch(e) {
       setErr('Error inesperado: ' + e.message)
     } finally {
@@ -92,7 +94,7 @@ export default function Registro() {
       <div style={S.card}>
         <div style={S.logo}>
           <div style={S.logoText}>MenuQR</div>
-          <div style={S.sub}>Crea tu carta digital en 2 minutos</div>
+          <div style={S.sub}>Creá tu carta digital en 2 minutos</div>
         </div>
 
         {err && <div style={S.err}>{err}</div>}
@@ -126,27 +128,27 @@ export default function Registro() {
             <input style={S.input} type="email" value={form.email} onChange={e=>upd('email',e.target.value)} placeholder="hola@mirestaurante.com" />
           </div>
           <div>
-            <label style={S.label}>Contrasena</label>
-            <input style={S.input} type="password" value={form.password} onChange={e=>upd('password',e.target.value)} placeholder="Minimo 6 caracteres" />
+            <label style={S.label}>Contraseña</label>
+            <input style={S.input} type="password" value={form.password} onChange={e=>upd('password',e.target.value)} placeholder="Mínimo 6 caracteres" />
           </div>
         </div>
 
         <div style={S.row}>
           <div>
-            <label style={S.label}>Telefono (opcional)</label>
+            <label style={S.label}>Teléfono (opcional)</label>
             <input style={S.input} value={form.telefono} onChange={e=>upd('telefono',e.target.value)} placeholder="+54 11..." />
           </div>
           <div>
-            <label style={S.label}>Direccion (opcional)</label>
+            <label style={S.label}>Dirección (opcional)</label>
             <input style={S.input} value={form.direccion} onChange={e=>upd('direccion',e.target.value)} placeholder="Calle 123" />
           </div>
         </div>
 
         <button style={{...S.btn,...(loading?S.btnDisabled:{})}} disabled={loading} onClick={registrar}>
-          {loading ? 'Creando tu carta...' : 'Crear mi carta gratis'}
+          {loading ? 'Creando tu carta...' : '✨ Crear mi carta gratis'}
         </button>
 
-        <div style={S.link}>Ya tenes cuenta? <a href="/" style={{color:'#6366F1',textDecoration:'none'}}>Inicia sesion</a></div>
+        <div style={S.link}>¿Ya tenés cuenta? <a href="/" style={{color:'#6366F1',textDecoration:'none'}}>Iniciá sesión</a></div>
       </div>
     </div>
   )
