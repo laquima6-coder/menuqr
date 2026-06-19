@@ -4,6 +4,8 @@ import MenuQR, { INIT_LOCAL, INIT_CATS, INIT_PRODS } from './MenuQR.jsx'
 import MenuPublico from './pages/MenuPublico.jsx'
 import Registro from './pages/Registro.jsx'
 import SuperAdmin from './pages/SuperAdmin.jsx'
+import LandingPage from './pages/LandingPage.jsx'
+import CocinaScreen from './pages/CocinaScreen.jsx'
 
 export default function App() {
   const [local, setLocal] = useState(() => {
@@ -23,7 +25,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Carta pública — clientes escanean el QR */}
+        {/* Carta publica - clientes escanean el QR */}
         <Route path="/menu/:slug" element={<MenuPublico />} />
         <Route path="/menu/:slug/mesa/:mesa" element={<MenuPublico />} />
         <Route path="/menu/:slug/vitrina" element={<MenuPublico vitrina />} />
@@ -35,19 +37,32 @@ export default function App() {
         <Route path="/superadmin" element={<SuperAdmin />} />
         <Route path="/superadmin/:section" element={<SuperAdmin />} />
 
-        {/* Carta pública por slug corto — clientes escanean /:slug */}
+        {/* Carta publica por slug corto */}
+        <Route path="/:slug/cocina" element={<CocinaScreen />} />
+        <Route path="/menu/:slug/cocina" element={<CocinaScreen />} />
         <Route path="/:slug" element={<MenuPublico />} />
         <Route path="/:slug/mesa/:mesa" element={<MenuPublico />} />
         <Route path="/:slug/vitrina" element={<MenuPublico vitrina />} />
 
-        {/* Panel del dueño + landing (solo en raíz /) */}
-        <Route path="/*" element={
+        {/* Panel del dueno - acceso directo */}
+        <Route path="/panel" element={
           <MenuQR
             local={local}   setLocal={setLocal}
             cats={cats}     setCats={setCats}
             prods={prods}   setProds={setProds}
           />
         } />
+        <Route path="/panel/*" element={
+          <MenuQR
+            local={local}   setLocal={setLocal}
+            cats={cats}     setCats={setCats}
+            prods={prods}   setProds={setProds}
+          />
+        } />
+
+        {/* Landing page de ventas - raiz */}
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/*" element={<LandingPage />} />
       </Routes>
     </BrowserRouter>
   )
