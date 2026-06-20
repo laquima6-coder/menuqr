@@ -200,6 +200,7 @@ export const INIT_LOCAL = {
   descripcion:"Cocina italiana contemporánea en el corazón de Buenos Aires.",
   color:"#C9A84C", mesas:12,
   propina:true, happyHour:true, happyDesde:"17:00", happyHasta:"21:00",
+  feat_solicitudes:true, feat_promo10:false,
   wifi_nombre:"LaTrattoria_WiFi", wifi_pass:"bienvenido2024",
   whatsapp:"5491112345678", whatsapp_msg:"Hola! Quiero hacer una consulta.",
   baseUrl:"latrattoria.menuqr.app",
@@ -790,7 +791,7 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
   const [lang,setLang]     = useState(()=>localStorage.getItem("menuqr_lang")||"es");
   const [promoActiva,setPromoActiva] = useState(()=>{
     if(vitrina) return false;
-    try { return !!JSON.parse(localStorage.getItem("menuqr_promo10")||"null"); } catch{ return false; }
+    try { return !!JSON.parse(localStorage.getItem("menuqr_promo10_"+(local.restauranteId||"x"))||"null"); } catch{ return false; }
   });
   const T = (key) => t(key,lang);
   const changeLang = (code) => { setLang(code); localStorage.setItem("menuqr_lang",code); };
@@ -804,7 +805,7 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
   const subTotal    = items.reduce((s,i)=>s+i.price*i.qty,0);
   const tipAmt      = tipPct===0 ? 0 : tipPct ? Math.round(subTotal*(tipPct/100))
                       : tipCustom ? Number(tipCustom) : 0;
-  const descuento10 = promoActiva && subTotal>0 ? Math.round(subTotal*0.10) : 0;
+  const descuento10 = promoActiva && local.feat_promo10 && subTotal>0 ? Math.round(subTotal*0.10) : 0;
   const grandTotal  = subTotal - descuento10 + tipAmt;
   const cartCount   = items.reduce((s,i)=>s+i.qty,0);
 
@@ -887,12 +888,12 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
       <div style={{margin:"10px 10px 0",display:"flex",flexDirection:"column",gap:8}}>
 
         {/* 10% primera vez */}
-        {(()=>{
+        {!!local.feat_promo10 && (()=>{
           const [activado, setActivado] = React.useState(()=>{
-            try { return !!JSON.parse(localStorage.getItem("menuqr_promo10")||"null"); } catch{ return false; }
+            try { return !!JSON.parse(localStorage.getItem("menuqr_promo10_"+(local.restauranteId||"x"))||"null"); } catch{ return false; }
           });
           const activar = () => {
-            localStorage.setItem("menuqr_promo10", JSON.stringify({active:true,ts:Date.now()}));
+            localStorage.setItem("menuqr_promo10_"+(local.restauranteId||"x"), JSON.stringify({active:true,ts:Date.now()}));
             setActivado(true);
           };
           return (
@@ -1042,7 +1043,7 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
               <span style={{color:"var(--cgr)"}}>$ {fmt(tipAmt)}</span>
             </div>
           )}
-          {descuento10>0 && (
+          {descuento10>0 && !!local.feat_promo10 && (
             <div style={{display:"flex",justifyContent:"space-between",
               alignItems:"center",padding:"8px 12px",marginTop:4,
               background:"rgba(0,204,112,.08)",border:"1px solid rgba(0,204,112,.25)",
@@ -1334,7 +1335,7 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
               else {
                 pedidoGuardado = true;
                 if(descuentoAplicado>0){
-                  localStorage.removeItem("menuqr_promo10");
+                  localStorage.removeItem("menuqr_promo10_"+(local.restauranteId||"x"));
                   setPromoActiva(false);
                 }
                 const items = cartItems.map(i=>({
@@ -1533,7 +1534,7 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
             <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:7,color:"#3A3A3A",letterSpacing:1,textTransform:"uppercase",marginBottom:3}}>Mesa</div>
             <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,color:"#FFF",fontWeight:900,lineHeight:1,marginBottom:4}}>{local.mesa}</div>
             {!vitrina&&(
-              <button onClick={()=>setShowSolicitudes(true)} style={{width:"100%",background:"rgba(201,168,76,.07)",border:"1px solid #1E1E1E",borderRadius:8,padding:"5px 0",cursor:"pointer",fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"}}>🛎️</button>
+              {local.feat_solicitudes!==false && <button onClick={()=>setShowSolicitudes(true)} style={{width:"100%",background:"rgba(201,168,76,.07)",border:"1px solid #1E1E1E",borderRadius:8,padding:"5px 0",cursor:"pointer",fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"}}>🛎️</button>}
             )}
           </div>
         ):(
@@ -2606,8 +2607,10 @@ function GestionTab({local,setLocal,cats,setCats,prods,setProds,gSubTab,setGSubT
         borderRadius:16,overflow:"hidden",marginBottom:12}}>
         <div style={{padding:"14px 18px 10px"}}><GLbl c="var(--gi2)">Funciones</GLbl></div>
         {[
-          {k:"propina",   label:"Propina en pedidos",  sub:"El cliente puede dejar propina al pagar"},
-          {k:"happyHour", label:"Happy Hour",           sub:"Activa descuentos por horario"},
+          {k:"propina",         label:"Propina en pedidos",       sub:"El cliente puede dejar propina al pagar"},
+          {k:"happyHour",       label:"Happy Hour",                sub:"Activa descuentos por horario"},
+          {k:"feat_solicitudes",label:"Llamar al mozo (🛎️)",       sub:"Botón para llamar al mozo desde la mesa"},
+          {k:"feat_promo10",    label:"Descuento primera visita",  sub:"10% de descuento para clientes nuevos via QR vitrina"},
         ].map((f,i)=>(
           <div key={f.k} style={{display:"flex",justifyContent:"space-between",
             alignItems:"center",padding:"14px 18px",
@@ -2684,7 +2687,9 @@ function GestionTab({local,setLocal,cats,setCats,prods,setProds,gSubTab,setGSubT
             mesas:     local.mesas,
             base_url:  (localDraft.baseUrl||"").replace(/^https?:\/\//,""),
             config: {
-              propina:     local.propina,
+              propina:           local.propina,
+              feat_solicitudes:  local.feat_solicitudes!==undefined ? local.feat_solicitudes : true,
+              feat_promo10:      !!local.feat_promo10,
               happyHour:   local.happyHour,
               happyDesde:  local.happyDesde,
               happyHasta:  local.happyHasta,
@@ -2980,7 +2985,9 @@ function ConfigTab({local,setLocal,toast}) {
         mesas:       local.mesas,
         base_url:    (cfgDraft.baseUrl||"").replace(/^https?:\/\//,""),
         config: {
-          propina:     local.propina,
+          propina:           local.propina,
+        feat_solicitudes:  local.feat_solicitudes!==undefined ? local.feat_solicitudes : true,
+        feat_promo10:      !!local.feat_promo10,
           happyHour:   local.happyHour,
           happyDesde:  local.happyDesde,
           happyHasta:  local.happyHasta,
@@ -3094,8 +3101,10 @@ function ConfigTab({local,setLocal,toast}) {
     <div style={{background:"var(--ac)",border:"1px solid var(--abr)",borderRadius:16,overflow:"hidden",marginBottom:12}}>
       <div style={{padding:"14px 18px 10px"}}><ALbl>Funciones</ALbl></div>
       {[
-        {k:"propina",   icon:"💝", label:"Propina en pedidos",  sub:"El cliente puede dejar propina al pagar"},
-        {k:"happyHour", icon:"🔥", label:"Happy Hour",           sub:"Activa descuentos por horario"},
+        {k:"propina",         icon:"💝", label:"Propina en pedidos",       sub:"El cliente puede dejar propina al pagar"},
+        {k:"happyHour",       icon:"🔥", label:"Happy Hour",                sub:"Activa descuentos por horario"},
+        {k:"feat_solicitudes",icon:"🛎️", label:"Llamar al mozo",            sub:"Botón para llamar al mozo desde la mesa"},
+        {k:"feat_promo10",    icon:"🎁", label:"Descuento primera visita",  sub:"10% de descuento para clientes nuevos via QR vitrina"},
       ].map(f=>(
         <div key={f.k} style={{display:"flex",justifyContent:"space-between",alignItems:"center",
           padding:"14px 18px",borderTop:"1px solid var(--abr)"}}>
