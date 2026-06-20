@@ -136,10 +136,57 @@ const GS = () => (
       }
     }
     @media (max-width: 899px) {
-      .admin-sidebar-nav { display: none !important; }
+      .admin-wrap {
+        display: flex !important;
+        flex-direction: row !important;
+        height: 100dvh !important;
+        overflow: hidden !important;
+        max-width: none !important;
+        padding-bottom: 0 !important;
+        margin: 0 !important;
+      }
+      .admin-sidebar {
+        display: flex !important;
+        flex-direction: column !important;
+        width: 58px !important;
+        min-width: 58px !important;
+        height: 100dvh !important;
+        overflow-y: auto !important;
+        border-left: 1px solid var(--abr) !important;
+        order: 2 !important;
+      }
+      .admin-sidebar-nav {
+        display: flex !important;
+        padding: 6px 4px !important;
+        gap: 1px !important;
+        flex: 1 !important;
+      }
+      .admin-sidebar-nav button {
+        padding: 10px 4px !important;
+        justify-content: center !important;
+        gap: 3px !important;
+        flex-direction: column !important;
+      }
+      .admin-sidebar-nav button span:nth-child(2) {
+        display: none !important;
+      }
       .admin-sidebar-logo { display: none !important; }
-      .admin-sidebar { display: none !important; }
-      .admin-content-scroll { display: contents; }
+      .admin-bottomnav { display: none !important; }
+      .admin-main {
+        flex: 1 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        overflow: hidden !important;
+        min-width: 0 !important;
+        order: 1 !important;
+      }
+      .admin-content-scroll {
+        display: block !important;
+        flex: 1 !important;
+        overflow-y: auto !important;
+        padding-bottom: 8px !important;
+      }
+      .admin-topbar { position: sticky !important; top: 0 !important; }
     }
   `}</style>
 );
@@ -1646,6 +1693,602 @@ function pushNotify(title, body) {
 /* ══════════════════════════════════════════
    GESTIÓN TAB — todo editable
 ══════════════════════════════════════════ */
+
+/* ═══════════════════════════════════════════════════
+   REPORTES — ventas históricas con gráfico SVG
+   ═══════════════════════════════════════════════════ */
+function ReportesTab({local}) {
+  const [rango, setRango]       = useState("7d");   // 7d | 30d | mes
+  const [datos, setDatos]       = useState([]);      // [{fecha, total, qty, pagos:{}}]
+  const [loading, setLoading]   = useState(false);
+  const [rsub, setRsub]         = useState("ventas"); // ventas | productos | pagos
+
+  const RANGOS = [{id:"7d",label:"7 días"},{id:"30d",label:"30 días"},{id:"mes",label:"Este mes"}];
+
+  const fechaDesde = () => {
+    const d = new Date();
+    if(rango==="7d")  { d.setDate(d.getDate()-6); }
+    else if(rango==="30d") { d.setDate(d.getDate()-29); }
+    else { d.setDate(1); }
+    d.setHours(0,0,0,0);
+    return d.toISOString();
+  };
+
+  useEffect(()=>{
+    if(!local.restauranteId) return;
+    setLoading(true);
+    (async()=>{
+      const {data} = await supabase
+        .from("pedidos")
+        .select("created_at, total, metodo_pago, status, pedido_items(nombre, cantidad, precio)")
+        .eq("restaurante_id", local.restauranteId)
+        .gte("created_at", fechaDesde())
+        .order("created_at",{ascending:true});
+      if(!data) { setLoading(false); return; }
+      // Agrupar por día
+      const byDay = {};
+      data.forEach(p=>{
+        const dia = p.created_at.slice(0,10);
+        if(!byDay[dia]) byDay[dia] = {fecha:dia, total:0, qty:0, pagos:{cash:0,mp:0,card:0,trans:0,mixto:0}};
+        byDay[dia].total += p.total||0;
+        byDay[dia].qty++;
+        const pago = p.metodo_pago||"";
+        if(pago.includes("+")) byDay[dia].pagos.mixto += p.total||0;
+        else if(pago==="cash") byDay[dia].pagos.cash += p.total||0;
+        else if(pago==="mp")   byDay[dia].pagos.mp   += p.total||0;
+        else if(pago==="card") byDay[dia].pagos.card += p.total||0;
+        else if(pago==="trans")byDay[dia].pagos.trans += p.total||0;
+        else                   byDay[dia].pagos.cash += p.total||0;
+      });
+      // Rellenar días vacíos
+      const desde = new Date(fechaDesde());
+      const hoy   = new Date();
+      const dias  = [];
+      const cur   = new Date(desde);
+      while(cur <= hoy) {
+        const key = cur.toISOString().slice(0,10);
+        dias.push(byDay[key] || {fecha:key, total:0, qty:0, pagos:{cash:0,mp:0,card:0,trans:0,mixto:0}});
+        cur.setDate(cur.getDate()+1);
+      }
+      // Agregar items vendidos
+      const itemMap = {};
+      data.forEach(p=>{
+        (p.pedido_items||[]).forEach(it=>{
+          const k = it.nombre;
+          if(!itemMap[k]) itemMap[k] = {nombre:k, cantidad:0, total:0};
+          itemMap[k].cantidad += it.cantidad||0;
+          itemMap[k].total    += (it.precio||0)*(it.cantidad||0);
+        });
+      });
+      setDatos({dias, items: Object.values(itemMap).sort((a,b)=>b.cantidad-a.cantidad)});
+      setLoading(false);
+    })();
+  },[local.restauranteId, rango]);
+
+  if(!datos.dias) return (
+    <div style={{padding:24,textAlign:"center",color:"var(--gd)",fontFamily:"'IBM Plex Mono',monospace",fontSize:12}}>
+      {loading ? "Cargando..." : "Sin datos"}
+    </div>
+  );
+
+  const dias   = datos.dias || [];
+  const items  = datos.items || [];
+  const totalGeneral  = dias.reduce((s,d)=>s+d.total,0);
+  const totalPedidos  = dias.reduce((s,d)=>s+d.qty,0);
+  const ticketProm    = totalPedidos ? Math.round(totalGeneral/totalPedidos) : 0;
+  const maxVal        = Math.max(...dias.map(d=>d.total), 1);
+  const totalPagos    = {
+    cash:  dias.reduce((s,d)=>s+d.pagos.cash,0),
+    mp:    dias.reduce((s,d)=>s+d.pagos.mp,0),
+    card:  dias.reduce((s,d)=>s+d.pagos.card,0),
+    trans: dias.reduce((s,d)=>s+d.pagos.trans,0),
+    mixto: dias.reduce((s,d)=>s+d.pagos.mixto,0),
+  };
+
+  const fmtFecha = (iso) => {
+    const d = new Date(iso+"T12:00:00");
+    return d.toLocaleDateString("es",{day:"2-digit",month:"2-digit"});
+  };
+
+  const BAR_H = 120;
+
+  return (
+    <div style={{padding:"18px 16px 100px"}}>
+      {/* Selector de rango */}
+      <div style={{display:"flex",gap:8,marginBottom:16}}>
+        {RANGOS.map(r=>(
+          <button key={r.id} onClick={()=>setRango(r.id)} style={{
+            flex:1,padding:"9px",borderRadius:10,cursor:"pointer",
+            fontFamily:"'Outfit',sans-serif",fontSize:12,fontWeight:600,
+            background:rango===r.id?"var(--gi)":"var(--ac)",
+            color:rango===r.id?"#fff":"var(--ad)",
+            border:`1px solid ${rango===r.id?"var(--gi)":"var(--abr)"}`,
+            transition:"all .2s"}}>
+            {r.label}
+          </button>
+        ))}
+      </div>
+
+      {loading && <div style={{textAlign:"center",padding:40,color:"var(--gd)",fontFamily:"'IBM Plex Mono',monospace",fontSize:11}}>Cargando reportes...</div>}
+
+      {!loading && (<>
+        {/* KPIs */}
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:16}}>
+          {[
+            {label:"INGRESOS",   value:`$${fmt(totalGeneral)}`,  color:"var(--ag)"},
+            {label:"PEDIDOS",    value:totalPedidos,               color:"var(--abl)"},
+            {label:"TICKET PROM",value:`$${fmt(ticketProm)}`,    color:"var(--am)"},
+          ].map(k=>(
+            <div key={k.label} style={{background:"var(--ac)",border:"1px solid var(--abr)",
+              borderRadius:12,padding:"12px 10px",textAlign:"center"}}>
+              <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,
+                color:"var(--am)",letterSpacing:1,marginBottom:4}}>{k.label}</p>
+              <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:15,
+                fontWeight:700,color:k.color,margin:0,lineHeight:1}}>{k.value}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Sub-tabs */}
+        <div style={{display:"flex",gap:8,marginBottom:14}}>
+          {[{id:"ventas",label:"📈 Ventas"},{id:"productos",label:"🏆 Productos"},{id:"pagos",label:"💳 Pagos"}].map(s=>(
+            <button key={s.id} onClick={()=>setRsub(s.id)} style={{
+              flex:1,padding:"8px",borderRadius:10,cursor:"pointer",
+              fontFamily:"'Outfit',sans-serif",fontSize:11,fontWeight:600,
+              background:rsub===s.id?"var(--gi)":"var(--ac)",
+              color:rsub===s.id?"#fff":"var(--ad)",
+              border:`1px solid ${rsub===s.id?"var(--gi)":"var(--abr)"}`,
+              transition:"all .2s"}}>
+              {s.label}
+            </button>
+          ))}
+        </div>
+
+        {/* ── VENTAS: gráfico de barras SVG ── */}
+        {rsub==="ventas" && (
+          <div style={{background:"var(--ac)",border:"1px solid var(--abr)",borderRadius:16,padding:"16px 12px"}}>
+            <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:"var(--am)",
+              letterSpacing:1,marginBottom:12}}>INGRESOS POR DÍA</p>
+            {totalGeneral===0 ? (
+              <p style={{textAlign:"center",color:"var(--gd)",fontFamily:"'IBM Plex Mono',monospace",fontSize:11,padding:"30px 0"}}>Sin ventas en este período</p>
+            ) : (
+              <div style={{overflowX:"auto"}}>
+                <svg width={Math.max(dias.length*36+20, 300)} height={BAR_H+40} style={{display:"block"}}>
+                  {dias.map((d,i)=>{
+                    const barH = d.total ? Math.max((d.total/maxVal)*BAR_H, 4) : 2;
+                    const x = i*36+10;
+                    const y = BAR_H - barH;
+                    const isHoy = d.fecha===new Date().toISOString().slice(0,10);
+                    return (
+                      <g key={d.fecha}>
+                        <rect x={x} y={y} width={24} height={barH}
+                          rx={4} fill={isHoy?"var(--abl)":"var(--gi)"}
+                          opacity={d.total?1:.25}/>
+                        {d.total>0 && (
+                          <text x={x+12} y={y-4} textAnchor="middle"
+                            fontSize={8} fill="var(--am)" fontFamily="IBM Plex Mono">
+                            ${d.total>=1000?Math.round(d.total/1000)+"k":d.total}
+                          </text>
+                        )}
+                        <text x={x+12} y={BAR_H+14} textAnchor="middle"
+                          fontSize={8} fill="var(--at)" fontFamily="IBM Plex Mono">
+                          {fmtFecha(d.fecha)}
+                        </text>
+                      </g>
+                    );
+                  })}
+                </svg>
+              </div>
+            )}
+            {/* Detalle por día */}
+            {dias.filter(d=>d.total>0).sort((a,b)=>b.fecha.localeCompare(a.fecha)).slice(0,7).map(d=>(
+              <div key={d.fecha} style={{display:"flex",justifyContent:"space-between",
+                alignItems:"center",padding:"7px 0",borderTop:"1px solid var(--abr)"}}>
+                <div>
+                  <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:600,color:"var(--abri)"}}>
+                    {new Date(d.fecha+"T12:00:00").toLocaleDateString("es",{weekday:"short",day:"2-digit",month:"2-digit"})}
+                  </span>
+                  <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:"var(--am)",marginLeft:8}}>
+                    {d.qty} pedido{d.qty!==1?"s":""}
+                  </span>
+                </div>
+                <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:13,fontWeight:700,color:"var(--ag)"}}>
+                  ${fmt(d.total)}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* ── PRODUCTOS MÁS VENDIDOS ── */}
+        {rsub==="productos" && (
+          <div style={{background:"var(--ac)",border:"1px solid var(--abr)",borderRadius:16,padding:"16px 12px"}}>
+            <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:"var(--am)",
+              letterSpacing:1,marginBottom:12}}>PRODUCTOS MÁS VENDIDOS</p>
+            {items.length===0 ? (
+              <p style={{textAlign:"center",color:"var(--gd)",fontFamily:"'IBM Plex Mono',monospace",fontSize:11,padding:"30px 0"}}>Sin datos en este período</p>
+            ) : items.slice(0,15).map((it,i)=>{
+              const maxCant = items[0].cantidad;
+              return (
+                <div key={it.nombre} style={{marginBottom:10}}>
+                  <div style={{display:"flex",justifyContent:"space-between",marginBottom:3}}>
+                    <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:600,
+                      color:"var(--abri)",flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                      <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,
+                        color:"var(--am)",marginRight:6}}>#{i+1}</span>
+                      {it.nombre}
+                    </span>
+                    <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:11,
+                      color:"var(--am)",flexShrink:0,marginLeft:8}}>{it.cantidad} uds</span>
+                  </div>
+                  <div style={{height:6,borderRadius:3,background:"var(--as)"}}>
+                    <div style={{height:6,borderRadius:3,
+                      background:`linear-gradient(90deg,var(--gi),var(--abl))`,
+                      width:`${(it.cantidad/maxCant)*100}%`,transition:"width .4s"}}/>
+                  </div>
+                  <div style={{textAlign:"right"}}>
+                    <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:"var(--ag)"}}>
+                      ${fmt(it.total)}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* ── PAGOS ── */}
+        {rsub==="pagos" && (
+          <div style={{background:"var(--ac)",border:"1px solid var(--abr)",borderRadius:16,padding:"16px 12px"}}>
+            <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:"var(--am)",
+              letterSpacing:1,marginBottom:12}}>BREAKDOWN POR MÉTODO</p>
+            {totalGeneral===0 ? (
+              <p style={{textAlign:"center",color:"var(--gd)",fontFamily:"'IBM Plex Mono',monospace",fontSize:11,padding:"30px 0"}}>Sin ventas en este período</p>
+            ) : [
+              {id:"cash", label:"Efectivo",     icon:"💵"},
+              {id:"mp",   label:"Mercado Pago", icon:"📲"},
+              {id:"card", label:"Débito",        icon:"💳"},
+              {id:"trans",label:"Transferencia", icon:"🏦"},
+              {id:"mixto",label:"Pago mixto",    icon:"÷"},
+            ].filter(p=>totalPagos[p.id]>0).map(p=>{
+              const pct = totalGeneral ? Math.round((totalPagos[p.id]/totalGeneral)*100) : 0;
+              return (
+                <div key={p.id} style={{marginBottom:12}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
+                    <span style={{fontFamily:"'Outfit',sans-serif",fontSize:13,fontWeight:600,color:"var(--abri)"}}>
+                      {p.icon} {p.label}
+                    </span>
+                    <div style={{textAlign:"right"}}>
+                      <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:13,fontWeight:700,color:"var(--ag)"}}>
+                        ${fmt(totalPagos[p.id])}
+                      </span>
+                      <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,
+                        color:"var(--am)",marginLeft:6}}>{pct}%</span>
+                    </div>
+                  </div>
+                  <div style={{height:8,borderRadius:4,background:"var(--as)"}}>
+                    <div style={{height:8,borderRadius:4,background:"var(--abl)",
+                      width:`${pct}%`,transition:"width .4s"}}/>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </>)}
+    </div>
+  );
+}
+
+
+/* ═══════════════════════════════════════════════════
+   GESTIÓN DE PERSONAL — mozos, roles, turnos
+   ═══════════════════════════════════════════════════ */
+function PersonalSection({local, toast}) {
+  const [mozos, setMozos]         = useState([]);
+  const [turnos, setTurnos]       = useState([]);
+  const [loading, setLoading]     = useState(false);
+  const [showAdd, setShowAdd]     = useState(false);
+  const [editMozo, setEditMozo]   = useState(null); // mozo being edited
+  const [draft, setDraft]         = useState({nombre:"",rol:"mozo",pin:""});
+  const [psub, setPsub]           = useState("mozos"); // mozos | turnos
+
+  const ROLES = [
+    {id:"mozo",    label:"Mozo/a",      icon:"🙋"},
+    {id:"cajero",  label:"Cajero/a",    icon:"💰"},
+    {id:"cocina",  label:"Cocina",      icon:"👨‍🍳"},
+    {id:"admin",   label:"Admin",       icon:"⚙️"},
+  ];
+
+  // Load from Supabase config.mozos
+  useEffect(()=>{
+    if(!local.restauranteId) return;
+    (async()=>{
+      setLoading(true);
+      const {data} = await supabase.from("restaurantes").select("config").eq("id",local.restauranteId).single();
+      if(data?.config?.mozos) setMozos(data.config.mozos);
+      if(data?.config?.turnos_personal) setTurnos(data.config.turnos_personal);
+      setLoading(false);
+    })();
+  },[local.restauranteId]);
+
+  const saveMozos = async(newMozos, newTurnos) => {
+    const updMozos = newMozos !== undefined ? newMozos : mozos;
+    const updTurnos = newTurnos !== undefined ? newTurnos : turnos;
+    if(!local.restauranteId) return;
+    await supabase.from("restaurantes").update({
+      config: supabase.rpc ? undefined : undefined
+    }).eq("id",local.restauranteId);
+    // Use jsonb merge approach via RPC or direct update
+    const {error} = await supabase.from("restaurantes")
+      .update({config: {mozos: updMozos, turnos_personal: updTurnos}})
+      .eq("id", local.restauranteId);
+    // Note: this replaces config — we need to merge
+    if(error) toast("Error al guardar","err");
+  };
+
+  const saveMozosOnly = async(newMozos) => {
+    if(!local.restauranteId) return;
+    // First fetch current config to merge
+    const {data} = await supabase.from("restaurantes").select("config").eq("id",local.restauranteId).single();
+    const cfg = {...(data?.config||{}), mozos: newMozos};
+    const {error} = await supabase.from("restaurantes").update({config: cfg}).eq("id",local.restauranteId);
+    if(error) toast("Error al guardar","err");
+  };
+
+  const saveTurnosOnly = async(newTurnos) => {
+    if(!local.restauranteId) return;
+    const {data} = await supabase.from("restaurantes").select("config").eq("id",local.restauranteId).single();
+    const cfg = {...(data?.config||{}), turnos_personal: newTurnos};
+    const {error} = await supabase.from("restaurantes").update({config: cfg}).eq("id",local.restauranteId);
+    if(error) toast("Error al guardar","err");
+  };
+
+  const addOrEditMozo = async() => {
+    if(!draft.nombre.trim()) { toast("Ingresá un nombre","err"); return; }
+    let newMozos;
+    if(editMozo) {
+      newMozos = mozos.map(m=>m.id===editMozo.id ? {...m,...draft} : m);
+    } else {
+      newMozos = [...mozos, {...draft, id: Date.now().toString(), activo:true, en_turno:false}];
+    }
+    setMozos(newMozos);
+    await saveMozosOnly(newMozos);
+    setShowAdd(false); setEditMozo(null); setDraft({nombre:"",rol:"mozo",pin:""});
+    toast(editMozo?"Empleado actualizado ✓":"Empleado agregado ✓");
+  };
+
+  const deleteMozo = async(id) => {
+    const newMozos = mozos.filter(m=>m.id!==id);
+    setMozos(newMozos);
+    await saveMozosOnly(newMozos);
+    toast("Empleado eliminado","warn");
+  };
+
+  const toggleTurno = async(mozo) => {
+    const ahora = new Date().toISOString();
+    let newTurnos = [...turnos];
+    let newMozos;
+    if(mozo.en_turno) {
+      // Close turno
+      newTurnos = turnos.map(t=>t.mozo_id===mozo.id && !t.fin ? {...t, fin:ahora} : t);
+      newMozos = mozos.map(m=>m.id===mozo.id ? {...m,en_turno:false} : m);
+      toast(`${mozo.nombre} salió del turno`);
+    } else {
+      // Open turno
+      newTurnos = [...turnos, {id:Date.now().toString(), mozo_id:mozo.id, nombre:mozo.nombre, rol:mozo.rol, inicio:ahora, fin:null}];
+      newMozos = mozos.map(m=>m.id===mozo.id ? {...m,en_turno:true} : m);
+      toast(`${mozo.nombre} inició turno ✓`);
+    }
+    setMozos(newMozos);
+    setTurnos(newTurnos);
+    await saveMozosOnly(newMozos);
+    await saveTurnosOnly(newTurnos);
+  };
+
+  const fmtDur = (inicio, fin) => {
+    const ms = new Date(fin||new Date()) - new Date(inicio);
+    const h = Math.floor(ms/3600000);
+    const m = Math.floor((ms%3600000)/60000);
+    return h>0 ? `${h}h ${m}m` : `${m}m`;
+  };
+
+  const fmtHora = (iso) => {
+    const d = new Date(iso);
+    return d.toLocaleTimeString("es",{hour:"2-digit",minute:"2-digit"});
+  };
+
+  const hoy = new Date().toDateString();
+  const turnosHoy = turnos.filter(t=>new Date(t.inicio).toDateString()===hoy);
+
+  return (
+    <div style={{paddingBottom:80}}>
+      {/* Sub-nav */}
+      <div style={{display:"flex",gap:8,marginBottom:16}}>
+        {[{id:"mozos",label:"👥 Empleados"},{id:"turnos",label:"🕐 Turnos hoy"}].map(s=>(
+          <button key={s.id} onClick={()=>setPsub(s.id)} style={{
+            flex:1,padding:"9px",borderRadius:10,cursor:"pointer",
+            fontFamily:"'Outfit',sans-serif",fontSize:12,fontWeight:600,
+            background:psub===s.id?"var(--gi)":"var(--ac)",
+            color:psub===s.id?"#fff":"var(--ad)",
+            border:`1px solid ${psub===s.id?"var(--gi)":"var(--abr)"}`,
+            transition:"all .2s"}}>
+            {s.label}
+          </button>
+        ))}
+      </div>
+
+      {/* ── EMPLEADOS ── */}
+      {psub==="mozos" && (<>
+        <button onClick={()=>{setShowAdd(true);setEditMozo(null);setDraft({nombre:"",rol:"mozo",pin:""}); }} style={{
+          width:"100%",padding:"12px",borderRadius:12,border:"1px dashed var(--gi)",
+          background:"rgba(99,102,241,.05)",color:"var(--gi)",
+          fontFamily:"'Outfit',sans-serif",fontSize:13,fontWeight:700,
+          cursor:"pointer",marginBottom:12,display:"flex",alignItems:"center",
+          justifyContent:"center",gap:8}}>
+          + Agregar empleado
+        </button>
+
+        {loading && <p style={{textAlign:"center",color:"var(--gd)",fontSize:12}}>Cargando...</p>}
+
+        {mozos.map(m=>{
+          const role = ROLES.find(r=>r.id===m.rol)||ROLES[0];
+          return (
+            <div key={m.id} style={{background:"var(--gc)",border:"1px solid var(--gbr)",
+              borderRadius:14,padding:"14px 16px",marginBottom:10,
+              display:"flex",alignItems:"center",gap:12}}>
+              <div style={{width:44,height:44,borderRadius:12,
+                background:m.en_turno?"rgba(0,255,136,.15)":"var(--gb)",
+                border:`2px solid ${m.en_turno?"#00FF88":"var(--gbr)"}`,
+                display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}>
+                {role.icon}
+              </div>
+              <div style={{flex:1,minWidth:0}}>
+                <p style={{fontFamily:"'Outfit',sans-serif",fontSize:14,fontWeight:700,
+                  color:"var(--gi2)",margin:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{m.nombre}</p>
+                <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,color:"var(--gd)",margin:0}}>
+                  {role.label} {m.pin ? `· PIN: ${m.pin}` : ""}
+                </p>
+              </div>
+              <div style={{display:"flex",alignItems:"center",gap:6,flexShrink:0}}>
+                <button onClick={()=>toggleTurno(m)} style={{
+                  padding:"6px 12px",borderRadius:8,border:"none",cursor:"pointer",
+                  fontFamily:"'IBM Plex Mono',monospace",fontSize:10,fontWeight:700,letterSpacing:.5,
+                  background:m.en_turno?"rgba(255,59,92,.12)":"rgba(0,255,136,.12)",
+                  color:m.en_turno?"var(--gr)":"#00CC70",transition:"all .15s"}}>
+                  {m.en_turno?"SALIR":"ENTRAR"}
+                </button>
+                <button onClick={()=>{setEditMozo(m);setDraft({nombre:m.nombre,rol:m.rol,pin:m.pin||""});setShowAdd(true);}} style={{
+                  width:30,height:30,borderRadius:8,border:"1px solid var(--gbr)",
+                  background:"var(--gb)",color:"var(--gd)",cursor:"pointer",fontSize:14,
+                  display:"flex",alignItems:"center",justifyContent:"center"}}>✏</button>
+                <button onClick={()=>deleteMozo(m.id)} style={{
+                  width:30,height:30,borderRadius:8,border:"none",
+                  background:"rgba(255,59,92,.1)",color:"var(--gr)",cursor:"pointer",fontSize:14,
+                  display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
+              </div>
+            </div>
+          );
+        })}
+
+        {mozos.length===0 && !loading && (
+          <div style={{textAlign:"center",padding:"40px 20px",color:"var(--gd)",
+            fontFamily:"'IBM Plex Mono',monospace",fontSize:11}}>
+            Sin empleados registrados.<br/>Agregá el primero arriba.
+          </div>
+        )}
+      </>)}
+
+      {/* ── TURNOS HOY ── */}
+      {psub==="turnos" && (<>
+        {turnosHoy.length===0 ? (
+          <div style={{textAlign:"center",padding:"40px 20px",color:"var(--gd)",
+            fontFamily:"'IBM Plex Mono',monospace",fontSize:11}}>
+            Sin turnos registrados hoy.
+          </div>
+        ) : (
+          <div>
+            {turnosHoy.sort((a,b)=>new Date(b.inicio)-new Date(a.inicio)).map(t=>(
+              <div key={t.id} style={{background:"var(--gc)",border:"1px solid var(--gbr)",
+                borderRadius:14,padding:"12px 16px",marginBottom:8,
+                display:"flex",alignItems:"center",gap:12}}>
+                <div style={{width:36,height:36,borderRadius:10,
+                  background:!t.fin?"rgba(0,255,136,.15)":"var(--gb)",
+                  border:`2px solid ${!t.fin?"#00FF88":"var(--gbr)"}`,
+                  display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0}}>
+                  {ROLES.find(r=>r.id===t.rol)?.icon||"🙋"}
+                </div>
+                <div style={{flex:1}}>
+                  <p style={{fontFamily:"'Outfit',sans-serif",fontSize:13,fontWeight:700,
+                    color:"var(--gi2)",margin:0}}>{t.nombre}</p>
+                  <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,
+                    color:"var(--gd)",margin:0}}>
+                    {fmtHora(t.inicio)} → {t.fin ? fmtHora(t.fin) : "activo"}
+                  </p>
+                </div>
+                <div style={{textAlign:"right",flexShrink:0}}>
+                  <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:13,fontWeight:700,
+                    color:!t.fin?"#00CC70":"var(--gi2)",margin:0}}>
+                    {fmtDur(t.inicio, t.fin)}
+                  </p>
+                  <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,
+                    color:"var(--gd)",margin:0}}>
+                    {!t.fin?"en turno":"completado"}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </>)}
+
+      {/* ── MODAL ADD/EDIT ── */}
+      {showAdd && (
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.6)",zIndex:9999,
+          display:"flex",alignItems:"flex-end",justifyContent:"center"}}
+          onClick={e=>{if(e.target===e.currentTarget){setShowAdd(false);setEditMozo(null);}}}>
+          <div style={{background:"var(--ab)",borderRadius:"20px 20px 0 0",padding:"24px 20px 40px",
+            width:"100%",maxWidth:480}}>
+            <h3 style={{fontFamily:"'Outfit',sans-serif",fontSize:18,fontWeight:800,
+              color:"var(--gi2)",marginBottom:20}}>
+              {editMozo?"Editar empleado":"Nuevo empleado"}
+            </h3>
+            <div style={{marginBottom:14}}>
+              <label style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:"var(--gd)",
+                letterSpacing:1,display:"block",marginBottom:6}}>NOMBRE</label>
+              <input value={draft.nombre} onChange={e=>setDraft(d=>({...d,nombre:e.target.value}))}
+                placeholder="Nombre del empleado"
+                style={{width:"100%",background:"var(--ac)",border:"1px solid var(--abr)",
+                  borderRadius:10,padding:"11px 14px",color:"var(--gi2)",
+                  fontFamily:"'Outfit',sans-serif",fontSize:14,outline:"none",boxSizing:"border-box"}}/>
+            </div>
+            <div style={{marginBottom:14}}>
+              <label style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:"var(--gd)",
+                letterSpacing:1,display:"block",marginBottom:6}}>ROL</label>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+                {ROLES.map(r=>(
+                  <button key={r.id} onClick={()=>setDraft(d=>({...d,rol:r.id}))} style={{
+                    padding:"10px",borderRadius:10,cursor:"pointer",
+                    display:"flex",alignItems:"center",gap:8,
+                    fontFamily:"'Outfit',sans-serif",fontSize:12,fontWeight:600,
+                    background:draft.rol===r.id?"var(--gi)":"var(--ac)",
+                    color:draft.rol===r.id?"#fff":"var(--ad)",
+                    border:`1px solid ${draft.rol===r.id?"var(--gi)":"var(--abr)"}`}}>
+                    <span style={{fontSize:16}}>{r.icon}</span>{r.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div style={{marginBottom:20}}>
+              <label style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:"var(--gd)",
+                letterSpacing:1,display:"block",marginBottom:6}}>PIN (opcional)</label>
+              <input value={draft.pin} onChange={e=>setDraft(d=>({...d,pin:e.target.value.replace(/\D/g,"").slice(0,6)}))}
+                placeholder="1234" type="text" inputMode="numeric" maxLength={6}
+                style={{width:"100%",background:"var(--ac)",border:"1px solid var(--abr)",
+                  borderRadius:10,padding:"11px 14px",color:"var(--gi2)",
+                  fontFamily:"'IBM Plex Mono',monospace",fontSize:18,letterSpacing:8,outline:"none",boxSizing:"border-box"}}/>
+            </div>
+            <div style={{display:"flex",gap:10}}>
+              <button onClick={()=>{setShowAdd(false);setEditMozo(null);}} style={{
+                flex:1,padding:"13px",borderRadius:12,border:"1px solid var(--abr)",
+                background:"var(--ac)",color:"var(--ad)",
+                fontFamily:"'Outfit',sans-serif",fontSize:14,fontWeight:700,cursor:"pointer"}}>
+                Cancelar
+              </button>
+              <button onClick={addOrEditMozo} style={{
+                flex:1.5,padding:"13px",borderRadius:12,border:"none",
+                background:"linear-gradient(135deg,var(--gi),var(--gi2))",color:"#fff",
+                fontFamily:"'Outfit',sans-serif",fontSize:14,fontWeight:800,cursor:"pointer"}}>
+                {editMozo?"Guardar cambios":"Agregar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function GestionTab({local,setLocal,cats,setCats,prods,setProds,gSubTab,setGSubTab,gActiveCat,setGActiveCat,gModal,setGModal,toast}) {
   const subTab    = gSubTab;
   const setSubTab = setGSubTab;
@@ -2087,8 +2730,9 @@ function GestionTab({local,setLocal,cats,setCats,prods,setProds,gSubTab,setGSubT
   };
 
   const SUBTABS = [
-    {id:"local",label:"🏠 Local"},
-    {id:"carta",label:"📋 Carta"},
+    {id:"local",   label:"🏠 Local"},
+    {id:"carta",   label:"📋 Carta"},
+    {id:"personal",label:"👥 Personal"},
   ];
 
   return (
@@ -2112,8 +2756,9 @@ function GestionTab({local,setLocal,cats,setCats,prods,setProds,gSubTab,setGSubT
           </button>
         ))}
       </div>
-      {subTab==="local" && LocalSection()}
-      {subTab==="carta" && CartaSection()}
+      {subTab==="local"    && LocalSection()}
+      {subTab==="carta"    && CartaSection()}
+      {subTab==="personal" && <PersonalSection local={local} toast={toast}/>}
     </div>
   );
 }
@@ -2414,6 +3059,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
   const [cajaMesaNum, setCajaMesaNum]   = useState(1);
   const [cajaOpenCat, setCajaOpenCat]   = useState(null);
   const [cajaLoading, setCajaLoading]   = useState(false);
+  const [editPayModal, setEditPayModal] = useState(null); // {id, pay} pedido cerrado a editar
 
   const vrTotal    = Object.values(vrCart).reduce((s,i)=>s+i.price*i.qty,0);
   const cajaTotal  = Object.values(cajaCart).reduce((s,i)=>s+i.price*i.qty,0);
@@ -3003,13 +3649,14 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
      TABS DE NAVEGACIÓN
   ══════════════════════════════════════════ */
   const TABS = [
-    {id:"home",    icon:"◈", label:"Inicio"},
-    {id:"orders",  icon:"⊞", label:"Pedidos",  badge:newCount},
-    {id:"carta",   icon:"≡", label:"Carta"},
-    {id:"qr",      icon:"⬛", label:"QRs"},
-    {id:"caja",    icon:"◉", label:"Caja"},
-    {id:"gestion", icon:"✏", label:"Gestión"},
-    {id:"config",  icon:"⚙", label:"Config"},
+    {id:"home",      icon:"◈", label:"Inicio"},
+    {id:"orders",    icon:"⊞", label:"Pedidos",  badge:newCount},
+    {id:"carta",     icon:"≡", label:"Carta"},
+    {id:"qr",        icon:"⬛", label:"QRs"},
+    {id:"caja",      icon:"◉", label:"Caja"},
+    {id:"reportes",  icon:"📊", label:"Reportes"},
+    {id:"gestion",   icon:"✏", label:"Gestión"},
+    {id:"config",    icon:"⚙", label:"Config"},
   ];
 
   /* ══════════════════════════════════════════
@@ -3564,6 +4211,13 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
                 padding:"4px 7px",color:"var(--ad)",fontSize:12,cursor:"pointer",lineHeight:1}}>
                 🖨️
               </button>
+              {isClosed && (
+                <button onClick={()=>setEditPayModal({id:o.id, pay:o.pay||""})} title="Editar método de pago" style={{
+                  background:"none",border:"1px solid var(--abr)",borderRadius:6,
+                  padding:"4px 7px",color:"var(--ad)",fontSize:12,cursor:"pointer",lineHeight:1}}>
+                  ✏️
+                </button>
+              )}
             </div>
           </div>
 
@@ -3792,6 +4446,68 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
             {cerrados.map(o=><OCard key={o.id} o={o}/>)}
           </div>
         )}
+
+      {/* ── Modal editar método de pago ── */}
+      {editPayModal && (()=>{
+        const METHODS = [
+          {id:"cash", label:"Efectivo",       icon:"💵"},
+          {id:"mp",   label:"Mercado Pago",   icon:"📲"},
+          {id:"card", label:"Débito/Créd.",   icon:"💳"},
+          {id:"trans",label:"Transferencia",  icon:"🏦"},
+        ];
+        const [selPay, setSelPay] = useState(editPayModal.pay);
+        const savePay = async () => {
+          if(!supabase||!selPay||selPay===editPayModal.pay){setEditPayModal(null);return;}
+          await supabase.from("pedidos").update({metodo_pago:selPay}).eq("id",editPayModal.id);
+          setOrders(os=>os.map(o=>o.id===editPayModal.id?{...o,pay:selPay}:o));
+          toast("✓ Método de pago actualizado");
+          setEditPayModal(null);
+        };
+        return (
+          <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.65)",zIndex:9999,
+            display:"flex",alignItems:"flex-end",justifyContent:"center"}}
+            onClick={e=>{if(e.target===e.currentTarget)setEditPayModal(null);}}>
+            <div style={{background:"var(--ab)",borderRadius:"20px 20px 0 0",
+              padding:"24px 20px 40px",width:"100%",maxWidth:480}}>
+              <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,
+                color:"var(--am)",letterSpacing:1.5,marginBottom:6}}>EDITAR PAGO</p>
+              <h3 style={{fontFamily:"'Outfit',sans-serif",fontSize:17,fontWeight:800,
+                color:"var(--gi2)",marginBottom:18}}>
+                ¿Cómo se cobró?
+              </h3>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:20}}>
+                {METHODS.map(m=>(
+                  <button key={m.id} onClick={()=>setSelPay(m.id)} style={{
+                    padding:"14px 10px",borderRadius:12,cursor:"pointer",
+                    display:"flex",flexDirection:"column",alignItems:"center",gap:6,
+                    fontFamily:"'Outfit',sans-serif",fontSize:13,fontWeight:700,
+                    background:selPay===m.id?"var(--gi)":"var(--ac)",
+                    color:selPay===m.id?"#fff":"var(--ad)",
+                    border:`1.5px solid ${selPay===m.id?"var(--gi)":"var(--abr)"}`,
+                    transition:"all .15s"}}>
+                    <span style={{fontSize:22}}>{m.icon}</span>
+                    {m.label}
+                  </button>
+                ))}
+              </div>
+              <div style={{display:"flex",gap:10}}>
+                <button onClick={()=>setEditPayModal(null)} style={{
+                  flex:1,padding:13,borderRadius:12,border:"1px solid var(--abr)",
+                  background:"var(--ac)",color:"var(--ad)",
+                  fontFamily:"'Outfit',sans-serif",fontSize:14,fontWeight:700,cursor:"pointer"}}>
+                  Cancelar
+                </button>
+                <button onClick={savePay} style={{
+                  flex:1.5,padding:13,borderRadius:12,border:"none",
+                  background:"linear-gradient(135deg,var(--gi),var(--gi2))",color:"#fff",
+                  fontFamily:"'Outfit',sans-serif",fontSize:14,fontWeight:800,cursor:"pointer"}}>
+                  Guardar
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
       </div>
     );
   };
@@ -4225,6 +4941,12 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
                         </div>
                         <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:13,
                           fontWeight:700,color:"var(--abri)",flexShrink:0}}>${fmt(i.price*i.qty)}</span>
+                        <button onClick={()=>cajaSub(i)}
+                          style={{width:22,height:22,borderRadius:6,border:"none",
+                            background:"var(--as)",color:"var(--abri)",
+                            border:"1px solid var(--abr)",
+                            fontSize:16,cursor:"pointer",flexShrink:0,
+                            display:"flex",alignItems:"center",justifyContent:"center"}}>−</button>
                         <button onClick={()=>setCajaCart(c=>{const n={...c};delete n[i.id];return n;})}
                           style={{width:22,height:22,borderRadius:6,border:"none",
                             background:"rgba(255,59,92,.12)",color:"var(--ar)",
@@ -4583,7 +5305,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
               <div style={{fontFamily:"'Outfit',sans-serif",fontSize:13,fontWeight:600,color:"var(--gi2)"}}>Subir foto</div>
               <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,color:"var(--gd)"}}>Desde tu camara o galeria</div>
             </div>
-            <input type="file" accept="image/*" capture="environment"
+            <input type="file" accept="image/*"
               style={{display:"none"}}
               onChange={async e=>{
                 const file = e.target.files?.[0];
@@ -4707,7 +5429,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
   ══════════════════════════════════════════ */
   return (
     <div className="admin-wrap" style={{maxWidth:700,margin:"0 auto",minHeight:"100vh",
-      background:"var(--ab)",paddingBottom:100,position:"relative"}}>
+      background:"var(--ab)",position:"relative"}}>
       <GS/>
       {showVentaRapida && <VentaRapidaModal/>}
 
@@ -4810,6 +5532,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
       {tab==="carta"   && <CartaTab/>}
       {tab==="qr"      && <QRTabComp mesaNum={mesaNumAdmin} setMesaNum={setMesaNumAdmin} qrType={qrType} setQrType={setQrType} promoUrl={promoUrl} setPromoUrl={setPromoUrl} local={local}/>}
       {tab==="caja"    && <CajaTab/>}
+      {tab==="reportes" && <ReportesTab local={local}/>}
       {tab==="gestion" && <GestionTab local={local} setLocal={setLocal} cats={cats} setCats={setCats} prods={prods} setProds={setProds} gSubTab={gSubTab} setGSubTab={setGSubTab} gActiveCat={gActiveCat} setGActiveCat={setGActiveCat} gModal={gModal} setGModal={setGModal} toast={toast}/>}
       {tab==="config"  && <ConfigTab local={local} setLocal={setLocal} toast={toast}/>}
 
