@@ -788,6 +788,10 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
   const [showDividir, setShowDividir]         = useState(false);
   const [dividirN, setDividirN]               = useState(2);
   const [lang,setLang]     = useState(()=>localStorage.getItem("menuqr_lang")||"es");
+  const [promoActiva,setPromoActiva] = useState(()=>{
+    if(vitrina) return false;
+    try { return !!JSON.parse(localStorage.getItem("menuqr_promo10")||"null"); } catch{ return false; }
+  });
   const T = (key) => t(key,lang);
   const changeLang = (code) => { setLang(code); localStorage.setItem("menuqr_lang",code); };
   // secs timer moved to HappyHourBanner component to prevent full re-renders
@@ -800,7 +804,8 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
   const subTotal    = items.reduce((s,i)=>s+i.price*i.qty,0);
   const tipAmt      = tipPct===0 ? 0 : tipPct ? Math.round(subTotal*(tipPct/100))
                       : tipCustom ? Number(tipCustom) : 0;
-  const grandTotal  = subTotal + tipAmt;
+  const descuento10 = promoActiva && subTotal>0 ? Math.round(subTotal*0.10) : 0;
+  const grandTotal  = subTotal - descuento10 + tipAmt;
   const cartCount   = items.reduce((s,i)=>s+i.qty,0);
 
   const add = item => setCart(c=>({...c,[item.id]:{...item,qty:(c[item.id]?.qty||0)+1}}));
@@ -882,18 +887,45 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
       <div style={{margin:"10px 10px 0",display:"flex",flexDirection:"column",gap:8}}>
 
         {/* 10% primera vez */}
-        <div style={{background:"linear-gradient(135deg,rgba(201,168,76,.15),rgba(201,168,76,.05))",
-          border:"1px solid rgba(201,168,76,.4)",borderRadius:14,padding:"12px 16px",
-          display:"flex",alignItems:"center",gap:12}}>
-          <div style={{fontSize:28,flexShrink:0}}>🎁</div>
-          <div>
-            <div style={{fontFamily:"'Outfit',sans-serif",fontWeight:800,fontSize:14,
-              color:"#C9A84C",lineHeight:1.1}}>10% de descuento en tu primera visita</div>
-            <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,color:"#8A7A50",marginTop:3}}>
-              Mencionalo al mozo o escaneá el QR de tu mesa
+        {(()=>{
+          const [activado, setActivado] = React.useState(()=>{
+            try { return !!JSON.parse(localStorage.getItem("menuqr_promo10")||"null"); } catch{ return false; }
+          });
+          const activar = () => {
+            localStorage.setItem("menuqr_promo10", JSON.stringify({active:true,ts:Date.now()}));
+            setActivado(true);
+          };
+          return (
+            <div style={{background:"linear-gradient(135deg,rgba(201,168,76,.15),rgba(201,168,76,.05))",
+              border:`1px solid ${activado?"rgba(0,204,112,.5)":"rgba(201,168,76,.4)"}`,
+              borderRadius:14,padding:"14px 16px"}}>
+              <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:activado?0:12}}>
+                <div style={{fontSize:28,flexShrink:0}}>{activado?"✅":"🎁"}</div>
+                <div>
+                  <div style={{fontFamily:"'Outfit',sans-serif",fontWeight:800,fontSize:14,
+                    color:activado?"#00CC70":"#C9A84C",lineHeight:1.1}}>
+                    {activado?"¡Descuento activado!":"10% de descuento en tu primera visita"}
+                  </div>
+                  <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,
+                    color:activado?"#4A7A5A":"#8A7A50",marginTop:3}}>
+                    {activado
+                      ? "Escaneá el QR de tu mesa — se aplica solo"
+                      : "Tocá el botón para activarlo antes de pedir"}
+                  </div>
+                </div>
+              </div>
+              {!activado && (
+                <button onClick={activar} style={{
+                  width:"100%",background:"linear-gradient(135deg,#C9A84C,#E8C97A)",
+                  border:"none",borderRadius:10,padding:"12px",
+                  fontFamily:"'Outfit',sans-serif",fontSize:14,fontWeight:800,
+                  color:"#0A0806",cursor:"pointer",letterSpacing:.3}}>
+                  🎁 Activar mi descuento
+                </button>
+              )}
             </div>
-          </div>
-        </div>
+          );
+        })()}
 
         {/* Mesas en tiempo real */}
         <div style={{background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.08)",
@@ -1008,6 +1040,19 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
               fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"var(--ct)"}}>
               <span>💝 {T('tip')}</span>
               <span style={{color:"var(--cgr)"}}>$ {fmt(tipAmt)}</span>
+            </div>
+          )}
+          {descuento10>0 && (
+            <div style={{display:"flex",justifyContent:"space-between",
+              alignItems:"center",padding:"8px 12px",marginTop:4,
+              background:"rgba(0,204,112,.08)",border:"1px solid rgba(0,204,112,.25)",
+              borderRadius:10}}>
+              <span style={{fontFamily:"'Outfit',sans-serif",fontSize:12,fontWeight:700,
+                color:"#00CC70",display:"flex",alignItems:"center",gap:6}}>
+                🎁 Descuento primera visita (10%)
+              </span>
+              <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:13,
+                fontWeight:700,color:"#00CC70"}}>− $ {fmt(descuento10)}</span>
             </div>
           )}
           <div style={{display:"flex",justifyContent:"space-between",paddingTop:12,
@@ -1262,7 +1307,8 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
           const cartItems = Object.values(cart).filter(i=>i.qty>0);
           const subtotal  = cartItems.reduce((s,i)=>s+i.price*i.qty,0);
           const tipAmount = tipPct!=null?(tipPct===0?0:Math.round(subtotal*tipPct/100)):0;
-          const totalFinal= subtotal + tipAmount;
+          const descuentoAplicado = promoActiva && subtotal>0 ? Math.round(subtotal*0.10) : 0;
+          const totalFinal= subtotal - descuentoAplicado + tipAmount;
           const mesa = local.mesa || 1;
           // Guardar en Supabase si está disponible
           let pedidoGuardado = false;
@@ -1281,12 +1327,16 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
                 metodo_pago:    pay,
                 propina:        tipAmount,
                 total:          totalFinal,
-                nota:           note||null,
+                nota:           [note, descuentoAplicado>0?`DESCUENTO_PRIMERA_VEZ_10%_$${descuentoAplicado}`:null].filter(Boolean).join(" | ")||null,
                 idioma:         lang||"es",
               });
               if(error){ errorMsg = error.message; }
               else {
                 pedidoGuardado = true;
+                if(descuentoAplicado>0){
+                  localStorage.removeItem("menuqr_promo10");
+                  setPromoActiva(false);
+                }
                 const items = cartItems.map(i=>({
                   pedido_id:   pedidoId,
                   producto_id: i.id,
