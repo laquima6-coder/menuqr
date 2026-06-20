@@ -5296,29 +5296,46 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
               resize:"none",height:68,marginBottom:14}}/>
 
           <GLbl>Foto del producto <span style={{color:"var(--gd)",fontWeight:400}}>(opcional)</span></GLbl>
-          {/* Upload desde celular */}
-          <label style={{display:"flex",alignItems:"center",gap:10,
-            background:"rgba(99,102,241,.08)",border:"1px dashed rgba(99,102,241,.4)",
-            borderRadius:10,padding:"11px 14px",cursor:"pointer",marginBottom:8}}>
-            <span style={{fontSize:20}}>📷</span>
-            <div style={{flex:1}}>
-              <div style={{fontFamily:"'Outfit',sans-serif",fontSize:13,fontWeight:600,color:"var(--gi2)"}}>Subir foto</div>
-              <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,color:"var(--gd)"}}>Desde tu camara o galeria</div>
-            </div>
-            <input type="file" accept="image/*"
-              style={{display:"none"}}
-              onChange={async e=>{
-                const file = e.target.files?.[0];
-                if(!file || !supabase) return;
-                const ext = file.name.split(".").pop();
-                const path = `productos/${local.restauranteId}/${Date.now()}.${ext}`;
-                const {error:upErr} = await supabase.storage.from("fotos").upload(path, file, {upsert:true});
-                if(upErr){ toast("Error al subir: "+upErr.message,"err"); return; }
-                const {data:{publicUrl}} = supabase.storage.from("fotos").getPublicUrl(path);
-                setForm("foto_url", publicUrl);
-                toast("Foto subida");
-              }}/>
-          </label>
+          {/* Upload desde celular — dos botones separados para forzar elección en Android */}
+          {(()=>{
+            const uploadHandler = async (e) => {
+              const file = e.target.files?.[0];
+              if(!file || !supabase) return;
+              e.target.value = "";
+              toast("Subiendo...");
+              const ext = file.name.split(".").pop();
+              const path = `productos/${local.restauranteId}/${Date.now()}.${ext}`;
+              const {error:upErr} = await supabase.storage.from("fotos").upload(path, file, {upsert:true});
+              if(upErr){ toast("Error al subir: "+upErr.message,"err"); return; }
+              const {data:{publicUrl}} = supabase.storage.from("fotos").getPublicUrl(path);
+              setForm("foto_url", publicUrl);
+              toast("Foto subida ✓");
+            };
+            return (
+              <div style={{display:"flex",gap:8,marginBottom:8}}>
+                <label style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",gap:8,
+                  background:"rgba(99,102,241,.08)",border:"1px dashed rgba(99,102,241,.4)",
+                  borderRadius:10,padding:"12px 10px",cursor:"pointer"}}>
+                  <span style={{fontSize:18}}>📷</span>
+                  <div>
+                    <div style={{fontFamily:"'Outfit',sans-serif",fontSize:12,fontWeight:700,color:"var(--gi2)"}}>Cámara</div>
+                  </div>
+                  <input type="file" accept="image/*" capture="environment"
+                    style={{display:"none"}} onChange={uploadHandler}/>
+                </label>
+                <label style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",gap:8,
+                  background:"rgba(99,102,241,.08)",border:"1px dashed rgba(99,102,241,.4)",
+                  borderRadius:10,padding:"12px 10px",cursor:"pointer"}}>
+                  <span style={{fontSize:18}}>🖼️</span>
+                  <div>
+                    <div style={{fontFamily:"'Outfit',sans-serif",fontSize:12,fontWeight:700,color:"var(--gi2)"}}>Galería</div>
+                  </div>
+                  <input type="file" accept="image/*"
+                    style={{display:"none"}} onChange={uploadHandler}/>
+                </label>
+              </div>
+            );
+          })()}
           {/* O pegar URL */}
           <div style={{display:"flex",alignItems:"center",background:"var(--gb)",
             border:"1px solid var(--gbr)",borderRadius:10,overflow:"hidden",
