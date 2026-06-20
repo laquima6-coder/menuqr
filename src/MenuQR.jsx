@@ -2663,8 +2663,11 @@ function GestionTab({local,setLocal,cats,setCats,prods,setProds,gSubTab,setGSubT
                 <button onClick={()=>openEdit(prod)} style={{
                   width:48,height:48,borderRadius:12,background:"var(--gs)",
                   border:"1px solid var(--gbr)",fontSize:24,cursor:"pointer",
-                  flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
-                  {prod.emoji}
+                  flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",
+                  overflow:"hidden",padding:0}}>
+                  {prod.foto_url
+                    ? <img src={prod.foto_url} alt={prod.name} style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>{e.target.style.display="none";}}/>
+                    : prod.emoji}
                 </button>
                 <div style={{flex:1,minWidth:0}}>
                   <div style={{display:"flex",alignItems:"center",gap:6,
@@ -4539,7 +4542,13 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
             padding:"13px 16px",cursor:"pointer",userSelect:"none",
             opacity:p.active?1:.5,transition:"opacity .3s",
           }}>
-            <span style={{fontSize:22,flexShrink:0}}>{p.emoji}</span>
+            {p.foto_url ? (
+              <img src={p.foto_url} alt={p.name}
+                style={{width:40,height:40,borderRadius:8,objectFit:"cover",flexShrink:0}}
+                onError={e=>{e.target.style.display="none";}}/>
+            ) : (
+              <span style={{fontSize:22,flexShrink:0}}>{p.emoji}</span>
+            )}
             <Dot color={activeColor} pulse={p.active&&!p.sin_stock}/>
             <div style={{flex:1,minWidth:0}}>
               <p style={{fontFamily:"'Outfit',sans-serif",fontWeight:600,
