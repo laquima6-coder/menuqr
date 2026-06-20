@@ -842,6 +842,134 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
   };
 
   /* ── DONE */
+
+  /* ═══════════════════════════════════════
+     VITRINA INFO — mesas + cómo funciona + promo
+  ═══════════════════════════════════════ */
+  const VitrinaInfo = () => {
+    const [mesasOcupadas, setMesasOcupadas] = React.useState([]);
+    const totalMesas = local.mesas || 10;
+    const libres = totalMesas - mesasOcupadas.length;
+    const pct = Math.round((mesasOcupadas.length/totalMesas)*100);
+
+    React.useEffect(()=>{
+      if(!supabase||!local.restauranteId) return;
+      const load = async () => {
+        const {data} = await supabase.from("pedidos")
+          .select("mesa_numero")
+          .eq("restaurante_id", local.restauranteId)
+          .in("status",["nuevo","preparando","listo"]);
+        if(data) setMesasOcupadas([...new Set(data.map(p=>p.mesa_numero))]);
+      };
+      load();
+      const ch = supabase.channel("vitrina-mesas-"+local.restauranteId)
+        .on("postgres_changes",{event:"*",schema:"public",table:"pedidos",
+          filter:`restaurante_id=eq.${local.restauranteId}`}, load)
+        .subscribe();
+      return ()=>supabase.removeChannel(ch);
+    },[]);
+
+    const isHappyHour = (() => {
+      if(!local.happyHour||!local.happyDesde||!local.happyHasta) return false;
+      const now = new Date();
+      const [hd,md]=local.happyDesde.split(":").map(Number);
+      const [hh,mh]=local.happyHasta.split(":").map(Number);
+      const mins = now.getHours()*60+now.getMinutes();
+      return mins>=(hd*60+md) && mins<(hh*60+mh);
+    })();
+
+    return (
+      <div style={{margin:"10px 10px 0",display:"flex",flexDirection:"column",gap:8}}>
+
+        {/* 10% primera vez */}
+        <div style={{background:"linear-gradient(135deg,rgba(201,168,76,.15),rgba(201,168,76,.05))",
+          border:"1px solid rgba(201,168,76,.4)",borderRadius:14,padding:"12px 16px",
+          display:"flex",alignItems:"center",gap:12}}>
+          <div style={{fontSize:28,flexShrink:0}}>🎁</div>
+          <div>
+            <div style={{fontFamily:"'Outfit',sans-serif",fontWeight:800,fontSize:14,
+              color:"#C9A84C",lineHeight:1.1}}>10% de descuento en tu primera visita</div>
+            <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,color:"#8A7A50",marginTop:3}}>
+              Mencionalo al mozo o escaneá el QR de tu mesa
+            </div>
+          </div>
+        </div>
+
+        {/* Mesas en tiempo real */}
+        <div style={{background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.08)",
+          borderRadius:14,padding:"12px 16px"}}>
+          <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,color:"#3A3A3A",
+            letterSpacing:2,marginBottom:10}}>MESAS EN TIEMPO REAL</div>
+          <div style={{display:"flex",gap:10,marginBottom:10}}>
+            <div style={{flex:1,background:"rgba(0,255,136,.06)",border:"1px solid rgba(0,255,136,.2)",
+              borderRadius:10,padding:"10px 12px",textAlign:"center"}}>
+              <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:24,fontWeight:700,
+                color:"#00CC70",lineHeight:1}}>{libres}</div>
+              <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,color:"#4A7A5A",marginTop:3}}>LIBRES</div>
+            </div>
+            <div style={{flex:1,background:"rgba(255,176,32,.06)",border:"1px solid rgba(255,176,32,.2)",
+              borderRadius:10,padding:"10px 12px",textAlign:"center"}}>
+              <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:24,fontWeight:700,
+                color:"#FFB020",lineHeight:1}}>{mesasOcupadas.length}</div>
+              <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,color:"#7A6A30",marginTop:3}}>OCUPADAS</div>
+            </div>
+            <div style={{flex:1,background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.08)",
+              borderRadius:10,padding:"10px 12px",textAlign:"center"}}>
+              <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:24,fontWeight:700,
+                color:"#C9A84C",lineHeight:1}}>{pct}%</div>
+              <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,color:"#6A5A40",marginTop:3}}>OCUPACIÓN</div>
+            </div>
+          </div>
+          {/* Barra visual */}
+          <div style={{height:4,background:"rgba(255,255,255,.06)",borderRadius:2,overflow:"hidden"}}>
+            <div style={{height:"100%",width:`${pct}%`,background:"linear-gradient(90deg,#00CC70,#FFB020)",
+              borderRadius:2,transition:"width .5s ease"}}/>
+          </div>
+        </div>
+
+        {/* Cómo funciona */}
+        <div style={{background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.08)",
+          borderRadius:14,padding:"12px 16px"}}>
+          <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,color:"#3A3A3A",
+            letterSpacing:2,marginBottom:10}}>CÓMO FUNCIONA</div>
+          {[
+            {n:"1",ico:"📱",t:"Escaneá el QR de tu mesa",d:"Cada mesa tiene su propio código QR"},
+            {n:"2",ico:"🍽️",t:"Elegí tu pedido",d:"Navegá la carta y sumá lo que quieras"},
+            {n:"3",ico:"✅",t:"Confirmá y listo",d:"El pedido llega directo a cocina — sin esperas"},
+          ].map(s=>(
+            <div key={s.n} style={{display:"flex",alignItems:"flex-start",gap:12,marginBottom:10}}>
+              <div style={{width:28,height:28,borderRadius:8,background:"rgba(201,168,76,.12)",
+                border:"1px solid rgba(201,168,76,.25)",display:"flex",alignItems:"center",
+                justifyContent:"center",fontSize:14,flexShrink:0}}>{s.ico}</div>
+              <div>
+                <div style={{fontFamily:"'Outfit',sans-serif",fontWeight:600,fontSize:12,
+                  color:"#C8B898",lineHeight:1.2}}>{s.t}</div>
+                <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,color:"#4A4A4A",marginTop:2}}>{s.d}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Happy Hour activo */}
+        {isHappyHour && (
+          <div style={{background:"linear-gradient(135deg,rgba(255,92,0,.12),rgba(255,176,32,.08))",
+            border:"1px solid rgba(255,120,0,.3)",borderRadius:14,padding:"12px 16px",
+            display:"flex",alignItems:"center",gap:12}}>
+            <div style={{fontSize:26,flexShrink:0}}>🔥</div>
+            <div>
+              <div style={{fontFamily:"'Outfit',sans-serif",fontWeight:800,fontSize:13,
+                color:"#FF8C00",lineHeight:1.1}}>Happy Hour activo ahora</div>
+              <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,color:"#7A4A20",marginTop:3}}>
+                Hasta las {local.happyHasta} · Entrá y aprovechá los precios especiales
+              </div>
+            </div>
+          </div>
+        )}
+
+      </div>
+    );
+  };
+
   if(view==="done") return (
     <div style={{maxWidth:430,margin:"0 auto",minHeight:"100vh",background:"var(--cb)",
       display:"flex",flexDirection:"column",alignItems:"center",
@@ -1205,6 +1333,8 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
         </div>
         {/* Happy Hour banner — isolated component with own timer */}
         <HappyHourBanner happyHasta={local.happyHasta} happyHour={local.happyHour} lang={lang}/>
+        {/* Vitrina info — solo en modo vitrina */}
+        {vitrina && <VitrinaInfo/>}
         {/* All categories */}
         {activeCats.map(cat=>{
           const catProds=prods.filter(p=>p.cat===cat.id&&(p.active||p.active==null));
