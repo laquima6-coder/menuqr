@@ -3653,7 +3653,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
   ══════════════════════════════════════════ */
   const TABS = [
     {id:"home",      icon:"◈", label:"Inicio"},
-    {id:"orders",    icon:"⊞", label:"Pedidos",  badge:newCount},
+    {id:"orders",    icon:"⊞", label:"Pedidos",  badge:newCount+solicitudes.length},
     {id:"carta",     icon:"≡", label:"Carta"},
     {id:"qr",        icon:"⬛", label:"QRs"},
     {id:"caja",      icon:"◉", label:"Caja"},
@@ -4346,6 +4346,55 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
             ))}
           </div>
         </div>
+
+        {/* ── Solicitudes de mesa (visible siempre en Pedidos) */}
+        {solicitudes.length>0 && (
+          <div style={{background:"var(--ac)",border:"1px solid rgba(255,176,32,.4)",
+            borderRadius:14,overflow:"hidden",marginBottom:14,
+            boxShadow:"0 0 16px rgba(255,176,32,.12)"}}>
+            <div style={{padding:"10px 14px 8px",borderBottom:"1px solid rgba(255,176,32,.15)",
+              display:"flex",justifyContent:"space-between",alignItems:"center",
+              background:"rgba(255,176,32,.06)"}}>
+              <div style={{display:"flex",alignItems:"center",gap:8}}>
+                <span style={{fontSize:16}}>🛎️</span>
+                <ALbl>Solicitudes de mesa</ALbl>
+              </div>
+              <span style={{background:"rgba(255,176,32,.15)",
+                border:"1px solid rgba(255,176,32,.4)",borderRadius:20,
+                padding:"2px 8px",fontFamily:"'IBM Plex Mono',monospace",
+                fontSize:9,fontWeight:700,color:"#FFB020"}}>{solicitudes.length}</span>
+            </div>
+            {solicitudes.map((s,i)=>{
+              const icons  = {mozo:"🙋",cuenta:"💳",cubiertos:"🍴",hielo:"🧊",pan:"🍞",servilletas:"🧻"};
+              const labels = {mozo:"Llamado al mozo",cuenta:"Piden la cuenta",
+                cubiertos:"Cubiertos",hielo:"Hielo",pan:"Pan",servilletas:"Servilletas"};
+              return (
+                <div key={s.id} style={{display:"flex",justifyContent:"space-between",
+                  alignItems:"center",padding:"10px 14px",
+                  borderBottom:i<solicitudes.length-1?"1px solid var(--abr)":"none"}}>
+                  <div style={{display:"flex",alignItems:"center",gap:10}}>
+                    <div style={{width:36,height:36,borderRadius:10,
+                      background:"rgba(255,176,32,.1)",border:"1px solid rgba(255,176,32,.2)",
+                      display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>
+                      {icons[s.tipo]||"🛎️"}
+                    </div>
+                    <div>
+                      <p style={{fontFamily:"'Outfit',sans-serif",fontWeight:600,
+                        fontSize:13,color:"var(--abri)"}}>{labels[s.tipo]||s.tipo}</p>
+                      <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,
+                        color:"var(--ad)"}}>Mesa {s.mesa} · {new Date(s.created_at).toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"})}</p>
+                    </div>
+                  </div>
+                  <button onClick={()=>markSolicitudAtendida(s.id)} className="pr" style={{
+                    background:"rgba(0,255,136,.1)",border:"1px solid rgba(0,255,136,.25)",
+                    borderRadius:8,padding:"6px 12px",cursor:"pointer",
+                    fontFamily:"'IBM Plex Mono',monospace",fontSize:9,
+                    color:"#00FF88",letterSpacing:.5}}>✓ LISTO</button>
+                </div>
+              );
+            })}
+          </div>
+        )}
 
         {f==="activos" && (
           <>
