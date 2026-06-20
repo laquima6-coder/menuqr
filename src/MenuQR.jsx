@@ -1533,8 +1533,8 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
           <div style={{width:"100%",padding:"8px 6px",borderTop:"1px solid #1C1C1C",textAlign:"center"}}>
             <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:7,color:"#3A3A3A",letterSpacing:1,textTransform:"uppercase",marginBottom:3}}>Mesa</div>
             <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,color:"#FFF",fontWeight:900,lineHeight:1,marginBottom:4}}>{local.mesa}</div>
-            {!vitrina&&(
-              {local.feat_solicitudes!==false && <button onClick={()=>setShowSolicitudes(true)} style={{width:"100%",background:"rgba(201,168,76,.07)",border:"1px solid #1E1E1E",borderRadius:8,padding:"5px 0",cursor:"pointer",fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"}}>🛎️</button>}
+            {!vitrina && local.feat_solicitudes!==false && (
+              <button onClick={()=>setShowSolicitudes(true)} style={{width:"100%",background:"rgba(201,168,76,.07)",border:"1px solid #1E1E1E",borderRadius:8,padding:"5px 0",cursor:"pointer",fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"}}>🛎️</button>
             )}
           </div>
         ):(
