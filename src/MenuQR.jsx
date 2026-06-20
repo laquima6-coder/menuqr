@@ -1655,9 +1655,10 @@ function playSound(type) {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
     const tonos = {
-      nuevo:  [[880,0,.08],[880,.12,.08],[1100,.26,.12]],
-      cocina: [[660,0,.10],[880,.18,.10]],
-      listo:  [[523,0,.09],[659,.12,.09],[784,.25,.14]],
+      nuevo:    [[880,0,.08],[880,.12,.08],[1100,.26,.12]],
+      cocina:   [[660,0,.10],[880,.18,.10]],
+      listo:    [[523,0,.09],[659,.12,.09],[784,.25,.14]],
+      solicitud:[[1318,0,.06],[1047,.1,.06],[1318,.2,.06],[1047,.3,.1],[1318,.45,.15]],
     };
     (tonos[type] || tonos.nuevo).forEach(([freq, delay, dur]) => {
       const osc  = ctx.createOscillator();
@@ -3338,7 +3339,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
           const labels = {mozo:"🙋 Llamado al mozo",cuenta:"💳 Piden la cuenta",
             cubiertos:"🍴 Cubiertos",hielo:"🧊 Hielo",pan:"🍞 Pan",servilletas:"🧻 Servilletas"};
           toast(`${labels[s.tipo]||s.tipo} · Mesa ${s.mesa}`);
-          playSound('nuevo');
+          playSound('solicitud');
           pushNotify("🛎️ Solicitud de mesa", `Mesa ${s.mesa} — ${labels[s.tipo]||s.tipo}`);
         })
       .subscribe();
