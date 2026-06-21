@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>MenuQR — Demo Interactivo</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:#060810;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'Outfit',sans-serif;overflow:hidden}
+.page-header{position:fixed;top:0;left:0;right:0;padding:14px 24px;display:flex;align-items:center;gap:12px;background:rgba(6,8,16,.92);backdrop-filter:blur(12px);border-bottom:1px solid #1A2230;z-index:100}
+.logo{font-family:'Playfair Display',serif;font-size:1.2rem;color:#EDE0C8}
+.badge{font-family:'IBM Plex Mono',monospace;font-size:.65rem;letter-spacing:2px;color:#00FF88;background:rgba(0,255,136,.1);border:1px solid rgba(0,255,136,.25);padding:3px 8px;border-radius:4px}
+.step-indicator{margin-left:auto;display:flex;gap:6px;align-items:center}
+.dot{width:8px;height:8px;border-radius:50%;background:#1A2230;transition:background .3s}
+.dot.active{background:#00FF88}.dot.done{background:#3D8EFF}
+.stage{display:flex;align-items:center;justify-content:center;gap:44px;padding:76px 24px 72px;width:100%}
+.phone{width:355px;height:695px;background:#0a0e1a;border-radius:38px;border:2px solid #1E2A3A;box-shadow:0 0 0 6px #0a0c14,0 0 60px rgba(0,0,0,.8),0 40px 80px rgba(0,0,0,.5);position:relative;overflow:hidden;flex-shrink:0}
+.phone-notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:100px;height:22px;background:#0a0e1a;border-radius:0 0 14px 14px;z-index:50;border:2px solid #1E2A3A;border-top:none}
+.phone-screen{width:100%;height:100%;background:#0d1117;overflow:hidden;position:relative}
+.screen{position:absolute;inset:0;opacity:0;transform:translateX(100%);transition:opacity .45s ease,transform .45s ease;overflow-y:auto;overflow-x:hidden}
+.screen.active{opacity:1;transform:translateX(0)}
+.screen.exit{opacity:0;transform:translateX(-100%)}
+.screen::-webkit-scrollbar{width:0}
+.vitrina{background:linear-gradient(180deg,#0d1117 0%,#060a10 100%);display:flex;flex-direction:column;align-items:center;padding:56px 22px 28px;gap:18px;min-height:100%}
+.rest-name{font-family:'Playfair Display',serif;font-size:1.75rem;color:#EDE0C8;text-align:center}
+.rest-sub{font-family:'IBM Plex Mono',monospace;font-size:.68rem;letter-spacing:3px;color:#4A6080;text-transform:uppercase;text-align:center}
+.qr-box{width:120px;height:120px;background:#fff;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:2.5rem;box-shadow:0 0 28px rgba(0,204,112,.12)}
+.promo-banner{background:rgba(0,204,112,.08);border:1px solid rgba(0,204,112,.25);border-radius:13px;padding:13px 17px;width:100%;text-align:center}
+.promo-banner h3{font-size:.9rem;font-weight:700;color:#00FF88;margin-bottom:3px}
+.promo-banner p{font-size:.72rem;color:#4A8060;font-family:'IBM Plex Mono',monospace}
+.btn-p{width:100%;padding:14px;background:linear-gradient(135deg,#00FF88,#00C870);border:none;border-radius:12px;color:#060810;font-size:.92rem;font-weight:800;cursor:pointer;font-family:'Outfit',sans-serif}
+.btn-s{width:100%;padding:12px;background:rgba(255,255,255,.04);border:1px solid #1A2230;border-radius:12px;color:#4A6080;font-size:.85rem;font-weight:600;cursor:pointer;font-family:'Outfit',sans-serif}
+.menu-hdr{background:#0d1117;padding:26px 15px 11px;border-bottom:1px solid #1A2230;position:sticky;top:0;z-index:10}
+.menu-rname{font-family:'Playfair Display',serif;font-size:1.05rem;color:#EDE0C8;margin-bottom:6px}
+.promo-chip{display:inline-flex;align-items:center;gap:5px;background:rgba(0,204,112,.1);border:1px solid rgba(0,204,112,.2);border-radius:20px;padding:3px 9px;font-family:'IBM Plex Mono',monospace;font-size:.6rem;color:#00CC70;letter-spacing:1px}
+.cats{display:flex;gap:7px;padding:9px 13px;overflow-x:auto}.cats::-webkit-scrollbar{height:0}
+.cat{flex-shrink:0;padding:6px 12px;background:#111820;border:1px solid #1A2230;border-radius:7px;color:#4A6080;font-size:.76rem;font-weight:600;cursor:pointer;transition:all .2s;white-space:nowrap}
+.cat.active{background:rgba(61,142,255,.15);border-color:#3D8EFF;color:#3D8EFF}
+.cat-ttl{padding:12px 15px 5px;font-family:'IBM Plex Mono',monospace;font-size:.62rem;letter-spacing:2px;color:#4A6080;text-transform:uppercase}
+.pcard{margin:0 9px 8px;background:#111820;border:1px solid #1A2230;border-radius:12px;padding:11px;display:flex;align-items:center;gap:10px;transition:border-color .2s,background .2s}
+.pcard.hi{border-color:rgba(0,255,136,.4);background:rgba(0,255,136,.03)}
+.pemoji{font-size:1.9rem;flex-shrink:0}
+.pinfo{flex:1;min-width:0}
+.pname{font-weight:700;color:#B8D0E8;font-size:.82rem;margin-bottom:2px}
+.pdesc{font-size:.7rem;color:#4A6080;margin-bottom:4px;line-height:1.3}
+.pprice{font-family:'IBM Plex Mono',monospace;font-size:.82rem;font-weight:700;color:#00CC70}
+.addbtn{width:30px;height:30px;border-radius:50%;background:#00CC70;border:none;color:#060810;font-size:1.15rem;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-weight:700;transition:transform .15s,background .2s;line-height:1}
+.addbtn.added{background:#00FF88;transform:scale(1.2)}
+.cart-bar{position:sticky;bottom:0;background:linear-gradient(135deg,#00CC70,#00A860);margin:6px 9px 12px;border-radius:12px;padding:13px 15px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 4px 20px rgba(0,204,112,.3);opacity:0;transform:translateY(20px);transition:opacity .4s ease,transform .4s ease;cursor:pointer}
+.cart-bar.vis{opacity:1;transform:translateY(0)}
+.cbt{font-weight:800;color:#060810;font-size:.88rem}
+.cbc{background:rgba(0,0,0,.15);color:#060810;font-family:'IBM Plex Mono',monospace;padding:3px 9px;border-radius:18px;font-size:.76rem;font-weight:700}
+.cart-hdr{padding:26px 13px 12px;background:#0d1117;border-bottom:1px solid #1A2230;display:flex;align-items:center;gap:9px;position:sticky;top:0;z-index:10}
+.back{width:28px;height:28px;border-radius:50%;background:#111820;border:1px solid #1A2230;color:#B8D0E8;display:flex;align-items:center;justify-content:center;font-size:.8rem;cursor:pointer;flex-shrink:0}
+.ctitle{font-weight:700;color:#EDE0C8;font-size:.9rem}
+.citem{margin:7px 9px 0;background:#111820;border:1px solid #1A2230;border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:8px}
+.cemoji{font-size:1.35rem}
+.cname{flex:1;color:#B8D0E8;font-size:.8rem;font-weight:600}
+.cqty{display:flex;align-items:center;gap:6px;font-family:'IBM Plex Mono',monospace;font-size:.82rem;color:#B8D0E8}
+.qbtn{background:#1A2230;border:none;color:#B8D0E8;width:22px;height:22px;border-radius:5px;cursor:pointer;font-size:.85rem}
+.cprice{font-family:'IBM Plex Mono',monospace;font-size:.8rem;color:#00CC70;font-weight:700}
+.tsec{margin:9px 9px 0}
+.trow{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-top:1px solid #1A2230;font-size:.8rem;color:#4A6080}
+.trow.fin{font-size:.92rem;font-weight:800;color:#EDE0C8}
+.trow span:last-child{font-family:'IBM Plex Mono',monospace}
+.drow{display:flex;justify-content:space-between;align-items:center;padding:6px 10px;margin:3px 0;background:rgba(0,204,112,.08);border:1px solid rgba(0,204,112,.25);border-radius:8px;font-size:.73rem}
+.dlbl{color:#00CC70;font-weight:700}
+.damt{font-family:'IBM Plex Mono',monospace;color:#00CC70;font-weight:700}
+.chk-btn{margin:12px 9px 18px;display:block;width:calc(100% - 18px);padding:14px;background:linear-gradient(135deg,#00FF88,#00C870);border:none;border-radius:12px;color:#060810;font-size:.92rem;font-weight:800;cursor:pointer;font-family:'Outfit',sans-serif;text-align:center}
+.tgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;padding:9px 13px}
+.tchip{aspect-ratio:1;border-radius:8px;border:1px solid #1A2230;background:#111820;color:#4A6080;display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;font-size:.8rem;font-weight:700;cursor:pointer;transition:all .15s}
+.tchip.sel{background:rgba(61,142,255,.15);border-color:#3D8EFF;color:#3D8EFF}
+.success-scr{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100%;padding:34px 20px;gap:14px;text-align:center}
+.sicon{width:76px;height:76px;border-radius:50%;background:rgba(0,255,136,.1);border:2px solid rgba(0,255,136,.3);display:flex;align-items:center;justify-content:center;font-size:2rem;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(0,255,136,.3)}50%{box-shadow:0 0 0 14px rgba(0,255,136,.0)}}
+.stitle{font-size:1.25rem;font-weight:800;color:#EDE0C8}
+.ssub{font-size:.8rem;color:#4A6080;line-height:1.6}
+.oinfo{background:#111820;border:1px solid #1A2230;border-radius:12px;padding:13px;width:100%;text-align:left}
+.orow{display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:.78rem;border-bottom:1px solid #1A2230}
+.orow:last-child{border-bottom:none}
+.orow span:first-child{color:#4A6080}
+.orow span:last-child{color:#B8D0E8;font-family:'IBM Plex Mono',monospace;font-weight:600}
+.sbadge{display:inline-flex;align-items:center;gap:4px;background:rgba(255,176,32,.1);border:1px solid rgba(255,176,32,.2);color:#FFB020;padding:2px 6px;border-radius:5px;font-family:'IBM Plex Mono',monospace;font-size:.62rem;font-weight:700}
+.adm-hdr{background:#060810;padding:26px 13px 9px;border-bottom:1px solid #1A2230;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}
+.adm-title{font-weight:800;font-size:.92rem;color:#EDE0C8}
+.adm-tabs{display:flex;background:#060810;border-bottom:1px solid #1A2230}
+.adm-tab{flex:1;padding:9px 0;text-align:center;font-size:.7rem;font-weight:700;color:#4A6080;border-bottom:2px solid transparent;cursor:pointer;transition:all .2s}
+.adm-tab.active{color:#00CC70;border-bottom-color:#00CC70}
+.ocard{margin:7px 9px 0;background:#111820;border:1px solid #1A2230;border-radius:12px;overflow:hidden}
+.ocard.new{border-color:rgba(255,176,32,.4);animation:slideIn .5s ease}
+@keyframes slideIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+.ochdr{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid #1A2230}
+.omesa{font-family:'IBM Plex Mono',monospace;font-size:.8rem;font-weight:700;color:#3D8EFF}
+.otime{font-size:.68rem;color:#4A6080}
+.oitems{padding:8px 12px}
+.oitem{font-size:.76rem;color:#B8D0E8;padding:2px 0}
+.ofooter{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:rgba(0,0,0,.2)}
+.ototal{font-family:'IBM Plex Mono',monospace;font-size:.8rem;font-weight:700;color:#00CC70}
+.oaction{padding:5px 11px;border-radius:6px;border:none;background:rgba(255,176,32,.15);color:#FFB020;font-size:.7rem;font-weight:700;cursor:pointer;font-family:'IBM Plex Mono',monospace}
+.oaction.rdy{background:rgba(61,142,255,.15);color:#3D8EFF}
+.sound-alert{margin:7px 9px 0;background:rgba(255,176,32,.1);border:1px solid rgba(255,176,32,.3);border-radius:8px;padding:8px 11px;font-size:.72rem;color:#FFB020;font-family:'IBM Plex Mono',monospace;display:none;animation:slideIn .4s ease}
+.tap-ring{position:absolute;width:46px;height:46px;border-radius:50%;border:3px solid rgba(0,255,136,.9);pointer-events:none;transform:translate(-50%,-50%) scale(0);animation:tapA .65s ease forwards;z-index:999}
+@keyframes tapA{0%{transform:translate(-50%,-50%) scale(0);opacity:1}60%{transform:translate(-50%,-50%) scale(1);opacity:.8}100%{transform:translate(-50%,-50%) scale(1.5);opacity:0}}
+.side{width:295px;display:flex;flex-direction:column;gap:16px}
+.icard{background:#0C1018;border:1px solid #1A2230;border-radius:14px;padding:17px}
+.icard h3{font-size:.68rem;letter-spacing:2px;text-transform:uppercase;color:#4A6080;font-family:'IBM Plex Mono',monospace;margin-bottom:11px}
+.frow{display:flex;align-items:flex-start;gap:9px;padding:7px 0;border-bottom:1px solid #1A2230;font-size:.78rem;color:#B8D0E8;line-height:1.4}
+.frow:last-child{border-bottom:none}
+.fico{font-size:.95rem;flex-shrink:0}
+.sdesc{font-size:.83rem;color:#B8D0E8;line-height:1.6;margin-top:7px}
+.slbl{display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:.6rem;letter-spacing:2px;text-transform:uppercase;background:rgba(61,142,255,.1);border:1px solid rgba(61,142,255,.2);color:#3D8EFF;padding:3px 7px;border-radius:4px;margin-bottom:6px}
+.pbar{height:3px;background:#1A2230;border-radius:2px;overflow:hidden;margin-top:12px}
+.pfill{height:100%;background:linear-gradient(90deg,#00FF88,#3D8EFF);border-radius:2px;transition:width .8s ease}
+.controls{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);display:flex;gap:9px;align-items:center;background:rgba(12,16,24,.93);backdrop-filter:blur(16px);border:1px solid #1A2230;border-radius:48px;padding:6px 13px;z-index:200}
+.cbtn{padding:7px 16px;border-radius:26px;border:none;font-family:'Outfit',sans-serif;font-size:.8rem;font-weight:700;cursor:pointer;transition:all .2s}
+.cplay{background:linear-gradient(135deg,#00FF88,#00C870);color:#060810}
+.cplay:hover{transform:scale(1.05)}
+.cnav{background:#111820;color:#4A6080;border:1px solid #1A2230}
+.cnav:hover:not(:disabled){color:#B8D0E8}
+.cnav:disabled{opacity:.3;cursor:default}
+.clbl{font-family:'IBM Plex Mono',monospace;font-size:.66rem;color:#4A6080;padding:0 2px}
+</style>
+</head>
+<body>
+<div class="page-header">
+  <span class="logo">MenuQR</span>
+  <span class="badge">DEMO INTERACTIVO</span>
+  <div class="step-indicator" id="stepInd"></div>
+</div>
+<div class="stage">
+  <div class="phone">
+    <div class="phone-notch"></div>
+    <div class="phone-screen" id="ps">
+
+      <!-- S0 Vitrina -->
+      <div class="screen" id="s0">
+        <div class="vitrina">
+          <div style="height:4px"></div>
+          <div class="rest-name">Los Amigos</div>
+          <div class="rest-sub">Escaneá para ver la carta</div>
+          <div class="qr-box">▦</div>
+          <div class="promo-banner">
+            <h3>🎁 10% de descuento</h3>
+            <p>Primera visita via QR</p>
+          </div>
+          <button class="btn-p" onclick="tap(event,()=>goTo(1))">Ver carta &rarr;</button>
+          <button class="btn-s">Solo consultar carta</button>
+        </div>
+      </div>
+
+      <!-- S1 Menu -->
+      <div class="screen" id="s1">
+        <div class="menu-hdr">
+          <div class="menu-rname">Los Amigos</div>
+          <span class="promo-chip">🎁 10% primera visita activo</span>
+        </div>
+        <div class="cats">
+          <div class="cat active" onclick="selCat(this)">🍕 Pizzas</div>
+          <div class="cat" onclick="selCat(this)">🥩 Carnes</div>
+          <div class="cat" onclick="selCat(this)">🥗 Ensaladas</div>
+          <div class="cat" onclick="selCat(this)">🍷 Bebidas</div>
+          <div class="cat" onclick="selCat(this)">🍰 Postres</div>
+        </div>
+        <div class="cat-ttl">PIZZAS</div>
+        <div class="pcard" id="pc1">
+          <span class="pemoji">🍕</span>
+          <div class="pinfo"><div class="pname">Muzzarella</div><div class="pdesc">Tomate, mozzarella, albahaca</div><div class="pprice">$ 3.200</div></div>
+          <button class="addbtn" id="ab1" onclick="addIt(event,'ab1','pc1',3200)">+</button>
+        </div>
+        <div class="pcard" id="pc2">
+          <span class="pemoji">🍕</span>
+          <div class="pinfo"><div class="pname">Especial</div><div class="pdesc">Jamón, morrones, aceitunas</div><div class="pprice">$ 4.100</div></div>
+          <button class="addbtn" id="ab2" onclick="addIt(event,'ab2','pc2',4100)">+</button>
+        </div>
+        <div class="cat-ttl">BEBIDAS</div>
+        <div class="pcard" id="pc3">
+          <span class="pemoji">🥤</span>
+          <div class="pinfo"><div class="pname">Coca-Cola 500ml</div><div class="pdesc">Bebida gasificada fría</div><div class="pprice">$ 900</div></div>
+          <button class="addbtn" id="ab3" onclick="addIt(event,'ab3','pc3',900)">+</button>
+        </div>
+        <div style="height:70px"></div>
+        <div class="cart-bar" id="cbar" onclick="tap(event,()=>goTo(2))">
+          <div class="cbt">Ver pedido</div>
+          <div style="display:flex;align-items:center;gap:7px">
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:.76rem;color:#060810;font-weight:700" id="ctot">$ 0</span>
+            <span class="cbc" id="cqty">0</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- S2 Mesa -->
+      <div class="screen" id="s2">
+        <div class="cart-hdr">
+          <div class="back" onclick="tap(event,()=>goTo(1))">&#8592;</div>
+          <div class="ctitle">&#191;En qu&#233; mesa est&#225;s?</div>
+        </div>
+        <div style="padding:12px 15px 5px;font-size:.76rem;color:#4A6080">Seleccion&#225; tu mesa:</div>
+        <div class="tgrid" id="tgrid"></div>
+        <div style="padding:9px 15px;font-size:.73rem;color:#4A6080;line-height:1.5">O escane&#225; el QR de tu mesa para asignaci&#243;n autom&#225;tica &#128241;</div>
+        <button class="btn-p" style="margin:7px 11px;width:calc(100% - 22px)" onclick="tap(event,()=>goTo(3))">Confirmar mesa 4 &#8594;</button>
+      </div>
+
+      <!-- S3 Cart -->
+      <div class="screen" id="s3">
+        <div class="cart-hdr">
+          <div class="back" onclick="tap(event,()=>goTo(2))">&#8592;</div>
+          <div class="ctitle">Tu pedido</div>
+          <div style="margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:.66rem;color:#3D8EFF;background:rgba(61,142,255,.1);border:1px solid rgba(61,142,255,.2);padding:3px 7px;border-radius:5px">Mesa 4</div>
+        </div>
+        <div class="citem"><span class="cemoji">🍕</span><div class="cname">Muzzarella</div><div class="cqty"><button class="qbtn">-</button><span>1</span><button class="qbtn">+</button></div><div class="cprice">$3.200</div></div>
+        <div class="citem"><span class="cemoji">🍕</span><div class="cname">Especial</div><div class="cqty"><button class="qbtn">-</button><span>1</span><button class="qbtn">+</button></div><div class="cprice">$4.100</div></div>
+        <div class="citem"><span class="cemoji">🥤</span><div class="cname">Coca-Cola 500ml</div><div class="cqty"><button class="qbtn">-</button><span>1</span><button class="qbtn">+</button></div><div class="cprice">$900</div></div>
+        <div class="tsec">
+          <div class="trow"><span>Subtotal</span><span>$ 8.200</span></div>
+          <div class="drow"><span class="dlbl">&#127873; Descuento primera visita (10%)</span><span class="damt">&#8722; $ 820</span></div>
+          <div class="trow fin"><span>TOTAL</span><span>$ 7.380</span></div>
+        </div>
+        <button class="chk-btn" onclick="tap(event,()=>goTo(4))">&#128722; Confirmar pedido</button>
+      </div>
+
+      <!-- S4 Success -->
+      <div class="screen" id="s4">
+        <div class="success-scr">
+          <div class="sicon">&#9989;</div>
+          <div class="stitle">&#161;Pedido enviado!</div>
+          <div class="ssub">Tu pedido ya est&#225; en cocina.<br>Te avisamos cuando est&#233; listo.</div>
+          <div class="oinfo">
+            <div class="orow"><span>Mesa</span><span>Mesa 4</span></div>
+            <div class="orow"><span>Productos</span><span>3 items</span></div>
+            <div class="orow"><span>Descuento</span><span style="color:#00CC70">&#8722; $ 820</span></div>
+            <div class="orow"><span>Total</span><span style="color:#00CC70">$ 7.380</span></div>
+            <div class="orow"><span>Estado</span><span><span class="sbadge">&#9679; NUEVO</span></span></div>
+          </div>
+          <button class="btn-s" style="width:100%" onclick="tap(event,()=>goTo(5))">Ver panel de cocina &#8594;</button>
+        </div>
+      </div>
+
+      <!-- S5 Admin -->
+      <div class="screen" id="s5">
+        <div class="adm-hdr">
+          <div class="adm-title">Panel &#183; Los Amigos</div>
+          <div id="nbadge" style="display:none;font-family:'IBM Plex Mono',monospace;font-size:.62rem;background:#ff4444;color:#fff;padding:2px 7px;border-radius:8px">1 nuevo</div>
+        </div>
+        <div class="adm-tabs">
+          <div class="adm-tab active">Pedidos</div>
+          <div class="adm-tab">Historial</div>
+          <div class="adm-tab">Carta</div>
+          <div class="adm-tab">Gesti&#243;n</div>
+        </div>
+        <div class="sound-alert" id="salt">&#128276; Nuevo pedido recibido &#183; Mesa 4</div>
+        <div style="height:5px"></div>
+        <div class="ocard">
+          <div class="ochdr">
+            <div class="omesa">Mesa 2</div>
+            <div style="display:flex;align-items:center;gap:7px">
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:.6rem;color:#3D8EFF;background:rgba(61,142,255,.1);border:1px solid rgba(61,142,255,.2);padding:2px 6px;border-radius:4px">EN COCINA</span>
+              <div class="otime">hace 8 min</div>
+            </div>
+          </div>
+          <div class="oitems"><div class="oitem">&#215; 2 Especial</div><div class="oitem">&#215; 1 Coca-Cola</div></div>
+          <div class="ofooter"><div class="ototal">$ 9.100</div><button class="oaction rdy">&#8594; LISTO</button></div>
+        </div>
+        <div class="ocard new" id="noc" style="display:none">
+          <div class="ochdr">
+            <div class="omesa">Mesa 4</div>
+            <div style="display:flex;align-items:center;gap:7px">
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:.6rem;color:#FFB020;background:rgba(255,176,32,.1);border:1px solid rgba(255,176,32,.2);padding:2px 6px;border-radius:4px">NUEVO</span>
+              <div class="otime">ahora</div>
+            </div>
+          </div>
+          <div class="oitems">
+            <div class="oitem">&#215; 1 Muzzarella</div>
+            <div class="oitem">&#215; 1 Especial</div>
+            <div class="oitem">&#215; 1 Coca-Cola 500ml</div>
+            <div class="oitem" style="color:#00CC70;font-size:.72rem;margin-top:3px">&#127873; Descuento 10% &#8212; $ 820</div>
+          </div>
+          <div class="ofooter"><div class="ototal">$ 7.380</div><button class="oaction">&#8594; COCINA</button></div>
+        </div>
+        <div style="height:14px"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="side">
+    <div class="icard">
+      <h3>FLUJO DEL DEMO</h3>
+      <div class="sdesc">
+        <div class="slbl" id="slbl">PASO 1 DE 6</div>
+        <div id="stxt">El cliente llega al restaurante y escanea el QR de la vitrina. Activa el descuento del 10% para su primera visita.</div>
+      </div>
+      <div class="pbar"><div class="pfill" id="pfill" style="width:16%"></div></div>
+    </div>
+    <div class="icard">
+      <h3>FUNCIONES EN VIVO</h3>
+      <div class="frow"><span class="fico">📱</span><span>QR unico por mesa y vitrina</span></div>
+      <div class="frow"><span class="fico">🎁</span><span>Descuento 10% primera visita</span></div>
+      <div class="frow"><span class="fico">🛒</span><span>Carrito con total en tiempo real</span></div>
+      <div class="frow"><span class="fico">🔔</span><span>Alerta sonora a cocina al recibir pedido</span></div>
+      <div class="frow"><span class="fico">🍽️</span><span>Panel de cocina: NUEVO &#8594; EN COCINA &#8594; LISTO</span></div>
+      <div class="frow"><span class="fico">📊</span><span>Historial y exportar CSV a pendrive</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="controls">
+  <button class="cbtn cnav" id="bprev" onclick="prev()" disabled>&#8592; Anterior</button>
+  <span class="clbl" id="clbl">1 / 6</span>
+  <button class="cbtn cplay" id="bplay" onclick="autoPlay()">&#9654; Auto Play</button>
+  <button class="cbtn cnav" id="bnext" onclick="next()">Siguiente &#8594;</button>
+</div>
+
+<script>
+const STEPS=[
+  {lbl:'PASO 1 DE 6',txt:'El cliente llega al restaurante y escanea el QR de la vitrina. Activa el descuento del 10% para su primera visita.',prog:16,on:null},
+  {lbl:'PASO 2 DE 6',txt:'Ve la carta digital con productos por categoria. El chip verde confirma que el descuento esta activo para esta sesion.',prog:33,on:null},
+  {lbl:'PASO 3 DE 6',txt:'Elige su mesa. Tambien puede escanear el QR pegado en la mesa para asignacion automatica sin errores.',prog:50,on:()=>{buildT();selT(4);}},
+  {lbl:'PASO 4 DE 6',txt:'El carrito aplica el 10% automaticamente. El cliente ve subtotal, descuento y total con claridad antes de confirmar.',prog:66,on:null},
+  {lbl:'PASO 5 DE 6',txt:'Pedido enviado a cocina en tiempo real. El cliente ve el resumen con el estado actual del pedido.',prog:83,on:null},
+  {lbl:'PASO 6 DE 6',txt:'Cocina recibe el pedido con alerta sonora. El mozo cambia el estado: NUEVO -> EN COCINA -> LISTO -> ENTREGADO.',prog:100,on:()=>{setTimeout(()=>{document.getElementById('salt').style.display='block';document.getElementById('nbadge').style.display='inline-block';document.getElementById('noc').style.display='block';},700);}}
+];
+let cur=0,playing=false,timer=null;
+const screens=document.querySelectorAll('.screen');
+function goTo(i){
+  if(i<0||i>=STEPS.length)return;
+  screens[cur].classList.remove('active');screens[cur].classList.add('exit');
+  const p=cur;cur=i;
+  setTimeout(()=>screens[p].classList.remove('exit'),500);
+  screens[cur].classList.add('active');
+  upUI();
+  if(STEPS[cur].on)STEPS[cur].on();
+  if(i!==5){document.getElementById('salt').style.display='none';document.getElementById('nbadge').style.display='none';document.getElementById('noc').style.display='none';}
+}
+function upUI(){
+  const s=STEPS[cur];
+  document.getElementById('slbl').textContent=s.lbl;
+  document.getElementById('stxt').textContent=s.txt;
+  document.getElementById('pfill').style.width=s.prog+'%';
+  document.getElementById('clbl').textContent=(cur+1)+' / '+STEPS.length;
+  document.getElementById('bprev').disabled=cur===0;
+  document.getElementById('bnext').disabled=cur===STEPS.length-1;
+  const ind=document.getElementById('stepInd');ind.innerHTML='';
+  STEPS.forEach((_,i)=>{const d=document.createElement('div');d.className='dot'+(i===cur?' active':i<cur?' done':'');ind.appendChild(d);});
+}
+function prev(){goTo(cur-1);}function next(){goTo(cur+1);}
+function autoPlay(){
+  if(playing){playing=false;clearTimeout(timer);document.getElementById('bplay').textContent='&#9654; Auto Play';return;}
+  playing=true;document.getElementById('bplay').textContent='&#9646;&#9646; Pausar';
+  function tick(){if(!playing)return;if(cur<STEPS.length-1){next();timer=setTimeout(tick,2800);}else{playing=false;document.getElementById('bplay').textContent='&#9654; Auto Play';}}
+  timer=setTimeout(tick,2000);
+}
+function tap(event,cb){
+  const el=event.currentTarget,rect=el.getBoundingClientRect(),ph=document.getElementById('ps'),phR=ph.getBoundingClientRect();
+  const ring=document.createElement('div');ring.className='tap-ring';
+  ring.style.left=(rect.left+rect.width/2-phR.left)+'px';ring.style.top=(rect.top+rect.height/2-phR.top)+'px';
+  ph.appendChild(ring);setTimeout(()=>ring.remove(),700);
+  if(cb)setTimeout(cb,350);
+}
+let added={},ctot=0,cqty=0;
+function addIt(event,bid,cid,price){
+  tap(event,null);
+  const btn=document.getElementById(bid),card=document.getElementById(cid);
+  btn.classList.add('added');card.classList.add('hi');
+  setTimeout(()=>{btn.classList.remove('added');card.classList.remove('hi');},600);
+  if(!added[bid]){added[bid]=true;ctot+=price;cqty++;
+    document.getElementById('cqty').textContent=cqty;
+    document.getElementById('ctot').textContent='$ '+ctot.toLocaleString('es-AR');
+    if(cqty>0)document.getElementById('cbar').classList.add('vis');
+  }
+}
+function selCat(el){document.querySelectorAll('.cat').forEach(c=>c.classList.remove('active'));el.classList.add('active');}
+function buildT(){const g=document.getElementById('tgrid');g.innerHTML='';for(let i=1;i<=12;i++){const c=document.createElement('div');c.className='tchip';c.textContent=i;c.dataset.n=i;c.onclick=()=>selT(i);g.appendChild(c);}}
+function selT(n){document.querySelectorAll('.tchip').forEach(c=>c.classList.remove('sel'));const c=document.querySelector('.tchip[data-n="'+n+'"]');if(c)c.classList.add('sel');}
+upUI();screens[0].classList.add('active');
+</script>
+</body>
+</html>
