@@ -91,6 +91,76 @@ function DemoTab({ restaurantes }) {
 
   const waText = `Hola! Te quiero mostrar MenuQR 🍽️\n\nEscaneá este link para ver la carta demo en vivo:\n👉 ${links[0].url}\n\nO la vitrina (para la puerta del local):\n👉 ${links[1].url}\n\nMenuQR te permite tener tu carta digital con QR por mesa, pedidos en tiempo real, panel de admin, cocina y mucho más 🚀`
 
+  function descargarPDF() {
+    const featOk = features.filter(f=>f.ok).map(f=>f.label.replace(/[^\w\s\-().,%]/g,'').trim())
+    const html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<title>MenuQR — Demo ${rest.nombre}</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;600&display=swap');
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Outfit',sans-serif;background:#fff;color:#1a1a1a;padding:32px;max-width:800px;margin:0 auto}
+  h1{font-size:2rem;font-weight:800;color:#0A0806;margin-bottom:4px}
+  .sub{color:#666;font-size:.95rem;margin-bottom:28px}
+  .section-title{font-size:.65rem;letter-spacing:.12em;text-transform:uppercase;color:#999;font-family:'IBM Plex Mono',monospace;margin-bottom:12px;font-weight:600}
+  .qr-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:32px}
+  .qr-card{border:1px solid #E5E7EB;border-radius:12px;padding:14px;text-align:center}
+  .qr-card img{width:120px;height:120px;display:block;margin:0 auto 10px;border-radius:6px}
+  .qr-label{font-size:.78rem;font-weight:700;color:#1a1a1a;margin-bottom:3px}
+  .qr-desc{font-size:.65rem;color:#888}
+  .qr-url{font-size:.55rem;color:#6366F1;font-family:'IBM Plex Mono',monospace;word-break:break-all;margin-top:5px}
+  .features{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:32px}
+  .feat{display:flex;align-items:center;gap:8px;font-size:.82rem;color:#1a1a1a}
+  .check{width:16px;height:16px;border-radius:4px;background:#DCFCE7;border:1px solid #86EFAC;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;color:#16A34A;font-weight:700}
+  .cta{background:linear-gradient(135deg,#C9A84C,#E8C97A);border-radius:14px;padding:22px 28px;color:#0A0806}
+  .cta h2{font-size:1.3rem;font-weight:800;margin-bottom:6px}
+  .cta p{font-size:.88rem;opacity:.8;margin-bottom:14px}
+  .cta .links{font-family:'IBM Plex Mono',monospace;font-size:.75rem;color:#5A3A00;line-height:2}
+  .footer{margin-top:28px;text-align:center;font-size:.7rem;color:#BBB;font-family:'IBM Plex Mono',monospace}
+  @media print{body{padding:16px}@page{margin:12mm}}
+</style>
+</head>
+<body>
+<h1>🍽️ MenuQR</h1>
+<div class="sub">Demo en vivo — <strong>${rest.nombre}</strong> · menuqr.vercel.app</div>
+
+<div class="section-title">Escaneá para ver la app en tu celular</div>
+<div class="qr-grid">
+${links.map(l=>`  <div class="qr-card">
+    <img src="${qrUrl(l.url,120)}" alt="${l.label.replace(/[^\w\s]/g,'')}"/>
+    <div class="qr-label">${l.label}</div>
+    <div class="qr-desc">${l.desc}</div>
+    <div class="qr-url">${l.url}</div>
+  </div>`).join('\n')}
+</div>
+
+<div class="section-title">Funcionalidades incluidas</div>
+<div class="features">
+${featOk.map(f=>`  <div class="feat"><div class="check">✓</div>${f}</div>`).join('\n')}
+</div>
+
+<div class="cta">
+  <h2>¿Querés esto para tu restaurante?</h2>
+  <p>Carta digital, QR por mesa, pedidos en tiempo real y panel de gestión completo.</p>
+  <div class="links">
+    Carta demo: ${links[0].url}<br/>
+    Vitrina demo: ${links[1].url}
+  </div>
+</div>
+
+<div class="footer">Generado por MenuQR SuperAdmin · menuqr.vercel.app</div>
+
+<script>window.onload=()=>{ setTimeout(()=>window.print(), 600) }<\/script>
+</body>
+</html>`
+
+    const w = window.open('', '_blank')
+    w.document.write(html)
+    w.document.close()
+  }
+
   return (
     <div style={{paddingBottom:40}}>
 
@@ -103,9 +173,14 @@ function DemoTab({ restaurantes }) {
             {restaurantes.map(r=><option key={r.id} value={r.id}>{r.nombre} (/{r.slug})</option>)}
           </select>
         </div>
-        <a href={links[0].url} target="_blank" style={{padding:'9px 18px',borderRadius:8,border:'none',background:'linear-gradient(135deg,#10B981,#059669)',color:'#fff',textDecoration:'none',fontSize:'.88rem',fontWeight:700,whiteSpace:'nowrap'}}>
-          ↗ Abrir demo
-        </a>
+        <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+          <a href={links[0].url} target="_blank" style={{padding:'9px 18px',borderRadius:8,border:'none',background:'linear-gradient(135deg,#10B981,#059669)',color:'#fff',textDecoration:'none',fontSize:'.88rem',fontWeight:700,whiteSpace:'nowrap'}}>
+            ↗ Abrir demo
+          </a>
+          <button onClick={descargarPDF} style={{padding:'9px 18px',borderRadius:8,border:'1px solid #6366F1',background:'#13152a',color:'#818CF8',cursor:'pointer',fontSize:'.88rem',fontWeight:700,whiteSpace:'nowrap'}}>
+            ⬇ Descargar PDF
+          </button>
+        </div>
       </div>
 
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16,marginBottom:20}}>
@@ -388,54 +463,4 @@ export default function SuperAdmin() {
                               <div style={{color:'#4A6080',fontSize:'.75rem'}}>{r.email}</div>
                             </td>
                             <td style={{padding:'12px 14px'}}>
-                              <a href={'/menu/'+r.slug} target="_blank" style={{color:'#6366F1',textDecoration:'none',fontSize:'.8rem',fontFamily:'IBM Plex Mono,monospace'}}>/{r.slug}</a>
-                            </td>
-                            <td style={{padding:'12px 14px'}}>
-                              <select value={r.plan} onChange={e=>cambiarPlan(r.id,e.target.value)}
-                                style={{padding:'4px 8px',background:'#0C1018',border:'1px solid '+(PLAN_COLORS[r.plan]||'#1E2A3A'),borderRadius:6,color:PLAN_COLORS[r.plan]||'#7A9AB8',fontSize:'.78rem',cursor:'pointer'}}>
-                                <option value="free">Free</option><option value="basico">Básico</option>
-                                <option value="pro">Pro</option><option value="empresa">Empresa</option>
-                              </select>
-                            </td>
-                            <td style={{padding:'12px 14px'}}>
-                              <button onClick={()=>toggleActivo(r.id,!r.activo)}
-                                style={{padding:'4px 10px',borderRadius:6,border:'none',cursor:'pointer',fontSize:'.75rem',fontWeight:600,background:r.activo?'#0a1f0e':'#1a0808',color:r.activo?'#4ade80':'#f87171'}}>
-                                {r.activo?'● Activo':'○ Inactivo'}
-                              </button>
-                            </td>
-                            <td style={{padding:'12px 14px',color:'#4A6080',fontSize:'.78rem',whiteSpace:'nowrap'}}>
-                              {new Date(r.created_at).toLocaleDateString('es-AR')}
-                            </td>
-                            <td style={{padding:'12px 14px'}}>
-                              <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
-                                <button onClick={()=>setEditRest({...r})}
-                                  style={{padding:'4px 10px',borderRadius:6,border:'none',background:'#13152a',color:'#818CF8',cursor:'pointer',fontSize:'.75rem'}}>Editar</button>
-                                <a href={'/menu/'+r.slug} target="_blank"
-                                  style={{padding:'4px 10px',borderRadius:6,border:'none',background:'#0a1f0e',color:'#4ade80',textDecoration:'none',fontSize:'.75rem',display:'inline-flex',alignItems:'center'}}>Ver</a>
-                                <button onClick={()=>{setResetModal({id:r.id,nombre:r.nombre,email:r.email});setResetPass('');setResetMsg(null)}}
-                                  style={{padding:'4px 10px',borderRadius:6,border:'none',background:'#0a1020',color:'#6366F1',cursor:'pointer',fontSize:'.75rem'}}>🔑 pwd</button>
-                                <button onClick={()=>deleteRest(r.id,r.nombre)}
-                                  style={{padding:'4px 10px',borderRadius:6,border:'none',background:'#1a0808',color:'#f87171',cursor:'pointer',fontSize:'.75rem'}}>Borrar</button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))
-                      }
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </>
-          )}
-
-          {/* ── TAB DEMO */}
-          {tab === 'demo' && <DemoTab restaurantes={data.restaurantes}/>}
-
-          {/* ── TAB REVENUE */}
-          {tab === 'revenue' && (
-            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(220px,1fr))',gap:14,paddingBottom:24}}>
-              {Object.entries(PLAN_PRICES).map(([plan,price])=>{
-                const count = (data.restaurantes||[]).filter(r=>r.plan===plan).length
-                return (
-                  <div key={plan} style={{background:'#0F1320',border:'1px solid '+(PLAN_COLORS[plan]||'#1E2A3A'),borderRadius:12,padding:'20px 18px'}}>
-                    <div style={{fontSize:'.8rem',color:PLAN_COLORS[plan]||'#4A6080',textTransform:'uppercase',letterSpacing:'.05em
+                              <a href={'/menu/'+r.slug} target="_blank" style={{color:'#6366F1',textDecoration:'none',fontSize:'.8rem',fontFamily:'IBM Plex Mono,monospace'}}>/{r
