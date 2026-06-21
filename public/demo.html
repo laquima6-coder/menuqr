@@ -21,7 +21,7 @@ html,body{height:100%;background:#060810;font-family:'Outfit',sans-serif;overscr
 .screen::-webkit-scrollbar{display:none}
 .infobar{background:#0C1018;border-top:1px solid #1A2230;padding:9px 16px;position:fixed;bottom:64px;left:0;right:0;z-index:99}
 .infolbl{font-family:'IBM Plex Mono',monospace;font-size:.56rem;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:3px}
-.infotxt{font-size:.76rem;color:#B8D0E8;line-height:1.4}
+.infotxt{font-size:.88rem;color:#B8D0E8;line-height:1.4}
 .pbar{height:2px;background:#1A2230;border-radius:2px;overflow:hidden;margin-top:7px}
 .pfill{height:100%;border-radius:2px;transition:width .8s ease}
 .ctrl{position:fixed;bottom:0;left:0;right:0;z-index:100;display:flex;gap:7px;align-items:center;justify-content:center;padding:10px 14px;background:rgba(6,8,16,.96);border-top:1px solid #1A2230}
@@ -572,8 +572,8 @@ function prev(){goTo(cur-1);}function next(){goTo(cur+1);}
 function autoPlay(){
   if(playing){playing=false;clearTimeout(timer);document.getElementById('bplay').textContent='&#9654; Auto';return;}
   playing=true;document.getElementById('bplay').textContent='&#9646;&#9646; Pausa';
-  function tick(){if(!playing)return;if(cur<STEPS.length-1){next();timer=setTimeout(tick,2800);}else{playing=false;document.getElementById('bplay').textContent='&#9654; Auto';}}
-  timer=setTimeout(tick,2000);
+  function tick(){if(!playing)return;if(cur<STEPS.length-1){next();timer=setTimeout(tick,4500);}else{playing=false;document.getElementById('bplay').textContent='&#9654; Auto';}}
+  timer=setTimeout(tick,3000);
 }
 function tap(event,cb){
   const ring=document.createElement('div');ring.className='tap-ring';
