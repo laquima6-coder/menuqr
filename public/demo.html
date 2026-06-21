@@ -3,305 +3,546 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>MenuQR — Demo</title>
+<title>MenuQR — Demo Completo</title>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=IBM+Plex+Mono:wght@400;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;background:#060810;font-family:'Outfit',sans-serif;overscroll-behavior:none}
-
-/* ── Header ── */
-.hdr{position:fixed;top:0;left:0;right:0;z-index:100;padding:10px 16px;display:flex;align-items:center;gap:10px;background:rgba(6,8,16,.95);border-bottom:1px solid #1A2230;backdrop-filter:blur(10px)}
-.logo{font-family:'Playfair Display',serif;font-size:1.1rem;color:#EDE0C8}
-.badge{font-family:'IBM Plex Mono',monospace;font-size:.58rem;letter-spacing:1.5px;color:#00FF88;background:rgba(0,255,136,.1);border:1px solid rgba(0,255,136,.25);padding:2px 7px;border-radius:4px}
-.dots{margin-left:auto;display:flex;gap:5px}
-.dot{width:7px;height:7px;border-radius:50%;background:#1A2230;transition:background .3s}
-.dot.active{background:#00FF88}.dot.done{background:#3D8EFF}
-
-/* ── Main area ── */
-.wrap{position:fixed;top:48px;bottom:64px;left:0;right:0;overflow:hidden}
+.hdr{position:fixed;top:0;left:0;right:0;z-index:100;padding:10px 16px;display:flex;align-items:center;gap:10px;background:rgba(6,8,16,.96);border-bottom:1px solid #1A2230;backdrop-filter:blur(10px)}
+.logo{font-family:'Playfair Display',serif;font-size:1.05rem;color:#EDE0C8;flex-shrink:0}
+.section-badge{font-family:'IBM Plex Mono',monospace;font-size:.58rem;letter-spacing:1.5px;padding:2px 8px;border-radius:4px;flex-shrink:0}
+.dots{margin-left:auto;display:flex;gap:4px;flex-wrap:wrap;max-width:120px;justify-content:flex-end}
+.dot{width:6px;height:6px;border-radius:50%;background:#1A2230;transition:all .3s}
+.dot.active{background:#00FF88;transform:scale(1.3)}.dot.done{background:#3D8EFF}
+.wrap{position:fixed;top:48px;bottom:130px;left:0;right:0;overflow:hidden}
 .screen{position:absolute;inset:0;opacity:0;transform:translateX(100%);transition:opacity .4s ease,transform .4s ease;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;background:#0d1117}
 .screen.active{opacity:1;transform:translateX(0)}
 .screen.exit{opacity:0;transform:translateX(-100%)}
 .screen::-webkit-scrollbar{display:none}
-
-/* ── Controls ── */
-.ctrl{position:fixed;bottom:0;left:0;right:0;z-index:100;display:flex;gap:8px;align-items:center;justify-content:center;padding:10px 16px;background:rgba(6,8,16,.95);border-top:1px solid #1A2230;backdrop-filter:blur(10px)}
-.cbtn{padding:9px 20px;border-radius:24px;border:none;font-family:'Outfit',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;transition:all .2s;flex:1;max-width:130px}
+.infobar{background:#0C1018;border-top:1px solid #1A2230;padding:9px 16px;position:fixed;bottom:64px;left:0;right:0;z-index:99}
+.infolbl{font-family:'IBM Plex Mono',monospace;font-size:.56rem;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:3px}
+.infotxt{font-size:.76rem;color:#B8D0E8;line-height:1.4}
+.pbar{height:2px;background:#1A2230;border-radius:2px;overflow:hidden;margin-top:7px}
+.pfill{height:100%;border-radius:2px;transition:width .8s ease}
+.ctrl{position:fixed;bottom:0;left:0;right:0;z-index:100;display:flex;gap:7px;align-items:center;justify-content:center;padding:10px 14px;background:rgba(6,8,16,.96);border-top:1px solid #1A2230}
+.cbtn{padding:9px 16px;border-radius:22px;border:none;font-family:'Outfit',sans-serif;font-size:.8rem;font-weight:700;cursor:pointer;transition:all .2s;flex:1;max-width:110px}
 .cplay{background:linear-gradient(135deg,#00FF88,#00C870);color:#060810}
 .cnav{background:#111820;color:#4A6080;border:1px solid #1A2230}
 .cnav:disabled{opacity:.3}
-.clbl{font-family:'IBM Plex Mono',monospace;font-size:.65rem;color:#4A6080;min-width:36px;text-align:center}
-
-/* ── Tap ring ── */
-.tap-ring{position:absolute;width:44px;height:44px;border-radius:50%;border:3px solid rgba(0,255,136,.9);pointer-events:none;transform:translate(-50%,-50%) scale(0);animation:tapA .6s ease forwards;z-index:999}
+.clbl{font-family:'IBM Plex Mono',monospace;font-size:.62rem;color:#4A6080;min-width:38px;text-align:center}
+.tap-ring{position:fixed;width:44px;height:44px;border-radius:50%;border:3px solid rgba(0,255,136,.9);pointer-events:none;transform:translate(-50%,-50%) scale(0);animation:tapA .6s ease forwards;z-index:9999}
 @keyframes tapA{0%{transform:translate(-50%,-50%) scale(0);opacity:1}60%{transform:translate(-50%,-50%) scale(1);opacity:.8}100%{transform:translate(-50%,-50%) scale(1.5);opacity:0}}
 
-/* ── Screens ── */
+/* ── REUSABLE COMPONENTS ── */
+.shdr{padding:18px 14px 12px;background:#0d1117;border-bottom:1px solid #1A2230;display:flex;align-items:center;gap:9px;position:sticky;top:0;z-index:10}
+.back{width:30px;height:30px;border-radius:50%;background:#111820;border:1px solid #1A2230;color:#B8D0E8;display:flex;align-items:center;justify-content:center;font-size:.82rem;cursor:pointer;flex-shrink:0}
+.stitle{font-weight:700;color:#EDE0C8;font-size:.92rem}
+.card{margin:8px 11px 0;background:#111820;border:1px solid #1A2230;border-radius:13px;overflow:hidden}
+.card.green{border-color:rgba(0,255,136,.3)}
+.card.blue{border-color:rgba(61,142,255,.3)}
+.card.gold{border-color:rgba(255,176,32,.3)}
+.chip{display:inline-flex;align-items:center;gap:4px;border-radius:20px;padding:3px 8px;font-family:'IBM Plex Mono',monospace;font-size:.6rem;letter-spacing:.5px;font-weight:700}
+.chip-g{background:rgba(0,204,112,.1);border:1px solid rgba(0,204,112,.2);color:#00CC70}
+.chip-b{background:rgba(61,142,255,.1);border:1px solid rgba(61,142,255,.2);color:#3D8EFF}
+.chip-y{background:rgba(255,176,32,.1);border:1px solid rgba(255,176,32,.2);color:#FFB020}
+.chip-r{background:rgba(255,59,92,.1);border:1px solid rgba(255,59,92,.2);color:#ff3b5c}
+.row{display:flex;align-items:center;justify-content:space-between;padding:10px 13px;border-bottom:1px solid #1A2230}
+.row:last-child{border-bottom:none}
+.lbl{font-size:.78rem;color:#4A6080}
+.val{font-family:'IBM Plex Mono',monospace;font-size:.82rem;color:#B8D0E8;font-weight:600}
+.val.green{color:#00CC70}
+.btn-g{width:calc(100% - 22px);margin:10px 11px;padding:14px;background:linear-gradient(135deg,#00FF88,#00C870);border:none;border-radius:12px;color:#060810;font-size:.92rem;font-weight:800;cursor:pointer;font-family:'Outfit',sans-serif;display:block}
+.btn-d{width:calc(100% - 22px);margin:6px 11px;padding:12px;background:rgba(255,255,255,.04);border:1px solid #1A2230;border-radius:12px;color:#4A6080;font-size:.85rem;font-weight:600;cursor:pointer;font-family:'Outfit',sans-serif;display:block;text-align:center}
+.section-hdr{padding:14px 14px 6px;font-family:'IBM Plex Mono',monospace;font-size:.6rem;letter-spacing:2px;color:#4A6080;text-transform:uppercase}
 
-/* S0 Vitrina */
-.vitrina{display:flex;flex-direction:column;align-items:center;padding:40px 22px 32px;gap:16px;min-height:100%;background:linear-gradient(180deg,#0d1117 0%,#060a10 100%)}
-.rname{font-family:'Playfair Display',serif;font-size:1.8rem;color:#EDE0C8;text-align:center}
-.rsub{font-family:'IBM Plex Mono',monospace;font-size:.65rem;letter-spacing:3px;color:#4A6080;text-transform:uppercase;text-align:center}
-.qr-box{width:130px;height:130px;background:#fff;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:3rem;box-shadow:0 0 30px rgba(0,204,112,.12)}
-.pbanner{background:rgba(0,204,112,.08);border:1px solid rgba(0,204,112,.25);border-radius:14px;padding:14px 18px;width:100%;text-align:center}
-.pbanner h3{font-size:.92rem;font-weight:700;color:#00FF88;margin-bottom:3px}
-.pbanner p{font-size:.72rem;color:#4A8060;font-family:'IBM Plex Mono',monospace}
-.btn-g{width:100%;padding:15px;background:linear-gradient(135deg,#00FF88,#00C870);border:none;border-radius:13px;color:#060810;font-size:1rem;font-weight:800;cursor:pointer;font-family:'Outfit',sans-serif}
-.btn-d{width:100%;padding:13px;background:rgba(255,255,255,.04);border:1px solid #1A2230;border-radius:13px;color:#4A6080;font-size:.9rem;font-weight:600;cursor:pointer;font-family:'Outfit',sans-serif}
+/* ── S0 VITRINA ── */
+.vitrina{display:flex;flex-direction:column;align-items:center;padding:36px 22px 28px;gap:14px;min-height:100%;background:linear-gradient(180deg,#0d1117 0%,#060a10 100%)}
+.rname{font-family:'Playfair Display',serif;font-size:1.7rem;color:#EDE0C8;text-align:center}
+.rsub{font-family:'IBM Plex Mono',monospace;font-size:.62rem;letter-spacing:3px;color:#4A6080;text-transform:uppercase;text-align:center}
+.qrbox{width:120px;height:120px;background:#fff;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:3rem;box-shadow:0 0 28px rgba(0,204,112,.12)}
+.pbanner{background:rgba(0,204,112,.08);border:1px solid rgba(0,204,112,.25);border-radius:13px;padding:13px 17px;width:100%;text-align:center}
+.pbanner h3{font-size:.88rem;font-weight:700;color:#00FF88;margin-bottom:3px}
+.pbanner p{font-size:.7rem;color:#4A8060;font-family:'IBM Plex Mono',monospace}
 
-/* S1 Menu */
-.mhdr{background:#0d1117;padding:20px 15px 10px;border-bottom:1px solid #1A2230;position:sticky;top:0;z-index:10}
-.mrname{font-family:'Playfair Display',serif;font-size:1.1rem;color:#EDE0C8;margin-bottom:5px}
-.pchip{display:inline-flex;align-items:center;gap:4px;background:rgba(0,204,112,.1);border:1px solid rgba(0,204,112,.2);border-radius:20px;padding:3px 9px;font-family:'IBM Plex Mono',monospace;font-size:.6rem;color:#00CC70;letter-spacing:1px}
-.cats{display:flex;gap:7px;padding:9px 13px;overflow-x:auto}.cats::-webkit-scrollbar{display:none}
-.cat{flex-shrink:0;padding:7px 13px;background:#111820;border:1px solid #1A2230;border-radius:8px;color:#4A6080;font-size:.78rem;font-weight:600;cursor:pointer;transition:all .2s;white-space:nowrap}
+/* ── S1 CARTA ── */
+.mhdr{background:#0d1117;padding:18px 14px 10px;border-bottom:1px solid #1A2230;position:sticky;top:0;z-index:10}
+.mrname{font-family:'Playfair Display',serif;font-size:1rem;color:#EDE0C8;margin-bottom:5px}
+.cats{display:flex;gap:7px;padding:8px 12px;overflow-x:auto}.cats::-webkit-scrollbar{display:none}
+.cat{flex-shrink:0;padding:6px 12px;background:#111820;border:1px solid #1A2230;border-radius:7px;color:#4A6080;font-size:.74rem;font-weight:600;cursor:pointer;white-space:nowrap}
 .cat.active{background:rgba(61,142,255,.15);border-color:#3D8EFF;color:#3D8EFF}
-.cttl{padding:14px 15px 6px;font-family:'IBM Plex Mono',monospace;font-size:.62rem;letter-spacing:2px;color:#4A6080;text-transform:uppercase}
-.pcard{margin:0 11px 9px;background:#111820;border:1px solid #1A2230;border-radius:13px;padding:12px;display:flex;align-items:center;gap:11px;transition:all .2s}
+.cttl{padding:12px 14px 5px;font-family:'IBM Plex Mono',monospace;font-size:.6rem;letter-spacing:2px;color:#4A6080;text-transform:uppercase}
+.pcard{margin:0 10px 8px;background:#111820;border:1px solid #1A2230;border-radius:12px;padding:11px;display:flex;align-items:center;gap:10px;transition:all .2s}
 .pcard.hi{border-color:rgba(0,255,136,.4);background:rgba(0,255,136,.03)}
-.pem{font-size:2.2rem;flex-shrink:0}
+.pem{font-size:2rem;flex-shrink:0}
 .pinf{flex:1;min-width:0}
-.pnm{font-weight:700;color:#B8D0E8;font-size:.88rem;margin-bottom:2px}
-.pds{font-size:.72rem;color:#4A6080;margin-bottom:5px;line-height:1.3}
-.ppr{font-family:'IBM Plex Mono',monospace;font-size:.88rem;font-weight:700;color:#00CC70}
-.abtn{width:34px;height:34px;border-radius:50%;background:#00CC70;border:none;color:#060810;font-size:1.3rem;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-weight:700;transition:transform .15s,background .2s;line-height:1}
+.pnm{font-weight:700;color:#B8D0E8;font-size:.84rem;margin-bottom:2px}
+.pds{font-size:.69rem;color:#4A6080;margin-bottom:4px;line-height:1.3}
+.ppr{font-family:'IBM Plex Mono',monospace;font-size:.84rem;font-weight:700;color:#00CC70}
+.abtn{width:32px;height:32px;border-radius:50%;background:#00CC70;border:none;color:#060810;font-size:1.2rem;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-weight:700;transition:transform .15s,background .2s;line-height:1}
 .abtn.added{background:#00FF88;transform:scale(1.2)}
-.cbar{position:sticky;bottom:0;background:linear-gradient(135deg,#00CC70,#00A860);margin:6px 11px 12px;border-radius:13px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 4px 20px rgba(0,204,112,.3);opacity:0;transform:translateY(20px);transition:opacity .4s ease,transform .4s ease;cursor:pointer}
+.cbar{position:sticky;bottom:0;background:linear-gradient(135deg,#00CC70,#00A860);margin:5px 10px 11px;border-radius:12px;padding:13px 15px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 4px 20px rgba(0,204,112,.3);opacity:0;transform:translateY(20px);transition:opacity .4s ease,transform .4s ease;cursor:pointer}
 .cbar.vis{opacity:1;transform:translateY(0)}
-.cbt{font-weight:800;color:#060810;font-size:.92rem}
-.cbc{background:rgba(0,0,0,.15);color:#060810;font-family:'IBM Plex Mono',monospace;padding:3px 10px;border-radius:18px;font-size:.78rem;font-weight:700}
 
-/* S2 Mesa */
-.shdr{padding:20px 13px 13px;background:#0d1117;border-bottom:1px solid #1A2230;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:10}
-.back{width:32px;height:32px;border-radius:50%;background:#111820;border:1px solid #1A2230;color:#B8D0E8;display:flex;align-items:center;justify-content:center;font-size:.85rem;cursor:pointer;flex-shrink:0}
-.stitle{font-weight:700;color:#EDE0C8;font-size:.95rem}
-.tgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;padding:10px 14px}
-.tchip{aspect-ratio:1;border-radius:9px;border:1px solid #1A2230;background:#111820;color:#4A6080;display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;font-size:.85rem;font-weight:700;cursor:pointer;transition:all .15s}
-.tchip.sel{background:rgba(61,142,255,.15);border-color:#3D8EFF;color:#3D8EFF}
+/* ── S2 DIVISION ── */
+.div-box{margin:10px 11px 0;background:#111820;border:1px solid #1A2230;border-radius:13px;padding:16px}
+.div-title{font-size:.88rem;font-weight:700;color:#EDE0C8;margin-bottom:10px}
+.div-stepper{display:flex;align-items:center;justify-content:center;gap:16px;margin-bottom:14px}
+.div-btn{width:40px;height:40px;border-radius:50%;background:#1A2230;border:none;color:#B8D0E8;font-size:1.2rem;cursor:pointer;font-weight:700}
+.div-n{font-family:'IBM Plex Mono',monospace;font-size:1.6rem;font-weight:700;color:#EDE0C8;min-width:40px;text-align:center}
+.div-pp{text-align:center;font-family:'IBM Plex Mono',monospace;font-size:1.2rem;font-weight:700;color:#00CC70;margin-bottom:4px}
+.div-sub{text-align:center;font-size:.72rem;color:#4A6080}
+.pay-opts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 11px 0}
+.pay-opt{padding:12px;background:#111820;border:1px solid #1A2230;border-radius:12px;text-align:center;cursor:pointer;transition:all .2s}
+.pay-opt.sel{background:rgba(0,204,112,.1);border-color:#00CC70}
+.pay-icon{font-size:1.4rem;display:block;margin-bottom:4px}
+.pay-label{font-size:.72rem;color:#B8D0E8;font-weight:600}
+.pay-sub{font-size:.62rem;color:#4A6080;font-family:'IBM Plex Mono',monospace}
 
-/* S3 Cart */
-.citem{margin:8px 11px 0;background:#111820;border:1px solid #1A2230;border-radius:11px;padding:11px 13px;display:flex;align-items:center;gap:9px}
-.cem{font-size:1.5rem}
-.cnm{flex:1;color:#B8D0E8;font-size:.83rem;font-weight:600}
-.cqty{display:flex;align-items:center;gap:7px;font-family:'IBM Plex Mono',monospace;font-size:.85rem;color:#B8D0E8}
-.qbtn{background:#1A2230;border:none;color:#B8D0E8;width:24px;height:24px;border-radius:5px;cursor:pointer;font-size:.9rem}
-.cprc{font-family:'IBM Plex Mono',monospace;font-size:.82rem;color:#00CC70;font-weight:700}
-.tsec{margin:10px 11px 0}
-.trow{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-top:1px solid #1A2230;font-size:.82rem;color:#4A6080}
-.trow.fin{font-size:.95rem;font-weight:800;color:#EDE0C8}
-.trow span:last-child{font-family:'IBM Plex Mono',monospace}
-.drow{display:flex;justify-content:space-between;align-items:center;padding:7px 11px;margin:3px 0;background:rgba(0,204,112,.08);border:1px solid rgba(0,204,112,.25);border-radius:9px;font-size:.75rem}
-.dlbl{color:#00CC70;font-weight:700}
-.damt{font-family:'IBM Plex Mono',monospace;color:#00CC70;font-weight:700}
-.chkbtn{margin:13px 11px 24px;display:block;width:calc(100% - 22px);padding:15px;background:linear-gradient(135deg,#00FF88,#00C870);border:none;border-radius:13px;color:#060810;font-size:.95rem;font-weight:800;cursor:pointer;font-family:'Outfit',sans-serif;text-align:center}
+/* ── S4 CAMPANITA ── */
+.bell-screen{display:flex;flex-direction:column;align-items:center;padding:36px 22px;gap:14px;min-height:100%}
+.bell-icon{width:80px;height:80px;border-radius:50%;background:rgba(61,142,255,.1);border:2px solid rgba(61,142,255,.3);display:flex;align-items:center;justify-content:center;font-size:2.2rem;animation:ringAnim 2s infinite}
+@keyframes ringAnim{0%,100%{transform:rotate(0)}5%{transform:rotate(-12deg)}10%{transform:rotate(12deg)}15%{transform:rotate(-8deg)}20%{transform:rotate(8deg)}25%{transform:rotate(0)}}
+.bell-title{font-size:1.2rem;font-weight:800;color:#EDE0C8}
+.bell-opts{width:100%;display:flex;flex-direction:column;gap:8px}
+.bell-opt{padding:14px 16px;background:#111820;border:1px solid #1A2230;border-radius:13px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:border-color .2s}
+.bell-opt.sel{border-color:#3D8EFF;background:rgba(61,142,255,.07)}
+.bell-opt-icon{font-size:1.4rem}
+.bell-opt-label{font-weight:700;color:#B8D0E8;font-size:.88rem}
+.bell-opt-sub{font-size:.72rem;color:#4A6080}
 
-/* S4 Success */
-.sscr{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100%;padding:36px 22px;gap:16px;text-align:center}
-.sico{width:82px;height:82px;border-radius:50%;background:rgba(0,255,136,.1);border:2px solid rgba(0,255,136,.3);display:flex;align-items:center;justify-content:center;font-size:2.2rem;animation:pulse 2s infinite}
+/* ── S5 HISTORIAL ── */
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px 11px 0}
+.stat-card{background:#111820;border:1px solid #1A2230;border-radius:12px;padding:12px}
+.stat-val{font-family:'IBM Plex Mono',monospace;font-size:1.1rem;font-weight:700;color:#00CC70}
+.stat-lbl{font-size:.7rem;color:#4A6080;margin-top:2px}
+.chart-bar-wrap{padding:10px 11px 0}
+.chart-ttl{font-family:'IBM Plex Mono',monospace;font-size:.6rem;letter-spacing:2px;color:#4A6080;text-transform:uppercase;margin-bottom:10px}
+.bar-row{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+.bar-day{font-family:'IBM Plex Mono',monospace;font-size:.65rem;color:#4A6080;width:28px;flex-shrink:0}
+.bar-track{flex:1;height:20px;background:#0C1018;border-radius:4px;overflow:hidden;position:relative}
+.bar-fill{height:100%;border-radius:4px;display:flex;align-items:center;justify-content:flex-end;padding-right:6px}
+.bar-num{font-family:'IBM Plex Mono',monospace;font-size:.62rem;color:#060810;font-weight:700}
+.pay-breakdown{padding:10px 11px 0}
+.pb-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.pb-icon{font-size:.9rem;flex-shrink:0}
+.pb-bar{flex:1;height:12px;background:#0C1018;border-radius:3px;overflow:hidden}
+.pb-fill{height:100%;border-radius:3px}
+.pb-pct{font-family:'IBM Plex Mono',monospace;font-size:.62rem;color:#4A6080;width:30px;text-align:right}
+
+/* ── S6 EMPLEADOS ── */
+.emp-card{margin:8px 11px 0;background:#111820;border:1px solid #1A2230;border-radius:13px;padding:13px;display:flex;align-items:center;gap:11px}
+.emp-card.on{border-color:#00FF88;background:rgba(0,255,136,.04)}
+.emp-avatar{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0}
+.emp-name{font-weight:700;color:#B8D0E8;font-size:.85rem}
+.emp-rol{font-size:.7rem;color:#4A6080;margin-top:1px}
+.emp-toggle{padding:5px 12px;border-radius:20px;border:none;font-family:'IBM Plex Mono',monospace;font-size:.65rem;font-weight:700;cursor:pointer;margin-left:auto;flex-shrink:0}
+.emp-toggle.on{background:rgba(255,59,92,.12);color:#ff3b5c}
+.emp-toggle.off{background:rgba(0,255,136,.12);color:#00CC70}
+.turno-row{margin:6px 11px 0;background:#0C1018;border:1px solid #1A2230;border-radius:9px;padding:10px 13px;display:flex;align-items:center;justify-content:space-between}
+.turno-name{font-size:.78rem;color:#B8D0E8;font-weight:600}
+.turno-time{font-family:'IBM Plex Mono',monospace;font-size:.7rem;color:#3D8EFF}
+.turno-dur{font-family:'IBM Plex Mono',monospace;font-size:.65rem;color:#4A6080}
+
+/* ── S7 S8 CAJA ── */
+.caja-tabs{display:flex;background:#060810;border-bottom:1px solid #1A2230}
+.caja-tab{flex:1;padding:9px 0;text-align:center;font-size:.7rem;font-weight:700;color:#4A6080;border-bottom:2px solid transparent;cursor:pointer}
+.caja-tab.active{color:#00CC70;border-bottom-color:#00CC70}
+.pos-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;padding:10px 11px 0}
+.pos-item{background:#111820;border:1px solid #1A2230;border-radius:11px;padding:11px;text-align:center;cursor:pointer;transition:all .2s}
+.pos-item:active{border-color:rgba(0,255,136,.4);background:rgba(0,255,136,.05)}
+.pos-em{font-size:1.6rem;display:block;margin-bottom:4px}
+.pos-nm{font-size:.7rem;font-weight:700;color:#B8D0E8}
+.pos-pr{font-family:'IBM Plex Mono',monospace;font-size:.65rem;color:#00CC70;margin-top:2px}
+.caja-ticket{margin:10px 11px 0;background:#0C1018;border:1px solid #1A2230;border-radius:13px;padding:13px}
+.ticket-item{display:flex;align-items:center;justify-content:space-between;padding:4px 0;font-size:.78rem;border-bottom:1px solid #1A2230}
+.ticket-item:last-child{border-bottom:none}
+.ticket-nm{color:#B8D0E8}
+.ticket-pr{font-family:'IBM Plex Mono',monospace;color:#00CC70;font-weight:600}
+.cierre-box{margin:10px 11px 0;background:#0C1018;border:1px solid #1A2230;border-radius:13px;padding:14px}
+.cierre-title{font-size:.82rem;font-weight:700;color:#EDE0C8;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.cierre-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;font-size:.78rem;border-bottom:1px solid #1A2230}
+.cierre-row:last-child{border-bottom:none}
+.cierre-row span:first-child{color:#4A6080}
+.cierre-row span:last-child{font-family:'IBM Plex Mono',monospace;color:#B8D0E8;font-weight:600}
+.btn-red{width:calc(100% - 22px);margin:10px 11px;padding:13px;background:rgba(255,59,92,.12);border:1px solid rgba(255,59,92,.3);border-radius:12px;color:#ff3b5c;font-size:.88rem;font-weight:800;cursor:pointer;font-family:'Outfit',sans-serif;display:block;text-align:center}
+.btn-gold{width:calc(100% - 22px);margin:10px 11px;padding:13px;background:rgba(255,176,32,.12);border:1px solid rgba(255,176,32,.3);border-radius:12px;color:#FFB020;font-size:.88rem;font-weight:800;cursor:pointer;font-family:'Outfit',sans-serif;display:block;text-align:center}
+.success-scr{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100%;padding:36px 22px;gap:14px;text-align:center}
+.sico{width:76px;height:76px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:2.2rem;animation:pulse 2s infinite}
+.sico.green{background:rgba(0,255,136,.1);border:2px solid rgba(0,255,136,.3)}
+.sico.blue{background:rgba(61,142,255,.1);border:2px solid rgba(61,142,255,.3)}
 @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(0,255,136,.3)}50%{box-shadow:0 0 0 16px rgba(0,255,136,0)}}
-.stit{font-size:1.35rem;font-weight:800;color:#EDE0C8}
-.ssub{font-size:.82rem;color:#4A6080;line-height:1.6}
-.oinfo{background:#111820;border:1px solid #1A2230;border-radius:13px;padding:14px;width:100%;text-align:left}
-.orow{display:flex;justify-content:space-between;align-items:center;padding:6px 0;font-size:.8rem;border-bottom:1px solid #1A2230}
-.orow:last-child{border-bottom:none}
-.orow span:first-child{color:#4A6080}
-.orow span:last-child{color:#B8D0E8;font-family:'IBM Plex Mono',monospace;font-weight:600}
-.sbdg{display:inline-flex;align-items:center;gap:4px;background:rgba(255,176,32,.1);border:1px solid rgba(255,176,32,.2);color:#FFB020;padding:2px 7px;border-radius:5px;font-family:'IBM Plex Mono',monospace;font-size:.62rem;font-weight:700}
-
-/* S5 Admin */
-.ahdr{background:#060810;padding:20px 13px 9px;border-bottom:1px solid #1A2230;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}
-.atit{font-weight:800;font-size:.95rem;color:#EDE0C8}
-.atabs{display:flex;background:#060810;border-bottom:1px solid #1A2230}
-.atab{flex:1;padding:10px 0;text-align:center;font-size:.72rem;font-weight:700;color:#4A6080;border-bottom:2px solid transparent;cursor:pointer}
-.atab.active{color:#00CC70;border-bottom-color:#00CC70}
-.ocard{margin:8px 11px 0;background:#111820;border:1px solid #1A2230;border-radius:13px;overflow:hidden}
-.ocard.new{border-color:rgba(255,176,32,.4);animation:sli .5s ease}
-@keyframes sli{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
-.ochdr{display:flex;align-items:center;justify-content:space-between;padding:11px 13px;border-bottom:1px solid #1A2230}
-.omsa{font-family:'IBM Plex Mono',monospace;font-size:.82rem;font-weight:700;color:#3D8EFF}
-.otim{font-size:.7rem;color:#4A6080}
-.oitm{padding:9px 13px}
-.oi{font-size:.78rem;color:#B8D0E8;padding:2px 0}
-.oftr{display:flex;align-items:center;justify-content:space-between;padding:9px 13px;background:rgba(0,0,0,.2)}
-.ott{font-family:'IBM Plex Mono',monospace;font-size:.82rem;font-weight:700;color:#00CC70}
-.oact{padding:6px 12px;border-radius:7px;border:none;background:rgba(255,176,32,.15);color:#FFB020;font-size:.72rem;font-weight:700;cursor:pointer;font-family:'IBM Plex Mono',monospace}
-.oact.rdy{background:rgba(61,142,255,.15);color:#3D8EFF}
-.salt{margin:8px 11px 0;background:rgba(255,176,32,.1);border:1px solid rgba(255,176,32,.3);border-radius:9px;padding:9px 12px;font-size:.74rem;color:#FFB020;font-family:'IBM Plex Mono',monospace;display:none;animation:sli .4s ease}
-
-/* Step info bar */
-.infobar{background:#0C1018;border-top:1px solid #1A2230;padding:10px 16px;position:fixed;bottom:64px;left:0;right:0;z-index:99}
-.infolbl{font-family:'IBM Plex Mono',monospace;font-size:.58rem;letter-spacing:1.5px;color:#3D8EFF;text-transform:uppercase;margin-bottom:3px}
-.infotxt{font-size:.78rem;color:#B8D0E8;line-height:1.4}
-.pbar{height:2px;background:#1A2230;border-radius:2px;overflow:hidden;margin-top:8px}
-.pfill{height:100%;background:linear-gradient(90deg,#00FF88,#3D8EFF);border-radius:2px;transition:width .8s ease}
 </style>
 </head>
 <body>
-
 <div class="hdr">
   <span class="logo">MenuQR</span>
-  <span class="badge">DEMO</span>
+  <span class="section-badge" id="secBadge" style="background:rgba(0,255,136,.1);border:1px solid rgba(0,255,136,.25);color:#00FF88">CLIENTE</span>
   <div class="dots" id="dots"></div>
 </div>
 
 <div class="wrap" id="wrap">
 
-  <!-- S0 Vitrina -->
-  <div class="screen" id="s0">
-    <div class="vitrina">
-      <div style="height:8px"></div>
-      <div class="rname">Los Amigos</div>
-      <div class="rsub">Escane&#225; para ver la carta</div>
-      <div class="qr-box">&#9638;</div>
-      <div class="pbanner">
-        <h3>&#127873; 10% de descuento</h3>
-        <p>Primera visita via QR</p>
-      </div>
-      <button class="btn-g" onclick="tap(event,()=>goTo(1))">Ver carta &#8594;</button>
-      <button class="btn-d">Solo consultar carta</button>
-    </div>
+<!-- ══ S0: VITRINA ══ -->
+<div class="screen" id="s0">
+  <div class="vitrina">
+    <div style="height:4px"></div>
+    <div class="rname">Los Amigos</div>
+    <div class="rsub">Escane&#225; para ver la carta</div>
+    <div class="qrbox">&#9638;</div>
+    <div class="pbanner"><h3>&#127873; 10% de descuento</h3><p>Primera visita via QR</p></div>
+    <button class="btn-g" style="margin:0;width:100%" onclick="tap(event,()=>goTo(1))">Ver carta &#8594;</button>
+    <button class="btn-d" style="margin:0;width:100%">Solo consultar carta</button>
   </div>
-
-  <!-- S1 Menu -->
-  <div class="screen" id="s1">
-    <div class="mhdr">
-      <div class="mrname">Los Amigos</div>
-      <span class="pchip">&#127873; 10% primera visita activo</span>
-    </div>
-    <div class="cats">
-      <div class="cat active" onclick="selCat(this)">&#127829; Pizzas</div>
-      <div class="cat" onclick="selCat(this)">&#129385; Carnes</div>
-      <div class="cat" onclick="selCat(this)">&#129367; Ensaladas</div>
-      <div class="cat" onclick="selCat(this)">&#127863; Bebidas</div>
-      <div class="cat" onclick="selCat(this)">&#127856; Postres</div>
-    </div>
-    <div class="cttl">PIZZAS</div>
-    <div class="pcard" id="pc1">
-      <span class="pem">&#127829;</span>
-      <div class="pinf"><div class="pnm">Muzzarella</div><div class="pds">Tomate, mozzarella, albahaca</div><div class="ppr">$ 3.200</div></div>
-      <button class="abtn" id="ab1" onclick="addIt(event,'ab1','pc1',3200)">+</button>
-    </div>
-    <div class="pcard" id="pc2">
-      <span class="pem">&#127829;</span>
-      <div class="pinf"><div class="pnm">Especial</div><div class="pds">Jam&#243;n, morrones, aceitunas</div><div class="ppr">$ 4.100</div></div>
-      <button class="abtn" id="ab2" onclick="addIt(event,'ab2','pc2',4100)">+</button>
-    </div>
-    <div class="cttl">BEBIDAS</div>
-    <div class="pcard" id="pc3">
-      <span class="pem">&#129380;</span>
-      <div class="pinf"><div class="pnm">Coca-Cola 500ml</div><div class="pds">Bebida gasificada fr&#237;a</div><div class="ppr">$ 900</div></div>
-      <button class="abtn" id="ab3" onclick="addIt(event,'ab3','pc3',900)">+</button>
-    </div>
-    <div style="height:68px"></div>
-    <div class="cbar" id="cbar" onclick="tap(event,()=>goTo(2))">
-      <div class="cbt">Ver pedido</div>
-      <div style="display:flex;align-items:center;gap:8px">
-        <span style="font-family:'IBM Plex Mono',monospace;font-size:.78rem;color:#060810;font-weight:700" id="ctot">$ 0</span>
-        <span class="cbc" id="cqty">0</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- S2 Mesa -->
-  <div class="screen" id="s2">
-    <div class="shdr">
-      <div class="back" onclick="tap(event,()=>goTo(1))">&#8592;</div>
-      <div class="stitle">&#191;En qu&#233; mesa est&#225;s?</div>
-    </div>
-    <div style="padding:12px 15px 5px;font-size:.78rem;color:#4A6080">Seleccion&#225; tu mesa:</div>
-    <div class="tgrid" id="tgrid"></div>
-    <div style="padding:9px 15px;font-size:.74rem;color:#4A6080;line-height:1.5">O escane&#225; el QR de tu mesa para asignaci&#243;n autom&#225;tica &#128241;</div>
-    <button class="btn-g" style="margin:8px 13px;width:calc(100% - 26px)" onclick="tap(event,()=>goTo(3))">Confirmar mesa 4 &#8594;</button>
-  </div>
-
-  <!-- S3 Cart -->
-  <div class="screen" id="s3">
-    <div class="shdr">
-      <div class="back" onclick="tap(event,()=>goTo(2))">&#8592;</div>
-      <div class="stitle">Tu pedido</div>
-      <div style="margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:.66rem;color:#3D8EFF;background:rgba(61,142,255,.1);border:1px solid rgba(61,142,255,.2);padding:3px 8px;border-radius:5px">Mesa 4</div>
-    </div>
-    <div class="citem"><span class="cem">&#127829;</span><div class="cnm">Muzzarella</div><div class="cqty"><button class="qbtn">-</button><span>1</span><button class="qbtn">+</button></div><div class="cprc">$3.200</div></div>
-    <div class="citem"><span class="cem">&#127829;</span><div class="cnm">Especial</div><div class="cqty"><button class="qbtn">-</button><span>1</span><button class="qbtn">+</button></div><div class="cprc">$4.100</div></div>
-    <div class="citem"><span class="cem">&#129380;</span><div class="cnm">Coca-Cola 500ml</div><div class="cqty"><button class="qbtn">-</button><span>1</span><button class="qbtn">+</button></div><div class="cprc">$900</div></div>
-    <div class="tsec">
-      <div class="trow"><span>Subtotal</span><span>$ 8.200</span></div>
-      <div class="drow"><span class="dlbl">&#127873; Descuento primera visita (10%)</span><span class="damt">&#8722; $ 820</span></div>
-      <div class="trow fin"><span>TOTAL</span><span>$ 7.380</span></div>
-    </div>
-    <button class="chkbtn" onclick="tap(event,()=>goTo(4))">&#128722; Confirmar pedido</button>
-  </div>
-
-  <!-- S4 Success -->
-  <div class="screen" id="s4">
-    <div class="sscr">
-      <div class="sico">&#9989;</div>
-      <div class="stit">&#161;Pedido enviado!</div>
-      <div class="ssub">Tu pedido ya est&#225; en cocina.<br>Te avisamos cuando est&#233; listo.</div>
-      <div class="oinfo">
-        <div class="orow"><span>Mesa</span><span>Mesa 4</span></div>
-        <div class="orow"><span>Productos</span><span>3 items</span></div>
-        <div class="orow"><span>Descuento</span><span style="color:#00CC70">&#8722; $ 820</span></div>
-        <div class="orow"><span>Total</span><span style="color:#00CC70">$ 7.380</span></div>
-        <div class="orow"><span>Estado</span><span><span class="sbdg">&#9679; NUEVO</span></span></div>
-      </div>
-      <button class="btn-d" style="width:100%" onclick="tap(event,()=>goTo(5))">Ver panel de cocina &#8594;</button>
-    </div>
-  </div>
-
-  <!-- S5 Admin -->
-  <div class="screen" id="s5">
-    <div class="ahdr">
-      <div class="atit">Panel &#183; Los Amigos</div>
-      <div id="nbdg" style="display:none;font-family:'IBM Plex Mono',monospace;font-size:.62rem;background:#ff4444;color:#fff;padding:2px 7px;border-radius:8px">1 nuevo</div>
-    </div>
-    <div class="atabs">
-      <div class="atab active">Pedidos</div>
-      <div class="atab">Historial</div>
-      <div class="atab">Carta</div>
-      <div class="atab">Gesti&#243;n</div>
-    </div>
-    <div class="salt" id="salt">&#128276; Nuevo pedido recibido &#183; Mesa 4</div>
-    <div style="height:6px"></div>
-    <div class="ocard">
-      <div class="ochdr"><div class="omsa">Mesa 2</div><div style="display:flex;align-items:center;gap:7px"><span style="font-family:'IBM Plex Mono',monospace;font-size:.6rem;color:#3D8EFF;background:rgba(61,142,255,.1);border:1px solid rgba(61,142,255,.2);padding:2px 6px;border-radius:4px">EN COCINA</span><div class="otim">hace 8 min</div></div></div>
-      <div class="oitm"><div class="oi">&#215; 2 Especial</div><div class="oi">&#215; 1 Coca-Cola</div></div>
-      <div class="oftr"><div class="ott">$ 9.100</div><button class="oact rdy">&#8594; LISTO</button></div>
-    </div>
-    <div class="ocard new" id="noc" style="display:none">
-      <div class="ochdr"><div class="omsa">Mesa 4</div><div style="display:flex;align-items:center;gap:7px"><span style="font-family:'IBM Plex Mono',monospace;font-size:.6rem;color:#FFB020;background:rgba(255,176,32,.1);border:1px solid rgba(255,176,32,.2);padding:2px 6px;border-radius:4px">NUEVO</span><div class="otim">ahora</div></div></div>
-      <div class="oitm"><div class="oi">&#215; 1 Muzzarella</div><div class="oi">&#215; 1 Especial</div><div class="oi">&#215; 1 Coca-Cola 500ml</div><div class="oi" style="color:#00CC70;font-size:.73rem;margin-top:3px">&#127873; Descuento 10% &#8212; $ 820</div></div>
-      <div class="oftr"><div class="ott">$ 7.380</div><button class="oact">&#8594; COCINA</button></div>
-    </div>
-    <div style="height:16px"></div>
-  </div>
-
 </div>
 
-<!-- Info bar -->
+<!-- ══ S1: CARTA ══ -->
+<div class="screen" id="s1">
+  <div class="mhdr">
+    <div class="mrname">Los Amigos</div>
+    <span class="chip chip-g">&#127873; 10% activo</span>
+  </div>
+  <div class="cats">
+    <div class="cat active">&#127829; Pizzas</div>
+    <div class="cat">&#129385; Carnes</div>
+    <div class="cat">&#127863; Bebidas</div>
+    <div class="cat">&#127856; Postres</div>
+  </div>
+  <div class="cttl">PIZZAS</div>
+  <div class="pcard" id="pc1">
+    <span class="pem">&#127829;</span>
+    <div class="pinf"><div class="pnm">Muzzarella</div><div class="pds">Tomate, mozzarella, albahaca</div><div class="ppr">$ 3.200</div></div>
+    <button class="abtn" id="ab1" onclick="addIt(event,'ab1','pc1',3200)">+</button>
+  </div>
+  <div class="pcard" id="pc2">
+    <span class="pem">&#127829;</span>
+    <div class="pinf"><div class="pnm">Especial</div><div class="pds">Jam&#243;n, morrones, aceitunas</div><div class="ppr">$ 4.100</div></div>
+    <button class="abtn" id="ab2" onclick="addIt(event,'ab2','pc2',4100)">+</button>
+  </div>
+  <div class="cttl">BEBIDAS</div>
+  <div class="pcard" id="pc3">
+    <span class="pem">&#129380;</span>
+    <div class="pinf"><div class="pnm">Coca-Cola 500ml</div><div class="pds">Bebida fr&#237;a</div><div class="ppr">$ 900</div></div>
+    <button class="abtn" id="ab3" onclick="addIt(event,'ab3','pc3',900)">+</button>
+  </div>
+  <div style="height:65px"></div>
+  <div class="cbar" id="cbar" onclick="tap(event,()=>goTo(2))">
+    <span style="font-weight:800;color:#060810;font-size:.9rem">Ver pedido</span>
+    <div style="display:flex;align-items:center;gap:8px">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:.76rem;color:#060810;font-weight:700" id="ctot">$ 0</span>
+      <span style="background:rgba(0,0,0,.15);color:#060810;font-family:'IBM Plex Mono',monospace;padding:3px 9px;border-radius:18px;font-size:.74rem;font-weight:700" id="cqty">0</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══ S2: CHECKOUT (con división) ══ -->
+<div class="screen" id="s2">
+  <div class="shdr">
+    <div class="back" onclick="tap(event,()=>goTo(1))">&#8592;</div>
+    <div class="stitle">Pagar pedido</div>
+    <div style="margin-left:auto" class="chip chip-b">Mesa 4</div>
+  </div>
+  <div class="section-hdr">RESUMEN</div>
+  <div class="card">
+    <div class="row"><span class="lbl">&#127829; Muzzarella &#215;1</span><span class="val">$3.200</span></div>
+    <div class="row"><span class="lbl">&#127829; Especial &#215;1</span><span class="val">$4.100</span></div>
+    <div class="row"><span class="lbl">&#129380; Coca-Cola &#215;1</span><span class="val">$900</span></div>
+    <div class="row" style="background:rgba(0,204,112,.05)"><span class="lbl" style="color:#00CC70">&#127873; Descuento 10%</span><span class="val green">&#8722; $820</span></div>
+    <div class="row" style="padding:12px 13px"><span class="lbl" style="font-weight:800;color:#EDE0C8;font-size:.88rem">TOTAL</span><span class="val green" style="font-size:1rem">$7.380</span></div>
+  </div>
+  <div class="section-hdr">&#247; DIVIDIR LA CUENTA</div>
+  <div class="div-box">
+    <div class="div-stepper">
+      <button class="div-btn" onclick="divChange(-1)">&#8722;</button>
+      <div class="div-n" id="divN">2</div>
+      <button class="div-btn" onclick="divChange(1)">+</button>
+    </div>
+    <div class="div-pp" id="divPP">$ 3.690</div>
+    <div class="div-sub" id="divSub">por persona (de 2)</div>
+  </div>
+  <div class="section-hdr">FORMA DE PAGO</div>
+  <div class="pay-opts">
+    <div class="pay-opt sel" onclick="selPay(this)"><span class="pay-icon">&#128181;</span><div class="pay-label">Efectivo</div><div class="pay-sub">Al mozo</div></div>
+    <div class="pay-opt" onclick="selPay(this)"><span class="pay-icon">&#128179;</span><div class="pay-label">Mercado Pago</div><div class="pay-sub">QR o link</div></div>
+    <div class="pay-opt" onclick="selPay(this)"><span class="pay-icon">&#128184;</span><div class="pay-label">Tarjeta</div><div class="pay-sub">D&#233;bito / cr&#233;dito</div></div>
+    <div class="pay-opt" onclick="selPay(this)"><span class="pay-icon">&#247;</span><div class="pay-label">Pago mixto</div><div class="pay-sub">Dos m&#233;todos</div></div>
+  </div>
+  <button class="btn-g" onclick="tap(event,()=>goTo(3))">Confirmar pedido &#8594;</button>
+</div>
+
+<!-- ══ S3: PEDIDO ENVIADO ══ -->
+<div class="screen" id="s3">
+  <div class="success-scr">
+    <div class="sico green">&#9989;</div>
+    <div style="font-size:1.3rem;font-weight:800;color:#EDE0C8">&#161;Pedido enviado!</div>
+    <div style="font-size:.8rem;color:#4A6080;line-height:1.6">Tu pedido ya est&#225; en cocina.<br>Te avisamos cuando est&#233; listo.</div>
+    <div class="card" style="width:100%;text-align:left">
+      <div class="row"><span class="lbl">Mesa</span><span class="val">Mesa 4</span></div>
+      <div class="row"><span class="lbl">Total</span><span class="val green">$7.380</span></div>
+      <div class="row"><span class="lbl">Por persona (2)</span><span class="val green">$3.690</span></div>
+      <div class="row"><span class="lbl">Pago</span><span class="val">Efectivo</span></div>
+      <div class="row"><span class="lbl">Estado</span><span><span class="chip chip-y">&#9679; NUEVO</span></span></div>
+    </div>
+    <button class="btn-d" style="width:100%" onclick="tap(event,()=>goTo(4))">Ver m&#225;s funciones &#8594;</button>
+  </div>
+</div>
+
+<!-- ══ S4: CAMPANITA ══ -->
+<div class="screen" id="s4">
+  <div class="shdr">
+    <div class="stitle">&#128276; Llamar al mozo</div>
+    <div style="margin-left:auto" class="chip chip-b">Mesa 4</div>
+  </div>
+  <div class="bell-screen">
+    <div class="bell-icon">&#128276;</div>
+    <div class="bell-title">&#191;Qu&#233; necesit&#225;s?</div>
+    <div style="font-size:.78rem;color:#4A6080;text-align:center">El mozo recibe la alerta al instante en el panel</div>
+    <div class="bell-opts">
+      <div class="bell-opt sel" onclick="selBell(this)">
+        <span class="bell-opt-icon">&#127864;</span>
+        <div><div class="bell-opt-label">Pedir la cuenta</div><div class="bell-opt-sub">Cerrar mesa y pagar</div></div>
+      </div>
+      <div class="bell-opt" onclick="selBell(this)">
+        <span class="bell-opt-icon">&#127859;</span>
+        <div><div class="bell-opt-label">Necesito un mozo</div><div class="bell-opt-sub">Consulta o pedido extra</div></div>
+      </div>
+      <div class="bell-opt" onclick="selBell(this)">
+        <span class="bell-opt-icon">&#9874;</span>
+        <div><div class="bell-opt-label">Cubiertos / servilletas</div><div class="bell-opt-sub">Falta algo en la mesa</div></div>
+      </div>
+    </div>
+    <button class="btn-g" style="width:100%;margin:0" onclick="tap(event,()=>goTo(5))">Enviar alerta &#8594;</button>
+  </div>
+</div>
+
+<!-- ══ S5: ADMIN RECIBE SOLICITUD ══ -->
+<div class="screen" id="s5">
+  <div class="shdr" style="background:#060810">
+    <div class="stitle">Panel &#183; Los Amigos</div>
+    <div style="margin-left:auto;background:#ff4444;color:#fff;font-family:'IBM Plex Mono',monospace;font-size:.6rem;padding:2px 7px;border-radius:8px;font-weight:700">2 alertas</div>
+  </div>
+  <div style="display:flex;background:#060810;border-bottom:1px solid #1A2230">
+    <div style="flex:1;padding:9px 0;text-align:center;font-size:.68rem;font-weight:700;color:#00CC70;border-bottom:2px solid #00CC70">Pedidos</div>
+    <div style="flex:1;padding:9px 0;text-align:center;font-size:.68rem;font-weight:700;color:#4A6080">Historial</div>
+    <div style="flex:1;padding:9px 0;text-align:center;font-size:.68rem;font-weight:700;color:#4A6080">Carta</div>
+    <div style="flex:1;padding:9px 0;text-align:center;font-size:.68rem;font-weight:700;color:#4A6080">Caja</div>
+  </div>
+  <!-- Solicitud bell -->
+  <div class="card gold" style="border-color:rgba(255,176,32,.5)">
+    <div class="row" style="background:rgba(255,176,32,.05)">
+      <div style="display:flex;align-items:center;gap:8px"><span style="font-size:1.2rem">&#128276;</span><div><div style="font-size:.8rem;font-weight:700;color:#FFB020">Mesa 4 &#8212; Pedir la cuenta</div><div style="font-size:.65rem;color:#4A6080;font-family:'IBM Plex Mono',monospace">hace 30 seg</div></div></div>
+      <button style="padding:5px 11px;border-radius:7px;border:none;background:rgba(255,176,32,.15);color:#FFB020;font-size:.68rem;font-weight:700;cursor:pointer;font-family:'IBM Plex Mono',monospace">OK</button>
+    </div>
+  </div>
+  <div class="card gold" style="border-color:rgba(255,176,32,.3)">
+    <div class="row">
+      <div style="display:flex;align-items:center;gap:8px"><span style="font-size:1.2rem">&#128276;</span><div><div style="font-size:.8rem;font-weight:700;color:#FFB020">Mesa 7 &#8212; Necesito un mozo</div><div style="font-size:.65rem;color:#4A6080;font-family:'IBM Plex Mono',monospace">hace 2 min</div></div></div>
+      <button style="padding:5px 11px;border-radius:7px;border:none;background:rgba(255,176,32,.15);color:#FFB020;font-size:.68rem;font-weight:700;cursor:pointer;font-family:'IBM Plex Mono',monospace">OK</button>
+    </div>
+  </div>
+  <!-- Pedido activo -->
+  <div class="section-hdr">PEDIDOS ACTIVOS</div>
+  <div class="card">
+    <div class="row"><div style="font-family:'IBM Plex Mono',monospace;font-size:.8rem;font-weight:700;color:#3D8EFF">Mesa 4</div><span class="chip chip-y">NUEVO</span></div>
+    <div class="row" style="flex-direction:column;align-items:flex-start;gap:3px">
+      <div style="font-size:.76rem;color:#B8D0E8">&#215;1 Muzzarella &#183; &#215;1 Especial &#183; &#215;1 Coca-Cola</div>
+      <div style="font-size:.7rem;color:#00CC70">&#127873; Descuento 10% aplicado</div>
+    </div>
+    <div class="row"><span style="font-family:'IBM Plex Mono',monospace;font-size:.82rem;font-weight:700;color:#00CC70">$ 7.380</span><button style="padding:6px 12px;border-radius:7px;border:none;background:rgba(255,176,32,.15);color:#FFB020;font-size:.7rem;font-weight:700;cursor:pointer;font-family:'IBM Plex Mono',monospace" onclick="tap(event,()=>goTo(6))">&#8594; COCINA</button></div>
+  </div>
+</div>
+
+<!-- ══ S6: HISTORIAL + ESTADÍSTICAS ══ -->
+<div class="screen" id="s6">
+  <div class="shdr" style="background:#060810">
+    <div class="stitle">Historial &#183; Esta semana</div>
+  </div>
+  <div style="display:flex;background:#060810;border-bottom:1px solid #1A2230">
+    <div style="flex:1;padding:8px 0;text-align:center;font-size:.68rem;font-weight:700;color:#00CC70;border-bottom:2px solid #00CC70">&#128200; Ventas</div>
+    <div style="flex:1;padding:8px 0;text-align:center;font-size:.68rem;font-weight:700;color:#4A6080">&#127942; Productos</div>
+    <div style="flex:1;padding:8px 0;text-align:center;font-size:.68rem;font-weight:700;color:#4A6080">&#128179; Pagos</div>
+  </div>
+  <div class="stat-grid">
+    <div class="stat-card"><div class="stat-val">$284.600</div><div class="stat-lbl">Ingresos semana</div></div>
+    <div class="stat-card"><div class="stat-val">147</div><div class="stat-lbl">Pedidos</div></div>
+    <div class="stat-card"><div class="stat-val">$1.936</div><div class="stat-lbl">Ticket promedio</div></div>
+    <div class="stat-card"><div class="stat-val">31</div><div class="stat-lbl">Pedidos hoy</div></div>
+  </div>
+  <div class="chart-bar-wrap">
+    <div class="chart-ttl">VENTAS POR D&#205;A</div>
+    <div class="bar-row"><div class="bar-day">Lun</div><div class="bar-track"><div class="bar-fill" style="width:60%;background:linear-gradient(90deg,#00FF88,#00C870)"><span class="bar-num">$38k</span></div></div></div>
+    <div class="bar-row"><div class="bar-day">Mar</div><div class="bar-track"><div class="bar-fill" style="width:45%;background:linear-gradient(90deg,#00FF88,#00C870)"><span class="bar-num">$29k</span></div></div></div>
+    <div class="bar-row"><div class="bar-day">Mi&#233;</div><div class="bar-track"><div class="bar-fill" style="width:72%;background:linear-gradient(90deg,#00FF88,#00C870)"><span class="bar-num">$46k</span></div></div></div>
+    <div class="bar-row"><div class="bar-day">Jue</div><div class="bar-track"><div class="bar-fill" style="width:55%;background:linear-gradient(90deg,#00FF88,#00C870)"><span class="bar-num">$35k</span></div></div></div>
+    <div class="bar-row"><div class="bar-day">Vie</div><div class="bar-track"><div class="bar-fill" style="width:100%;background:linear-gradient(90deg,#FFB020,#FF8C00)"><span class="bar-num">$63k</span></div></div></div>
+    <div class="bar-row"><div class="bar-day">S&#225;b</div><div class="bar-track"><div class="bar-fill" style="width:88%;background:linear-gradient(90deg,#FFB020,#FF8C00)"><span class="bar-num">$56k</span></div></div></div>
+    <div class="bar-row"><div class="bar-day">Dom</div><div class="bar-track"><div class="bar-fill" style="width:28%;background:linear-gradient(90deg,#3D8EFF,#2066CC)"><span class="bar-num">$18k</span></div></div></div>
+  </div>
+  <div class="pay-breakdown">
+    <div class="chart-ttl">FORMAS DE PAGO</div>
+    <div class="pb-row"><span class="pb-icon">&#128181;</span><div class="pb-bar"><div class="pb-fill" style="width:42%;background:#00CC70"></div></div><span class="pb-pct">42%</span></div>
+    <div class="pb-row"><span class="pb-icon">&#128242;</span><div class="pb-bar"><div class="pb-fill" style="width:35%;background:#3D8EFF"></div></div><span class="pb-pct">35%</span></div>
+    <div class="pb-row"><span class="pb-icon">&#128184;</span><div class="pb-bar"><div class="pb-fill" style="width:15%;background:#FFB020"></div></div><span class="pb-pct">15%</span></div>
+    <div class="pb-row"><span class="pb-icon">&#247;</span><div class="pb-bar"><div class="pb-fill" style="width:8%;background:#4A6080"></div></div><span class="pb-pct">8%</span></div>
+  </div>
+  <div style="padding:10px 11px;display:flex;gap:8px">
+    <button style="flex:1;padding:11px;background:rgba(61,142,255,.1);border:1px solid rgba(61,142,255,.2);border-radius:11px;color:#3D8EFF;font-size:.78rem;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif">&#11015; Exportar CSV</button>
+    <button style="flex:1;padding:11px;background:#111820;border:1px solid #1A2230;border-radius:11px;color:#4A6080;font-size:.78rem;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif" onclick="tap(event,()=>goTo(7))">Empleados &#8594;</button>
+  </div>
+</div>
+
+<!-- ══ S7: EMPLEADOS ══ -->
+<div class="screen" id="s7">
+  <div class="shdr" style="background:#060810">
+    <div class="stitle">Personal</div>
+    <div style="margin-left:auto;display:flex;gap:6px">
+      <span class="chip chip-g">3 en turno</span>
+    </div>
+  </div>
+  <div style="display:flex;background:#060810;border-bottom:1px solid #1A2230">
+    <div style="flex:1;padding:9px 0;text-align:center;font-size:.68rem;font-weight:700;color:#00CC70;border-bottom:2px solid #00CC70">&#128101; Empleados</div>
+    <div style="flex:1;padding:9px 0;text-align:center;font-size:.68rem;font-weight:700;color:#4A6080">&#128336; Turnos hoy</div>
+  </div>
+  <div class="emp-card on">
+    <div class="emp-avatar" style="background:rgba(0,255,136,.1)">&#128104;&#8205;&#127859;</div>
+    <div><div class="emp-name">Carlos M.</div><div class="emp-rol">Mozo &#183; Turno ma&#241;ana</div></div>
+    <button class="emp-toggle on">SALIR</button>
+  </div>
+  <div class="emp-card on">
+    <div class="emp-avatar" style="background:rgba(61,142,255,.1)">&#128105;&#8205;&#127859;</div>
+    <div><div class="emp-name">Laura P.</div><div class="emp-rol">Moza &#183; Turno ma&#241;ana</div></div>
+    <button class="emp-toggle on">SALIR</button>
+  </div>
+  <div class="emp-card on">
+    <div class="emp-avatar" style="background:rgba(255,176,32,.1)">&#128104;&#8205;&#127859;</div>
+    <div><div class="emp-name">Diego R.</div><div class="emp-rol">Cocinero &#183; Turno tarde</div></div>
+    <button class="emp-toggle on">SALIR</button>
+  </div>
+  <div class="emp-card">
+    <div class="emp-avatar" style="background:#111820">&#128105;</div>
+    <div><div class="emp-name">Ana G.</div><div class="emp-rol">Cajera &#183; Sin turno</div></div>
+    <button class="emp-toggle off">ENTRAR</button>
+  </div>
+  <div class="section-hdr">TURNOS HOY</div>
+  <div class="turno-row">
+    <div><div class="turno-name">Carlos M.</div><div class="turno-time">09:00 &#8594; ahora (4h 22m)</div></div>
+    <span class="chip chip-g">ACTIVO</span>
+  </div>
+  <div class="turno-row">
+    <div><div class="turno-name">Laura P.</div><div class="turno-time">09:30 &#8594; ahora (3h 52m)</div></div>
+    <span class="chip chip-g">ACTIVO</span>
+  </div>
+  <div class="turno-row">
+    <div><div class="turno-name">Mar&#237;a T.</div><div class="turno-time">08:00 &#8594; 12:00 (4h)</div></div>
+    <span class="chip chip-b">FINALIZADO</span>
+  </div>
+  <button class="btn-d" onclick="tap(event,()=>goTo(8))">Ver Caja &#8594;</button>
+</div>
+
+<!-- ══ S8: CAJA — VENTA RÁPIDA ══ -->
+<div class="screen" id="s8">
+  <div class="shdr" style="background:#060810">
+    <div class="stitle">Caja &#183; Turno activo</div>
+    <div style="margin-left:auto" class="chip chip-g">&#9632; ABIERTO</div>
+  </div>
+  <div class="caja-tabs">
+    <div class="caja-tab active">&#9881;&#65039; Venta r&#225;pida</div>
+    <div class="caja-tab">&#128200; Cierre X</div>
+    <div class="caja-tab">&#9940; Cierre Z</div>
+  </div>
+  <div class="section-hdr">PRODUCTOS</div>
+  <div class="pos-grid">
+    <div class="pos-item" onclick="posAdd(event,'Muzzarella',3200)"><span class="pos-em">&#127829;</span><div class="pos-nm">Muzzarella</div><div class="pos-pr">$3.200</div></div>
+    <div class="pos-item" onclick="posAdd(event,'Especial',4100)"><span class="pos-em">&#127829;</span><div class="pos-nm">Especial</div><div class="pos-pr">$4.100</div></div>
+    <div class="pos-item" onclick="posAdd(event,'Coca-Cola',900)"><span class="pos-em">&#129380;</span><div class="pos-nm">Coca-Cola</div><div class="pos-pr">$900</div></div>
+    <div class="pos-item" onclick="posAdd(event,'Fernet',1800)"><span class="pos-em">&#127863;</span><div class="pos-nm">Fernet</div><div class="pos-pr">$1.800</div></div>
+    <div class="pos-item" onclick="posAdd(event,'Tiramisú',2200)"><span class="pos-em">&#127856;</span><div class="pos-nm">Tiramisú</div><div class="pos-pr">$2.200</div></div>
+    <div class="pos-item" onclick="posAdd(event,'Agua',600)"><span class="pos-em">&#128167;</span><div class="pos-nm">Agua</div><div class="pos-pr">$600</div></div>
+  </div>
+  <div class="section-hdr">TICKET</div>
+  <div class="caja-ticket" id="posTicket">
+    <div style="font-size:.74rem;color:#4A6080;text-align:center;padding:6px 0">Toc&#225; un producto para agregar</div>
+  </div>
+  <div class="card" style="margin-top:8px">
+    <div class="row"><span class="lbl">TOTAL</span><span class="val green" style="font-size:1rem" id="posTotal">$ 0</span></div>
+  </div>
+  <div style="display:flex;gap:8px;margin:10px 11px">
+    <button style="flex:1;padding:13px;background:rgba(255,59,92,.1);border:1px solid rgba(255,59,92,.2);border-radius:11px;color:#ff3b5c;font-size:.82rem;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif" onclick="posClear()">Limpiar</button>
+    <button style="flex:2;padding:13px;background:linear-gradient(135deg,#00FF88,#00C870);border:none;border-radius:11px;color:#060810;font-size:.88rem;font-weight:800;cursor:pointer;font-family:'Outfit',sans-serif" onclick="tap(event,()=>goTo(9))">Cobrar &#8594;</button>
+  </div>
+</div>
+
+<!-- ══ S9: CIERRE X ══ -->
+<div class="screen" id="s9">
+  <div class="shdr" style="background:#060810">
+    <div class="stitle">Caja</div>
+  </div>
+  <div class="caja-tabs">
+    <div class="caja-tab">&#9881;&#65039; Venta r&#225;pida</div>
+    <div class="caja-tab active">&#128200; Cierre X</div>
+    <div class="caja-tab">&#9940; Cierre Z</div>
+  </div>
+  <div class="cierre-box">
+    <div class="cierre-title"><span style="font-family:'IBM Plex Mono',monospace;background:rgba(61,142,255,.15);border:1px solid rgba(61,142,255,.3);color:#3D8EFF;padding:2px 8px;border-radius:5px;font-size:.7rem">CIERRE X</span> Parcial &#8212; sin cerrar turno</div>
+    <div class="cierre-row"><span>Fondo apertura</span><span>$ 15.000</span></div>
+    <div class="cierre-row"><span>Ventas efectivo</span><span style="color:#00CC70">$ 89.400</span></div>
+    <div class="cierre-row"><span>Ventas Mercado Pago</span><span style="color:#3D8EFF">$ 54.200</span></div>
+    <div class="cierre-row"><span>Ventas tarjeta</span><span style="color:#FFB020">$ 23.800</span></div>
+    <div class="cierre-row"><span>Pedidos</span><span>24</span></div>
+    <div class="cierre-row" style="border-top:2px solid #1A2230;margin-top:4px;padding-top:10px"><span style="font-weight:800;color:#EDE0C8">TOTAL ACUMULADO</span><span style="color:#00CC70;font-size:.95rem">$ 167.400</span></div>
+  </div>
+  <div class="card" style="margin-top:8px;border-color:rgba(61,142,255,.2)">
+    <div class="row"><span class="lbl">En caj&#243;n (efectivo + fondo)</span><span class="val green">$ 104.400</span></div>
+    <div class="row"><span class="lbl">Digital (MP + tarjeta)</span><span class="val" style="color:#3D8EFF">$ 78.000</span></div>
+  </div>
+  <div style="padding:8px 11px 4px;font-size:.72rem;color:#4A6080;line-height:1.5">&#128200; El Cierre X no cierra el turno. Podés imprimir el resumen parcial y seguir operando.</div>
+  <button class="btn-gold" onclick="tap(event,()=>goTo(10))">&#128200; Imprimir Cierre X</button>
+  <button class="btn-red" onclick="tap(event,()=>goTo(10))">&#9940; Ejecutar Cierre Z (cerrar turno)</button>
+</div>
+
+<!-- ══ S10: CIERRE Z ══ -->
+<div class="screen" id="s10">
+  <div class="success-scr">
+    <div class="sico blue" style="animation:none">&#9940;</div>
+    <div style="font-size:1.25rem;font-weight:800;color:#EDE0C8">Cierre Z ejecutado</div>
+    <div style="font-size:.78rem;color:#4A6080;line-height:1.6;text-align:center">Turno cerrado. Datos guardados<br>en el historial permanente.</div>
+    <div class="card" style="width:100%;text-align:left">
+      <div class="row"><span class="lbl">Apertura</span><span class="val">09:00 hs</span></div>
+      <div class="row"><span class="lbl">Cierre</span><span class="val">22:00 hs (13h)</span></div>
+      <div class="row"><span class="lbl">Total vendido</span><span class="val green">$ 284.600</span></div>
+      <div class="row"><span class="lbl">Pedidos</span><span class="val">147</span></div>
+      <div class="row"><span class="lbl">Diferencia caj&#243;n</span><span class="val green">+ $ 200 &#128077;</span></div>
+    </div>
+    <button class="btn-d" style="width:100%" onclick="tap(event,()=>goTo(0))">&#8635; Volver al inicio</button>
+  </div>
+</div>
+
+</div><!-- /wrap -->
+
 <div class="infobar" id="infobar">
-  <div class="infolbl" id="slbl">PASO 1 DE 6</div>
-  <div class="infotxt" id="stxt">El cliente escanea el QR de la vitrina y activa el 10% de descuento para su primera visita.</div>
-  <div class="pbar"><div class="pfill" id="pfill" style="width:16%"></div></div>
+  <div class="infolbl" id="slbl" style="color:#00CC70">CLIENTE · PASO 1 DE 11</div>
+  <div class="infotxt" id="stxt">El cliente llega, escanea el QR de la vitrina y activa el descuento del 10% para su primera visita.</div>
+  <div class="pbar"><div class="pfill" id="pfill" style="width:9%;background:linear-gradient(90deg,#00FF88,#3D8EFF)"></div></div>
 </div>
-
-<!-- Controls -->
 <div class="ctrl">
   <button class="cbtn cnav" id="bprev" onclick="prev()" disabled>&#8592;</button>
-  <span class="clbl" id="clbl">1/6</span>
+  <span class="clbl" id="clbl">1/11</span>
   <button class="cbtn cplay" id="bplay" onclick="autoPlay()">&#9654; Auto</button>
-  <span class="clbl" id="clbl2" style="display:none"></span>
   <button class="cbtn cnav" id="bnext" onclick="next()">&#8594;</button>
 </div>
 
 <script>
 const STEPS=[
-  {lbl:'PASO 1 DE 6',txt:'El cliente escanea el QR de la vitrina y activa el 10% de descuento para su primera visita.',prog:16,on:null},
-  {lbl:'PASO 2 DE 6',txt:'Ve la carta digital. Agrega productos al carrito — el chip verde confirma que el descuento est&#225; activo.',prog:33,on:null},
-  {lbl:'PASO 3 DE 6',txt:'Elige su mesa o escanea el QR de la mesa para asignaci&#243;n autom&#225;tica.',prog:50,on:()=>{buildT();selT(4);}},
-  {lbl:'PASO 4 DE 6',txt:'El carrito aplica el 10% autom&#225;ticamente y muestra subtotal, descuento y total final.',prog:66,on:null},
-  {lbl:'PASO 5 DE 6',txt:'Pedido enviado a cocina en tiempo real. El cliente ve el estado del pedido.',prog:83,on:null},
-  {lbl:'PASO 6 DE 6',txt:'Cocina recibe el pedido con alerta sonora. El mozo cambia el estado: NUEVO &#8594; EN COCINA &#8594; LISTO.',prog:100,on:()=>{setTimeout(()=>{document.getElementById('salt').style.display='block';document.getElementById('nbdg').style.display='inline-block';document.getElementById('noc').style.display='block';},700);}}
+  {sec:'CLIENTE',col:'#00FF88',bg:'rgba(0,255,136,.1)',border:'rgba(0,255,136,.25)',lbl:'CLIENTE · PASO 1 DE 11',txt:'El cliente llega, escanea el QR de la vitrina y activa el descuento del 10% para su primera visita.',prog:9},
+  {sec:'CLIENTE',col:'#00FF88',bg:'rgba(0,255,136,.1)',border:'rgba(0,255,136,.25)',lbl:'CLIENTE · PASO 2 DE 11',txt:'Ve la carta digital por categoría. Agrega productos al carrito — el chip verde confirma el descuento activo.',prog:18},
+  {sec:'CLIENTE',col:'#00FF88',bg:'rgba(0,255,136,.1)',border:'rgba(0,255,136,.25)',lbl:'CLIENTE · PASO 3 DE 11',txt:'Al pagar puede dividir la cuenta entre varias personas y elegir la forma de pago (efectivo, MP, tarjeta o mixto).',prog:27},
+  {sec:'CLIENTE',col:'#00FF88',bg:'rgba(0,255,136,.1)',border:'rgba(0,255,136,.25)',lbl:'CLIENTE · PASO 4 DE 11',txt:'Pedido enviado a cocina en tiempo real. El cliente ve el resumen con descuento y división aplicados.',prog:36},
+  {sec:'CAMPANITA',col:'#3D8EFF',bg:'rgba(61,142,255,.1)',border:'rgba(61,142,255,.25)',lbl:'CAMPANITA · PASO 5 DE 11',txt:'Desde la carta el cliente puede llamar al mozo con un toque: pedir la cuenta, necesitar atención o pedir algo extra.',prog:45},
+  {sec:'ADMIN',col:'#FFB020',bg:'rgba(255,176,32,.1)',border:'rgba(255,176,32,.25)',lbl:'ADMIN · PASO 6 DE 11',txt:'El panel recibe las alertas de la campanita en tiempo real. El mozo las ve y puede marcarlas como atendidas.',prog:54},
+  {sec:'ADMIN',col:'#FFB020',bg:'rgba(255,176,32,.1)',border:'rgba(255,176,32,.25)',lbl:'ADMIN · PASO 7 DE 11',txt:'Historial completo: ventas diarias, ticket promedio, ranking de productos y desglose por forma de pago. Exportable a CSV.',prog:63},
+  {sec:'PERSONAL',col:'#B050FF',bg:'rgba(176,80,255,.1)',border:'rgba(176,80,255,.25)',lbl:'PERSONAL · PASO 8 DE 11',txt:'Gestión de empleados: roles, turnos y horarios. El mozo toca ENTRAR/SALIR para registrar su turno automáticamente.',prog:72},
+  {sec:'CAJA',col:'#FF8C00',bg:'rgba(255,140,0,.1)',border:'rgba(255,140,0,.25)',lbl:'CAJA · PASO 9 DE 11',txt:'Venta rápida desde la caja: tocás los productos, armás el ticket y cobrás sin necesidad de que el cliente escanee nada.',prog:81},
+  {sec:'CAJA',col:'#FF8C00',bg:'rgba(255,140,0,.1)',border:'rgba(255,140,0,.25)',lbl:'CAJA · PASO 10 DE 11',txt:'Cierre X: resumen parcial del turno sin cerrarlo. Efectivo en cajón, ventas digitales y total acumulado. Imprimible.',prog:90},
+  {sec:'CAJA',col:'#FF8C00',bg:'rgba(255,140,0,.1)',border:'rgba(255,140,0,.25)',lbl:'CAJA · PASO 11 DE 11',txt:'Cierre Z: cierra el turno definitivamente, registra todo en el historial y verifica la diferencia del cajón.',prog:100},
 ];
 let cur=0,playing=false,timer=null;
 const screens=document.querySelectorAll('.screen');
@@ -312,17 +553,18 @@ function goTo(i){
   setTimeout(()=>screens[p].classList.remove('exit'),500);
   screens[cur].classList.add('active');
   upUI();
-  if(STEPS[cur].on)STEPS[cur].on();
-  if(i!==5){document.getElementById('salt').style.display='none';document.getElementById('nbdg').style.display='none';document.getElementById('noc').style.display='none';}
 }
 function upUI(){
   const s=STEPS[cur];
   document.getElementById('slbl').textContent=s.lbl;
-  document.getElementById('stxt').innerHTML=s.txt;
+  document.getElementById('slbl').style.color=s.col;
+  document.getElementById('stxt').textContent=s.txt;
   document.getElementById('pfill').style.width=s.prog+'%';
   document.getElementById('clbl').textContent=(cur+1)+'/'+STEPS.length;
   document.getElementById('bprev').disabled=cur===0;
   document.getElementById('bnext').disabled=cur===STEPS.length-1;
+  const b=document.getElementById('secBadge');
+  b.textContent=s.sec;b.style.background=s.bg;b.style.border='1px solid '+s.border;b.style.color=s.col;
   const d=document.getElementById('dots');d.innerHTML='';
   STEPS.forEach((_,i)=>{const dot=document.createElement('div');dot.className='dot'+(i===cur?' active':i<cur?' done':'');d.appendChild(dot);});
 }
@@ -334,10 +576,8 @@ function autoPlay(){
   timer=setTimeout(tick,2000);
 }
 function tap(event,cb){
-  const el=event.currentTarget,rect=el.getBoundingClientRect(),wrap=document.getElementById('wrap');
   const ring=document.createElement('div');ring.className='tap-ring';
-  ring.style.left=(rect.left+rect.width/2)+'px';ring.style.top=(rect.top+rect.height/2)+'px';
-  ring.style.position='fixed';
+  ring.style.left=event.clientX+'px';ring.style.top=event.clientY+'px';
   document.body.appendChild(ring);setTimeout(()=>ring.remove(),700);
   if(cb)setTimeout(cb,350);
 }
@@ -353,9 +593,25 @@ function addIt(event,bid,cid,price){
     if(cqty>0)document.getElementById('cbar').classList.add('vis');
   }
 }
-function selCat(el){document.querySelectorAll('.cat').forEach(c=>c.classList.remove('active'));el.classList.add('active');}
-function buildT(){const g=document.getElementById('tgrid');g.innerHTML='';for(let i=1;i<=12;i++){const c=document.createElement('div');c.className='tchip';c.textContent=i;c.dataset.n=i;c.onclick=()=>selT(i);g.appendChild(c);}}
-function selT(n){document.querySelectorAll('.tchip').forEach(c=>c.classList.remove('sel'));const c=document.querySelector('.tchip[data-n="'+n+'"]');if(c)c.classList.add('sel');}
+function divChange(d){
+  let n=parseInt(document.getElementById('divN').textContent)+d;
+  if(n<2)n=2;if(n>10)n=10;
+  document.getElementById('divN').textContent=n;
+  const pp=Math.ceil(7380/n);
+  document.getElementById('divPP').textContent='$ '+pp.toLocaleString('es-AR');
+  document.getElementById('divSub').textContent='por persona (de '+n+')';
+}
+function selPay(el){document.querySelectorAll('.pay-opt').forEach(e=>e.classList.remove('sel'));el.classList.add('sel');}
+function selBell(el){document.querySelectorAll('.bell-opt').forEach(e=>e.classList.remove('sel'));el.classList.add('sel');}
+let posItems={},posTotal=0;
+function posAdd(event,name,price){
+  tap(event,null);
+  posItems[name]=(posItems[name]||0)+1;posTotal+=price;
+  const ticket=document.getElementById('posTicket');
+  ticket.innerHTML=Object.entries(posItems).map(([k,v])=>`<div class="ticket-item"><span class="ticket-nm">x${v} ${k}</span><span class="ticket-pr">$${(v*({Muzzarella:3200,Especial:4100,'Coca-Cola':900,Fernet:1800,'Tiramisú':2200,Agua:600}[k]||0)).toLocaleString('es-AR')}</span></div>`).join('');
+  document.getElementById('posTotal').textContent='$ '+posTotal.toLocaleString('es-AR');
+}
+function posClear(){posItems={};posTotal=0;document.getElementById('posTicket').innerHTML='<div style="font-size:.74rem;color:#4A6080;text-align:center;padding:6px 0">Tocá un producto para agregar</div>';document.getElementById('posTotal').textContent='$ 0';}
 upUI();screens[0].classList.add('active');
 </script>
 </body>
