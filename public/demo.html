@@ -71,7 +71,8 @@ html,body{height:100%;background:#060810;font-family:'Outfit',sans-serif;overscr
 .cat{flex-shrink:0;padding:6px 12px;background:#111820;border:1px solid #1A2230;border-radius:7px;color:#4A6080;font-size:.74rem;font-weight:600;cursor:pointer;white-space:nowrap}
 .cat.active{background:rgba(61,142,255,.15);border-color:#3D8EFF;color:#3D8EFF}
 .cttl{padding:12px 14px 5px;font-family:'IBM Plex Mono',monospace;font-size:.6rem;letter-spacing:2px;color:#4A6080;text-transform:uppercase}
-.pcard{margin:0 10px 8px;background:#111820;border:1px solid #1A2230;border-radius:12px;padding:11px;display:flex;align-items:center;gap:10px;transition:all .2s}
+.pcard{margin:0 10px 8px;background:#111820;border:1px solid #1A2230;border-radius:12px;overflow:hidden;display:flex;align-items:center;gap:10px;transition:all .2s}
+.pcard-img{width:64px;height:64px;border-radius:10px;object-fit:cover;flex-shrink:0;background:#1A2230}
 .pcard.hi{border-color:rgba(0,255,136,.4);background:rgba(0,255,136,.03)}
 .pem{font-size:2rem;flex-shrink:0}
 .pinf{flex:1;min-width:0}
@@ -190,6 +191,7 @@ html,body{height:100%;background:#060810;font-family:'Outfit',sans-serif;overscr
   <div class="rsub">PANCHERÍA · Desde 1996</div>
     
     <div class="qrbox">&#9638;</div>
+    <img src="https://fwovflsaghnutysjyaus.supabase.co/storage/v1/object/public/fotos/el-porteno/porteno.jpg" style="width:100%;border-radius:16px;height:140px;object-fit:cover;margin-top:4px" alt="El Porteño">
     <div class="pbanner"><h3>&#127873; 10% de descuento</h3><p>Primera visita via QR</p></div>
     <button class="btn-g" style="margin:0;width:100%" onclick="tap(event,()=>goTo(1))">Ver carta &#8594;</button>
     <button class="btn-d" style="margin:0;width:100%">Solo consultar carta</button>
@@ -210,18 +212,18 @@ html,body{height:100%;background:#060810;font-family:'Outfit',sans-serif;overscr
   </div>
   <div class="cttl">PANCHOS DEL MUNDO</div>
   <div class="pcard hi" id="pc1">
-    <span class="pem">&#127462;&#127479;</span>
+    <img class="pcard-img" src="https://fwovflsaghnutysjyaus.supabase.co/storage/v1/object/public/fotos/el-porteno/porteno.jpg" alt="Porteño">
     <div class="pinf"><div class="pnm">Porte&#241;o</div><div class="pds">Salsa roquefort &#183; Tomate &#183; Salsa golf &#183; Papas pay</div><div class="ppr">$ 5.800</div></div>
     <button class="abtn" id="ab1" onclick="addIt(event,'ab1','pc1',5800)">+</button>
   </div>
   <div class="pcard" id="pc2">
-    <span class="pem">&#127474;&#127485;</span>
+    <img class="pcard-img" src="https://fwovflsaghnutysjyaus.supabase.co/storage/v1/object/public/fotos/el-porteno/mexicano.jpg" alt="Mexicano">
     <div class="pinf"><div class="pnm">Mexicano &#127798;</div><div class="pds">Cebolla &#183; Salsa newman&#39;s &#183; Tabasco &#183; Jalape&#241;os</div><div class="ppr">$ 5.300</div></div>
     <button class="abtn" id="ab2" onclick="addIt(event,'ab2','pc2',5300)">+</button>
   </div>
   <div class="cttl">BEBIDAS</div>
   <div class="pcard" id="pc3">
-    <span class="pem">&#127866;</span>
+    <img class="pcard-img" src="https://fwovflsaghnutysjyaus.supabase.co/storage/v1/object/public/fotos/el-porteno/quilmes_473ml_.jpg" alt="Quilmes">
     <div class="pinf"><div class="pnm">Quilmes 473ml</div><div class="pds">Lata fr&#237;a</div><div class="ppr">$ 2.800</div></div>
     <button class="abtn" id="ab3" onclick="addIt(event,'ab3','pc3',2800)">+</button>
   </div>
@@ -452,12 +454,12 @@ html,body{height:100%;background:#060810;font-family:'Outfit',sans-serif;overscr
   </div>
   <div class="section-hdr">PRODUCTOS</div>
   <div class="pos-grid">
-    <div class="pos-item" onclick="posAdd(event,'Muzzarella',3200)"><span class="pos-em">&#127829;</span><div class="pos-nm">Muzzarella</div><div class="pos-pr">$3.200</div></div>
-    <div class="pos-item" onclick="posAdd(event,'Especial',4100)"><span class="pos-em">&#127829;</span><div class="pos-nm">Especial</div><div class="pos-pr">$4.100</div></div>
-    <div class="pos-item" onclick="posAdd(event,'Coca-Cola',900)"><span class="pos-em">&#129380;</span><div class="pos-nm">Coca-Cola</div><div class="pos-pr">$900</div></div>
-    <div class="pos-item" onclick="posAdd(event,'Fernet',1800)"><span class="pos-em">&#127863;</span><div class="pos-nm">Fernet</div><div class="pos-pr">$1.800</div></div>
-    <div class="pos-item" onclick="posAdd(event,'Tiramisú',2200)"><span class="pos-em">&#127856;</span><div class="pos-nm">Tiramisú</div><div class="pos-pr">$2.200</div></div>
-    <div class="pos-item" onclick="posAdd(event,'Agua',600)"><span class="pos-em">&#128167;</span><div class="pos-nm">Agua</div><div class="pos-pr">$600</div></div>
+    <div class="pos-item" onclick="posAdd(event,'Porteño',5800)"><img src="https://fwovflsaghnutysjyaus.supabase.co/storage/v1/object/public/fotos/el-porteno/porteno.jpg" style="width:100%;height:52px;object-fit:cover;border-radius:7px;display:block;margin-bottom:4px"><div class="pos-nm">Porteño</div><div class="pos-pr">$5.800</div></div>
+    <div class="pos-item" onclick="posAdd(event,'Mexicano',5300)"><img src="https://fwovflsaghnutysjyaus.supabase.co/storage/v1/object/public/fotos/el-porteno/mexicano.jpg" style="width:100%;height:52px;object-fit:cover;border-radius:7px;display:block;margin-bottom:4px"><div class="pos-nm">Mexicano</div><div class="pos-pr">$5.300</div></div>
+    <div class="pos-item" onclick="posAdd(event,'Quilmes',2800)"><img src="https://fwovflsaghnutysjyaus.supabase.co/storage/v1/object/public/fotos/el-porteno/quilmes_473ml_.jpg" style="width:100%;height:52px;object-fit:cover;border-radius:7px;display:block;margin-bottom:4px"><div class="pos-nm">Quilmes</div><div class="pos-pr">$2.800</div></div>
+    <div class="pos-item" onclick="posAdd(event,'Coca-Cola',2200)"><img src="https://fwovflsaghnutysjyaus.supabase.co/storage/v1/object/public/fotos/el-porteno/coca_cola_500ml_.jpg" style="width:100%;height:52px;object-fit:cover;border-radius:7px;display:block;margin-bottom:4px"><div class="pos-nm">Coca-Cola</div><div class="pos-pr">$2.200</div></div>
+    <div class="pos-item" onclick="posAdd(event,'Lomito',6900)"><img src="https://fwovflsaghnutysjyaus.supabase.co/storage/v1/object/public/fotos/el-porteno/lomito.jpg" style="width:100%;height:52px;object-fit:cover;border-radius:7px;display:block;margin-bottom:4px"><div class="pos-nm">Lomito</div><div class="pos-pr">$6.900</div></div>
+    <div class="pos-item" onclick="posAdd(event,'Heineken',3200)"><img src="https://fwovflsaghnutysjyaus.supabase.co/storage/v1/object/public/fotos/el-porteno/heineken_330ml_.jpg" style="width:100%;height:52px;object-fit:cover;border-radius:7px;display:block;margin-bottom:4px"><div class="pos-nm">Heineken</div><div class="pos-pr">$3.200</div></div>
   </div>
   <div class="section-hdr">TICKET</div>
   <div class="caja-ticket" id="posTicket">
