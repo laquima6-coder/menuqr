@@ -284,6 +284,19 @@ const GS = () => (
       .admin-ocard-mesa { font-size: 24px !important; }
       .admin-ocard-item { font-size: 15px !important; line-height: 2.2 !important; }
       .admin-nota { font-size: 13px !important; padding: 10px 16px !important; border-radius: 10px !important; }
+      /* Carta tab — 2-column grid + bigger elements */
+      .admin-carta-list { display: grid !important; grid-template-columns: repeat(2, 1fr) !important; gap: 0 !important; border-radius: 16px !important; overflow: hidden !important; }
+      .admin-carta-item { border-bottom: 1px solid var(--abr) !important; }
+      .admin-carta-row { padding: 16px 20px !important; gap: 16px !important; }
+      .admin-carta-img { width: 54px !important; height: 54px !important; border-radius: 10px !important; }
+      .admin-carta-name { font-size: 16px !important; }
+      .admin-carta-price { font-size: 14px !important; margin-top: 4px !important; }
+    }
+    @media (min-width: 1400px) {
+      .admin-carta-list { grid-template-columns: repeat(3, 1fr) !important; }
+      .admin-carta-img { width: 64px !important; height: 64px !important; }
+      .admin-carta-name { font-size: 18px !important; }
+      .admin-carta-price { font-size: 16px !important; }
     }
   `}</style>
 );
@@ -4875,20 +4888,20 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
       const activeColor = p.active ? (p.sin_stock ? "var(--aam)" : "var(--ag)") : "var(--am)";
       const glowColor   = p.active ? (p.sin_stock ? "#FFB020" : "#00FF88") : "#4A5A6A";
       return (
-        <div style={{
+        <div className="admin-carta-item" style={{
           borderBottom: i < total-1 ? "1px solid var(--abr)" : "none",
           background: open ? `${glowColor}07` : "transparent",
           transition:"background .2s",
           boxShadow: open ? `inset 3px 0 0 ${glowColor}` : "none",
         }}>
           {/* Fila principal — click para expandir */}
-          <div onClick={()=>setOpen(v=>!v)} style={{
+          <div className="admin-carta-row" onClick={()=>setOpen(v=>!v)} style={{
             display:"flex",alignItems:"center",gap:12,
             padding:"13px 16px",cursor:"pointer",userSelect:"none",
             opacity:p.active?1:.5,transition:"opacity .3s",
           }}>
             {p.foto_url ? (
-              <img src={p.foto_url} alt={p.name}
+              <img className="admin-carta-img" src={p.foto_url} alt={p.name}
                 style={{width:40,height:40,borderRadius:8,objectFit:"cover",flexShrink:0}}
                 onError={e=>{e.target.style.display="none";}}/>
             ) : (
@@ -4896,7 +4909,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
             )}
             <Dot color={activeColor} pulse={p.active&&!p.sin_stock}/>
             <div style={{flex:1,minWidth:0}}>
-              <p style={{fontFamily:"'Outfit',sans-serif",fontWeight:600,
+              <p className="admin-carta-name" style={{fontFamily:"'Outfit',sans-serif",fontWeight:600,
                 fontSize:14,color:"var(--abri)",lineHeight:1.2}}>{p.name}
                 {p.sin_stock && (
                   <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,
@@ -4907,7 +4920,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
                   </span>
                 )}
               </p>
-              <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:11,
+              <p className="admin-carta-price" style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:11,
                 color:"var(--ag)",marginTop:2}}>$ {fmt(p.price)}</p>
             </div>
             <span style={{
@@ -5000,7 +5013,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
             );
           })}
         </div>
-        <div style={{background:"var(--ac)",border:"1px solid var(--abr)",
+        <div className="admin-carta-list" style={{background:"var(--ac)",border:"1px solid var(--abr)",
           borderRadius:16,overflow:"hidden"}}>
           {visProds.length===0 && (
             <div style={{padding:"30px",textAlign:"center",color:"var(--am)"}}>
