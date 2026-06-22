@@ -14,7 +14,14 @@ export default function MenuPublico({ vitrina = false }) {
 
   useEffect(() => {
     load()
-  }, [slug])
+  }, [slug, mesa])
+
+  // Refresh when tab regains focus (admin may have updated products)
+  useEffect(() => {
+    const onVisible = () => { if (document.visibilityState === 'visible') load() }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
+  }, [slug, mesa])
 
   async function load() {
     setLoading(true)

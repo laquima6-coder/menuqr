@@ -188,6 +188,64 @@ const GS = () => (
       }
       .admin-topbar { position: sticky !important; top: 0 !important; }
     }
+
+    /* ── PUBLIC MENU — RESPONSIVE DESKTOP / TABLET ────────── */
+    @media (min-width: 768px) {
+      /* Outer wrapper: remove 430px cap */
+      .mpo { max-width: none !important; width: 100% !important; }
+      /* Sidebar: expand from 74px to 180px with text visible */
+      .msr { width: 180px !important; min-width: 180px !important; }
+      .msr-name { font-size: 9px !important; -webkit-line-clamp: 3 !important; }
+      .msr-catbtn {
+        flex-direction: row !important;
+        align-items: center !important;
+        gap: 8px !important;
+        padding: 10px 14px !important;
+        text-align: left !important;
+        justify-content: flex-start !important;
+      }
+      .msr-catemoji { font-size: 18px !important; }
+      .msr-catlabel {
+        font-size: 11px !important;
+        white-space: normal !important;
+        overflow: visible !important;
+        text-overflow: unset !important;
+        text-align: left !important;
+        max-width: none !important;
+      }
+      /* Main content: bigger header */
+      .mhd { padding: 28px 32px 20px !important; }
+      .mhd-title { font-size: 30px !important; }
+      .mhd-desc { font-size: 13px !important; color: #888 !important; }
+      /* Category section header */
+      .mcat-hdr-label { font-size: 13px !important; letter-spacing: 2px !important; }
+      /* Product grid: auto-fill with min 170px columns */
+      .mpg { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)) !important; gap: 12px !important; padding: 0 16px 16px !important; }
+      /* Product card text */
+      .mpc-name { font-size: 14px !important; line-height: 1.3 !important; margin-bottom: 4px !important; }
+      .mpc-desc { font-size: 11px !important; color: #666 !important; -webkit-line-clamp: 3 !important; }
+      .mpc-price { font-size: 16px !important; }
+      .mpc-add { width: 30px !important; height: 30px !important; font-size: 20px !important; border-radius: 8px !important; }
+    }
+    @media (min-width: 1100px) {
+      .msr { width: 220px !important; min-width: 220px !important; }
+      .mpg { grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)) !important; gap: 16px !important; }
+      .mhd-title { font-size: 38px !important; }
+      .mpc-name { font-size: 16px !important; }
+      .mpc-desc { font-size: 12px !important; }
+      .mpc-price { font-size: 19px !important; }
+      .mpc-add { width: 34px !important; height: 34px !important; font-size: 22px !important; }
+    }
+    /* Cart view: wider on desktop */
+    @media (min-width: 768px) {
+      .cv { max-width: 700px !important; margin: 0 auto !important; }
+    }
+    /* Admin orders: bigger on desktop */
+    @media (min-width: 900px) {
+      .admin-ocard-mesa { font-size: 24px !important; }
+      .admin-ocard-item { font-size: 15px !important; line-height: 2.2 !important; }
+      .admin-nota { font-size: 13px !important; padding: 10px 16px !important; border-radius: 10px !important; }
+    }
   `}</style>
 );
 
@@ -1085,7 +1143,7 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
 
   /* ── CART */
   if(view==="cart") return (
-    <div style={{maxWidth:430,margin:"0 auto",minHeight:"100vh",
+    <div className="cv" style={{maxWidth:430,margin:"0 auto",minHeight:"100vh",
       background:"var(--cb)",paddingBottom:220}}>
       <GS/>
       {/* Header */}
@@ -1371,15 +1429,15 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
 
   /* ── MENU VIEW */
   return (
-    <div style={{maxWidth:430,margin:"0 auto",minHeight:"100vh",background:"#0A0806",display:"flex",position:"relative",overflow:"hidden"}}>
+    <div className="mpo" style={{maxWidth:430,margin:"0 auto",minHeight:"100vh",background:"#0A0806",display:"flex",position:"relative",overflow:"hidden"}}>
       <GS/>
       {/* ── MAIN CONTENT ── */}
       <div style={{flex:1,overflowX:"hidden",overflowY:"auto",maxHeight:"100vh"}}>
         {/* Header */}
-        <div style={{background:"linear-gradient(135deg,#1A0800 0%,#0D0D0D 100%)",padding:"14px 10px 12px",textAlign:"center",borderBottom:"1px solid #1A1A1A"}}>
+        <div className="mhd" style={{background:"linear-gradient(135deg,#1A0800 0%,#0D0D0D 100%)",padding:"14px 10px 12px",textAlign:"center",borderBottom:"1px solid #1A1A1A"}}>
           <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:7,color:"#3A2A10",letterSpacing:2,textTransform:"uppercase",marginBottom:3}}>{T("welcome")}</div>
-          <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:900,color:"#FFF",lineHeight:1.1,marginBottom:2}}>{local.nombre}</div>
-          {local.descripcion&&<div style={{fontFamily:"'DM Sans',sans-serif",fontSize:9,color:"#444",lineHeight:1.3,marginTop:2}}>{local.descripcion}</div>}
+          <div className="mhd-title" style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:900,color:"#FFF",lineHeight:1.1,marginBottom:2}}>{local.nombre}</div>
+          {local.descripcion&&<div className="mhd-desc" style={{fontFamily:"'DM Sans',sans-serif",fontSize:9,color:"#444",lineHeight:1.3,marginTop:2}}>{local.descripcion}</div>}
           <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,color:"#2A2A2A",marginTop:4}}>{local.mesa?`Mesa ${local.mesa} · `:""}{nowStr()}</div>
         </div>
         {/* Happy Hour banner — isolated component with own timer */}
@@ -1398,13 +1456,13 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
                 <div style={{flex:1,height:1,background:"linear-gradient(to right,transparent,#1E1E1E)"}}/>
                 <div style={{display:"flex",alignItems:"center",gap:4,whiteSpace:"nowrap"}}>
                   <span style={{color:ac,fontSize:8}}>◆</span>
-                  <span style={{fontFamily:"'Outfit',sans-serif",fontSize:9,fontWeight:800,color:"#FFF",letterSpacing:1.5,textTransform:"uppercase"}}>{cat.icon} {(cat.label||"").toUpperCase()}</span>
+                  <span className="mcat-hdr-label" style={{fontFamily:"'Outfit',sans-serif",fontSize:9,fontWeight:800,color:"#FFF",letterSpacing:1.5,textTransform:"uppercase"}}>{cat.icon} {(cat.label||"").toUpperCase()}</span>
                   <span style={{color:ac,fontSize:8}}>◆</span>
                 </div>
                 <div style={{flex:1,height:1,background:"linear-gradient(to left,transparent,#1E1E1E)"}}/>
               </div>
               {/* 3-col grid */}
-              <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:5,padding:"0 5px 5px"}}>
+              <div className="mpg" style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:5,padding:"0 5px 5px"}}>
                 {catProds.map(item=>{
                   const inCart=cart[item.id]?.qty||0;
                   const disc=item.orig?Math.round((1-item.price/item.orig)*100):null;
@@ -1433,19 +1491,19 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
                       {/* Product info */}
                       <div style={{padding:"5px 5px 6px",flex:1,display:"flex",flexDirection:"column",justifyContent:"space-between"}}>
                         <div>
-                          <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:9,fontWeight:700,color:"#EEE",lineHeight:1.2,marginBottom:2}}>{item.name}</div>
-                          {item.desc&&<div style={{fontFamily:"'DM Sans',sans-serif",fontSize:7.5,color:"#333",lineHeight:1.3,display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",overflow:"hidden"}}>{item.desc}</div>}
+                          <div className="mpc-name" style={{fontFamily:"'DM Sans',sans-serif",fontSize:9,fontWeight:700,color:"#EEE",lineHeight:1.2,marginBottom:2}}>{item.name}</div>
+                          {item.desc&&<div className="mpc-desc" style={{fontFamily:"'DM Sans',sans-serif",fontSize:7.5,color:"#333",lineHeight:1.3,display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",overflow:"hidden"}}>{item.desc}</div>}
                         </div>
                         <div style={{marginTop:4}}>
                           <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end"}}>
                             <div>
-                              <div style={{fontFamily:"'Outfit',sans-serif",fontSize:11,fontWeight:800,color:ac,lineHeight:1}}>$ {fmt(item.price)}</div>
+                              <div className="mpc-price" style={{fontFamily:"'Outfit',sans-serif",fontSize:11,fontWeight:800,color:ac,lineHeight:1}}>$ {fmt(item.price)}</div>
                               {item.orig&&<div style={{fontFamily:"'DM Sans',sans-serif",fontSize:7,color:"#2A2A2A",textDecoration:"line-through"}}>$ {fmt(item.orig)}</div>}
                             </div>
                             {!vitrina&&(item.sin_stock?(
                               <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:6,fontWeight:700,color:"#444",background:"#1A1A1A",border:"1px solid #222",borderRadius:3,padding:"1px 3px"}}>Agotado</span>
                             ):inCart===0?(
-                              <button onClick={()=>add(item)} className="pr" style={{width:22,height:22,borderRadius:6,background:ac,border:"none",color:"#0A0806",fontSize:17,fontWeight:900,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,touchAction:"manipulation",lineHeight:1}}>+</button>
+                              <button onClick={()=>add(item)} className="pr mpc-add" style={{width:22,height:22,borderRadius:6,background:ac,border:"none",color:"#0A0806",fontSize:17,fontWeight:900,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,touchAction:"manipulation",lineHeight:1}}>+</button>
                             ):(
                               <div style={{display:"flex",alignItems:"center",gap:2,flexShrink:0}}>
                                 <button onClick={()=>rem(item.id)} className="pr" style={{width:19,height:19,borderRadius:5,background:"#1E1E1E",border:"1px solid #2A2A2A",color:"#AAA",fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",padding:0,touchAction:"manipulation",lineHeight:1}}>−</button>
@@ -1503,7 +1561,7 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
         </div>
       )}
       {/* ── SIDEBAR ── */}
-      <div style={{width:74,flexShrink:0,background:"#0C0C0C",borderLeft:"1px solid #1C1C1C",position:"sticky",top:0,height:"100vh",overflowY:"auto",display:"flex",flexDirection:"column",alignItems:"center",zIndex:20,scrollbarWidth:"none"}}>
+      <div className="msr" style={{width:74,flexShrink:0,background:"#0C0C0C",borderLeft:"1px solid #1C1C1C",position:"sticky",top:0,height:"100vh",overflowY:"auto",display:"flex",flexDirection:"column",alignItems:"center",zIndex:20,scrollbarWidth:"none"}}>
         {/* Logo + Name */}
         <div style={{width:"100%",padding:"10px 4px 8px",borderBottom:"1px solid #1C1C1C",textAlign:"center"}}>
           {local.logo_url?(
@@ -1511,19 +1569,19 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
           ):(
             <div style={{width:44,height:44,borderRadius:"50%",background:"linear-gradient(135deg,#1A0D00,#2A1A00)",border:"2px solid #C9A84C",margin:"0 auto 4px",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}>{local.emoji||"🍽️"}</div>
           )}
-          <div style={{fontFamily:"'Outfit',sans-serif",fontSize:7,color:"#C9A84C",fontWeight:800,textTransform:"uppercase",letterSpacing:.5,lineHeight:1.2,padding:"0 3px",overflow:"hidden",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical"}}>{(local.nombre||"").toUpperCase()}</div>
+          <div className="msr-name" style={{fontFamily:"'Outfit',sans-serif",fontSize:7,color:"#C9A84C",fontWeight:800,textTransform:"uppercase",letterSpacing:.5,lineHeight:1.2,padding:"0 3px",overflow:"hidden",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical"}}>{(local.nombre||"").toUpperCase()}</div>
         </div>
         {/* Category Nav */}
         <div style={{width:"100%",flex:1,padding:"4px 0"}}>
           {activeCats.map(cat=>{
             const isAct=activeCat===cat.id;
             return(
-              <button key={cat.id} onClick={()=>{setAC(cat.id);document.getElementById(`cat-${cat.id}`)?.scrollIntoView({behavior:"smooth",block:"start"});}} style={{
+              <button key={cat.id} onClick={()=>{setAC(cat.id);document.getElementById(`cat-${cat.id}`)?.scrollIntoView({behavior:"smooth",block:"start"});}} className="msr-catbtn" style={{
                 width:"100%",padding:"8px 2px",background:isAct?"rgba(201,168,76,.1)":"none",
                 border:"none",borderLeft:`2px solid ${isAct?"#C9A84C":"transparent"}`,
                 cursor:"pointer",textAlign:"center",display:"flex",flexDirection:"column",alignItems:"center",gap:2,transition:"all .15s"}}>
-                <span style={{fontSize:18,lineHeight:1}}>{cat.icon}</span>
-                <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:7.5,fontWeight:700,color:isAct?"#C9A84C":"#383838",lineHeight:1.2,maxWidth:68,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",textTransform:"uppercase",letterSpacing:.3}}>{cat.label}</span>
+                <span className="msr-catemoji" style={{fontSize:18,lineHeight:1}}>{cat.icon}</span>
+                <span className="msr-catlabel" style={{fontFamily:"'DM Sans',sans-serif",fontSize:7.5,fontWeight:700,color:isAct?"#C9A84C":"#383838",lineHeight:1.2,maxWidth:68,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",textTransform:"uppercase",letterSpacing:.3}}>{cat.label}</span>
               </button>
             );
           })}
@@ -3419,8 +3477,8 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
     const mapPedido = p => ({
       id:p.id, table:p.mesa_numero,
       time:new Date(p.created_at).toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"}),
-      status:p.status, items:(p.pedido_items||[]).map(i=>({name:i.nombre,qty:i.cantidad})),
-      total:p.total, pay:p.metodo_pago||"", tip:p.propina||0,
+      status:p.status, items:(p.pedido_items||[]).map(i=>({name:i.nombre,qty:i.cantidad,price:i.precio||0})),
+      total:p.total, pay:p.metodo_pago||"", tip:p.propina||0, nota:p.nota||null,
     });
 
     // Cargar pedidos de hoy
@@ -4344,6 +4402,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
         <div class="line"></div>
         ${o.items.map(it=>`<div class="item"><span class="qty">${it.qty}×</span><span style="flex:1;padding-left:8px">${it.name}</span></div>`).join('')}
         <div class="line"></div>
+        ${o.nota?`<div style="padding:4px 0;font-size:10px"><b>NOTA:</b> ${o.nota}</div><div class="line"></div>`:''}
         <div class="row"><span class="b">TOTAL</span><span class="total">$${fmt(o.total)}</span></div>
         ${o.tip>0?`<div class="row"><span>Propina</span><span>+ $${fmt(o.tip)}</span></div>`:''}
         <div class="line"></div>
@@ -4379,7 +4438,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
             justifyContent:"space-between",alignItems:"flex-start",
             background:`${s.color}${isClosed?"04":"09"}`}}>
             <div>
-              <span style={{fontFamily:"'IBM Plex Mono',monospace",fontWeight:700,
+              <span className="admin-ocard-mesa" style={{fontFamily:"'IBM Plex Mono',monospace",fontWeight:700,
                 fontSize:isClosed?15:20,color:s.color,display:"block",lineHeight:1}}>
                 {mesaLabel}
               </span>
@@ -4423,7 +4482,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
               o.items.map((it,i)=>(
                 <div key={i} style={{display:"flex",justifyContent:"space-between",
                   alignItems:"baseline",paddingBottom:2}}>
-                  <p style={{fontFamily:"'IBM Plex Mono',monospace",
+                  <p className="admin-ocard-item" style={{fontFamily:"'IBM Plex Mono',monospace",
                     fontSize:isClosed?11:13,color:"var(--at)",lineHeight:1.9}}>
                     <span style={{color:s.color,fontWeight:700,marginRight:5}}>{it.qty}×</span>
                     {it.name}
@@ -4438,6 +4497,14 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
               ))
             )}
           </div>
+
+          {/* ── Nota / Observación */}
+          {o.nota && (
+            <div className="admin-nota" style={{padding:"6px 14px 8px",borderTop:`1px solid ${s.color}15`,background:`${s.color}08`}}>
+              <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:s.color,letterSpacing:1,textTransform:"uppercase",marginBottom:3}}>📝 Observación</p>
+              <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"var(--at)",lineHeight:1.5}}>{o.nota}</p>
+            </div>
+          )}
 
           {/* ── Pago */}
           {(o.pay||o.tip>0) && (
