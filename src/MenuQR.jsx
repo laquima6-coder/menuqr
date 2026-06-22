@@ -82,12 +82,12 @@ const GS = () => (
     input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none }
 
     /* ── DESKTOP LAYOUT ───────────────────── */
-    /* Zoom the entire wrap so everything scales up proportionally */
-    @media (min-width: 900px) {
+    /* Desktop: sidebar vertical on right, content fills left. Zoom entire wrap. */
+    @media (min-width: 700px) {
       .admin-wrap {
-        zoom: 1.35;
-        width: calc(100vw / 1.35) !important;
-        height: calc(100vh / 1.35) !important;
+        zoom: 1.3;
+        width: calc(100vw / 1.3) !important;
+        height: calc(100vh / 1.3) !important;
         min-height: 0 !important;
         display: flex !important;
         flex-direction: row !important;
@@ -99,8 +99,8 @@ const GS = () => (
       .admin-sidebar {
         display: flex !important;
         flex-direction: column;
-        width: 220px;
-        min-width: 220px;
+        width: 200px;
+        min-width: 200px;
         height: 100%;
         background: var(--as);
         border-left: 1px solid var(--abr);
@@ -128,25 +128,28 @@ const GS = () => (
         overflow-x: hidden;
         padding-bottom: 24px !important;
       }
-      .admin-bottomnav {
-        display: none !important;
+      .admin-bottomnav { display: none !important; }
+      .admin-sidebar-nav { display: flex !important; }
+      .admin-sidebar-logo { display: flex !important; }
+    }
+    @media (min-width: 1100px) {
+      .admin-wrap {
+        zoom: 1.45;
+        width: calc(100vw / 1.45) !important;
+        height: calc(100vh / 1.45) !important;
       }
-      .admin-sidebar-nav {
-        display: flex !important;
-      }
-      .admin-sidebar-logo {
-        display: flex !important;
-      }
+      .admin-sidebar { width: 215px; min-width: 215px; }
     }
     @media (min-width: 1400px) {
       .admin-wrap {
-        zoom: 1.55;
-        width: calc(100vw / 1.55) !important;
-        height: calc(100vh / 1.55) !important;
+        zoom: 1.6;
+        width: calc(100vw / 1.6) !important;
+        height: calc(100vh / 1.6) !important;
       }
-      .admin-sidebar { width: 240px; min-width: 240px; }
+      .admin-sidebar { width: 230px; min-width: 230px; }
     }
-    @media (max-width: 899px) {
+    /* Mobile: thin icon-only sidebar on right */
+    @media (max-width: 699px) {
       .admin-wrap {
         display: flex !important;
         flex-direction: row !important;
@@ -178,9 +181,7 @@ const GS = () => (
         gap: 3px !important;
         flex-direction: column !important;
       }
-      .admin-sidebar-nav button span:nth-child(2) {
-        display: none !important;
-      }
+      .admin-sidebar-nav button span:nth-child(2) { display: none !important; }
       .admin-sidebar-logo { display: none !important; }
       .admin-bottomnav { display: none !important; }
       .admin-main {
@@ -280,7 +281,7 @@ const GS = () => (
       .cv { max-width: 700px !important; margin: 0 auto !important; }
     }
     /* Admin orders: bigger on desktop */
-    @media (min-width: 900px) {
+    @media (min-width: 700px) {
       .admin-ocard-mesa { font-size: 24px !important; }
       .admin-ocard-item { font-size: 15px !important; line-height: 2.2 !important; }
       .admin-nota { font-size: 13px !important; padding: 10px 16px !important; border-radius: 10px !important; }
