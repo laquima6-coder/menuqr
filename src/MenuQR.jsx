@@ -3364,6 +3364,11 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
   const [cajaOpenCat, setCajaOpenCat]   = useState(null);
   const [cajaLoading, setCajaLoading]   = useState(false);
   const [editPayModal, setEditPayModal] = useState(null); // {id, pay} pedido cerrado a editar
+  const [cajaMov, setCajaMov]           = useState([]);    // movimientos manuales de caja
+  const [showMovModal, setShowMovModal] = useState(false);
+  const [movTipo, setMovTipo]           = useState("egreso");
+  const [movMonto, setMovMonto]         = useState("");
+  const [movDesc, setMovDesc]           = useState("");
 
   const vrTotal    = Object.values(vrCart).reduce((s,i)=>s+i.price*i.qty,0);
   const cajaTotal  = Object.values(cajaCart).reduce((s,i)=>s+i.price*i.qty,0);
@@ -3797,7 +3802,10 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
     const ta=t.arqueoFinal
       ? Object.entries(t.arqueoFinal).reduce((s,[val,q])=>s+(Number(val)*Number(q||0)),0)
       : null;
-    const diff = ta!==null ? ta-(tv+t.fondoApertura) : null;
+    const totalIngresos = cajaMov.filter(m=>m.tipo==="ingreso").reduce((s,m)=>s+m.monto,0);
+    const totalEgresos  = cajaMov.filter(m=>m.tipo==="egreso").reduce((s,m)=>s+m.monto,0);
+    const efectivoEsperado = (vt.efectivo||0) + t.fondoApertura + totalIngresos - totalEgresos;
+    const diff = ta!==null ? ta-efectivoEsperado : null;
     const isZ = tipo==="Z";
     return (
       <AdminModal onClose={onClose}>
@@ -3836,6 +3844,23 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
                 color:"var(--abri)",fontWeight:600}}>${fmt(v)}</span>
             </div>
           ))}
+          {/* Movimientos de caja */}
+          {cajaMov.length>0 && (<>
+            <div style={{height:1,background:"repeating-linear-gradient(90deg,var(--abr),var(--abr) 4px,transparent 4px,transparent 8px)",margin:"6px 0"}}/>
+            <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,color:"var(--am)",letterSpacing:1.5,marginBottom:4}}>MOVIMIENTOS DE CAJA</p>
+            {cajaMov.map(m=>(
+              <div key={m.id} style={{display:"flex",justifyContent:"space-between",padding:"4px 0",borderBottom:"1px dashed var(--abr)"}}>
+                <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:"var(--ad)",flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:170}}>
+                  {m.tipo==="ingreso"?"↑":"↓"} {m.desc}
+                </span>
+                <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,fontWeight:600,flexShrink:0,color:m.tipo==="ingreso"?"var(--ag)":"var(--ar)"}}>
+                  {m.tipo==="ingreso"?"+":"-"}${fmt(m.monto)}
+                </span>
+              </div>
+            ))}
+            {totalIngresos>0 && <div style={{display:"flex",justifyContent:"space-between",padding:"3px 0"}}><span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:"var(--ag)"}}>Subtotal ingresos</span><span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:"var(--ag)"}}>+${fmt(totalIngresos)}</span></div>}
+            {totalEgresos>0 && <div style={{display:"flex",justifyContent:"space-between",padding:"3px 0"}}><span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:"var(--ar)"}}>Subtotal egresos</span><span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:"var(--ar)"}}>-${fmt(totalEgresos)}</span></div>}
+          </>)}
           <div style={{display:"flex",justifyContent:"space-between",padding:"10px 0"}}>
             <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:12,
               fontWeight:700,color:"var(--abri)"}}>TOTAL VENTAS</span>
@@ -5036,6 +5061,78 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
   /* ══════════════════════════════════════════
      CAJA TAB
   ══════════════════════════════════════════ */
+  /* ── Modal movimientos de caja ── */
+  const MovModal = () => (
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.75)",zIndex:999,
+      display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+      <div style={{background:"var(--as)",border:"1px solid var(--abr)",
+        borderRadius:18,padding:24,width:"100%",maxWidth:340}}>
+        <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:12,fontWeight:700,
+          color:"var(--abri)",letterSpacing:1.5,marginBottom:16,textAlign:"center"}}>
+          MOVIMIENTO DE CAJA
+        </p>
+        {/* Tipo ingreso/egreso */}
+        <div style={{display:"flex",gap:8,marginBottom:14}}>
+          {["ingreso","egreso"].map(t=>(
+            <button key={t} onClick={()=>setMovTipo(t)} style={{
+              flex:1,padding:"10px",borderRadius:10,cursor:"pointer",
+              fontFamily:"'IBM Plex Mono',monospace",fontSize:10,fontWeight:700,
+              letterSpacing:1,textTransform:"uppercase",
+              background:movTipo===t
+                ?(t==="ingreso"?"rgba(0,255,136,.15)":"rgba(255,59,92,.15)")
+                :"var(--ac)",
+              color:movTipo===t
+                ?(t==="ingreso"?"var(--ag)":"var(--ar)")
+                :"var(--am)",
+              border:`1px solid ${movTipo===t
+                ?(t==="ingreso"?"rgba(0,255,136,.4)":"rgba(255,59,92,.4)")
+                :"var(--abr)"}`}}>
+              {t==="ingreso"?"↑ Ingreso":"↓ Egreso / Gasto"}
+            </button>
+          ))}
+        </div>
+        {/* Monto */}
+        <ALbl>Monto ($)</ALbl>
+        <input type="number" value={movMonto} onChange={e=>setMovMonto(e.target.value)}
+          placeholder="0" autoFocus
+          style={{width:"100%",background:"var(--ab)",border:"1px solid var(--abr)",
+            borderRadius:9,padding:"12px 14px",color:"var(--abri)",
+            fontFamily:"'Outfit',sans-serif",fontSize:22,fontWeight:700,
+            marginBottom:12,boxSizing:"border-box"}}/>
+        {/* Descripción */}
+        <ALbl>Descripción</ALbl>
+        <input value={movDesc} onChange={e=>setMovDesc(e.target.value)}
+          placeholder="Ej: Pago proveedor, retiro efectivo, fondo..."
+          style={{width:"100%",background:"var(--ab)",border:"1px solid var(--abr)",
+            borderRadius:9,padding:"12px 14px",color:"var(--abri)",
+            fontFamily:"'DM Sans',sans-serif",fontSize:13,
+            marginBottom:20,boxSizing:"border-box"}}/>
+        {/* Botones */}
+        <div style={{display:"flex",gap:10}}>
+          <button onClick={()=>{setShowMovModal(false);setMovMonto("");setMovDesc("");}}
+            style={{flex:1,padding:12,borderRadius:10,background:"var(--ac)",
+              border:"1px solid var(--abr)",color:"var(--am)",cursor:"pointer",
+              fontFamily:"'IBM Plex Mono',monospace",fontSize:10}}>CANCELAR</button>
+          <button onClick={()=>{
+            const m=Number(movMonto);
+            if(!m||m<=0){toast("Ingresá un monto válido");return;}
+            const mv={id:Date.now(),tipo:movTipo,monto:m,
+              desc:movDesc.trim()||(movTipo==="ingreso"?"Ingreso manual":"Egreso/Gasto"),
+              hora:nowStr()};
+            setCajaMov(prev=>[...prev,mv]);
+            setShowMovModal(false);setMovMonto("");setMovDesc("");
+            toast(`${movTipo==="ingreso"?"Ingreso":"Egreso"} de $${fmt(m)} registrado ✓`);
+          }} style={{flex:1,padding:12,borderRadius:10,border:"none",cursor:"pointer",
+            fontFamily:"'IBM Plex Mono',monospace",fontSize:10,fontWeight:700,letterSpacing:1,
+            background:movTipo==="ingreso"?"var(--ag)":"var(--ar)",
+            color:movTipo==="ingreso"?"#000":"#fff"}}>
+            ✓ GUARDAR
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
   const CajaTab = () => {
     const plan = local.plan||"free";
     const canCaja = PLAN_LIMITS[plan]?.caja !== false;
@@ -5102,6 +5199,11 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
           {/* X / Z buttons */}
           {turno && (
             <div style={{display:"flex",gap:5,flexShrink:0}}>
+              <button onClick={()=>setShowMovModal(true)} className="pr"
+                style={{background:"rgba(99,102,241,.1)",border:"1px solid rgba(99,102,241,.35)",
+                  borderRadius:7,padding:"5px 10px",cursor:"pointer",
+                  fontFamily:"'IBM Plex Mono',monospace",fontSize:11,fontWeight:800,
+                  color:"rgba(139,92,246,1)"}}>± MOV</button>
               <button onClick={()=>setTkt({tipo:"X",turno:{...turno}})} className="pr"
                 style={{background:"rgba(245,158,11,.08)",border:"1px solid rgba(245,158,11,.3)",
                   borderRadius:7,padding:"5px 10px",cursor:"pointer",
@@ -5481,6 +5583,46 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
                 </div>
               )}
 
+              {/* Movimientos de caja del turno actual */}
+              {cajaMov.length>0 && Object.values(cajaCart).filter(i=>i.qty>0).length===0 && (
+                <div style={{borderTop:"1px solid var(--abr)",padding:"10px 12px"}}>
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
+                    <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,
+                      color:"var(--am)",letterSpacing:1.5,margin:0}}>MOVIMIENTOS</p>
+                    <div style={{display:"flex",gap:10}}>
+                      <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,color:"var(--ag)"}}>
+                        +${fmt(cajaMov.filter(m=>m.tipo==="ingreso").reduce((s,m)=>s+m.monto,0))}
+                      </span>
+                      <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,color:"var(--ar)",marginLeft:8}}>
+                        -${fmt(cajaMov.filter(m=>m.tipo==="egreso").reduce((s,m)=>s+m.monto,0))}
+                      </span>
+                    </div>
+                  </div>
+                  {cajaMov.map((m,i)=>(
+                    <div key={m.id} style={{display:"flex",justifyContent:"space-between",
+                      alignItems:"center",padding:"5px 0",
+                      borderBottom:i<cajaMov.length-1?"1px solid var(--abr)":"none"}}>
+                      <div style={{display:"flex",alignItems:"center",gap:6,minWidth:0}}>
+                        <span style={{fontSize:12,flexShrink:0}}>{m.tipo==="ingreso"?"↑":"↓"}</span>
+                        <div style={{minWidth:0}}>
+                          <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,
+                            color:"var(--abri)",margin:0,
+                            overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",
+                            maxWidth:120}}>{m.desc}</p>
+                          <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,
+                            color:"var(--am)",margin:0}}>{m.hora}</p>
+                        </div>
+                      </div>
+                      <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:11,
+                        fontWeight:700,flexShrink:0,
+                        color:m.tipo==="ingreso"?"var(--ag)":"var(--ar)"}}>
+                        {m.tipo==="ingreso"?"+":"-"}${fmt(m.monto)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
               {/* Exportar CSV */}
               {orders.filter(o=>o.status==="entregado").length>0 && Object.values(cajaCart).filter(i=>i.qty>0).length===0 && (
                 <div style={{padding:"8px 12px",borderTop:"1px solid var(--abr)",flexShrink:0}}>
@@ -5817,6 +5959,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
       background:"var(--ab)",position:"relative"}}>
       <GS/>
       {showVentaRapida && <VentaRapidaModal/>}
+      {showMovModal && <MovModal/>}
 
       {/* DESKTOP SIDEBAR */}
       <div className="admin-sidebar" style={{display:"none"}}>
