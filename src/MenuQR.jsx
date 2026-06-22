@@ -96,8 +96,8 @@ const GS = () => (
       .admin-sidebar {
         display: flex !important;
         flex-direction: column;
-        width: 220px;
-        min-width: 220px;
+        width: 240px;
+        min-width: 240px;
         height: 100vh;
         background: var(--as);
         border-left: 1px solid var(--abr);
@@ -107,6 +107,7 @@ const GS = () => (
         overflow-y: auto;
         z-index: 10;
         order: 2;
+        zoom: 1.25;
       }
       .admin-main {
         flex: 1;
@@ -119,11 +120,14 @@ const GS = () => (
       .admin-topbar {
         position: sticky !important;
         top: 0;
+        zoom: 1.3;
       }
       .admin-content-scroll {
         flex: 1;
         overflow-y: auto;
+        overflow-x: hidden;
         padding-bottom: 24px !important;
+        zoom: 1.3;
       }
       .admin-bottomnav {
         display: none !important;
@@ -134,6 +138,11 @@ const GS = () => (
       .admin-sidebar-logo {
         display: flex !important;
       }
+    }
+    @media (min-width: 1400px) {
+      .admin-sidebar { zoom: 1.4; width: 260px; min-width: 260px; }
+      .admin-topbar  { zoom: 1.45; }
+      .admin-content-scroll { zoom: 1.45; }
     }
     @media (max-width: 899px) {
       .admin-wrap {
