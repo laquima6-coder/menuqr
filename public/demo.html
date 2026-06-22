@@ -186,8 +186,9 @@ html,body{height:100%;background:#060810;font-family:'Outfit',sans-serif;overscr
 <div class="screen" id="s0">
   <div class="vitrina">
     <div style="height:4px"></div>
-    <div class="rname">Los Amigos</div>
-    <div class="rsub">Escane&#225; para ver la carta</div>
+    <div class="rname">El Porteño</div>
+  <div class="rsub">PANCHERÍA · Desde 1996</div>
+    
     <div class="qrbox">&#9638;</div>
     <div class="pbanner"><h3>&#127873; 10% de descuento</h3><p>Primera visita via QR</p></div>
     <button class="btn-g" style="margin:0;width:100%" onclick="tap(event,()=>goTo(1))">Ver carta &#8594;</button>
@@ -198,31 +199,31 @@ html,body{height:100%;background:#060810;font-family:'Outfit',sans-serif;overscr
 <!-- ══ S1: CARTA ══ -->
 <div class="screen" id="s1">
   <div class="mhdr">
-    <div class="mrname">Los Amigos</div>
+    <div class="mrname">El Porteño</div>
     <span class="chip chip-g">&#127873; 10% activo</span>
   </div>
   <div class="cats">
-    <div class="cat active">&#127829; Pizzas</div>
-    <div class="cat">&#129385; Carnes</div>
-    <div class="cat">&#127863; Bebidas</div>
-    <div class="cat">&#127856; Postres</div>
+    <div class="cat active">&#127829; Panchos</div>
+    <div class="cat">&#11088; Especiales</div>
+    <div class="cat">&#127866; Cervezas</div>
+    <div class="cat">&#127861; Gaseosas</div>
   </div>
-  <div class="cttl">PIZZAS</div>
-  <div class="pcard" id="pc1">
-    <span class="pem">&#127829;</span>
-    <div class="pinf"><div class="pnm">Muzzarella</div><div class="pds">Tomate, mozzarella, albahaca</div><div class="ppr">$ 3.200</div></div>
-    <button class="abtn" id="ab1" onclick="addIt(event,'ab1','pc1',3200)">+</button>
+  <div class="cttl">PANCHOS DEL MUNDO</div>
+  <div class="pcard hi" id="pc1">
+    <span class="pem">&#127462;&#127479;</span>
+    <div class="pinf"><div class="pnm">Porte&#241;o</div><div class="pds">Salsa roquefort &#183; Tomate &#183; Salsa golf &#183; Papas pay</div><div class="ppr">$ 5.800</div></div>
+    <button class="abtn" id="ab1" onclick="addIt(event,'ab1','pc1',5800)">+</button>
   </div>
   <div class="pcard" id="pc2">
-    <span class="pem">&#127829;</span>
-    <div class="pinf"><div class="pnm">Especial</div><div class="pds">Jam&#243;n, morrones, aceitunas</div><div class="ppr">$ 4.100</div></div>
-    <button class="abtn" id="ab2" onclick="addIt(event,'ab2','pc2',4100)">+</button>
+    <span class="pem">&#127474;&#127485;</span>
+    <div class="pinf"><div class="pnm">Mexicano &#127798;</div><div class="pds">Cebolla &#183; Salsa newman&#39;s &#183; Tabasco &#183; Jalape&#241;os</div><div class="ppr">$ 5.300</div></div>
+    <button class="abtn" id="ab2" onclick="addIt(event,'ab2','pc2',5300)">+</button>
   </div>
   <div class="cttl">BEBIDAS</div>
   <div class="pcard" id="pc3">
-    <span class="pem">&#129380;</span>
-    <div class="pinf"><div class="pnm">Coca-Cola 500ml</div><div class="pds">Bebida fr&#237;a</div><div class="ppr">$ 900</div></div>
-    <button class="abtn" id="ab3" onclick="addIt(event,'ab3','pc3',900)">+</button>
+    <span class="pem">&#127866;</span>
+    <div class="pinf"><div class="pnm">Quilmes 473ml</div><div class="pds">Lata fr&#237;a</div><div class="ppr">$ 2.800</div></div>
+    <button class="abtn" id="ab3" onclick="addIt(event,'ab3','pc3',2800)">+</button>
   </div>
   <div style="height:65px"></div>
   <div class="cbar" id="cbar" onclick="tap(event,()=>goTo(2))">
@@ -243,11 +244,11 @@ html,body{height:100%;background:#060810;font-family:'Outfit',sans-serif;overscr
   </div>
   <div class="section-hdr">RESUMEN</div>
   <div class="card">
-    <div class="row"><span class="lbl">&#127829; Muzzarella &#215;1</span><span class="val">$3.200</span></div>
-    <div class="row"><span class="lbl">&#127829; Especial &#215;1</span><span class="val">$4.100</span></div>
-    <div class="row"><span class="lbl">&#129380; Coca-Cola &#215;1</span><span class="val">$900</span></div>
-    <div class="row" style="background:rgba(0,204,112,.05)"><span class="lbl" style="color:#00CC70">&#127873; Descuento 10%</span><span class="val green">&#8722; $820</span></div>
-    <div class="row" style="padding:12px 13px"><span class="lbl" style="font-weight:800;color:#EDE0C8;font-size:.88rem">TOTAL</span><span class="val green" style="font-size:1rem">$7.380</span></div>
+    <div class="row"><span class="lbl">&#127462;&#127479; Porte&#241;o &#215;1</span><span class="val">$5.800</span></div>
+    <div class="row"><span class="lbl">&#127474;&#127485; Mexicano &#215;1</span><span class="val">$5.300</span></div>
+    <div class="row"><span class="lbl">&#127866; Quilmes &#215;1</span><span class="val">$2.800</span></div>
+    <div class="row" style="background:rgba(0,204,112,.05)"><span class="lbl" style="color:#00CC70">&#127873; Descuento 10%</span><span class="val green">&#8722; $1.390</span></div>
+    <div class="row" style="padding:12px 13px"><span class="lbl" style="font-weight:800;color:#EDE0C8;font-size:.88rem">TOTAL</span><span class="val green" style="font-size:1rem">$12.510</span></div>
   </div>
   <div class="section-hdr">&#247; DIVIDIR LA CUENTA</div>
   <div class="div-box">
@@ -277,8 +278,8 @@ html,body{height:100%;background:#060810;font-family:'Outfit',sans-serif;overscr
     <div style="font-size:.8rem;color:#4A6080;line-height:1.6">Tu pedido ya est&#225; en cocina.<br>Te avisamos cuando est&#233; listo.</div>
     <div class="card" style="width:100%;text-align:left">
       <div class="row"><span class="lbl">Mesa</span><span class="val">Mesa 4</span></div>
-      <div class="row"><span class="lbl">Total</span><span class="val green">$7.380</span></div>
-      <div class="row"><span class="lbl">Por persona (2)</span><span class="val green">$3.690</span></div>
+      <div class="row"><span class="lbl">Total</span><span class="val green">$12.510</span></div>
+      <div class="row"><span class="lbl">Por persona (2)</span><span class="val green">$6.255</span></div>
       <div class="row"><span class="lbl">Pago</span><span class="val">Efectivo</span></div>
       <div class="row"><span class="lbl">Estado</span><span><span class="chip chip-y">&#9679; NUEVO</span></span></div>
     </div>
@@ -317,7 +318,7 @@ html,body{height:100%;background:#060810;font-family:'Outfit',sans-serif;overscr
 <!-- ══ S5: ADMIN RECIBE SOLICITUD ══ -->
 <div class="screen" id="s5">
   <div class="shdr" style="background:#060810">
-    <div class="stitle">Panel &#183; Los Amigos</div>
+    <div class="stitle">Panel &#183; El Porteño</div>
     <div style="margin-left:auto;background:#ff4444;color:#fff;font-family:'IBM Plex Mono',monospace;font-size:.6rem;padding:2px 7px;border-radius:8px;font-weight:700">2 alertas</div>
   </div>
   <div style="display:flex;background:#060810;border-bottom:1px solid #1A2230">
@@ -344,10 +345,10 @@ html,body{height:100%;background:#060810;font-family:'Outfit',sans-serif;overscr
   <div class="card">
     <div class="row"><div style="font-family:'IBM Plex Mono',monospace;font-size:.8rem;font-weight:700;color:#3D8EFF">Mesa 4</div><span class="chip chip-y">NUEVO</span></div>
     <div class="row" style="flex-direction:column;align-items:flex-start;gap:3px">
-      <div style="font-size:.76rem;color:#B8D0E8">&#215;1 Muzzarella &#183; &#215;1 Especial &#183; &#215;1 Coca-Cola</div>
+      <div style="font-size:.76rem;color:#B8D0E8">&#215;1 Porte&#241;o &#183; &#215;1 Mexicano &#183; &#215;1 Quilmes</div>
       <div style="font-size:.7rem;color:#00CC70">&#127873; Descuento 10% aplicado</div>
     </div>
-    <div class="row"><span style="font-family:'IBM Plex Mono',monospace;font-size:.82rem;font-weight:700;color:#00CC70">$ 7.380</span><button style="padding:6px 12px;border-radius:7px;border:none;background:rgba(255,176,32,.15);color:#FFB020;font-size:.7rem;font-weight:700;cursor:pointer;font-family:'IBM Plex Mono',monospace" onclick="tap(event,()=>goTo(6))">&#8594; COCINA</button></div>
+    <div class="row"><span style="font-family:'IBM Plex Mono',monospace;font-size:.82rem;font-weight:700;color:#00CC70">$ 12.510</span><button style="padding:6px 12px;border-radius:7px;border:none;background:rgba(255,176,32,.15);color:#FFB020;font-size:.7rem;font-weight:700;cursor:pointer;font-family:'IBM Plex Mono',monospace" onclick="tap(event,()=>goTo(6))">&#8594; COCINA</button></div>
   </div>
 </div>
 
@@ -532,7 +533,7 @@ html,body{height:100%;background:#060810;font-family:'Outfit',sans-serif;overscr
 
 <script>
 const STEPS=[
-  {sec:'CLIENTE',col:'#00FF88',bg:'rgba(0,255,136,.1)',border:'rgba(0,255,136,.25)',lbl:'CLIENTE · PASO 1 DE 11',txt:'El cliente llega, escanea el QR de la vitrina y activa el descuento del 10% para su primera visita.',prog:9},
+  {sec:'CLIENTE',col:'#00FF88',bg:'rgba(0,255,136,.1)',border:'rgba(0,255,136,.25)',lbl:'CLIENTE · PASO 1 DE 11',txt:'El cliente llega a El Porteño, escanea el QR de la vitrina y activa el descuento del 10% para su primera visita.',prog:9},
   {sec:'CLIENTE',col:'#00FF88',bg:'rgba(0,255,136,.1)',border:'rgba(0,255,136,.25)',lbl:'CLIENTE · PASO 2 DE 11',txt:'Ve la carta digital por categoría. Agrega productos al carrito — el chip verde confirma el descuento activo.',prog:18},
   {sec:'CLIENTE',col:'#00FF88',bg:'rgba(0,255,136,.1)',border:'rgba(0,255,136,.25)',lbl:'CLIENTE · PASO 3 DE 11',txt:'Al pagar puede dividir la cuenta entre varias personas y elegir la forma de pago (efectivo, MP, tarjeta o mixto).',prog:27},
   {sec:'CLIENTE',col:'#00FF88',bg:'rgba(0,255,136,.1)',border:'rgba(0,255,136,.25)',lbl:'CLIENTE · PASO 4 DE 11',txt:'Pedido enviado a cocina en tiempo real. El cliente ve el resumen con descuento y división aplicados.',prog:36},
@@ -597,7 +598,7 @@ function divChange(d){
   let n=parseInt(document.getElementById('divN').textContent)+d;
   if(n<2)n=2;if(n>10)n=10;
   document.getElementById('divN').textContent=n;
-  const pp=Math.ceil(7380/n);
+  const pp=Math.ceil(12510/n);
   document.getElementById('divPP').textContent='$ '+pp.toLocaleString('es-AR');
   document.getElementById('divSub').textContent='por persona (de '+n+')';
 }
