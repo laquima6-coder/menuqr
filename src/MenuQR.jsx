@@ -82,32 +82,32 @@ const GS = () => (
     input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none }
 
     /* ── DESKTOP LAYOUT ───────────────────── */
+    /* Zoom the entire wrap so everything scales up proportionally */
     @media (min-width: 900px) {
       .admin-wrap {
+        zoom: 1.35;
+        width: calc(100vw / 1.35) !important;
+        height: calc(100vh / 1.35) !important;
+        min-height: 0 !important;
         display: flex !important;
         flex-direction: row !important;
         max-width: none !important;
-        width: 100vw !important;
         margin: 0 !important;
-        height: 100vh;
         overflow: hidden;
         padding-bottom: 0 !important;
       }
       .admin-sidebar {
         display: flex !important;
         flex-direction: column;
-        width: 240px;
-        min-width: 240px;
-        height: 100vh;
+        width: 220px;
+        min-width: 220px;
+        height: 100%;
         background: var(--as);
         border-left: 1px solid var(--abr);
-        position: sticky;
-        top: 0;
         flex-shrink: 0;
         overflow-y: auto;
         z-index: 10;
         order: 2;
-        zoom: 1.25;
       }
       .admin-main {
         flex: 1;
@@ -116,18 +116,17 @@ const GS = () => (
         overflow: hidden;
         min-width: 0;
         order: 1;
+        height: 100%;
       }
       .admin-topbar {
         position: sticky !important;
         top: 0;
-        zoom: 1.3;
       }
       .admin-content-scroll {
         flex: 1;
         overflow-y: auto;
         overflow-x: hidden;
         padding-bottom: 24px !important;
-        zoom: 1.3;
       }
       .admin-bottomnav {
         display: none !important;
@@ -140,9 +139,12 @@ const GS = () => (
       }
     }
     @media (min-width: 1400px) {
-      .admin-sidebar { zoom: 1.4; width: 260px; min-width: 260px; }
-      .admin-topbar  { zoom: 1.45; }
-      .admin-content-scroll { zoom: 1.45; }
+      .admin-wrap {
+        zoom: 1.55;
+        width: calc(100vw / 1.55) !important;
+        height: calc(100vh / 1.55) !important;
+      }
+      .admin-sidebar { width: 240px; min-width: 240px; }
     }
     @media (max-width: 899px) {
       .admin-wrap {
