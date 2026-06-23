@@ -1110,6 +1110,81 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
           </div>
         )}
 
+        {/* Horarios */}
+        {local.horarios && Object.values(local.horarios).some(d=>d.abierto) && (()=>{
+          const DIAS=[{k:"lun",n:"Lun"},{k:"mar",n:"Mar"},{k:"mie",n:"Mié"},
+                      {k:"jue",n:"Jue"},{k:"vie",n:"Vie"},{k:"sab",n:"Sáb"},{k:"dom",n:"Dom"}];
+          const hoyIdx = new Date().getDay();
+          const hoyKey = ["dom","lun","mar","mie","jue","vie","sab"][hoyIdx];
+          const hoyDia = (local.horarios||{})[hoyKey]||{};
+          const abiertaAhora = (()=>{
+            if(!hoyDia.abierto||!hoyDia.desde||!hoyDia.hasta) return false;
+            const now=new Date(), mins=now.getHours()*60+now.getMinutes();
+            const [hd,md]=hoyDia.desde.split(":").map(Number);
+            const [hh,mh]=hoyDia.hasta.split(":").map(Number);
+            return mins>=(hd*60+md) && mins<(hh*60+mh);
+          })();
+          return (
+            <div style={{background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.08)",borderRadius:14,padding:"12px 16px"}}>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
+                <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,color:"#3A3A3A",letterSpacing:2}}>HORARIOS</div>
+                <div style={{background:abiertaAhora?"rgba(0,204,112,.15)":"rgba(255,80,80,.12)",
+                  border:`1px solid ${abiertaAhora?"rgba(0,204,112,.4)":"rgba(255,80,80,.3)"}`,
+                  borderRadius:6,padding:"3px 8px",fontFamily:"'IBM Plex Mono',monospace",fontSize:9,fontWeight:700,
+                  color:abiertaAhora?"#00CC70":"#FF5050",letterSpacing:1}}>
+                  {abiertaAhora?"● ABIERTO":"● CERRADO"}
+                </div>
+              </div>
+              {DIAS.map(d=>{
+                const dia=(local.horarios||{})[d.k]||{};
+                const esHoy=d.k===hoyKey;
+                return (
+                  <div key={d.k} style={{display:"flex",alignItems:"center",gap:8,padding:"5px 0",
+                    borderBottom:"1px solid rgba(255,255,255,.04)",opacity:dia.abierto?1:.4}}>
+                    <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:11,fontWeight:700,
+                      color:esHoy?"#C9A84C":"#5A5A5A",width:28,flexShrink:0}}>{d.n}</span>
+                    {dia.abierto
+                      ? <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:esHoy?"#C8B898":"#4A4A4A"}}>{dia.desde} – {dia.hasta}</span>
+                      : <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"#3A3A3A"}}>Cerrado</span>
+                    }
+                    {esHoy && <span style={{marginLeft:"auto",fontFamily:"'IBM Plex Mono',monospace",fontSize:8,color:"#C9A84C",letterSpacing:1}}>HOY</span>}
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })()}
+
+        {/* WhatsApp pedidos */}
+        {!!local.feat_whatsapp_vitrina && local.whatsapp_vitrina_numero && (local.whatsapp_delivery||local.whatsapp_retiro) && (
+          <div style={{background:"rgba(37,211,102,.06)",border:"1px solid rgba(37,211,102,.25)",borderRadius:14,padding:"14px 16px"}}>
+            <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,color:"#3A3A3A",letterSpacing:2,marginBottom:12}}>PEDIDOS POR WHATSAPP</div>
+            <div style={{display:"flex",flexDirection:"column",gap:8}}>
+              {!!local.whatsapp_delivery && (
+                <a href={`https://wa.me/${local.whatsapp_vitrina_numero}?text=${encodeURIComponent("Hola! Quiero hacer un pedido para DELIVERY 🛵")}`}
+                  target="_blank" rel="noopener noreferrer"
+                  style={{display:"flex",alignItems:"center",justifyContent:"center",gap:10,
+                    background:"#25D366",borderRadius:12,padding:"14px",
+                    fontFamily:"'Outfit',sans-serif",fontSize:15,fontWeight:800,
+                    color:"#fff",textDecoration:"none",letterSpacing:.3}}>
+                  🛵 Pedir con delivery
+                </a>
+              )}
+              {!!local.whatsapp_retiro && (
+                <a href={`https://wa.me/${local.whatsapp_vitrina_numero}?text=${encodeURIComponent("Hola! Quiero hacer un pedido para RETIRAR en el local 🏪")}`}
+                  target="_blank" rel="noopener noreferrer"
+                  style={{display:"flex",alignItems:"center",justifyContent:"center",gap:10,
+                    background:"rgba(37,211,102,.15)",border:"1px solid rgba(37,211,102,.4)",
+                    borderRadius:12,padding:"14px",
+                    fontFamily:"'Outfit',sans-serif",fontSize:15,fontWeight:800,
+                    color:"#25D366",textDecoration:"none",letterSpacing:.3}}>
+                  🏪 Retirar en el local
+                </a>
+              )}
+            </div>
+          </div>
+        )}
+
       </div>
     );
   };
@@ -3106,6 +3181,11 @@ function ConfigTab({local,setLocal,toast}) {
           wifi_pass:   cfgDraft.wifi_pass,
           whatsapp:    cfgDraft.whatsapp,
           whatsapp_msg:cfgDraft.whatsapp_msg,
+          horarios:                local.horarios || {},
+          feat_whatsapp_vitrina:   !!local.feat_whatsapp_vitrina,
+          whatsapp_vitrina_numero: local.whatsapp_vitrina_numero || "",
+          whatsapp_delivery:       !!local.whatsapp_delivery,
+          whatsapp_retiro:         !!local.whatsapp_retiro,
         }
       }).eq("id", local.restauranteId);
       if(error) toast("Error al guardar: "+error.message,"err");
@@ -3243,6 +3323,46 @@ function ConfigTab({local,setLocal,toast}) {
       )}
     </div>
 
+    {/* Horarios */}
+    <div style={{background:"var(--ac)",border:"1px solid var(--abr)",borderRadius:16,overflow:"hidden",marginBottom:12}}>
+      <div style={{padding:"14px 18px 10px"}}><ALbl>Horarios de apertura</ALbl></div>
+      {[
+        {k:"lun",label:"Lunes"},
+        {k:"mar",label:"Martes"},
+        {k:"mie",label:"Miércoles"},
+        {k:"jue",label:"Jueves"},
+        {k:"vie",label:"Viernes"},
+        {k:"sab",label:"Sábado"},
+        {k:"dom",label:"Domingo"},
+      ].map(d=>{
+        const dia = (local.horarios||{})[d.k]||{abierto:false,desde:"09:00",hasta:"23:00"};
+        const setDia = (upd) => setLocal(l=>({...l,horarios:{...(l.horarios||{}),[d.k]:{...dia,...upd}}}));
+        return (
+          <div key={d.k} style={{borderTop:"1px solid var(--abr)",padding:"10px 18px",
+            display:"flex",alignItems:"center",gap:12,flexWrap:"wrap"}}>
+            <div style={{display:"flex",alignItems:"center",gap:8,width:110,flexShrink:0}}>
+              <ToggleA on={dia.abierto} onChange={()=>setDia({abierto:!dia.abierto})}/>
+              <span style={{fontFamily:"'Outfit',sans-serif",fontSize:14,fontWeight:600,
+                color:dia.abierto?"var(--abri)":"var(--ad)"}}>{d.label}</span>
+            </div>
+            {dia.abierto ? (
+              <div style={{display:"flex",alignItems:"center",gap:8,flex:1}}>
+                <input type="time" value={dia.desde} onChange={e=>setDia({desde:e.target.value})}
+                  style={{flex:1,background:"var(--as)",border:"1px solid var(--abr)",borderRadius:8,
+                    padding:"7px 10px",color:"var(--abri)",fontSize:13}}/>
+                <span style={{color:"var(--ad)",fontSize:12}}>a</span>
+                <input type="time" value={dia.hasta} onChange={e=>setDia({hasta:e.target.value})}
+                  style={{flex:1,background:"var(--as)",border:"1px solid var(--abr)",borderRadius:8,
+                    padding:"7px 10px",color:"var(--abri)",fontSize:13}}/>
+              </div>
+            ) : (
+              <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"var(--ad)"}}>Cerrado</span>
+            )}
+          </div>
+        );
+      })}
+    </div>
+
     {/* WiFi */}
     <div style={{background:"var(--ac)",border:"1px solid var(--abr)",borderRadius:16,padding:18,marginBottom:12}}>
       <ALbl>QR WiFi</ALbl>
@@ -3260,6 +3380,43 @@ function ConfigTab({local,setLocal,toast}) {
         placeholder="Mensaje que verá el cliente al escanear el QR de WhatsApp..."
         style={{width:"100%",background:"var(--as)",border:"1px solid var(--abr)",borderRadius:10,
           padding:"11px 14px",color:"var(--abri)",fontSize:14,resize:"none",height:72,boxSizing:"border-box"}}/>
+    </div>
+
+    {/* WhatsApp Vitrina */}
+    <div style={{background:"var(--ac)",border:"1px solid var(--abr)",borderRadius:16,overflow:"hidden",marginBottom:12}}>
+      <div style={{padding:"14px 18px 10px"}}><ALbl>Vitrina — Pedidos por WhatsApp</ALbl></div>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",
+        padding:"14px 18px",borderTop:"1px solid var(--abr)"}}>
+        <div>
+          <p style={{fontFamily:"'Outfit',sans-serif",fontSize:15,fontWeight:600,color:"var(--abri)",marginBottom:2}}>📲 Activar botón de WhatsApp</p>
+          <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"var(--ad)"}}>Muestra un botón en la vitrina para pedir por WA</p>
+        </div>
+        <ToggleA on={local.feat_whatsapp_vitrina} onChange={()=>setLocal(l=>({...l,feat_whatsapp_vitrina:!l.feat_whatsapp_vitrina}))}/>
+      </div>
+      {local.feat_whatsapp_vitrina && (
+        <div style={{padding:"12px 18px 16px",borderTop:"1px solid var(--abr)",background:"rgba(37,211,102,.04)"}}>
+          <GInput label="Número WhatsApp (con código de país, sin +)"
+            value={local.whatsapp_vitrina_numero||""}
+            onChange={v=>setLocal(l=>({...l,whatsapp_vitrina_numero:v}))}
+            placeholder="5491112345678" prefix="+"/>
+          <div style={{marginTop:12}}>
+            <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,letterSpacing:2.5,textTransform:"uppercase",color:"var(--ad)",marginBottom:10}}>Tipos de pedido disponibles</p>
+            {[
+              {k:"whatsapp_delivery",icon:"🛵",label:"Delivery",sub:"Envío a domicilio"},
+              {k:"whatsapp_retiro",  icon:"🏪",label:"Retiro en local",sub:"El cliente pasa a buscar"},
+            ].map(op=>(
+              <div key={op.k} style={{display:"flex",justifyContent:"space-between",alignItems:"center",
+                padding:"10px 0",borderBottom:"1px solid rgba(255,255,255,.05)"}}>
+                <div>
+                  <p style={{fontFamily:"'Outfit',sans-serif",fontSize:14,fontWeight:600,color:"var(--abri)",marginBottom:2}}>{op.icon} {op.label}</p>
+                  <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,color:"var(--ad)"}}>{op.sub}</p>
+                </div>
+                <ToggleA on={local[op.k]} onChange={()=>setLocal(l=>({...l,[op.k]:!l[op.k]}))}/>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
 
     <button onClick={saveAll} className="pr"
