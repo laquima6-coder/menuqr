@@ -4143,6 +4143,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
     {id:"reportes",  icon:"📊", label:"Reportes"},
     {id:"gestion",   icon:"✏", label:"Gestión"},
     {id:"config",    icon:"⚙", label:"Config"},
+    {id:"whatsapp",  icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347zM11.996 0C5.374 0 0 5.373 0 11.996c0 2.133.56 4.133 1.54 5.867L.047 23.53a.5.5 0 00.612.632l5.828-1.528A11.935 11.935 0 0011.996 24C18.619 24 24 18.619 24 11.996 24 5.373 18.619 0 11.996 0zm0 21.818a9.794 9.794 0 01-4.992-1.367l-.358-.212-3.718.975 1.002-3.618-.234-.372a9.794 9.794 0 01-1.518-5.228c0-5.419 4.409-9.818 9.818-9.818s9.818 4.399 9.818 9.818-4.399 9.822-9.818 9.822z"/></svg>, label:"WhatsApp"},
   ];
 
   /* ══════════════════════════════════════════
@@ -6108,6 +6109,145 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
         return null;
   };
 
+  /* ── WhatsApp Tab ── */
+  function WhatsAppTab() {
+    const waNum = local.whatsapp_vitrina_numero || "";
+    const active = !!local.feat_whatsapp_vitrina;
+    const deliveryLink = `https://wa.me/${waNum}?text=${encodeURIComponent("Hola! Quiero hacer un pedido para DELIVERY 🛵")}`;
+    const retiroLink   = `https://wa.me/${waNum}?text=${encodeURIComponent("Hola! Quiero hacer un pedido para RETIRAR en el local 🏪")}`;
+
+    const save = async () => {
+      if(local.restauranteId && supabase){
+        const {error} = await supabase.from("restaurantes").update({
+          config: {
+            propina:                 local.propina,
+            feat_solicitudes:        local.feat_solicitudes !== undefined ? local.feat_solicitudes : true,
+            feat_promo10:            !!local.feat_promo10,
+            happyHour:               local.happyHour,
+            happyDesde:              local.happyDesde,
+            happyHasta:              local.happyHasta,
+            wifi_nombre:             local.wifi_nombre,
+            wifi_pass:               local.wifi_pass,
+            whatsapp:                local.whatsapp,
+            whatsapp_msg:            local.whatsapp_msg,
+            horarios:                local.horarios || {},
+            feat_whatsapp_vitrina:   !!local.feat_whatsapp_vitrina,
+            whatsapp_vitrina_numero: waNum,
+            whatsapp_delivery:       !!local.whatsapp_delivery,
+            whatsapp_retiro:         !!local.whatsapp_retiro,
+          }
+        }).eq("id", local.restauranteId);
+        if(error) toast("Error: "+error.message,"err");
+        else toast("✓ Cambios guardados");
+      }
+    };
+
+    return (
+      <div style={{padding:"18px 16px 80px"}}>
+        <div style={{marginBottom:18}}>
+          <ALbl>Pedidos externos</ALbl>
+          <h2 style={{fontFamily:"'Outfit',sans-serif",fontSize:20,fontWeight:800,color:"var(--abri)",display:"flex",alignItems:"center",gap:8}}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347zM11.996 0C5.374 0 0 5.373 0 11.996c0 2.133.56 4.133 1.54 5.867L.047 23.53a.5.5 0 00.612.632l5.828-1.528A11.935 11.935 0 0011.996 24C18.619 24 24 18.619 24 11.996 24 5.373 18.619 0 11.996 0zm0 21.818a9.794 9.794 0 01-4.992-1.367l-.358-.212-3.718.975 1.002-3.618-.234-.372a9.794 9.794 0 01-1.518-5.228c0-5.419 4.409-9.818 9.818-9.818s9.818 4.399 9.818 9.818-4.399 9.822-9.818 9.822z"/></svg>
+            WhatsApp
+          </h2>
+        </div>
+
+        {/* Toggle + config */}
+        <div style={{background:"var(--ac)",border:"1px solid var(--abr)",borderRadius:16,overflow:"hidden",marginBottom:12}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"16px 18px"}}>
+            <div>
+              <p style={{fontFamily:"'Outfit',sans-serif",fontSize:15,fontWeight:700,color:"var(--abri)",marginBottom:3}}>📲 Recibir pedidos por WhatsApp</p>
+              <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"var(--ad)"}}>Delivery y retiro desde la vitrina del local</p>
+            </div>
+            <ToggleA on={active} onChange={()=>setLocal(l=>({...l,feat_whatsapp_vitrina:!l.feat_whatsapp_vitrina}))}/>
+          </div>
+          {active && (
+            <div style={{padding:"0 18px 16px",borderTop:"1px solid var(--abr)"}}>
+              <div style={{marginTop:12}}>
+                <GInput label="Número de WhatsApp (con código de país, sin +)"
+                  value={waNum} onChange={v=>setLocal(l=>({...l,whatsapp_vitrina_numero:v}))}
+                  placeholder="5491112345678" prefix="+"/>
+              </div>
+              <div style={{marginTop:12}}>
+                <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,letterSpacing:2.5,textTransform:"uppercase",color:"var(--ad)",marginBottom:10}}>Tipos de pedido</p>
+                {[
+                  {k:"whatsapp_delivery",icon:"🛵",label:"Delivery",sub:"Envío a domicilio"},
+                  {k:"whatsapp_retiro",  icon:"🏪",label:"Retiro en local",sub:"El cliente pasa a buscar"},
+                ].map(op=>(
+                  <div key={op.k} style={{display:"flex",justifyContent:"space-between",alignItems:"center",
+                    padding:"12px 0",borderBottom:"1px solid var(--abr)"}}>
+                    <div>
+                      <p style={{fontFamily:"'Outfit',sans-serif",fontSize:15,fontWeight:600,color:"var(--abri)",marginBottom:2}}>{op.icon} {op.label}</p>
+                      <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"var(--ad)"}}>{op.sub}</p>
+                    </div>
+                    <ToggleA on={local[op.k]} onChange={()=>setLocal(l=>({...l,[op.k]:!l[op.k]}))}/>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Preview */}
+        {active && waNum && (local.whatsapp_delivery||local.whatsapp_retiro) && (
+          <div style={{background:"var(--ac)",border:"1px solid var(--abr)",borderRadius:16,padding:18,marginBottom:12}}>
+            <ALbl>Preview — así lo ve el cliente en la vitrina</ALbl>
+            <div style={{display:"flex",flexDirection:"column",gap:8,marginTop:12}}>
+              {local.whatsapp_delivery && (
+                <div style={{display:"flex",alignItems:"center",gap:12,background:"#25D366",
+                  borderRadius:12,padding:"14px 16px"}}>
+                  <span style={{fontSize:20}}>🛵</span>
+                  <span style={{fontFamily:"'Outfit',sans-serif",fontSize:15,fontWeight:800,color:"#fff"}}>Pedir con delivery</span>
+                </div>
+              )}
+              {local.whatsapp_retiro && (
+                <div style={{display:"flex",alignItems:"center",gap:12,
+                  background:"rgba(37,211,102,.12)",border:"1px solid rgba(37,211,102,.35)",
+                  borderRadius:12,padding:"14px 16px"}}>
+                  <span style={{fontSize:20}}>🏪</span>
+                  <span style={{fontFamily:"'Outfit',sans-serif",fontSize:15,fontWeight:800,color:"#25D366"}}>Retirar en el local</span>
+                </div>
+              )}
+            </div>
+            <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,color:"var(--ad)",marginTop:10}}>
+              Al tocar, se abre WhatsApp con el mensaje listo para enviar
+            </p>
+          </div>
+        )}
+
+        {/* QRs para compartir */}
+        {active && waNum && (local.whatsapp_delivery||local.whatsapp_retiro) && (
+          <div style={{background:"var(--ac)",border:"1px solid var(--abr)",borderRadius:16,padding:18,marginBottom:12}}>
+            <ALbl>QRs para flyers y puerta del local</ALbl>
+            <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"var(--ad)",marginBottom:14,marginTop:4}}>
+              El cliente escanea y le llega el WhatsApp listo para pedir
+            </p>
+            <div style={{display:"flex",gap:20,flexWrap:"wrap"}}>
+              {local.whatsapp_delivery && (
+                <div style={{textAlign:"center"}}>
+                  <QRImg data={deliveryLink} size={130} dark="#25D366" light="#0D1117"/>
+                  <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:"#25D366",letterSpacing:1,marginTop:8}}>DELIVERY 🛵</p>
+                </div>
+              )}
+              {local.whatsapp_retiro && (
+                <div style={{textAlign:"center"}}>
+                  <QRImg data={retiroLink} size={130} dark="#25D366" light="#0D1117"/>
+                  <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:"#25D366",letterSpacing:1,marginTop:8}}>RETIRO 🏪</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        <button onClick={save} style={{width:"100%",background:"#25D366",color:"#fff",
+          border:"none",borderRadius:12,padding:14,
+          fontFamily:"'Outfit',sans-serif",fontSize:15,fontWeight:700,cursor:"pointer",marginBottom:8}}>
+          Guardar cambios
+        </button>
+      </div>
+    );
+  }
+
   /* ══════════════════════════════════════════
      RENDER PRINCIPAL DEL ADMIN
   ══════════════════════════════════════════ */
@@ -6219,7 +6359,8 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
       {tab==="caja"    && <CajaTab/>}
       {tab==="reportes" && <ReportesTab local={local}/>}
       {tab==="gestion" && <GestionTab local={local} setLocal={setLocal} cats={cats} setCats={setCats} prods={prods} setProds={setProds} gSubTab={gSubTab} setGSubTab={setGSubTab} gActiveCat={gActiveCat} setGActiveCat={setGActiveCat} gModal={gModal} setGModal={setGModal} toast={toast}/>}
-      {tab==="config"  && <ConfigTab local={local} setLocal={setLocal} toast={toast}/>}
+      {tab==="config"   && <ConfigTab local={local} setLocal={setLocal} toast={toast}/>}
+      {tab==="whatsapp" && <WhatsAppTab/>}
 
       </div>{/* end admin-content-scroll */}
       </div>{/* end admin-main */}
