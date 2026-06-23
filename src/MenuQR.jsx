@@ -887,6 +887,330 @@ function HappyHourBanner({happyHasta, happyHour, lang}) {
   );
 }
 
+/* ═══════════════════════════════════════════════════
+   WA ORDER FLOW — Pedido completo desde la vitrina
+═══════════════════════════════════════════════════ */
+function WAOrderFlow({local, prods, cats, tipo, onClose}) {
+  const [step, setStep]     = React.useState(1);
+  const [cart, setCart]     = React.useState({});
+  const [activeCat, setAC]  = React.useState((cats.filter(c=>c.activa!==false)[0]||{}).id||"");
+  const [name, setName]     = React.useState("");
+  const [phone, setPhone]   = React.useState("");
+  const [direc, setDirec]   = React.useState("");
+  const [nota, setNota]     = React.useState("");
+  const [saving, setSaving] = React.useState(false);
+  const [done, setDone]     = React.useState(false);
+
+  const activeCats = cats.filter(c=>c.activa!==false);
+  const catProds   = prods.filter(p=>p.cat===activeCat&&(p.active||p.active==null));
+  const cartItems  = Object.entries(cart).filter(([,q])=>q>0).map(([id,qty])=>{
+    const p=prods.find(x=>String(x.id)===String(id)); return p?{...p,qty}:null;
+  }).filter(Boolean);
+  const total = cartItems.reduce((s,i)=>s+i.price*i.qty,0);
+  const totalQty = cartItems.reduce((s,i)=>s+i.qty,0);
+
+  const addItem = p => setCart(c=>({...c,[p.id]:(c[p.id]||0)+1}));
+  const remItem = p => setCart(c=>{const q=(c[p.id]||0)-1;if(q<=0){const n={...c};delete n[p.id];return n;}return{...c,[p.id]:q};});
+
+  const canGoStep2 = cartItems.length>0;
+  const canGoStep3 = name.trim()&&(tipo!=="delivery"||direc.trim());
+
+  const WASVG = () => (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347zM11.996 0C5.374 0 0 5.373 0 11.996c0 2.133.56 4.133 1.54 5.867L.047 23.53a.5.5 0 00.612.632l5.828-1.528A11.935 11.935 0 0011.996 24C18.619 24 24 18.619 24 11.996 24 5.373 18.619 0 11.996 0zm0 21.818a9.794 9.794 0 01-4.992-1.367l-.358-.212-3.718.975 1.002-3.618-.234-.372a9.794 9.794 0 01-1.518-5.228c0-5.419 4.409-9.818 9.818-9.818s9.818 4.399 9.818 9.818-4.399 9.822-9.818 9.822z"/>
+    </svg>
+  );
+
+  const sendWA = async () => {
+    setSaving(true);
+    if(supabase && local.restauranteId) {
+      try {
+        const pedidoId = crypto.randomUUID();
+        const notaStr = ["PEDIDO WA",tipo==="delivery"?"DELIVERY":"RETIRO",
+          tipo==="delivery"&&direc?"Dir:"+direc:null,
+          "Cliente:"+name, phone?"Tel:"+phone:null, nota?"Nota:"+nota:null
+        ].filter(Boolean).join(" | ");
+        await supabase.from("pedidos").insert({
+          id:pedidoId, restaurante_id:local.restauranteId,
+          mesa_numero:0, status:"nuevo", metodo_pago:"whatsapp",
+          propina:0, total, nota:notaStr, idioma:"es",
+        });
+        await supabase.from("pedido_items").insert(
+          cartItems.map(i=>({pedido_id:pedidoId,producto_id:i.id,nombre:i.name,precio:i.price,cantidad:i.qty}))
+        );
+      } catch(e){ console.warn("wa order err",e); }
+    }
+    const lineas = cartItems.map(i=>"• "+i.qty+"x "+i.name+" — $"+fmt(i.price*i.qty)).join("\n");
+    const msg = "*Hola "+local.nombre+"! Quiero hacer un pedido* 🍽️\n\n"
+      +(tipo==="delivery"?"📍 *DELIVERY* a: "+direc:"🏪 *RETIRO en el local*")+"\n"
+      +"👤 "+name+(phone?" · 📱 "+phone:"")+"\n\n"
+      +"*Mi pedido:*\n"+lineas+"\n\n"
+      +"💰 *Total: $"+fmt(total)+"*"
+      +(nota?"\n📝 "+nota:"");
+    window.open("https://wa.me/"+local.whatsapp_vitrina_numero+"?text="+encodeURIComponent(msg),"_blank");
+    setSaving(false);
+    setDone(true);
+  };
+
+  if(done) return (
+    <div style={{position:"fixed",inset:0,background:"var(--cb)",zIndex:9999,
+      display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
+      padding:32,textAlign:"center"}}>
+      <div style={{width:80,height:80,borderRadius:"50%",background:"rgba(37,211,102,.15)",
+        border:"2px solid #25D366",display:"flex",alignItems:"center",justifyContent:"center",
+        fontSize:36,marginBottom:20}}>✅</div>
+      <h2 style={{fontFamily:"'Outfit',sans-serif",fontSize:22,fontWeight:800,color:"var(--cbri)",marginBottom:8}}>¡Pedido armado!</h2>
+      <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:14,color:"var(--cm)",marginBottom:6,lineHeight:1.6}}>
+        Se abrió WhatsApp con tu pedido escrito.<br/>Solo tocá <b style={{color:"#25D366"}}>Enviar</b> y el local lo recibe.
+      </p>
+      <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"rgba(255,255,255,.35)",marginBottom:28}}>
+        {tipo==="delivery"?"🛵 Delivery — te contactarán para coordinar":"🏪 Retiro — te avisan cuando está listo"}
+      </p>
+      <button onClick={onClose} style={{background:"#25D366",color:"#fff",border:"none",
+        borderRadius:12,padding:"14px 36px",fontFamily:"'Outfit',sans-serif",
+        fontSize:15,fontWeight:700,cursor:"pointer"}}>
+        Volver
+      </button>
+    </div>
+  );
+
+  return (
+    <div style={{position:"fixed",inset:0,background:"var(--cb)",zIndex:9999,
+      display:"flex",flexDirection:"column"}}>
+
+      {/* Header */}
+      <div style={{padding:"14px 16px 10px",borderBottom:"1px solid rgba(255,255,255,.07)",
+        display:"flex",alignItems:"center",gap:10,flexShrink:0,
+        background:"rgba(0,0,0,.3)",backdropFilter:"blur(10px)"}}>
+        <button onClick={onClose} style={{background:"rgba(255,255,255,.08)",border:"none",
+          color:"var(--cbri)",cursor:"pointer",fontSize:18,width:34,height:34,
+          borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center"}}>←</button>
+        <div style={{flex:1}}>
+          <div style={{fontFamily:"'Outfit',sans-serif",fontSize:16,fontWeight:800,color:"var(--cbri)",lineHeight:1}}>
+            {tipo==="delivery"?"🛵 Pedir con delivery":"🏪 Retirar en local"}
+          </div>
+          <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,color:"#25D366",marginTop:1}}>{local.nombre}</div>
+        </div>
+        <div style={{display:"flex",gap:5,alignItems:"center"}}>
+          {[1,2,3].map(s=>(
+            <div key={s} style={{height:6,borderRadius:3,transition:"all .3s",
+              width:step>=s?20:6,
+              background:step>=s?"#25D366":"rgba(255,255,255,.15)"}}/>
+          ))}
+        </div>
+      </div>
+
+      {/* Step labels */}
+      <div style={{display:"flex",borderBottom:"1px solid rgba(255,255,255,.06)",flexShrink:0}}>
+        {[{n:1,l:"Tu pedido"},{n:2,l:"Tus datos"},{n:3,l:"Confirmar"}].map(s=>(
+          <div key={s.n} style={{flex:1,textAlign:"center",padding:"8px 4px",
+            borderBottom:step===s.n?"2px solid #25D366":"2px solid transparent",
+            fontFamily:"'IBM Plex Mono',monospace",fontSize:9,fontWeight:700,letterSpacing:1,
+            color:step===s.n?"#25D366":step>s.n?"rgba(37,211,102,.5)":"rgba(255,255,255,.25)"}}>
+            {step>s.n?"✓ ":""}{s.l.toUpperCase()}
+          </div>
+        ))}
+      </div>
+
+      {/* STEP 1 — Productos */}
+      {step===1 && (
+        <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+          <div style={{display:"flex",gap:8,padding:"10px 16px",overflowX:"auto",
+            flexShrink:0,borderBottom:"1px solid rgba(255,255,255,.05)"}}>
+            {activeCats.map(c=>(
+              <button key={c.id} onClick={()=>setAC(c.id)} style={{
+                background:activeCat===c.id?"rgba(37,211,102,.15)":"rgba(255,255,255,.04)",
+                border:"1px solid "+(activeCat===c.id?"rgba(37,211,102,.4)":"rgba(255,255,255,.1)"),
+                borderRadius:20,padding:"6px 14px",cursor:"pointer",whiteSpace:"nowrap",
+                fontFamily:"'DM Sans',sans-serif",fontSize:13,
+                fontWeight:activeCat===c.id?700:400,
+                color:activeCat===c.id?"#25D366":"var(--cm)"}}>
+                {c.nombre}
+              </button>
+            ))}
+          </div>
+          <div style={{flex:1,overflowY:"auto",padding:"4px 16px 8px"}}>
+            {catProds.length===0 && (
+              <p style={{textAlign:"center",color:"rgba(255,255,255,.3)",
+                fontFamily:"'DM Sans',sans-serif",fontSize:13,padding:32}}>
+                No hay productos en esta categoría
+              </p>
+            )}
+            {catProds.map(p=>{
+              const qty=cart[p.id]||0;
+              return (
+                <div key={p.id} style={{display:"flex",alignItems:"center",gap:12,
+                  padding:"12px 0",borderBottom:"1px solid rgba(255,255,255,.04)"}}>
+                  {p.img&&<img src={p.img} alt={p.name} style={{width:52,height:52,
+                    borderRadius:10,objectFit:"cover",flexShrink:0}}/>}
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontFamily:"'Outfit',sans-serif",fontSize:14,fontWeight:600,
+                      color:"var(--cbri)",lineHeight:1.2,marginBottom:2}}>{p.name}</div>
+                    {p.desc&&<div style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,
+                      color:"var(--cm)",overflow:"hidden",display:"-webkit-box",
+                      WebkitLineClamp:1,WebkitBoxOrient:"vertical"}}>{p.desc}</div>}
+                    <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:13,
+                      fontWeight:700,color:"#25D366",marginTop:3}}>${fmt(p.price)}</div>
+                  </div>
+                  <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
+                    {qty>0?(
+                      <>
+                        <button onClick={()=>remItem(p)} style={{width:30,height:30,borderRadius:8,
+                          background:"rgba(255,255,255,.08)",border:"1px solid rgba(255,255,255,.15)",
+                          color:"var(--cbri)",fontSize:18,cursor:"pointer",
+                          display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>−</button>
+                        <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:14,
+                          fontWeight:700,color:"#25D366",minWidth:20,textAlign:"center"}}>{qty}</span>
+                        <button onClick={()=>addItem(p)} style={{width:30,height:30,borderRadius:8,
+                          background:"#25D366",border:"none",color:"#fff",fontSize:18,cursor:"pointer",
+                          display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>+</button>
+                      </>
+                    ):(
+                      <button onClick={()=>addItem(p)} style={{width:30,height:30,borderRadius:8,
+                        background:"rgba(37,211,102,.12)",border:"1px solid rgba(37,211,102,.3)",
+                        color:"#25D366",fontSize:18,cursor:"pointer",
+                        display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>+</button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* STEP 2 — Datos */}
+      {step===2 && (
+        <div style={{flex:1,overflowY:"auto",padding:"20px 16px"}}>
+          {[
+            {label:"Tu nombre *",value:name,set:setName,placeholder:"Juan García",type:"text"},
+            {label:"Teléfono",value:phone,set:setPhone,placeholder:"1123456789",type:"tel"},
+            ...(tipo==="delivery"?[{label:"Dirección de entrega *",value:direc,set:setDirec,placeholder:"Calle, número, piso...",type:"text"}]:[]),
+            {label:"Aclaraciones o alergias",value:nota,set:setNota,placeholder:"Sin cebolla, doble queso...",multiline:true},
+          ].map((f,i)=>(
+            <div key={i} style={{marginBottom:16}}>
+              <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,letterSpacing:2,
+                color:"rgba(255,255,255,.4)",marginBottom:7,textTransform:"uppercase"}}>{f.label}</p>
+              {f.multiline
+                ?<textarea value={f.value} onChange={e=>f.set(e.target.value)}
+                    placeholder={f.placeholder} rows={3}
+                    style={{width:"100%",background:"rgba(255,255,255,.06)",
+                      border:"1px solid rgba(255,255,255,.12)",borderRadius:10,
+                      padding:"12px 14px",color:"var(--cbri)",fontSize:14,resize:"none",
+                      boxSizing:"border-box",fontFamily:"'DM Sans',sans-serif"}}/>
+                :<input type={f.type} value={f.value} onChange={e=>f.set(e.target.value)}
+                    placeholder={f.placeholder}
+                    style={{width:"100%",background:"rgba(255,255,255,.06)",
+                      border:"1px solid rgba(255,255,255,.12)",borderRadius:10,
+                      padding:"12px 14px",color:"var(--cbri)",fontSize:14,
+                      boxSizing:"border-box",fontFamily:"'DM Sans',sans-serif"}}/>
+              }
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* STEP 3 — Confirmar */}
+      {step===3 && (
+        <div style={{flex:1,overflowY:"auto",padding:"20px 16px"}}>
+          <div style={{background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.08)",
+            borderRadius:14,padding:"14px 16px",marginBottom:12}}>
+            <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,color:"rgba(255,255,255,.3)",
+              letterSpacing:2,marginBottom:12}}>TU PEDIDO</p>
+            {cartItems.map(i=>(
+              <div key={i.id} style={{display:"flex",justifyContent:"space-between",
+                padding:"7px 0",borderBottom:"1px solid rgba(255,255,255,.05)",
+                fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"var(--cbri)"}}>
+                <span>{i.qty}× {i.name}</span>
+                <span style={{color:"#25D366"}}>${fmt(i.price*i.qty)}</span>
+              </div>
+            ))}
+            <div style={{display:"flex",justifyContent:"space-between",paddingTop:10,
+              fontFamily:"'Outfit',sans-serif",fontSize:16,fontWeight:800}}>
+              <span style={{color:"var(--cbri)"}}>Total</span>
+              <span style={{color:"#25D366"}}>${fmt(total)}</span>
+            </div>
+          </div>
+          <div style={{background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.07)",
+            borderRadius:14,padding:"14px 16px",marginBottom:16}}>
+            <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,color:"rgba(255,255,255,.3)",
+              letterSpacing:2,marginBottom:10}}>DATOS DE ENTREGA</p>
+            <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"var(--cbri)",marginBottom:4}}>
+              {tipo==="delivery"?"📍 Delivery a: "+direc:"🏪 Retiro en el local"}
+            </p>
+            <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"rgba(255,255,255,.5)"}}>
+              👤 {name}{phone?" · 📱 "+phone:""}
+            </p>
+            {nota&&<p style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"rgba(255,255,255,.35)",marginTop:4}}>📝 {nota}</p>}
+          </div>
+          <div style={{background:"rgba(37,211,102,.06)",border:"1px solid rgba(37,211,102,.2)",
+            borderRadius:12,padding:"12px 16px",marginBottom:16}}>
+            <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"rgba(255,255,255,.45)",lineHeight:1.6}}>
+              Al tocar <b style={{color:"#25D366"}}>Enviar por WhatsApp</b> se abre la app con el pedido ya escrito. Solo tocás enviar y el local lo recibe de inmediato.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Bottom bar */}
+      <div style={{padding:"10px 16px 24px",borderTop:"1px solid rgba(255,255,255,.07)",
+        background:"var(--cb)",flexShrink:0}}>
+        {step===1 && cartItems.length>0&&(
+          <div style={{display:"flex",justifyContent:"space-between",
+            alignItems:"center",marginBottom:10,padding:"0 2px"}}>
+            <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"rgba(255,255,255,.4)"}}>
+              {totalQty} {totalQty===1?"producto":"productos"}
+            </span>
+            <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:15,
+              fontWeight:700,color:"#25D366"}}>${fmt(total)}</span>
+          </div>
+        )}
+        {step===1&&(
+          <button onClick={()=>setStep(2)} disabled={!canGoStep2}
+            style={{width:"100%",background:canGoStep2?"#25D366":"rgba(255,255,255,.08)",
+              color:canGoStep2?"#fff":"rgba(255,255,255,.25)",border:"none",
+              borderRadius:12,padding:"14px",fontFamily:"'Outfit',sans-serif",
+              fontSize:15,fontWeight:700,cursor:canGoStep2?"pointer":"default"}}>
+            {canGoStep2?"Continuar — "+totalQty+" productos →":"Agregá productos para continuar"}
+          </button>
+        )}
+        {step===2&&(
+          <div style={{display:"flex",gap:10}}>
+            <button onClick={()=>setStep(1)} style={{flex:1,background:"rgba(255,255,255,.06)",
+              border:"1px solid rgba(255,255,255,.12)",color:"var(--cbri)",borderRadius:12,
+              padding:14,fontFamily:"'Outfit',sans-serif",fontSize:14,fontWeight:600,cursor:"pointer"}}>
+              ← Atrás
+            </button>
+            <button onClick={()=>setStep(3)} disabled={!canGoStep3}
+              style={{flex:2,background:canGoStep3?"#25D366":"rgba(255,255,255,.08)",
+                color:canGoStep3?"#fff":"rgba(255,255,255,.25)",border:"none",
+                borderRadius:12,padding:14,fontFamily:"'Outfit',sans-serif",
+                fontSize:15,fontWeight:700,cursor:canGoStep3?"pointer":"default"}}>
+              Ver resumen →
+            </button>
+          </div>
+        )}
+        {step===3&&(
+          <div style={{display:"flex",gap:10}}>
+            <button onClick={()=>setStep(2)} style={{flex:1,background:"rgba(255,255,255,.06)",
+              border:"1px solid rgba(255,255,255,.12)",color:"var(--cbri)",borderRadius:12,
+              padding:14,fontFamily:"'Outfit',sans-serif",fontSize:14,fontWeight:600,cursor:"pointer"}}>
+              ← Atrás
+            </button>
+            <button onClick={sendWA} disabled={saving}
+              style={{flex:2,background:saving?"rgba(37,211,102,.5)":"#25D366",
+                color:"#fff",border:"none",borderRadius:12,padding:14,
+                fontFamily:"'Outfit',sans-serif",fontSize:15,fontWeight:700,cursor:"pointer",
+                display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+              <WASVG/>{saving?"Abriendo WhatsApp...":"Enviar por WhatsApp"}
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function ClientApp({onBack, local, cats, prods, vitrina=false}) {
   const [view,setView]   = useState("menu"); // menu | cart | done
   const [cart,setCart]   = useState({});
@@ -965,6 +1289,8 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
   ═══════════════════════════════════════ */
   const VitrinaInfo = () => {
     const [mesasOcupadas, setMesasOcupadas] = React.useState([]);
+    const [waFlow, setWaFlow] = React.useState(null); // null | "delivery" | "retiro"
+
     const totalMesas = local.mesas || 10;
     const libres = totalMesas - mesasOcupadas.length;
     const pct = Math.round((mesasOcupadas.length/totalMesas)*100);
@@ -1158,32 +1484,37 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
         {/* WhatsApp pedidos */}
         {!!local.feat_whatsapp_vitrina && local.whatsapp_vitrina_numero && (local.whatsapp_delivery||local.whatsapp_retiro) && (
           <div style={{background:"rgba(37,211,102,.06)",border:"1px solid rgba(37,211,102,.25)",borderRadius:14,padding:"14px 16px"}}>
-            <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,color:"#3A3A3A",letterSpacing:2,marginBottom:12}}>PEDIDOS POR WHATSAPP</div>
+            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347zM11.996 0C5.374 0 0 5.373 0 11.996c0 2.133.56 4.133 1.54 5.867L.047 23.53a.5.5 0 00.612.632l5.828-1.528A11.935 11.935 0 0011.996 24C18.619 24 24 18.619 24 11.996 24 5.373 18.619 0 11.996 0zm0 21.818a9.794 9.794 0 01-4.992-1.367l-.358-.212-3.718.975 1.002-3.618-.234-.372a9.794 9.794 0 01-1.518-5.228c0-5.419 4.409-9.818 9.818-9.818s9.818 4.399 9.818 9.818-4.399 9.822-9.818 9.822z"/></svg>
+              <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,color:"#25D366",letterSpacing:2}}>PEDIDOS POR WHATSAPP</span>
+            </div>
+            <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"rgba(255,255,255,.4)",marginBottom:12,lineHeight:1.5}}>
+              Elegí los productos, dejá tus datos y te armamos el mensaje listo para enviar
+            </p>
             <div style={{display:"flex",flexDirection:"column",gap:8}}>
               {!!local.whatsapp_delivery && (
-                <a href={`https://wa.me/${local.whatsapp_vitrina_numero}?text=${encodeURIComponent("Hola! Quiero hacer un pedido para DELIVERY 🛵")}`}
-                  target="_blank" rel="noopener noreferrer"
+                <button onClick={()=>setWaFlow("delivery")}
                   style={{display:"flex",alignItems:"center",justifyContent:"center",gap:10,
-                    background:"#25D366",borderRadius:12,padding:"14px",
+                    background:"#25D366",border:"none",borderRadius:12,padding:"14px",
                     fontFamily:"'Outfit',sans-serif",fontSize:15,fontWeight:800,
-                    color:"#fff",textDecoration:"none",letterSpacing:.3}}>
+                    color:"#fff",cursor:"pointer",width:"100%"}}>
                   🛵 Pedir con delivery
-                </a>
+                </button>
               )}
               {!!local.whatsapp_retiro && (
-                <a href={`https://wa.me/${local.whatsapp_vitrina_numero}?text=${encodeURIComponent("Hola! Quiero hacer un pedido para RETIRAR en el local 🏪")}`}
-                  target="_blank" rel="noopener noreferrer"
+                <button onClick={()=>setWaFlow("retiro")}
                   style={{display:"flex",alignItems:"center",justifyContent:"center",gap:10,
-                    background:"rgba(37,211,102,.15)",border:"1px solid rgba(37,211,102,.4)",
+                    background:"rgba(37,211,102,.12)",border:"1px solid rgba(37,211,102,.4)",
                     borderRadius:12,padding:"14px",
                     fontFamily:"'Outfit',sans-serif",fontSize:15,fontWeight:800,
-                    color:"#25D366",textDecoration:"none",letterSpacing:.3}}>
+                    color:"#25D366",cursor:"pointer",width:"100%"}}>
                   🏪 Retirar en el local
-                </a>
+                </button>
               )}
             </div>
           </div>
         )}
+        {waFlow && <WAOrderFlow local={local} prods={prods} cats={cats} tipo={waFlow} onClose={()=>setWaFlow(null)}/>}
 
       </div>
     );
