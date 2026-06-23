@@ -2106,7 +2106,7 @@ function QRTabComp({ mesaNum, setMesaNum, qrType, setQrType, promoUrl, setPromoU
     switch(qrType){
       case "mesa":      return `${base}/mesa/${mesaNum}`;
       case "wifi":      return `WIFI:T:WPA;S:${local.wifi_nombre};P:${local.wifi_pass};;`;
-      case "whatsapp":  return `https://wa.me/${local.whatsapp}?text=${encodeURIComponent(local.whatsapp_msg||"")}`;
+      case "whatsapp":  return local.feat_whatsapp_vitrina&&local.whatsapp_vitrina_numero ? `https://${baseUrl}/vitrina` : `https://wa.me/${local.whatsapp}?text=${encodeURIComponent(local.whatsapp_msg||"")}`;
       case "promo":     return promoUrl || `${base}/promo`;
       case "vitrina":   return `${base}/vitrina`;
       case "cocina":    return `${base}/cocina`;
@@ -2118,7 +2118,7 @@ function QRTabComp({ mesaNum, setMesaNum, qrType, setQrType, promoUrl, setPromoU
     {id:"vitrina",  icon:"🪟", label:"Vitrina",   desc:"Carta en la puerta / vidrio",        color:"#8B5CF6"},
     {id:"cocina",   icon:"👨‍🍳", label:"Cocina",    desc:"Pantalla de pedidos en cocina",      color:"#F97316"},
     {id:"wifi",     icon:"📶", label:"WiFi",      desc:"Conectarse al escanear",             color:"#10B981"},
-    {id:"whatsapp", icon:"💬", label:"WhatsApp",  desc:"Abre WA directo con tu número",      color:"#25D366"},
+    {id:"whatsapp", icon:"💬", label:"WhatsApp",  desc:"Pedidos por WA — flujo completo",    color:"#25D366"},
     {id:"promo",    icon:"🔥", label:"Promo",     desc:"URL personalizada de promo",         color:"#EF4444"},
   ];
   const current = QR_TYPES.find(t=>t.id===qrType) || QR_TYPES[0];
@@ -2204,10 +2204,25 @@ function QRTabComp({ mesaNum, setMesaNum, qrType, setQrType, promoUrl, setPromoU
         )}
         {qrType==="whatsapp"&&(
           <div>
-            <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:current.color,letterSpacing:1.5,textTransform:"uppercase",marginBottom:8}}>Datos de WhatsApp</div>
-            <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"#777",marginBottom:4}}>Número: <b style={{color:"#CCC"}}>+{local.whatsapp||"Sin configurar"}</b></div>
-            <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"#777",marginBottom:8}}>Mensaje: <i style={{color:"#555"}}>{local.whatsapp_msg||"Sin mensaje"}</i></div>
-            <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:"#2E2E2E"}}>Editá estos datos en Gestión →</div>
+            <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:current.color,letterSpacing:1.5,textTransform:"uppercase",marginBottom:8}}>QR de Pedidos WhatsApp</div>
+            {local.feat_whatsapp_vitrina&&local.whatsapp_vitrina_numero ? (
+              <>
+                <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"#777",marginBottom:4}}>
+                  ✅ Flujo de pedidos activado · <b style={{color:"#25D366"}}>+{local.whatsapp_vitrina_numero}</b>
+                </div>
+                <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"#555",marginBottom:8,lineHeight:1.5}}>
+                  El cliente escanea → elige productos → llena sus datos → abre WhatsApp con el pedido listo
+                </div>
+                <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:"#2E2E2E"}}>Configurar en tab WhatsApp →</div>
+              </>
+            ) : (
+              <>
+                <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"#FF6B6B",marginBottom:6}}>
+                  ⚠️ Activá el flujo de pedidos en el tab WhatsApp primero
+                </div>
+                <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:"#2E2E2E"}}>Sin flujo activo abre WA directo →</div>
+              </>
+            )}
           </div>
         )}
         {qrType==="promo"&&(
@@ -2234,7 +2249,7 @@ function QRTabComp({ mesaNum, setMesaNum, qrType, setQrType, promoUrl, setPromoU
           <div style={{fontFamily:"'Outfit',sans-serif",fontSize:14,fontWeight:700,color:"#0A0806"}}>
             {qrType==="mesa"?`Mesa ${mesaNum}`:
              qrType==="wifi"?"WiFi Gratis":
-             qrType==="whatsapp"?"Escribinos por WA":
+             qrType==="whatsapp"?"Pedí por WhatsApp ▶":
              qrType==="vitrina"?"Ver la Carta":
              qrType==="cocina"?"Pantalla Cocina":
              "Promo Especial"}
@@ -2245,7 +2260,7 @@ function QRTabComp({ mesaNum, setMesaNum, qrType, setQrType, promoUrl, setPromoU
 
       <button type="button" onClick={async()=>{
         const qrUrl = await QRCodeLib.toDataURL(qrData,{width:280,margin:2,color:{dark:"#0A0806",light:"#FFFFFF"}});
-        const label = qrType==="mesa"?`Mesa ${mesaNum}`:qrType==="wifi"?"WiFi Gratis":qrType==="whatsapp"?"Escribinos por WA":qrType==="vitrina"?"Ver la Carta":qrType==="cocina"?"Pantalla Cocina":"Promo Especial";
+        const label = qrType==="mesa"?`Mesa ${mesaNum}`:qrType==="wifi"?"WiFi Gratis":qrType==="whatsapp"?"Pedí por WhatsApp":qrType==="vitrina"?"Ver la Carta":qrType==="cocina"?"Pantalla Cocina":"Promo Especial";
         const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>QR</title>
 <style>
   @page{size:A4;margin:0}
