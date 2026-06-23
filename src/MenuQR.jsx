@@ -1214,7 +1214,7 @@ function WAOrderFlow({local, prods, cats, tipo, onClose}) {
 function ClientApp({onBack, local, cats, prods, vitrina=false}) {
   const [view,setView]   = useState("menu"); // menu | cart | done
   const [cart,setCart]   = useState({});
-  const [activeCat,setAC]= useState(cats.find(c=>c.activa)?.id || "dest");
+  const [activeCat,setAC]= useState("TODO");
   const [pay,setPay]     = useState(null);
   const [note,setNote]   = useState("");
   const [tipPct,setTipPct] = useState(null); // null | 0 | 10 | 15 | 20
@@ -1903,9 +1903,8 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
         <HappyHourBanner happyHasta={local.happyHasta} happyHour={local.happyHour} lang={lang}/>
         {/* Vitrina info — solo en modo vitrina */}
         {vitrina && <VitrinaInfo/>}
-        {/* Horizontal category tabs — vitrina mode */}
-        {vitrina && (
-          <div style={{display:"flex",gap:7,padding:"10px 12px 8px",overflowX:"auto",scrollbarWidth:"none",WebkitOverflowScrolling:"touch",background:"#0A0806",position:"sticky",top:0,zIndex:10,borderBottom:"1px solid #1A1A1A"}}>
+        {/* Horizontal category tabs */}
+        <div style={{display:"flex",gap:7,padding:"10px 12px 8px",overflowX:"auto",scrollbarWidth:"none",WebkitOverflowScrolling:"touch",background:"#0A0806",position:"sticky",top:0,zIndex:10,borderBottom:"1px solid #1A1A1A"}}>
             {[{id:"TODO",icon:"",label:"Todo"},...activeCats].map(cat=>(
               <button key={cat.id} onClick={()=>setAC(cat.id)} className="pr" style={{
                 flexShrink:0,borderRadius:20,padding:"6px 14px",
@@ -1917,10 +1916,9 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
                 {cat.icon?cat.icon+" ":""}{cat.label}
               </button>
             ))}
-          </div>
-        )}
+        </div>
         {/* All categories */}
-        {activeCats.filter(cat=>!vitrina||activeCat==="TODO"||activeCat===cat.id).map(cat=>{
+        {activeCats.filter(cat=>activeCat==="TODO"||activeCat===cat.id).map(cat=>{
           const catProds=prods.filter(p=>p.cat===cat.id&&(p.active||p.active==null));
           if(!catProds.length) return null;
           const ac=local.color||"#C9A84C";
