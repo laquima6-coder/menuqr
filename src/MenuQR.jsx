@@ -1903,8 +1903,24 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
         <HappyHourBanner happyHasta={local.happyHasta} happyHour={local.happyHour} lang={lang}/>
         {/* Vitrina info — solo en modo vitrina */}
         {vitrina && <VitrinaInfo/>}
+        {/* Horizontal category tabs — vitrina mode */}
+        {vitrina && (
+          <div style={{display:"flex",gap:7,padding:"10px 12px 8px",overflowX:"auto",scrollbarWidth:"none",WebkitOverflowScrolling:"touch",background:"#0A0806",position:"sticky",top:0,zIndex:10,borderBottom:"1px solid #1A1A1A"}}>
+            {[{id:"TODO",icon:"",label:"Todo"},...activeCats].map(cat=>(
+              <button key={cat.id} onClick={()=>setAC(cat.id)} className="pr" style={{
+                flexShrink:0,borderRadius:20,padding:"6px 14px",
+                background:activeCat===cat.id?(local.color||"#C9A84C"):"#141414",
+                border:"1px solid "+(activeCat===cat.id?"transparent":"#2A2A2A"),
+                color:activeCat===cat.id?"#0A0806":"#5A4A30",
+                fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:700,
+                cursor:"pointer",transition:"all .15s",whiteSpace:"nowrap"}}>
+                {cat.icon?cat.icon+" ":""}{cat.label}
+              </button>
+            ))}
+          </div>
+        )}
         {/* All categories */}
-        {activeCats.map(cat=>{
+        {activeCats.filter(cat=>!vitrina||activeCat==="TODO"||activeCat===cat.id).map(cat=>{
           const catProds=prods.filter(p=>p.cat===cat.id&&(p.active||p.active==null));
           if(!catProds.length) return null;
           const ac=local.color||"#C9A84C";
@@ -2020,7 +2036,7 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
         </div>
       )}
       {/* ── SIDEBAR ── */}
-      <div className="msr" style={{width:74,flexShrink:0,background:"#0C0C0C",borderLeft:"1px solid #1C1C1C",position:"sticky",top:0,height:"100vh",overflowY:"auto",display:"flex",flexDirection:"column",alignItems:"center",zIndex:20,scrollbarWidth:"none"}}>
+      {!vitrina&&<div className="msr" style={{width:74,flexShrink:0,background:"#0C0C0C",borderLeft:"1px solid #1C1C1C",position:"sticky",top:0,height:"100vh",overflowY:"auto",display:"flex",flexDirection:"column",alignItems:"center",zIndex:20,scrollbarWidth:"none"}}>
         {/* Logo + Name */}
         <div style={{width:"100%",padding:"10px 4px 8px",borderBottom:"1px solid #1C1C1C",textAlign:"center"}}>
           {local.logo_url?(
@@ -2089,7 +2105,7 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
             </button>
           ))}
         </div>
-      </div>
+      </div>}
 
     </div>
   );
