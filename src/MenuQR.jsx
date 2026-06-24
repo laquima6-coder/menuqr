@@ -1526,7 +1526,86 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
     );
   };
 
-  if(view==="done") {
+  /* ── PC DONE VIEW — OPCION C */
+  if(view==="done"&&pcMode){
+    const ac=local.color||"#C9A84C";
+    const creamBg="#F5F0E8";
+    const warmBorder="#D4C4A8";
+    const warmMuted="#7A6050";
+    const warmText="#2C1810";
+    const darkPanel="#1C1008";
+    const STEPS2=[
+      {key:"nuevo",     icon:"📋", label:"Recibido",    sub:"En espera de la cocina"},
+      {key:"preparando",icon:"🍳", label:"Preparando",  sub:"Tu pedido está siendo preparado"},
+      {key:"listo",     icon:"🔔", label:"¡Listo!",     sub:"Ya va a salir"},
+      {key:"entregado", icon:"🎉", label:"Entregado",   sub:"¡Buen provecho!"},
+    ];
+    const stepIdx2=STEPS2.findIndex(s=>s.key===orderStatus);
+    const curStep2=STEPS2[Math.max(0,stepIdx2)];
+    const isDone2=orderStatus==="listo"||orderStatus==="entregado";
+    return(
+      <div style={{display:"flex",height:"100vh",overflow:"hidden",fontFamily:"Georgia,serif"}}>
+        <GS/>
+        {/* LEFT */}
+        <div style={{width:320,flexShrink:0,background:darkPanel,display:"flex",flexDirection:"column",borderRight:"1px solid #2A1C0E"}}>
+          <div style={{padding:"28px 24px 18px",borderBottom:"1px solid #2A1C0E"}}>
+            <div style={{fontSize:38,marginBottom:8}}>{local.emoji||"🍽️"}</div>
+            <div style={{fontSize:20,fontWeight:700,color:"#F5F0E8",fontStyle:"italic"}}>{local.nombre}</div>
+            {local.mesa&&<div style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,color:"#4A3020",marginTop:4}}>Mesa <span style={{fontSize:22,fontWeight:700,color:ac,fontStyle:"italic"}}>{local.mesa}</span></div>}
+          </div>
+          <div style={{flex:1,overflowY:"auto",padding:"16px 20px"}}>
+            <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,fontWeight:700,letterSpacing:2,color:"#5A3A20",textTransform:"uppercase",marginBottom:12}}>Tu pedido</div>
+            {items.map(i=>(
+              <div key={i.id} style={{display:"flex",justifyContent:"space-between",padding:"6px 0",borderBottom:"1px solid #2A1C0E",fontFamily:"'DM Sans',sans-serif"}}>
+                <span style={{fontSize:12,fontStyle:"italic",color:"#D4C4A8"}}>{i.qty}× {i.name}</span>
+                <span style={{fontSize:11,color:ac,fontWeight:700}}>$ {fmt(i.price*i.qty)}</span>
+              </div>
+            ))}
+          </div>
+          <div style={{padding:"14px 20px",borderTop:"1px solid #2A1C0E",background:"#140C04"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline"}}>
+              <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,color:"#5A3A20",letterSpacing:2,textTransform:"uppercase"}}>Total</span>
+              <span style={{fontSize:22,fontWeight:700,color:ac,fontStyle:"italic"}}>$ {fmt(grandTotal)}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* RIGHT — cream tracking */}
+        <div style={{flex:1,background:creamBg,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"40px"}}>
+          <div style={{width:"100%",maxWidth:500}}>
+            <div style={{textAlign:"center",marginBottom:32}}>
+              <div style={{fontSize:56,marginBottom:12}}>{curStep2.icon}</div>
+              <div style={{fontSize:28,fontWeight:700,color:isDone2?"#4A7A50":warmText,marginBottom:6}}>{curStep2.label}</div>
+              <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:14,color:warmMuted}}>{curStep2.sub}</div>
+              {lastPedidoId&&<div style={{display:"inline-flex",alignItems:"center",gap:6,marginTop:10,background:"#4A9A5A18",border:"1px solid #4A9A5A33",borderRadius:20,padding:"4px 12px"}}><div style={{width:6,height:6,borderRadius:"50%",background:"#4A9A5A"}}/><span style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,fontWeight:700,color:"#4A7A50",letterSpacing:1}}>EN VIVO</span></div>}
+            </div>
+            {/* Steps */}
+            <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:32}}>
+              {STEPS2.map((s,i)=>{
+                const done=i<=stepIdx2; const active=i===stepIdx2;
+                return(
+                  <div key={s.key} style={{display:"flex",alignItems:"center",gap:14,padding:"12px 16px",borderRadius:12,border:`1px solid ${active?"#4A9A5A44":done?"#C9A84C33":warmBorder}`,background:active?"#4A9A5A0A":done?"#C9A84C0A":creamBg,transition:".3s"}}>
+                    <span style={{fontSize:22,flexShrink:0}}>{s.icon}</span>
+                    <div style={{flex:1}}>
+                      <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:700,color:active?"#4A7A50":done?warmText:warmMuted}}>{s.label}</div>
+                      <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,color:warmMuted}}>{s.sub}</div>
+                    </div>
+                    <div style={{width:8,height:8,borderRadius:"50%",background:active?"#4A9A5A":done?ac:warmBorder,boxShadow:active?"0 0 8px #4A9A5A":"none",flexShrink:0}}/>
+                  </div>
+                );
+              })}
+            </div>
+            <div style={{display:"flex",gap:12}}>
+              <button onClick={reset} className="pr" style={{flex:1,background:"#EEE8D8",border:`1px solid ${warmBorder}`,borderRadius:10,padding:13,fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:600,color:warmMuted,cursor:"pointer"}}>Hacer otro pedido</button>
+              <button onClick={onBack} className="pr" style={{flex:1,background:warmText,border:"none",borderRadius:10,padding:13,fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,color:creamBg,cursor:"pointer"}}>Volver al inicio</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+    if(view==="done") {
     const STEPS=[
       {key:"nuevo",     icon:"📋", label:"Recibido",    sub:"En espera de la cocina"},
       {key:"preparando",icon:"🍳", label:"Preparando",  sub:"Tu pedido está siendo preparado"},
@@ -1662,7 +1741,127 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
   }
 
   /* ── CART */
-  if(view==="cart") return (
+  /* ── PC CART VIEW — OPCION C */
+  if(view==="cart"&&pcMode){
+    const ac=local.color||"#C9A84C";
+    const creamBg="#F5F0E8";
+    const warmBorder="#D4C4A8";
+    const warmMuted="#7A6050";
+    const warmText="#2C1810";
+    const darkPanel="#1C1008";
+    const confirmOrder = async()=>{
+      if(!pay) return;
+      const cartItems=Object.values(cart).filter(i=>i.qty>0);
+      const subtotal=cartItems.reduce((s,i)=>s+i.price*i.qty,0);
+      const tipAmount=tipPct!=null?(tipPct===0?0:Math.round(subtotal*tipPct/100)):0;
+      const descuentoAplicado=promoActiva&&subtotal>0?Math.round(subtotal*0.10):0;
+      const mesa=local.mesa||1;
+      let errorMsg=null; let pedidoId=null;
+      if(!supabase) errorMsg="Supabase no configurado";
+      else if(!local.restauranteId) errorMsg="Sin restauranteId";
+      else {
+        try {
+          pedidoId=crypto.randomUUID();
+          const {error}=await supabase.from("pedidos").insert({id:pedidoId,restaurante_id:local.restauranteId,mesa_numero:mesa,status:"nuevo",metodo_pago:pay,propina:tipAmount,total:subtotal-descuentoAplicado+tipAmount,nota:[note,descuentoAplicado>0?`DESCUENTO_PRIMERA_VEZ_10%_$${descuentoAplicado}`:null].filter(Boolean).join(" | ")||null,idioma:lang||"es"});
+          if(error){errorMsg=error.message;}
+          else{
+            if(descuentoAplicado>0){localStorage.removeItem("menuqr_promo10_"+(local.restauranteId||"x"));setPromoActiva(false);}
+            const its=cartItems.map(i=>({pedido_id:pedidoId,producto_id:i.id,nombre:i.name,precio:i.price,cantidad:i.qty}));
+            await supabase.from("pedido_items").insert(its);
+          }
+        } catch(e){errorMsg=e.message;}
+      }
+      if(errorMsg) localStorage.setItem("menuqr_last_order_error",errorMsg);
+      else{localStorage.removeItem("menuqr_last_order_error");setLastPedidoId(pedidoId);setOrderStatus("nuevo");}
+      setView("done");
+    };
+    return(
+      <div style={{display:"flex",height:"100vh",overflow:"hidden",fontFamily:"Georgia,serif"}}>
+        <GS/>
+        {/* LEFT PANEL */}
+        <div style={{width:320,flexShrink:0,background:darkPanel,display:"flex",flexDirection:"column",borderRight:"1px solid #2A1C0E"}}>
+          <div style={{padding:"28px 24px 18px",borderBottom:"1px solid #2A1C0E"}}>
+            <button onClick={()=>setView("menu")} className="pr" style={{display:"flex",alignItems:"center",gap:6,background:"none",border:"none",color:ac,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:12,marginBottom:14,padding:0}}>← Volver a la carta</button>
+            <div style={{fontSize:38,marginBottom:8}}>{local.emoji||"🍽️"}</div>
+            <div style={{fontSize:20,fontWeight:700,color:"#F5F0E8",fontStyle:"italic"}}>{local.nombre}</div>
+            {local.mesa&&<div style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,color:"#4A3020",marginTop:4}}>Mesa <span style={{fontSize:22,fontWeight:700,color:ac,fontStyle:"italic"}}>{local.mesa}</span></div>}
+          </div>
+          <div style={{flex:1,overflowY:"auto",padding:"16px 20px"}}>
+            <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,fontWeight:700,letterSpacing:2,color:"#5A3A20",textTransform:"uppercase",marginBottom:12}}>Resumen del pedido</div>
+            {items.map(i=>(
+              <div key={i.id} style={{display:"flex",alignItems:"center",gap:10,padding:"7px 0",borderBottom:"1px solid #2A1C0E"}}>
+                <span style={{fontSize:18,flexShrink:0}}>{i.emoji||"🍽️"}</span>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:12,fontStyle:"italic",color:"#D4C4A8",fontFamily:"'DM Sans',sans-serif",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{i.name}</div>
+                  <div style={{fontSize:10,color:"#5A3A20",fontFamily:"'DM Sans',sans-serif"}}>{i.qty} × $ {fmt(i.price)}</div>
+                </div>
+                <div style={{fontSize:11,color:ac,fontFamily:"'DM Sans',sans-serif",fontWeight:700,flexShrink:0}}>$ {fmt(i.price*i.qty)}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{padding:"14px 20px",borderTop:"1px solid #2A1C0E",background:"#140C04"}}>
+            {tipAmt>0&&<div style={{display:"flex",justifyContent:"space-between",fontFamily:"'DM Sans',sans-serif",fontSize:11,color:"#5A3A20",marginBottom:4}}><span>💝 Propina</span><span>+ $ {fmt(tipAmt)}</span></div>}
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline"}}>
+              <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,color:"#5A3A20",letterSpacing:2,textTransform:"uppercase"}}>Total</span>
+              <span style={{fontSize:22,fontWeight:700,color:ac,fontStyle:"italic"}}>$ {fmt(grandTotal)}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* RIGHT — cream form */}
+        <div style={{flex:1,background:creamBg,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+          <div style={{padding:"20px 40px 16px",borderBottom:`2px solid ${warmBorder}`,flexShrink:0}}>
+            <span style={{fontSize:13,letterSpacing:4,textTransform:"uppercase",color:warmText,fontFamily:"'DM Sans',sans-serif",fontWeight:700}}>Confirmar pedido</span>
+          </div>
+          <div style={{flex:1,overflowY:"auto",padding:"24px 40px"}}>
+            {/* Propina */}
+            {local.propina&&(
+              <div style={{marginBottom:24}}>
+                <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,fontWeight:700,letterSpacing:2,color:warmMuted,textTransform:"uppercase",marginBottom:10}}>¿Dejás propina?</div>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}}>
+                  {[{label:"No, gracias",val:0},{label:"10%",val:10},{label:"15%",val:15},{label:"20%",val:20}].map(t=>(
+                    <button key={t.val} onClick={()=>{setTipPct(t.val);setTC("");}} className="pr" style={{background:tipPct===t.val?"#EDE4CE":"#EEE8D8",border:`1px solid ${tipPct===t.val?ac:warmBorder}`,borderRadius:10,padding:"10px 6px",cursor:"pointer",textAlign:"center",transition:".2s"}}>
+                      <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:700,color:tipPct===t.val?warmText:warmMuted}}>{t.label}</div>
+                      {t.val>0&&<div style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,color:warmMuted,marginTop:2}}>$ {fmt(Math.round(subTotal*(t.val/100)))}</div>}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            {/* Nota */}
+            <div style={{marginBottom:24}}>
+              <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,fontWeight:700,letterSpacing:2,color:warmMuted,textTransform:"uppercase",marginBottom:8}}>Observaciones</div>
+              <textarea value={note} onChange={e=>setNote(e.target.value)} placeholder="Sin sal, alergia a mariscos, sin gluten..." style={{width:"100%",background:"#EEE8D8",border:`1px solid ${warmBorder}`,borderRadius:10,padding:"12px 16px",color:warmText,fontFamily:"'DM Sans',sans-serif",fontSize:13,resize:"none",height:72,outline:"none"}}/>
+            </div>
+            {/* Pago */}
+            <div style={{marginBottom:28}}>
+              <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,fontWeight:700,letterSpacing:2,color:warmMuted,textTransform:"uppercase",marginBottom:10}}>Forma de pago</div>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:10}}>
+                {PAYS.map(p=>(
+                  <button key={p.id} onClick={()=>setPay(p.id)} className="pr" style={{background:pay===p.id?"#EDE4CE":"#EEE8D8",border:`2px solid ${pay===p.id?ac:warmBorder}`,borderRadius:12,padding:"14px 16px",cursor:"pointer",textAlign:"left",transition:".2s"}}>
+                    <span style={{fontSize:24,display:"block",marginBottom:6}}>{p.icon}</span>
+                    <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,color:pay===p.id?warmText:warmMuted}}>{p.label}</div>
+                    <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,color:warmMuted}}>{p.sub}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+            {/* Confirm */}
+            <div style={{borderTop:`1px solid ${warmBorder}`,paddingTop:20}}>
+              <div style={{display:"flex",justifyContent:"space-between",fontSize:20,fontWeight:700,color:warmText,marginBottom:16,fontFamily:"'DM Sans',sans-serif"}}>
+                <span>Total a pagar</span><span style={{color:"#8A6A30"}}>$ {fmt(grandTotal)}</span>
+              </div>
+              <button onClick={confirmOrder} disabled={!pay} className="pr" style={{width:"100%",background:pay?darkPanel:"#C8B898",border:"none",borderRadius:10,padding:15,fontFamily:"'DM Sans',sans-serif",fontSize:15,fontWeight:700,color:pay?creamBg:"#A09080",cursor:pay?"pointer":"not-allowed",letterSpacing:.5,textTransform:"uppercase",transition:".2s"}}>
+                {pay?"CONFIRMAR PEDIDO →":"ELEGÍ UNA FORMA DE PAGO"}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+    if(view==="cart") return (
     <div className="cv" style={{maxWidth:430,margin:"0 auto",minHeight:"100vh",
       background:"var(--cb)",paddingBottom:220}}>
       <GS/>
