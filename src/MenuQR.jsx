@@ -1948,163 +1948,174 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
   );
 
 
-  /* ── PC MENU VIEW */
+  /* ── PC MENU VIEW — OPCION C: BISTRO CLASICO */
   if(view==="menu"&&pcMode){
     const ac=local.color||"#C9A84C";
     const featured=prods.filter(p=>p.active||p.active==null).sort((a,b)=>(b.tag==="CHEF"?1:0)-(a.tag==="CHEF"?1:0)||b.price-a.price)[0];
+    const creamBg="#F5F0E8";
+    const warmBorder="#D4C4A8";
+    const warmMuted="#7A6050";
+    const warmText="#2C1810";
+    const darkPanel="#1C1008";
     return(
-      <div style={{display:"flex",height:"100vh",background:"#0A0806",overflow:"hidden",fontFamily:"'DM Sans',sans-serif"}}>
+      <div style={{display:"flex",height:"100vh",overflow:"hidden",fontFamily:"Georgia,serif"}}>
         <GS/>
-        {/* LEFT PANEL */}
-        <div style={{width:290,flexShrink:0,background:"linear-gradient(160deg,#1C0D00 0%,#0A0806 100%)",borderRight:"1px solid #1E1200",padding:"40px 28px",display:"flex",flexDirection:"column",height:"100vh",overflow:"hidden",position:"relative",zIndex:5}}>
-          <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:"#C9A84C",letterSpacing:3,textTransform:"uppercase",marginBottom:12}}>EST. 1996</div>
-          <div style={{fontFamily:"'Playfair Display',serif",fontSize:42,fontWeight:900,fontStyle:"italic",color:"#FFF",lineHeight:1,marginBottom:8,wordBreak:"break-word"}}>{local.nombre}</div>
-          {local.descripcion&&<div style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,color:"#5A4A30",letterSpacing:1.5,textTransform:"uppercase",lineHeight:1.6,marginBottom:20}}>{local.descripcion}</div>}
-          {local.mesa&&<div style={{display:"flex",alignItems:"center",gap:6,marginTop:4}}>
-            <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,color:"#3A2A10",letterSpacing:2,textTransform:"uppercase"}}>MESA</span>
-            <span style={{fontFamily:"'Playfair Display',serif",fontSize:28,color:ac,fontWeight:700,marginLeft:6}}>{local.mesa}</span>
-          </div>}
-          <div style={{flex:1}}/>
-          {cartCount>0&&(
-            <div>
-              <div style={{height:1,background:"linear-gradient(to right,transparent,#2A1A00,transparent)",marginBottom:14}}/>
-              <div style={{marginBottom:10,maxHeight:140,overflowY:"auto"}}>
-                {items.map(i=>(
-                  <div key={i.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"5px 0",borderBottom:"1px solid #1A1200",fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"#8A7A60"}}>
-                    <span style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:140}}>{i.qty}× {i.name}</span>
-                    <span style={{color:ac,fontWeight:700,flexShrink:0,marginLeft:8}}>$ {fmt(i.price*i.qty)}</span>
+        {/* LEFT PANEL — dark order panel */}
+        <div style={{width:320,flexShrink:0,background:darkPanel,display:"flex",flexDirection:"column",overflowY:"auto",borderRight:"1px solid #2A1C0E"}}>
+          {/* Branding */}
+          <div style={{padding:"28px 24px 20px",borderBottom:"1px solid #2A1C0E"}}>
+            <div style={{fontSize:40,marginBottom:10}}>{local.emoji||"🍽️"}</div>
+            <div style={{fontSize:20,fontWeight:700,color:"#F5F0E8",fontStyle:"italic",letterSpacing:-.3}}>{local.nombre}</div>
+            {local.descripcion&&<div style={{fontSize:9,color:"#5A3A20",letterSpacing:3,textTransform:"uppercase",marginTop:3,fontFamily:"'DM Sans',sans-serif"}}>{local.descripcion}</div>}
+            <div style={{width:40,height:2,background:ac,margin:"12px 0"}}/>
+            {local.mesa&&<div style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,color:"#4A3020"}}>Mesa <span style={{fontSize:22,fontWeight:700,color:ac,fontStyle:"italic"}}>{local.mesa}</span></div>}
+          </div>
+          {/* Order list */}
+          <div style={{flex:1,overflowY:"auto",padding:"18px 20px"}}>
+            <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,fontWeight:700,letterSpacing:2.5,color:"#5A3A20",textTransform:"uppercase",marginBottom:16}}>Tu pedido</div>
+            {items.length===0?(
+              <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:8,padding:"30px 0",fontFamily:"'DM Sans',sans-serif"}}>
+                <span style={{fontSize:28}}>📋</span>
+                <span style={{fontSize:11,color:"#3A2210",fontStyle:"italic"}}>Seleccioná un producto</span>
+              </div>
+            ):(
+              items.map(i=>(
+                <div key={i.id} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",borderBottom:"1px solid #2A1C0E"}}>
+                  <span style={{fontSize:20,flexShrink:0}}>{i.emoji||"🍽️"}</span>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:12,fontStyle:"italic",color:"#D4C4A8",fontFamily:"'DM Sans',sans-serif",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{i.name}</div>
+                    <div style={{fontSize:10,color:ac,fontFamily:"'DM Sans',sans-serif"}}>$ {fmt(i.price*i.qty)}</div>
                   </div>
-                ))}
-              </div>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10,padding:"6px 0"}}>
-                <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:"#5A4A30",letterSpacing:1}}>TOTAL</span>
-                <span style={{fontFamily:"'Playfair Display',serif",fontSize:20,color:ac,fontWeight:700}}>$ {fmt(grandTotal)}</span>
-              </div>
-              <button onClick={()=>setView("cart")} className="pr" style={{width:"100%",background:ac,border:"none",borderRadius:12,padding:"13px 0",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:700,color:"#0A0806",cursor:"pointer",letterSpacing:0.5}}>
-                VER PEDIDO ({cartCount})
-              </button>
+                  <div style={{display:"flex",alignItems:"center",gap:4,flexShrink:0}}>
+                    <button onClick={()=>rem(i.id)} className="pr" style={{width:20,height:20,borderRadius:4,border:"1px solid #3A2A10",background:"#2A1C0E",color:"#888",fontSize:12,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'DM Sans',sans-serif"}}>−</button>
+                    <span style={{fontSize:11,fontWeight:700,color:"#D4C4A8",minWidth:14,textAlign:"center",fontFamily:"'DM Sans',sans-serif"}}>{i.qty}</span>
+                    <button onClick={()=>add(i)} className="pr" style={{width:20,height:20,borderRadius:4,border:"none",background:ac,color:darkPanel,fontSize:12,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'DM Sans',sans-serif"}}>+</button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+          {/* Footer */}
+          <div style={{padding:"16px 20px",borderTop:"1px solid #2A1C0E",background:"#140C04"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:12}}>
+              <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,color:"#5A3A20",letterSpacing:2,textTransform:"uppercase"}}>Total</span>
+              <span style={{fontSize:22,fontWeight:700,color:ac,fontStyle:"italic"}}>$ {fmt(grandTotal)}</span>
             </div>
-          )}
+            <div style={{height:1,background:"#2A1C0E",marginBottom:12}}/>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:4,marginBottom:10}}>
+              {["💵 Efectivo","💳 Tarjeta","📱 QR","🧾 Cuenta"].map(opt=>(
+                <button key={opt} onClick={()=>{setPay(opt.split(" ")[1]);}} className="pr" style={{background:pay===opt.split(" ")[1]?"#2A1A08":"#1C1008",border:`1px solid ${pay===opt.split(" ")[1]?ac+"55":"#2A1C0E"}`,borderRadius:6,padding:"7px 2px",textAlign:"center",cursor:"pointer",transition:".15s"}}>
+                  <span style={{display:"block",fontSize:14,marginBottom:2}}>{opt.split(" ")[0]}</span>
+                  <span style={{fontSize:8,color:pay===opt.split(" ")[1]?ac:"#4A3020",fontFamily:"'DM Sans',sans-serif",display:"block"}}>{opt.split(" ").slice(1).join(" ")}</span>
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={()=>setView("cart")}
+              className="pr"
+              disabled={cartCount===0}
+              style={{width:"100%",background:cartCount>0?ac:"#2A1C0E",border:"none",borderRadius:8,padding:13,fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,color:cartCount>0?darkPanel:"#3A2A10",cursor:cartCount>0?"pointer":"not-allowed",letterSpacing:.8,textTransform:"uppercase"}}>
+              {cartCount>0?`CONFIRMAR PEDIDO (${cartCount})`:"SELECCIONÁ PRODUCTOS"}
+            </button>
+          </div>
         </div>
 
-        {/* MAIN CONTENT */}
-        <div style={{flex:1,overflowY:"auto",display:"flex",flexDirection:"column"}}>
-          {/* Category tabs bar */}
-          <div style={{display:"flex",alignItems:"center",gap:8,padding:"18px 36px",position:"sticky",top:0,background:"#0A0806cc",backdropFilter:"blur(12px)",borderBottom:"1px solid #1A1200",zIndex:10,flexWrap:"wrap"}}>
-            {[{id:"TODO",icon:"",label:"Todo"},...activeCats].map(cat=>(
-              <button key={cat.id} onClick={()=>setAC(cat.id)} className="pr" style={{
-                flexShrink:0,borderRadius:20,padding:"7px 18px",
-                background:activeCat===cat.id?ac:"#141414",
-                border:"1px solid "+(activeCat===cat.id?"transparent":"#2A2A2A"),
-                color:activeCat===cat.id?"#0A0806":"#5A4A30",
-                fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,
-                cursor:"pointer",transition:"all .15s",whiteSpace:"nowrap"}}>
-                {cat.icon?cat.icon+" ":""}{cat.label}
-              </button>
-            ))}
-            <div style={{flex:1}}/>
-            <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:"#2A2A2A"}}>{nowStr()}</div>
+        {/* RIGHT — warm carta */}
+        <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",background:creamBg}}>
+          {/* Header with category tabs */}
+          <div style={{padding:"18px 32px 14px",borderBottom:`2px solid ${warmBorder}`,display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
+            <span style={{fontSize:13,letterSpacing:4,textTransform:"uppercase",color:warmText,fontFamily:"'DM Sans',sans-serif",fontWeight:700}}>La Carta</span>
+            <div style={{display:"flex",gap:0,overflowX:"auto",scrollbarWidth:"none"}}>
+              {[{id:"TODO",icon:"",label:"Todo"},...activeCats].map(cat=>(
+                <button key={cat.id} onClick={()=>setAC(cat.id)} className="pr" style={{
+                  padding:"6px 18px",fontSize:11,cursor:"pointer",
+                  color:activeCat===cat.id?warmText:warmMuted,
+                  borderBottom:`2px solid ${activeCat===cat.id?ac:"transparent"}`,
+                  background:"transparent",border:"none",borderBottomWidth:2,
+                  borderBottomStyle:"solid",borderBottomColor:activeCat===cat.id?ac:"transparent",
+                  fontFamily:"'DM Sans',sans-serif",fontWeight:600,whiteSpace:"nowrap",
+                  transition:".15s",flexShrink:0}}>
+                  {cat.icon?cat.icon+" ":""}{cat.label}
+                </button>
+              ))}
+            </div>
           </div>
 
-          <div style={{padding:"32px 36px 60px"}}>
-            {/* Featured product */}
-            {featured&&(activeCat==="TODO"||(()=>{const fc=activeCats.find(c=>c.id===featured.cat);return !fc||activeCat===featured.cat;})())&&(()=>{
-              const inCart=cart[featured.id]?.qty||0;
-              return(
-                <div style={{marginBottom:40}}>
-                  <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,color:ac,letterSpacing:3,textTransform:"uppercase",marginBottom:16}}>DESTACADO DEL DÍA</div>
-                  <div style={{background:"#141414",borderRadius:20,overflow:"hidden",border:`1px solid ${inCart>0?ac+"88":"#2A2A2A"}`,display:"grid",gridTemplateColumns:"1fr 1fr",transition:"all .3s",boxShadow:inCart>0?`0 0 30px ${ac}20`:"none"}}>
-                    <div style={{position:"relative",minHeight:220,overflow:"hidden",background:"#1A1A1A",display:"flex",alignItems:"center",justifyContent:"center"}}>
-                      {featured.foto_url?(
-                        <img src={featured.foto_url} alt={featured.name} style={{width:"100%",height:"100%",objectFit:"cover",position:"absolute",inset:0}}
-                          onError={e=>{e.target.style.display="none";}}/>
+          {/* Featured */}
+          {featured&&(activeCat==="TODO"||activeCat===featured.cat)&&(()=>{
+            const inCart=cart[featured.id]?.qty||0;
+            return(
+              <div style={{padding:"16px 32px 0",flexShrink:0}}>
+                <div style={{background:"#EAE0CC",border:`1px solid ${warmBorder}`,borderLeft:`4px solid ${ac}`,borderRadius:12,padding:"18px 24px",display:"flex",gap:20,alignItems:"center"}}>
+                  {featured.foto_url?(
+                    <img src={featured.foto_url} alt={featured.name} style={{width:80,height:80,objectFit:"cover",borderRadius:8,flexShrink:0}}
+                      onError={e=>{e.target.style.display="none";const s=document.createElement("span");s.style.fontSize="56px";e.target.parentNode.insertBefore(s,e.target);s.textContent=featured.emoji||"🍽️";}}/>
+                  ):(
+                    <span style={{fontSize:56,flexShrink:0}}>{featured.emoji||"🍽️"}</span>
+                  )}
+                  <div style={{flex:1}}>
+                    <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:9,fontWeight:700,letterSpacing:2,color:"#8A6A30",textTransform:"uppercase",marginBottom:4}}>✦ Recomendado del día</div>
+                    <div style={{fontSize:22,fontWeight:700,color:warmText,marginBottom:3}}>{featured.name}</div>
+                    {featured.desc&&<div style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:warmMuted,lineHeight:1.5,marginBottom:12}}>{featured.desc}</div>}
+                    <div style={{display:"flex",alignItems:"center",gap:16}}>
+                      <span style={{fontSize:20,color:"#8A6A30"}}>$ {fmt(featured.price)}</span>
+                      {featured.sin_stock?(
+                        <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,color:"#888"}}>Agotado</span>
+                      ):inCart===0?(
+                        <button onClick={()=>add(featured)} className="pr" style={{background:warmText,border:"none",borderRadius:8,padding:"9px 20px",fontSize:12,fontWeight:700,color:creamBg,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",letterSpacing:.5}}>+ Agregar al pedido</button>
                       ):(
-                        <span style={{fontSize:80}}>{featured.emoji||"🍽️"}</span>
+                        <div style={{display:"flex",alignItems:"center",gap:8}}>
+                          <button onClick={()=>rem(featured.id)} className="pr" style={{width:28,height:28,borderRadius:6,background:"#D4C4A8",border:`1px solid ${warmBorder}`,color:warmMuted,fontSize:15,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'DM Sans',sans-serif"}}>−</button>
+                          <span style={{fontFamily:"'DM Sans',sans-serif",fontWeight:700,fontSize:14,color:warmText,minWidth:14,textAlign:"center"}}>{inCart}</span>
+                          <button onClick={()=>add(featured)} className="pr" style={{width:28,height:28,borderRadius:6,background:warmText,border:"none",color:creamBg,fontSize:15,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'DM Sans',sans-serif"}}>+</button>
+                        </div>
                       )}
-                      <div style={{position:"absolute",top:14,left:14,background:ac,borderRadius:20,padding:"5px 12px",display:"flex",alignItems:"center",gap:5}}>
-                        <span style={{fontSize:11}}>⭐</span>
-                        <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,fontWeight:700,color:"#0A0806",letterSpacing:1}}>MÁS PEDIDO</span>
-                      </div>
-                    </div>
-                    <div style={{padding:"32px 32px",display:"flex",flexDirection:"column",justifyContent:"space-between"}}>
-                      <div>
-                        {featured.tag&&<Tag tag={featured.tag}/>}
-                        <div style={{fontFamily:"'Playfair Display',serif",fontSize:34,fontWeight:900,color:"#FFF",lineHeight:1.1,marginTop:8,marginBottom:10}}>{featured.name}</div>
-                        <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"#5A4A30",lineHeight:1.6}}>{featured.desc}</div>
-                      </div>
-                      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginTop:20}}>
-                        <div style={{fontFamily:"'Playfair Display',serif",fontSize:30,fontWeight:900,color:ac}}>$ {fmt(featured.price)}</div>
-                        {featured.sin_stock?(
-                          <span style={{fontSize:12,color:"#444",background:"#1A1A1A",border:"1px solid #222",borderRadius:8,padding:"8px 16px",fontFamily:"'DM Sans',sans-serif"}}>Agotado</span>
-                        ):inCart===0?(
-                          <button onClick={()=>add(featured)} className="pr" style={{background:ac,border:"none",borderRadius:12,padding:"12px 28px",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:700,color:"#0A0806",cursor:"pointer"}}>+ Agregar</button>
-                        ):(
-                          <div style={{display:"flex",alignItems:"center",gap:10}}>
-                            <button onClick={()=>rem(featured.id)} className="pr" style={{width:36,height:36,borderRadius:10,background:"#1E1E1E",border:"1px solid #2A2A2A",color:"#AAA",fontSize:20,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>−</button>
-                            <span style={{fontFamily:"'DM Sans',sans-serif",fontWeight:800,fontSize:18,color:ac,minWidth:24,textAlign:"center"}}>{inCart}</span>
-                            <button onClick={()=>add(featured)} className="pr" style={{width:36,height:36,borderRadius:10,background:ac,border:"none",color:"#0A0806",fontSize:20,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>+</button>
-                          </div>
-                        )}
-                      </div>
                     </div>
                   </div>
                 </div>
-              );
-            })()}
+              </div>
+            );
+          })()}
 
-            {/* Products grid */}
+          {/* Carta scroll */}
+          <div style={{flex:1,overflowY:"auto",padding:"16px 32px 32px"}}>
             {activeCats.filter(cat=>activeCat==="TODO"||activeCat===cat.id).map(cat=>{
               const catProds=prods.filter(p=>p.cat===cat.id&&(p.active||p.active==null));
               if(!catProds.length) return null;
               return(
-                <div key={cat.id} style={{marginBottom:44}}>
-                  <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:20}}>
-                    <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,color:ac,letterSpacing:2}}>◆</span>
-                    <span style={{fontFamily:"'Outfit',sans-serif",fontSize:11,fontWeight:800,color:"#FFF",letterSpacing:2,textTransform:"uppercase"}}>{cat.icon} {cat.label}</span>
-                    <div style={{flex:1,height:1,background:"linear-gradient(to right,#2A2A2A,transparent)",marginLeft:8}}/>
-                  </div>
-                  <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(210px,1fr))",gap:14}}>
+                <div key={cat.id} style={{marginBottom:8}}>
+                  <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,letterSpacing:3,textTransform:"uppercase",color:warmMuted,padding:"16px 0 8px",borderBottom:`1px solid ${warmBorder}`}}>{cat.icon} {cat.label}</div>
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:10,padding:"10px 0"}}>
                     {catProds.map(item=>{
                       const inCart=cart[item.id]?.qty||0;
                       const disc=item.orig?Math.round((1-item.price/item.orig)*100):null;
                       return(
-                        <div key={item.id} style={{background:"#141414",borderRadius:14,overflow:"hidden",border:`1px solid ${inCart>0?ac+"88":"#2A2A2A"}`,display:"flex",flexDirection:"column",boxShadow:inCart>0?`0 0 16px ${ac}25`:"0 2px 12px rgba(0,0,0,.4)",transition:"all .2s"}}>
+                        <div key={item.id} style={{background:inCart>0?"#EDE4CE":"#EEE8D8",border:`1px solid ${inCart>0?ac+"88":warmBorder}`,borderRadius:10,display:"flex",gap:12,alignItems:"center",padding:"12px 14px",transition:".2s",cursor:"pointer"}}
+                          onClick={inCart===0&&!item.sin_stock?()=>add(item):undefined}>
                           {item.foto_url?(
-                            <div style={{position:"relative",height:130,overflow:"hidden"}}>
-                              <img src={item.foto_url} alt={item.name} style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}}
-                                onError={e=>{const p=e.target.parentElement;p.style.cssText="height:130px;background:#1A1A1A;display:flex;align-items:center;justify-content:center;";e.target.remove();const s=document.createElement("span");s.style.fontSize="38px";s.textContent=item.emoji||"🍽️";p.appendChild(s);}}/>
-                              {disc&&<div style={{position:"absolute",top:7,left:7,background:"#22C55E",color:"#FFF",borderRadius:4,fontSize:8,fontWeight:800,padding:"2px 5px",fontFamily:"'DM Sans',sans-serif"}}>-{disc}%</div>}
-                              {item.tag&&<div style={{position:"absolute",top:7,right:7}}><Tag tag={item.tag}/></div>}
-                            </div>
+                            <img src={item.foto_url} alt={item.name} style={{width:44,height:44,objectFit:"cover",borderRadius:8,flexShrink:0}}
+                              onError={e=>{e.target.style.display="none";const s=document.createElement("span");s.style.fontSize="36px";e.target.parentNode.insertBefore(s,e.target);s.textContent=item.emoji||"🍽️";}}/>
                           ):(
-                            <div style={{height:100,background:"linear-gradient(135deg,#181818,#101010)",display:"flex",alignItems:"center",justifyContent:"center",position:"relative"}}>
-                              <span style={{fontSize:38}}>{item.emoji||"🍽️"}</span>
-                              {disc&&<div style={{position:"absolute",top:7,left:7,background:"#22C55E",color:"#FFF",borderRadius:4,fontSize:8,fontWeight:800,padding:"2px 5px",fontFamily:"'DM Sans',sans-serif"}}>-{disc}%</div>}
-                              {item.tag&&<div style={{position:"absolute",top:7,right:7}}><Tag tag={item.tag}/></div>}
-                            </div>
+                            <span style={{fontSize:36,flexShrink:0}}>{item.emoji||"🍽️"}</span>
                           )}
-                          <div style={{padding:"12px 14px",flex:1,display:"flex",flexDirection:"column",justifyContent:"space-between"}}>
-                            <div>
-                              <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,color:"#EEE",lineHeight:1.2,marginBottom:3}}>{item.name}</div>
-                              {item.desc&&<div style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,color:"#3A3A3A",lineHeight:1.4,display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",overflow:"hidden"}}>{item.desc}</div>}
-                            </div>
-                            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:10}}>
-                              <div>
-                                <div style={{fontFamily:"'Outfit',sans-serif",fontSize:15,fontWeight:800,color:ac,lineHeight:1}}>$ {fmt(item.price)}</div>
-                                {item.orig&&<div style={{fontFamily:"'DM Sans',sans-serif",fontSize:9,color:"#2A2A2A",textDecoration:"line-through"}}>$ {fmt(item.orig)}</div>}
+                          <div style={{flex:1,minWidth:0}}>
+                            <div style={{fontSize:14,fontWeight:700,color:warmText,marginBottom:2}}>{item.name}</div>
+                            {item.desc&&<div style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,color:warmMuted,lineHeight:1.4,display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",overflow:"hidden"}}>{item.desc}</div>}
+                          </div>
+                          <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:6,flexShrink:0}}>
+                            <span style={{fontSize:15,color:"#8A6A30"}}>{disc?<><span style={{textDecoration:"line-through",fontSize:11,color:warmMuted,marginRight:4}}>$ {fmt(item.orig)}</span></>:""}$ {fmt(item.price)}</span>
+                            {item.tag&&<span style={{fontFamily:"'DM Sans',sans-serif",fontSize:8,fontWeight:700,padding:"2px 6px",borderRadius:4,background:item.tag==="CHEF"?"#C9A84C22":"#4A9A5A22",color:item.tag==="CHEF"?"#8A6A30":"#4A7A50",border:`1px solid ${item.tag==="CHEF"?"#C9A84C55":"#4A9A5A44"}`}}>{item.tag}</span>}
+                            {item.sin_stock?(
+                              <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:9,color:"#888"}}>Agotado</span>
+                            ):inCart===0?(
+                              <button onClick={e=>{e.stopPropagation();add(item);}} className="pr" style={{width:28,height:28,borderRadius:7,background:warmText,border:"none",color:creamBg,fontSize:17,fontWeight:900,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'DM Sans',sans-serif"}}>+</button>
+                            ):(
+                              <div style={{display:"flex",alignItems:"center",gap:5}} onClick={e=>e.stopPropagation()}>
+                                <button onClick={()=>rem(item.id)} className="pr" style={{width:24,height:24,borderRadius:5,background:"#D4C4A8",border:`1px solid ${warmBorder}`,color:warmMuted,fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'DM Sans',sans-serif"}}>−</button>
+                                <span style={{fontFamily:"'DM Sans',sans-serif",fontWeight:700,fontSize:12,color:warmText,minWidth:14,textAlign:"center"}}>{inCart}</span>
+                                <button onClick={()=>add(item)} className="pr" style={{width:24,height:24,borderRadius:5,background:warmText,border:"none",color:creamBg,fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'DM Sans',sans-serif"}}>+</button>
                               </div>
-                              {item.sin_stock?(
-                                <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:9,fontWeight:700,color:"#444",background:"#1A1A1A",border:"1px solid #222",borderRadius:4,padding:"3px 6px"}}>Agotado</span>
-                              ):inCart===0?(
-                                <button onClick={()=>add(item)} className="pr" style={{width:30,height:30,borderRadius:8,background:ac,border:"none",color:"#0A0806",fontSize:19,fontWeight:900,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,touchAction:"manipulation",lineHeight:1}}>+</button>
-                              ):(
-                                <div style={{display:"flex",alignItems:"center",gap:5,flexShrink:0}}>
-                                  <button onClick={()=>rem(item.id)} className="pr" style={{width:24,height:24,borderRadius:6,background:"#1E1E1E",border:"1px solid #2A2A2A",color:"#AAA",fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",padding:0,touchAction:"manipulation",lineHeight:1}}>−</button>
-                                  <span style={{fontFamily:"'DM Sans',sans-serif",fontWeight:800,fontSize:13,color:ac,minWidth:14,textAlign:"center"}}>{inCart}</span>
-                                  <button onClick={()=>add(item)} className="pr" style={{width:24,height:24,borderRadius:6,background:ac,border:"none",color:"#0A0806",fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",padding:0,touchAction:"manipulation",lineHeight:1}}>+</button>
-                                </div>
-                              )}
-                            </div>
+                            )}
                           </div>
                         </div>
                       );
@@ -2118,7 +2129,6 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
       </div>
     );
   }
-
   /* ── MENU VIEW */
   return (
     <div className="mpo" style={{maxWidth:430,margin:"0 auto",minHeight:"100vh",background:"#0A0806",display:"flex",position:"relative",overflow:"hidden"}}>

@@ -2,620 +2,336 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>MenuQR — Demo Completo</title>
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=IBM+Plex+Mono:wght@400;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+<title>MenuQR — Demo completo</title>
 <style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%;background:#060810;font-family:'Outfit',sans-serif;overscroll-behavior:none}
-.hdr{position:fixed;top:0;left:0;right:0;z-index:100;padding:10px 16px;display:flex;align-items:center;gap:10px;background:rgba(6,8,16,.96);border-bottom:1px solid #1A2230;backdrop-filter:blur(10px)}
-.logo{font-family:'Playfair Display',serif;font-size:1.05rem;color:#EDE0C8;flex-shrink:0}
-.section-badge{font-family:'IBM Plex Mono',monospace;font-size:.58rem;letter-spacing:1.5px;padding:2px 8px;border-radius:4px;flex-shrink:0}
-.dots{margin-left:auto;display:flex;gap:4px;flex-wrap:wrap;max-width:120px;justify-content:flex-end}
-.dot{width:6px;height:6px;border-radius:50%;background:#1A2230;transition:all .3s}
-.dot.active{background:#00FF88;transform:scale(1.3)}.dot.done{background:#3D8EFF}
-.wrap{position:fixed;top:48px;bottom:130px;left:0;right:0;overflow:hidden}
-.screen{position:absolute;inset:0;opacity:0;transform:translateX(100%);transition:opacity .4s ease,transform .4s ease;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;background:#0d1117}
-.screen.active{opacity:1;transform:translateX(0)}
-.screen.exit{opacity:0;transform:translateX(-100%)}
-.screen::-webkit-scrollbar{display:none}
-.infobar{background:#0C1018;border-top:1px solid #1A2230;padding:9px 16px;position:fixed;bottom:64px;left:0;right:0;z-index:99}
-.infolbl{font-family:'IBM Plex Mono',monospace;font-size:.56rem;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:3px}
-.infotxt{font-size:1.1rem;color:#B8D0E8;line-height:1.4}
-.pbar{height:2px;background:#1A2230;border-radius:2px;overflow:hidden;margin-top:7px}
-.pfill{height:100%;border-radius:2px;transition:width .8s ease}
-.ctrl{position:fixed;bottom:0;left:0;right:0;z-index:100;display:flex;gap:7px;align-items:center;justify-content:center;padding:10px 14px;background:rgba(6,8,16,.96);border-top:1px solid #1A2230}
-.cbtn{padding:9px 16px;border-radius:22px;border:none;font-family:'Outfit',sans-serif;font-size:.8rem;font-weight:700;cursor:pointer;transition:all .2s;flex:1;max-width:110px}
-.cplay{background:linear-gradient(135deg,#00FF88,#00C870);color:#060810}
-.cnav{background:#111820;color:#4A6080;border:1px solid #1A2230}
-.cnav:disabled{opacity:.3}
-.clbl{font-family:'IBM Plex Mono',monospace;font-size:.62rem;color:#4A6080;min-width:38px;text-align:center}
-.tap-ring{position:fixed;width:44px;height:44px;border-radius:50%;border:3px solid rgba(0,255,136,.9);pointer-events:none;transform:translate(-50%,-50%) scale(0);animation:tapA .6s ease forwards;z-index:9999}
-@keyframes tapA{0%{transform:translate(-50%,-50%) scale(0);opacity:1}60%{transform:translate(-50%,-50%) scale(1);opacity:.8}100%{transform:translate(-50%,-50%) scale(1.5);opacity:0}}
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,600;0,700;0,800;1,400&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{--gold:#C9A84C;--dark:#0A0806;--d2:#141208;--d3:#1E1C14;--muted:#5A4A30;--green:#4A9A5A;}
+html,body{width:100%;height:100%;overflow:hidden;background:#050402;font-family:'DM Sans',sans-serif;color:#FFF;}
 
-/* ── REUSABLE COMPONENTS ── */
-.shdr{padding:18px 14px 12px;background:#0d1117;border-bottom:1px solid #1A2230;display:flex;align-items:center;gap:9px;position:sticky;top:0;z-index:10}
-.back{width:30px;height:30px;border-radius:50%;background:#111820;border:1px solid #1A2230;color:#B8D0E8;display:flex;align-items:center;justify-content:center;font-size:.82rem;cursor:pointer;flex-shrink:0}
-.stitle{font-weight:700;color:#EDE0C8;font-size:.92rem}
-.card{margin:8px 11px 0;background:#111820;border:1px solid #1A2230;border-radius:13px;overflow:hidden}
-.card.green{border-color:rgba(0,255,136,.3)}
-.card.blue{border-color:rgba(61,142,255,.3)}
-.card.gold{border-color:rgba(255,176,32,.3)}
-.chip{display:inline-flex;align-items:center;gap:4px;border-radius:20px;padding:3px 8px;font-family:'IBM Plex Mono',monospace;font-size:.6rem;letter-spacing:.5px;font-weight:700}
-.chip-g{background:rgba(0,204,112,.1);border:1px solid rgba(0,204,112,.2);color:#00CC70}
-.chip-b{background:rgba(61,142,255,.1);border:1px solid rgba(61,142,255,.2);color:#3D8EFF}
-.chip-y{background:rgba(255,176,32,.1);border:1px solid rgba(255,176,32,.2);color:#FFB020}
-.chip-r{background:rgba(255,59,92,.1);border:1px solid rgba(255,59,92,.2);color:#ff3b5c}
-.row{display:flex;align-items:center;justify-content:space-between;padding:10px 13px;border-bottom:1px solid #1A2230}
-.row:last-child{border-bottom:none}
-.lbl{font-size:.78rem;color:#4A6080}
-.val{font-family:'IBM Plex Mono',monospace;font-size:.82rem;color:#B8D0E8;font-weight:600}
-.val.green{color:#00CC70}
-.btn-g{width:calc(100% - 22px);margin:10px 11px;padding:14px;background:linear-gradient(135deg,#00FF88,#00C870);border:none;border-radius:12px;color:#060810;font-size:.92rem;font-weight:800;cursor:pointer;font-family:'Outfit',sans-serif;display:block}
-.btn-d{width:calc(100% - 22px);margin:6px 11px;padding:12px;background:rgba(255,255,255,.04);border:1px solid #1A2230;border-radius:12px;color:#4A6080;font-size:.85rem;font-weight:600;cursor:pointer;font-family:'Outfit',sans-serif;display:block;text-align:center}
-.section-hdr{padding:14px 14px 6px;font-family:'IBM Plex Mono',monospace;font-size:.6rem;letter-spacing:2px;color:#4A6080;text-transform:uppercase}
+#prog-bar{position:fixed;top:0;left:0;height:3px;background:var(--gold);width:0%;transition:none;z-index:1000;}
 
-/* ── S0 VITRINA ── */
-.vitrina{display:flex;flex-direction:column;align-items:center;padding:36px 22px 28px;gap:14px;min-height:100%;background:linear-gradient(180deg,#0d1117 0%,#060a10 100%)}
-.rname{font-family:'Playfair Display',serif;font-size:1.7rem;color:#EDE0C8;text-align:center}
-.rsub{font-family:'IBM Plex Mono',monospace;font-size:.62rem;letter-spacing:3px;color:#4A6080;text-transform:uppercase;text-align:center}
-.qrbox{width:120px;height:120px;background:#fff;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:3rem;box-shadow:0 0 28px rgba(0,204,112,.12)}
-.pbanner{background:rgba(0,204,112,.08);border:1px solid rgba(0,204,112,.25);border-radius:13px;padding:13px 17px;width:100%;text-align:center}
-.pbanner h3{font-size:.88rem;font-weight:700;color:#00FF88;margin-bottom:3px}
-.pbanner p{font-size:.7rem;color:#4A8060;font-family:'IBM Plex Mono',monospace}
+#stage{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px 40px 60px;}
 
-/* ── S1 CARTA ── */
-.mhdr{background:#0d1117;padding:18px 14px 10px;border-bottom:1px solid #1A2230;position:sticky;top:0;z-index:10}
-.mrname{font-family:'Playfair Display',serif;font-size:1rem;color:#EDE0C8;margin-bottom:5px}
-.cats{display:flex;gap:7px;padding:8px 12px;overflow-x:auto}.cats::-webkit-scrollbar{display:none}
-.cat{flex-shrink:0;padding:6px 12px;background:#111820;border:1px solid #1A2230;border-radius:7px;color:#4A6080;font-size:.74rem;font-weight:600;cursor:pointer;white-space:nowrap}
-.cat.active{background:rgba(61,142,255,.15);border-color:#3D8EFF;color:#3D8EFF}
-.cttl{padding:12px 14px 5px;font-family:'IBM Plex Mono',monospace;font-size:.6rem;letter-spacing:2px;color:#4A6080;text-transform:uppercase}
-.pcard{margin:0 10px 8px;background:#111820;border:1px solid #1A2230;border-radius:12px;overflow:hidden;display:flex;align-items:center;gap:10px;transition:all .2s}
-.pcard-img{width:64px;height:64px;border-radius:10px;object-fit:cover;flex-shrink:0;background:#1A2230}
-.pcard.hi{border-color:rgba(0,255,136,.4);background:rgba(0,255,136,.03)}
-.pem{font-size:2rem;flex-shrink:0}
-.pinf{flex:1;min-width:0}
-.pnm{font-weight:700;color:#B8D0E8;font-size:.84rem;margin-bottom:2px}
-.pds{font-size:.69rem;color:#4A6080;margin-bottom:4px;line-height:1.3}
-.ppr{font-family:'IBM Plex Mono',monospace;font-size:.84rem;font-weight:700;color:#00CC70}
-.abtn{width:32px;height:32px;border-radius:50%;background:#00CC70;border:none;color:#060810;font-size:1.2rem;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-weight:700;transition:transform .15s,background .2s;line-height:1}
-.abtn.added{background:#00FF88;transform:scale(1.2)}
-.cbar{position:sticky;bottom:0;background:linear-gradient(135deg,#00CC70,#00A860);margin:5px 10px 11px;border-radius:12px;padding:13px 15px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 4px 20px rgba(0,204,112,.3);opacity:0;transform:translateY(20px);transition:opacity .4s ease,transform .4s ease;cursor:pointer}
-.cbar.vis{opacity:1;transform:translateY(0)}
+.phone{width:270px;background:#111;border-radius:36px;border:3px solid #2A2A2A;box-shadow:0 40px 100px rgba(0,0,0,.7),inset 0 0 0 1px #333;overflow:hidden;position:relative;flex-shrink:0;}
+.phone-notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:80px;height:22px;background:#111;border-radius:0 0 14px 14px;z-index:10;}
+.phone-screen{min-height:500px;background:var(--dark);overflow:hidden;padding-top:22px;}
 
-/* ── S2 DIVISION ── */
-.div-box{margin:10px 11px 0;background:#111820;border:1px solid #1A2230;border-radius:13px;padding:16px}
-.div-title{font-size:.88rem;font-weight:700;color:#EDE0C8;margin-bottom:10px}
-.div-stepper{display:flex;align-items:center;justify-content:center;gap:16px;margin-bottom:14px}
-.div-btn{width:40px;height:40px;border-radius:50%;background:#1A2230;border:none;color:#B8D0E8;font-size:1.2rem;cursor:pointer;font-weight:700}
-.div-n{font-family:'IBM Plex Mono',monospace;font-size:1.6rem;font-weight:700;color:#EDE0C8;min-width:40px;text-align:center}
-.div-pp{text-align:center;font-family:'IBM Plex Mono',monospace;font-size:1.2rem;font-weight:700;color:#00CC70;margin-bottom:4px}
-.div-sub{text-align:center;font-size:.72rem;color:#4A6080}
-.pay-opts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 11px 0}
-.pay-opt{padding:12px;background:#111820;border:1px solid #1A2230;border-radius:12px;text-align:center;cursor:pointer;transition:all .2s}
-.pay-opt.sel{background:rgba(0,204,112,.1);border-color:#00CC70}
-.pay-icon{font-size:1.4rem;display:block;margin-bottom:4px}
-.pay-label{font-size:.72rem;color:#B8D0E8;font-weight:600}
-.pay-sub{font-size:.62rem;color:#4A6080;font-family:'IBM Plex Mono',monospace}
+#text-area{text-align:center;max-width:900px;margin-top:16px;flex-shrink:0;}
+#slide-num{font-size:11px;font-weight:700;letter-spacing:2.5px;color:var(--muted);text-transform:uppercase;margin-bottom:6px;}
+#slide-title{font-size:36px;font-weight:800;letter-spacing:-1px;line-height:1.1;margin-bottom:8px;}
+#slide-desc{font-size:20px;color:#8A7A60;line-height:1.45;font-weight:400;}
 
-/* ── S4 CAMPANITA ── */
-.bell-screen{display:flex;flex-direction:column;align-items:center;padding:36px 22px;gap:14px;min-height:100%}
-.bell-icon{width:80px;height:80px;border-radius:50%;background:rgba(61,142,255,.1);border:2px solid rgba(61,142,255,.3);display:flex;align-items:center;justify-content:center;font-size:2.2rem;animation:ringAnim 2s infinite}
-@keyframes ringAnim{0%,100%{transform:rotate(0)}5%{transform:rotate(-12deg)}10%{transform:rotate(12deg)}15%{transform:rotate(-8deg)}20%{transform:rotate(8deg)}25%{transform:rotate(0)}}
-.bell-title{font-size:1.2rem;font-weight:800;color:#EDE0C8}
-.bell-opts{width:100%;display:flex;flex-direction:column;gap:8px}
-.bell-opt{padding:14px 16px;background:#111820;border:1px solid #1A2230;border-radius:13px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:border-color .2s}
-.bell-opt.sel{border-color:#3D8EFF;background:rgba(61,142,255,.07)}
-.bell-opt-icon{font-size:1.4rem}
-.bell-opt-label{font-weight:700;color:#B8D0E8;font-size:.88rem}
-.bell-opt-sub{font-size:.72rem;color:#4A6080}
+#controls{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:14px;}
+.ctrl-btn{width:40px;height:40px;border-radius:50%;background:#1A1612;border:1px solid #2A2210;color:#888;font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.15s;}
+.ctrl-btn:hover{border-color:var(--gold);color:var(--gold);}
+#dots{display:flex;gap:6px;}
+.dot{width:7px;height:7px;border-radius:50%;background:#2A2210;cursor:pointer;transition:.2s;}
+.dot.active{background:var(--gold);transform:scale(1.3);}
 
-/* ── S5 HISTORIAL ── */
-.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px 11px 0}
-.stat-card{background:#111820;border:1px solid #1A2230;border-radius:12px;padding:12px}
-.stat-val{font-family:'IBM Plex Mono',monospace;font-size:1.1rem;font-weight:700;color:#00CC70}
-.stat-lbl{font-size:.7rem;color:#4A6080;margin-top:2px}
-.chart-bar-wrap{padding:10px 11px 0}
-.chart-ttl{font-family:'IBM Plex Mono',monospace;font-size:.6rem;letter-spacing:2px;color:#4A6080;text-transform:uppercase;margin-bottom:10px}
-.bar-row{display:flex;align-items:center;gap:8px;margin-bottom:7px}
-.bar-day{font-family:'IBM Plex Mono',monospace;font-size:.65rem;color:#4A6080;width:28px;flex-shrink:0}
-.bar-track{flex:1;height:20px;background:#0C1018;border-radius:4px;overflow:hidden;position:relative}
-.bar-fill{height:100%;border-radius:4px;display:flex;align-items:center;justify-content:flex-end;padding-right:6px}
-.bar-num{font-family:'IBM Plex Mono',monospace;font-size:.62rem;color:#060810;font-weight:700}
-.pay-breakdown{padding:10px 11px 0}
-.pb-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
-.pb-icon{font-size:.9rem;flex-shrink:0}
-.pb-bar{flex:1;height:12px;background:#0C1018;border-radius:3px;overflow:hidden}
-.pb-fill{height:100%;border-radius:3px}
-.pb-pct{font-family:'IBM Plex Mono',monospace;font-size:.62rem;color:#4A6080;width:30px;text-align:right}
+.app-header{display:flex;align-items:center;gap:10px;padding:14px 14px 8px;}
+.app-emoji{font-size:28px;}
+.app-name{font-size:15px;font-weight:800;color:#FFF;font-style:italic;}
+.app-sub{font-size:9px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;}
 
-/* ── S6 EMPLEADOS ── */
-.emp-card{margin:8px 11px 0;background:#111820;border:1px solid #1A2230;border-radius:13px;padding:13px;display:flex;align-items:center;gap:11px}
-.emp-card.on{border-color:#00FF88;background:rgba(0,255,136,.04)}
-.emp-avatar{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0}
-.emp-name{font-weight:700;color:#B8D0E8;font-size:.85rem}
-.emp-rol{font-size:.7rem;color:#4A6080;margin-top:1px}
-.emp-toggle{padding:5px 12px;border-radius:20px;border:none;font-family:'IBM Plex Mono',monospace;font-size:.65rem;font-weight:700;cursor:pointer;margin-left:auto;flex-shrink:0}
-.emp-toggle.on{background:rgba(255,59,92,.12);color:#ff3b5c}
-.emp-toggle.off{background:rgba(0,255,136,.12);color:#00CC70}
-.turno-row{margin:6px 11px 0;background:#0C1018;border:1px solid #1A2230;border-radius:9px;padding:10px 13px;display:flex;align-items:center;justify-content:space-between}
-.turno-name{font-size:.78rem;color:#B8D0E8;font-weight:600}
-.turno-time{font-family:'IBM Plex Mono',monospace;font-size:.7rem;color:#3D8EFF}
-.turno-dur{font-family:'IBM Plex Mono',monospace;font-size:.65rem;color:#4A6080}
+.cat-bar{display:flex;gap:6px;padding:6px 12px 8px;overflow:hidden;}
+.ctab{font-size:9px;font-weight:700;padding:5px 11px;border-radius:12px;background:#141208;color:var(--muted);border:1px solid #1E1C14;flex-shrink:0;}
+.ctab.on{background:var(--gold);color:#0A0806;border-color:var(--gold);}
 
-/* ── S7 S8 CAJA ── */
-.caja-tabs{display:flex;background:#060810;border-bottom:1px solid #1A2230}
-.caja-tab{flex:1;padding:9px 0;text-align:center;font-size:.7rem;font-weight:700;color:#4A6080;border-bottom:2px solid transparent;cursor:pointer}
-.caja-tab.active{color:#00CC70;border-bottom-color:#00CC70}
-.pos-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;padding:10px 11px 0}
-.pos-item{background:#111820;border:1px solid #1A2230;border-radius:11px;padding:11px;text-align:center;cursor:pointer;transition:all .2s}
-.pos-item:active{border-color:rgba(0,255,136,.4);background:rgba(0,255,136,.05)}
-.pos-em{font-size:1.6rem;display:block;margin-bottom:4px}
-.pos-nm{font-size:.7rem;font-weight:700;color:#B8D0E8}
-.pos-pr{font-family:'IBM Plex Mono',monospace;font-size:.65rem;color:#00CC70;margin-top:2px}
-.caja-ticket{margin:10px 11px 0;background:#0C1018;border:1px solid #1A2230;border-radius:13px;padding:13px}
-.ticket-item{display:flex;align-items:center;justify-content:space-between;padding:4px 0;font-size:.78rem;border-bottom:1px solid #1A2230}
-.ticket-item:last-child{border-bottom:none}
-.ticket-nm{color:#B8D0E8}
-.ticket-pr{font-family:'IBM Plex Mono',monospace;color:#00CC70;font-weight:600}
-.cierre-box{margin:10px 11px 0;background:#0C1018;border:1px solid #1A2230;border-radius:13px;padding:14px}
-.cierre-title{font-size:.82rem;font-weight:700;color:#EDE0C8;margin-bottom:10px;display:flex;align-items:center;gap:6px}
-.cierre-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;font-size:.78rem;border-bottom:1px solid #1A2230}
-.cierre-row:last-child{border-bottom:none}
-.cierre-row span:first-child{color:#4A6080}
-.cierre-row span:last-child{font-family:'IBM Plex Mono',monospace;color:#B8D0E8;font-weight:600}
-.btn-red{width:calc(100% - 22px);margin:10px 11px;padding:13px;background:rgba(255,59,92,.12);border:1px solid rgba(255,59,92,.3);border-radius:12px;color:#ff3b5c;font-size:.88rem;font-weight:800;cursor:pointer;font-family:'Outfit',sans-serif;display:block;text-align:center}
-.btn-gold{width:calc(100% - 22px);margin:10px 11px;padding:13px;background:rgba(255,176,32,.12);border:1px solid rgba(255,176,32,.3);border-radius:12px;color:#FFB020;font-size:.88rem;font-weight:800;cursor:pointer;font-family:'Outfit',sans-serif;display:block;text-align:center}
-.success-scr{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100%;padding:36px 22px;gap:14px;text-align:center}
-.sico{width:76px;height:76px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:2.2rem;animation:pulse 2s infinite}
-.sico.green{background:rgba(0,255,136,.1);border:2px solid rgba(0,255,136,.3)}
-.sico.blue{background:rgba(61,142,255,.1);border:2px solid rgba(61,142,255,.3)}
-@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(0,255,136,.3)}50%{box-shadow:0 0 0 16px rgba(0,255,136,0)}}
+.prod-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:4px 12px;}
+.pc{background:#141208;border-radius:10px;overflow:hidden;border:1px solid #1E1C14;}
+.pc.glow{border-color:#C9A84C55;box-shadow:0 0 12px #C9A84C18;}
+.pc-img{height:64px;display:flex;align-items:center;justify-content:center;font-size:28px;background:#0E0C08;position:relative;}
+.pc-tag{position:absolute;top:4px;right:4px;font-size:7px;font-weight:800;padding:2px 5px;border-radius:3px;}
+.tag-c{background:#C9A84C22;color:var(--gold);border:1px solid #C9A84C44;}
+.tag-n{background:#4A9A5A22;color:#6ABD7A;border:1px solid #4A9A5A44;}
+.pc-info{padding:6px 8px;}
+.pc-name{font-size:10px;font-weight:700;color:#CCC;margin-bottom:2px;}
+.pc-bot{display:flex;align-items:center;justify-content:space-between;}
+.pc-price{font-size:11px;font-weight:800;color:var(--gold);}
+.pc-add{width:20px;height:20px;border-radius:5px;background:var(--gold);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:#0A0806;}
+.qty-c{display:flex;align-items:center;gap:4px;}
+.qb{width:18px;height:18px;border-radius:4px;background:#1E1C14;border:1px solid #2A2210;display:flex;align-items:center;justify-content:center;font-size:11px;color:#888;}
+.qb.p{background:var(--gold);border-color:var(--gold);color:#0A0806;}
+.qn{font-size:10px;font-weight:800;color:var(--gold);min-width:12px;text-align:center;}
+
+.cart-box{background:#141208;border-radius:10px;padding:10px 12px;margin:6px 12px 0;}
+.cart-row{display:flex;justify-content:space-between;font-size:9px;color:var(--muted);padding:3px 0;}
+.cart-total{display:flex;justify-content:space-between;font-size:13px;font-weight:800;color:#FFF;padding:6px 0 8px;border-top:1px solid #1E1C14;margin-top:4px;}
+.cart-total span:last-child{color:var(--gold);}
+.cart-btn{background:var(--gold);border-radius:8px;padding:9px;text-align:center;font-size:11px;font-weight:800;color:#0A0806;}
+
+.pay-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:7px;}
+.pb{background:#0E0C08;border:1px solid #1E1C14;border-radius:7px;padding:6px 4px;text-align:center;font-size:8px;color:var(--muted);}
+.pb.on{border-color:#C9A84C55;color:var(--gold);}
+.pb-i{font-size:14px;display:block;margin-bottom:2px;}
+
+.track-wrap{padding:12px 14px;}
+.track-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.track-title{font-size:13px;font-weight:700;}
+.track-live{display:flex;align-items:center;gap:4px;font-size:8px;color:var(--green);background:#4A9A5A18;border:1px solid #4A9A5A33;border-radius:10px;padding:2px 7px;}
+.tl-dot{width:5px;height:5px;border-radius:50%;background:var(--green);}
+.tstep{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:10px;border:1px solid transparent;margin-bottom:7px;}
+.tstep.done{background:#C9A84C18;border-color:#C9A84C33;}
+.tstep.now{background:#4A9A5A18;border-color:#4A9A5A44;}
+.tstep.wait{opacity:.3;}
+.ts-icon{font-size:18px;flex-shrink:0;}
+.ts-info{flex:1;}
+.ts-label{font-size:11px;font-weight:700;color:#EEE;}
+.ts-sub{font-size:9px;color:var(--muted);}
+.ts-dot{width:7px;height:7px;border-radius:50%;}
+.ts-dot.g{background:var(--gold);}
+.ts-dot.v{background:var(--green);box-shadow:0 0 6px var(--green);}
+.ts-dot.w{background:#3A2A10;}
+
+.qrv-screen{padding:14px;}
+.qrv-title{font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;margin-bottom:10px;}
+.qrv-list{display:flex;flex-direction:column;gap:6px;}
+.qrv-item{background:#141208;border-radius:8px;padding:9px 12px;display:flex;align-items:center;gap:10px;}
+.qrv-e{font-size:20px;flex-shrink:0;}
+.qrv-d{flex:1;}
+.qrv-n{font-size:11px;font-weight:700;color:#CCC;}
+.qrv-p{font-size:10px;color:var(--gold);}
+
+.pc-layout{display:flex;height:500px;background:var(--dark);}
+.pc-left{width:90px;flex-shrink:0;background:#0E0C08;border-right:1px solid #1A1612;padding:10px 0;}
+.pc-logo-sm{padding:8px 10px;border-bottom:1px solid #1A1612;margin-bottom:8px;text-align:center;}
+.pc-logo-sm .e{font-size:20px;}
+.pc-logo-sm .n{font-size:8px;font-weight:800;color:#FFF;font-style:italic;}
+.pc-cat-item{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 6px;border-left:2px solid transparent;}
+.pc-cat-item.on{border-left-color:var(--gold);}
+.pc-cat-item .ci{font-size:16px;}
+.pc-cat-item .cl{font-size:7px;color:var(--muted);}
+.pc-cat-item.on .cl{color:var(--gold);}
+.pc-main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.pc-tabs{display:flex;gap:5px;padding:8px 10px;border-bottom:1px solid #1A1612;}
+.pc-t{font-size:8px;font-weight:700;padding:4px 10px;border-radius:10px;background:#141208;color:var(--muted);border:1px solid #1E1C14;}
+.pc-t.on{background:var(--gold);color:#0A0806;border-color:var(--gold);}
+.pc-feat{background:#141208;border:1px solid #2A2210;border-radius:10px;padding:10px 14px;margin:8px 10px;display:flex;gap:12px;align-items:center;}
+.pc-feat-e{font-size:32px;}
+.pc-feat-inf .badge{font-size:7px;font-weight:800;color:var(--gold);letter-spacing:1px;margin-bottom:4px;}
+.pc-feat-inf .fn{font-size:12px;font-weight:800;color:#FFF;margin-bottom:2px;}
+.pc-feat-inf .fp{font-size:14px;color:var(--gold);}
+.pc-pgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;padding:0 10px;}
+.pcg{background:#141208;border-radius:8px;overflow:hidden;border:1px solid #1E1C14;}
+.pcg-img{height:45px;display:flex;align-items:center;justify-content:center;font-size:20px;background:#0E0C08;}
+.pcg-info{padding:5px 6px;}
+.pcg-n{font-size:8px;font-weight:700;color:#CCC;}
+.pcg-p{font-size:9px;font-weight:800;color:var(--gold);}
+.pc-right{width:80px;flex-shrink:0;background:#0E0C08;border-left:1px solid #1A1612;padding:8px;}
+.pc-right-title{font-size:7px;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin-bottom:8px;}
+.pc-cart-item{display:flex;gap:4px;align-items:center;padding:4px 0;border-bottom:1px solid #1A1612;}
+.pc-ci-e{font-size:12px;}
+.pc-ci-d{flex:1;}
+.pc-ci-n{font-size:7px;color:#CCC;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+.pc-ci-p{font-size:7px;color:var(--gold);}
+.pc-total{font-size:10px;font-weight:800;color:var(--gold);text-align:right;margin-top:6px;}
+.pc-order-btn{background:var(--gold);border-radius:6px;padding:6px;text-align:center;font-size:7px;font-weight:800;color:#0A0806;margin-top:6px;}
+
+.multi-screen{padding:14px;}
+.multi-title{font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;margin-bottom:12px;}
+.multi-item{background:#141208;border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:10px;margin-bottom:7px;border:1px solid #1E1C14;}
+.mi-e{font-size:22px;}
+.mi-d{flex:1;}
+.mi-n{font-size:12px;font-weight:700;color:#EEE;}
+.mi-u{font-size:9px;color:var(--muted);}
+.mi-dot{width:7px;height:7px;border-radius:50%;background:var(--green);}
+.mi-dot.off{background:#3A2A10;}
+
+.qr-scan{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px 20px;text-align:center;gap:14px;}
+.qr-icon-big{font-size:80px;}
+.qr-beam{width:180px;height:3px;background:linear-gradient(90deg,transparent,var(--gold),transparent);animation:scan 2s ease-in-out infinite;}
+@keyframes scan{0%,100%{transform:translateY(-40px);opacity:0}50%{transform:translateY(40px);opacity:1}}
+.qr-label{font-size:14px;font-weight:700;color:#EEE;}
+.qr-sub-txt{font-size:10px;color:var(--muted);line-height:1.6;}
+
+.confirm-screen{padding:18px 14px;text-align:center;}
+.confirm-icon{font-size:56px;margin-bottom:12px;}
+.confirm-title{font-size:16px;font-weight:800;color:#FFF;margin-bottom:6px;}
+.confirm-sub{font-size:10px;color:var(--muted);line-height:1.6;margin-bottom:14px;}
+.confirm-order-num{background:#141208;border:1px solid var(--gold);border-radius:10px;padding:10px 16px;font-size:22px;font-weight:800;color:var(--gold);margin-bottom:14px;}
+.confirm-msg{font-size:10px;color:#3A2A10;font-style:italic;}
+
+.kitchen-screen{padding:12px;}
+.kitch-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.kitch-title{font-size:13px;font-weight:700;color:#FFF;}
+.kitch-badge{font-size:8px;background:#C9A84C22;color:var(--gold);border:1px solid #C9A84C44;border-radius:8px;padding:2px 8px;}
+.kitch-order{background:#141208;border:1px solid #2A2210;border-radius:10px;padding:10px 12px;margin-bottom:8px;}
+.ko-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.ko-num{font-size:12px;font-weight:800;color:var(--gold);}
+.ko-status{font-size:8px;font-weight:700;padding:2px 7px;border-radius:10px;}
+.ko-status.prep{background:#4A9A5A22;color:#6ABD7A;border:1px solid #4A9A5A44;}
+.ko-item{display:flex;gap:8px;font-size:10px;color:#CCC;padding:3px 0;}
+.ko-item-e{font-size:14px;}
+.ko-obs{font-size:9px;color:var(--muted);font-style:italic;margin-top:4px;}
+.ko-btn{background:var(--green);border-radius:7px;padding:7px;text-align:center;font-size:10px;font-weight:700;color:#FFF;margin-top:8px;}
+
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.fade-in{animation:fadeIn .4s ease forwards;}
+@keyframes slideLeft{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+.slide-in{animation:slideLeft .4s ease forwards;}
 </style>
 </head>
 <body>
-<div class="hdr">
-  <span class="logo">MenuQR</span>
-  <span class="section-badge" id="secBadge" style="background:rgba(0,255,136,.1);border:1px solid rgba(0,255,136,.25);color:#00FF88">CLIENTE</span>
-  <div class="dots" id="dots"></div>
-</div>
 
-<div class="wrap" id="wrap">
+<div id="prog-bar"></div>
 
-<!-- ══ S0: VITRINA ══ -->
-<div class="screen" id="s0">
-  <div class="vitrina">
-    <div style="height:4px"></div>
-    <div class="rname">El Porteño</div>
-  <div class="rsub">PANCHERÍA · Desde 1996</div>
-    
-    <div class="qrbox">&#9638;</div>
-    <img src="https://fwovflsaghnutysjyaus.supabase.co/storage/v1/object/public/fotos/el-porteno/porteno.jpg" style="width:100%;border-radius:16px;height:140px;object-fit:cover;margin-top:4px" alt="El Porteño">
-    <div class="pbanner"><h3>&#127873; 10% de descuento</h3><p>Primera visita via QR</p></div>
-    <button class="btn-g" style="margin:0;width:100%" onclick="tap(event,()=>goTo(1))">Ver carta &#8594;</button>
-    <button class="btn-d" style="margin:0;width:100%">Solo consultar carta</button>
+<div id="stage">
+  <div class="phone">
+    <div class="phone-notch"></div>
+    <div class="phone-screen" id="phone-screen"></div>
+  </div>
+  <div id="text-area">
+    <div id="slide-num"></div>
+    <div id="slide-title"></div>
+    <div id="slide-desc"></div>
   </div>
 </div>
 
-<!-- ══ S1: CARTA ══ -->
-<div class="screen" id="s1">
-  <div class="mhdr">
-    <div class="mrname">El Porteño</div>
-    <span class="chip chip-g">&#127873; 10% activo</span>
-  </div>
-  <div class="cats">
-    <div class="cat active">&#127829; Panchos</div>
-    <div class="cat">&#11088; Especiales</div>
-    <div class="cat">&#127866; Cervezas</div>
-    <div class="cat">&#127861; Gaseosas</div>
-  </div>
-  <div class="cttl">PANCHOS DEL MUNDO</div>
-  <div class="pcard hi" id="pc1">
-    <img class="pcard-img" src="https://fwovflsaghnutysjyaus.supabase.co/storage/v1/object/public/fotos/el-porteno/porteno.jpg" alt="Porteño">
-    <div class="pinf"><div class="pnm">Porte&#241;o</div><div class="pds">Salsa roquefort &#183; Tomate &#183; Salsa golf &#183; Papas pay</div><div class="ppr">$ 5.800</div></div>
-    <button class="abtn" id="ab1" onclick="addIt(event,'ab1','pc1',5800)">+</button>
-  </div>
-  <div class="pcard" id="pc2">
-    <img class="pcard-img" src="https://fwovflsaghnutysjyaus.supabase.co/storage/v1/object/public/fotos/el-porteno/mexicano.jpg" alt="Mexicano">
-    <div class="pinf"><div class="pnm">Mexicano &#127798;</div><div class="pds">Cebolla &#183; Salsa newman&#39;s &#183; Tabasco &#183; Jalape&#241;os</div><div class="ppr">$ 5.300</div></div>
-    <button class="abtn" id="ab2" onclick="addIt(event,'ab2','pc2',5300)">+</button>
-  </div>
-  <div class="cttl">BEBIDAS</div>
-  <div class="pcard" id="pc3">
-    <img class="pcard-img" src="https://fwovflsaghnutysjyaus.supabase.co/storage/v1/object/public/fotos/el-porteno/quilmes_473ml_.jpg" alt="Quilmes">
-    <div class="pinf"><div class="pnm">Quilmes 473ml</div><div class="pds">Lata fr&#237;a</div><div class="ppr">$ 2.800</div></div>
-    <button class="abtn" id="ab3" onclick="addIt(event,'ab3','pc3',2800)">+</button>
-  </div>
-  <div style="height:65px"></div>
-  <div class="cbar" id="cbar" onclick="tap(event,()=>goTo(2))">
-    <span style="font-weight:800;color:#060810;font-size:.9rem">Ver pedido</span>
-    <div style="display:flex;align-items:center;gap:8px">
-      <span style="font-family:'IBM Plex Mono',monospace;font-size:.76rem;color:#060810;font-weight:700" id="ctot">$ 0</span>
-      <span style="background:rgba(0,0,0,.15);color:#060810;font-family:'IBM Plex Mono',monospace;padding:3px 9px;border-radius:18px;font-size:.74rem;font-weight:700" id="cqty">0</span>
-    </div>
-  </div>
-</div>
-
-<!-- ══ S2: CHECKOUT (con división) ══ -->
-<div class="screen" id="s2">
-  <div class="shdr">
-    <div class="back" onclick="tap(event,()=>goTo(1))">&#8592;</div>
-    <div class="stitle">Pagar pedido</div>
-    <div style="margin-left:auto" class="chip chip-b">Mesa 4</div>
-  </div>
-  <div class="section-hdr">RESUMEN</div>
-  <div class="card">
-    <div class="row"><span class="lbl">&#127462;&#127479; Porte&#241;o &#215;1</span><span class="val">$5.800</span></div>
-    <div class="row"><span class="lbl">&#127474;&#127485; Mexicano &#215;1</span><span class="val">$5.300</span></div>
-    <div class="row"><span class="lbl">&#127866; Quilmes &#215;1</span><span class="val">$2.800</span></div>
-    <div class="row" style="background:rgba(0,204,112,.05)"><span class="lbl" style="color:#00CC70">&#127873; Descuento 10%</span><span class="val green">&#8722; $1.390</span></div>
-    <div class="row" style="padding:12px 13px"><span class="lbl" style="font-weight:800;color:#EDE0C8;font-size:.88rem">TOTAL</span><span class="val green" style="font-size:1rem">$12.510</span></div>
-  </div>
-  <div class="section-hdr">&#247; DIVIDIR LA CUENTA</div>
-  <div class="div-box">
-    <div class="div-stepper">
-      <button class="div-btn" onclick="divChange(-1)">&#8722;</button>
-      <div class="div-n" id="divN">2</div>
-      <button class="div-btn" onclick="divChange(1)">+</button>
-    </div>
-    <div class="div-pp" id="divPP">$ 3.690</div>
-    <div class="div-sub" id="divSub">por persona (de 2)</div>
-  </div>
-  <div class="section-hdr">FORMA DE PAGO</div>
-  <div class="pay-opts">
-    <div class="pay-opt sel" onclick="selPay(this)"><span class="pay-icon">&#128181;</span><div class="pay-label">Efectivo</div><div class="pay-sub">Al mozo</div></div>
-    <div class="pay-opt" onclick="selPay(this)"><span class="pay-icon">&#128179;</span><div class="pay-label">Mercado Pago</div><div class="pay-sub">QR o link</div></div>
-    <div class="pay-opt" onclick="selPay(this)"><span class="pay-icon">&#128184;</span><div class="pay-label">Tarjeta</div><div class="pay-sub">D&#233;bito / cr&#233;dito</div></div>
-    <div class="pay-opt" onclick="selPay(this)"><span class="pay-icon">&#247;</span><div class="pay-label">Pago mixto</div><div class="pay-sub">Dos m&#233;todos</div></div>
-  </div>
-  <button class="btn-g" onclick="tap(event,()=>goTo(3))">Confirmar pedido &#8594;</button>
-</div>
-
-<!-- ══ S3: PEDIDO ENVIADO ══ -->
-<div class="screen" id="s3">
-  <div class="success-scr">
-    <div class="sico green">&#9989;</div>
-    <div style="font-size:1.3rem;font-weight:800;color:#EDE0C8">&#161;Pedido enviado!</div>
-    <div style="font-size:.8rem;color:#4A6080;line-height:1.6">Tu pedido ya est&#225; en cocina.<br>Te avisamos cuando est&#233; listo.</div>
-    <div class="card" style="width:100%;text-align:left">
-      <div class="row"><span class="lbl">Mesa</span><span class="val">Mesa 4</span></div>
-      <div class="row"><span class="lbl">Total</span><span class="val green">$12.510</span></div>
-      <div class="row"><span class="lbl">Por persona (2)</span><span class="val green">$6.255</span></div>
-      <div class="row"><span class="lbl">Pago</span><span class="val">Efectivo</span></div>
-      <div class="row"><span class="lbl">Estado</span><span><span class="chip chip-y">&#9679; NUEVO</span></span></div>
-    </div>
-    <button class="btn-d" style="width:100%" onclick="tap(event,()=>goTo(4))">Ver m&#225;s funciones &#8594;</button>
-  </div>
-</div>
-
-<!-- ══ S4: CAMPANITA ══ -->
-<div class="screen" id="s4">
-  <div class="shdr">
-    <div class="stitle">&#128276; Llamar al mozo</div>
-    <div style="margin-left:auto" class="chip chip-b">Mesa 4</div>
-  </div>
-  <div class="bell-screen">
-    <div class="bell-icon">&#128276;</div>
-    <div class="bell-title">&#191;Qu&#233; necesit&#225;s?</div>
-    <div style="font-size:.78rem;color:#4A6080;text-align:center">El mozo recibe la alerta al instante en el panel</div>
-    <div class="bell-opts">
-      <div class="bell-opt sel" onclick="selBell(this)">
-        <span class="bell-opt-icon">&#127864;</span>
-        <div><div class="bell-opt-label">Pedir la cuenta</div><div class="bell-opt-sub">Cerrar mesa y pagar</div></div>
-      </div>
-      <div class="bell-opt" onclick="selBell(this)">
-        <span class="bell-opt-icon">&#127859;</span>
-        <div><div class="bell-opt-label">Necesito un mozo</div><div class="bell-opt-sub">Consulta o pedido extra</div></div>
-      </div>
-      <div class="bell-opt" onclick="selBell(this)">
-        <span class="bell-opt-icon">&#9874;</span>
-        <div><div class="bell-opt-label">Cubiertos / servilletas</div><div class="bell-opt-sub">Falta algo en la mesa</div></div>
-      </div>
-    </div>
-    <button class="btn-g" style="width:100%;margin:0" onclick="tap(event,()=>goTo(5))">Enviar alerta &#8594;</button>
-  </div>
-</div>
-
-<!-- ══ S5: ADMIN RECIBE SOLICITUD ══ -->
-<div class="screen" id="s5">
-  <div class="shdr" style="background:#060810">
-    <div class="stitle">Panel &#183; El Porteño</div>
-    <div style="margin-left:auto;background:#ff4444;color:#fff;font-family:'IBM Plex Mono',monospace;font-size:.6rem;padding:2px 7px;border-radius:8px;font-weight:700">2 alertas</div>
-  </div>
-  <div style="display:flex;background:#060810;border-bottom:1px solid #1A2230">
-    <div style="flex:1;padding:9px 0;text-align:center;font-size:.68rem;font-weight:700;color:#00CC70;border-bottom:2px solid #00CC70">Pedidos</div>
-    <div style="flex:1;padding:9px 0;text-align:center;font-size:.68rem;font-weight:700;color:#4A6080">Historial</div>
-    <div style="flex:1;padding:9px 0;text-align:center;font-size:.68rem;font-weight:700;color:#4A6080">Carta</div>
-    <div style="flex:1;padding:9px 0;text-align:center;font-size:.68rem;font-weight:700;color:#4A6080">Caja</div>
-  </div>
-  <!-- Solicitud bell -->
-  <div class="card gold" style="border-color:rgba(255,176,32,.5)">
-    <div class="row" style="background:rgba(255,176,32,.05)">
-      <div style="display:flex;align-items:center;gap:8px"><span style="font-size:1.2rem">&#128276;</span><div><div style="font-size:.8rem;font-weight:700;color:#FFB020">Mesa 4 &#8212; Pedir la cuenta</div><div style="font-size:.65rem;color:#4A6080;font-family:'IBM Plex Mono',monospace">hace 30 seg</div></div></div>
-      <button style="padding:5px 11px;border-radius:7px;border:none;background:rgba(255,176,32,.15);color:#FFB020;font-size:.68rem;font-weight:700;cursor:pointer;font-family:'IBM Plex Mono',monospace">OK</button>
-    </div>
-  </div>
-  <div class="card gold" style="border-color:rgba(255,176,32,.3)">
-    <div class="row">
-      <div style="display:flex;align-items:center;gap:8px"><span style="font-size:1.2rem">&#128276;</span><div><div style="font-size:.8rem;font-weight:700;color:#FFB020">Mesa 7 &#8212; Necesito un mozo</div><div style="font-size:.65rem;color:#4A6080;font-family:'IBM Plex Mono',monospace">hace 2 min</div></div></div>
-      <button style="padding:5px 11px;border-radius:7px;border:none;background:rgba(255,176,32,.15);color:#FFB020;font-size:.68rem;font-weight:700;cursor:pointer;font-family:'IBM Plex Mono',monospace">OK</button>
-    </div>
-  </div>
-  <!-- Pedido activo -->
-  <div class="section-hdr">PEDIDOS ACTIVOS</div>
-  <div class="card">
-    <div class="row"><div style="font-family:'IBM Plex Mono',monospace;font-size:.8rem;font-weight:700;color:#3D8EFF">Mesa 4</div><span class="chip chip-y">NUEVO</span></div>
-    <div class="row" style="flex-direction:column;align-items:flex-start;gap:3px">
-      <div style="font-size:.76rem;color:#B8D0E8">&#215;1 Porte&#241;o &#183; &#215;1 Mexicano &#183; &#215;1 Quilmes</div>
-      <div style="font-size:.7rem;color:#00CC70">&#127873; Descuento 10% aplicado</div>
-    </div>
-    <div class="row"><span style="font-family:'IBM Plex Mono',monospace;font-size:.82rem;font-weight:700;color:#00CC70">$ 12.510</span><button style="padding:6px 12px;border-radius:7px;border:none;background:rgba(255,176,32,.15);color:#FFB020;font-size:.7rem;font-weight:700;cursor:pointer;font-family:'IBM Plex Mono',monospace" onclick="tap(event,()=>goTo(6))">&#8594; COCINA</button></div>
-  </div>
-</div>
-
-<!-- ══ S6: HISTORIAL + ESTADÍSTICAS ══ -->
-<div class="screen" id="s6">
-  <div class="shdr" style="background:#060810">
-    <div class="stitle">Historial &#183; Esta semana</div>
-  </div>
-  <div style="display:flex;background:#060810;border-bottom:1px solid #1A2230">
-    <div style="flex:1;padding:8px 0;text-align:center;font-size:.68rem;font-weight:700;color:#00CC70;border-bottom:2px solid #00CC70">&#128200; Ventas</div>
-    <div style="flex:1;padding:8px 0;text-align:center;font-size:.68rem;font-weight:700;color:#4A6080">&#127942; Productos</div>
-    <div style="flex:1;padding:8px 0;text-align:center;font-size:.68rem;font-weight:700;color:#4A6080">&#128179; Pagos</div>
-  </div>
-  <div class="stat-grid">
-    <div class="stat-card"><div class="stat-val">$284.600</div><div class="stat-lbl">Ingresos semana</div></div>
-    <div class="stat-card"><div class="stat-val">147</div><div class="stat-lbl">Pedidos</div></div>
-    <div class="stat-card"><div class="stat-val">$1.936</div><div class="stat-lbl">Ticket promedio</div></div>
-    <div class="stat-card"><div class="stat-val">31</div><div class="stat-lbl">Pedidos hoy</div></div>
-  </div>
-  <div class="chart-bar-wrap">
-    <div class="chart-ttl">VENTAS POR D&#205;A</div>
-    <div class="bar-row"><div class="bar-day">Lun</div><div class="bar-track"><div class="bar-fill" style="width:60%;background:linear-gradient(90deg,#00FF88,#00C870)"><span class="bar-num">$38k</span></div></div></div>
-    <div class="bar-row"><div class="bar-day">Mar</div><div class="bar-track"><div class="bar-fill" style="width:45%;background:linear-gradient(90deg,#00FF88,#00C870)"><span class="bar-num">$29k</span></div></div></div>
-    <div class="bar-row"><div class="bar-day">Mi&#233;</div><div class="bar-track"><div class="bar-fill" style="width:72%;background:linear-gradient(90deg,#00FF88,#00C870)"><span class="bar-num">$46k</span></div></div></div>
-    <div class="bar-row"><div class="bar-day">Jue</div><div class="bar-track"><div class="bar-fill" style="width:55%;background:linear-gradient(90deg,#00FF88,#00C870)"><span class="bar-num">$35k</span></div></div></div>
-    <div class="bar-row"><div class="bar-day">Vie</div><div class="bar-track"><div class="bar-fill" style="width:100%;background:linear-gradient(90deg,#FFB020,#FF8C00)"><span class="bar-num">$63k</span></div></div></div>
-    <div class="bar-row"><div class="bar-day">S&#225;b</div><div class="bar-track"><div class="bar-fill" style="width:88%;background:linear-gradient(90deg,#FFB020,#FF8C00)"><span class="bar-num">$56k</span></div></div></div>
-    <div class="bar-row"><div class="bar-day">Dom</div><div class="bar-track"><div class="bar-fill" style="width:28%;background:linear-gradient(90deg,#3D8EFF,#2066CC)"><span class="bar-num">$18k</span></div></div></div>
-  </div>
-  <div class="pay-breakdown">
-    <div class="chart-ttl">FORMAS DE PAGO</div>
-    <div class="pb-row"><span class="pb-icon">&#128181;</span><div class="pb-bar"><div class="pb-fill" style="width:42%;background:#00CC70"></div></div><span class="pb-pct">42%</span></div>
-    <div class="pb-row"><span class="pb-icon">&#128242;</span><div class="pb-bar"><div class="pb-fill" style="width:35%;background:#3D8EFF"></div></div><span class="pb-pct">35%</span></div>
-    <div class="pb-row"><span class="pb-icon">&#128184;</span><div class="pb-bar"><div class="pb-fill" style="width:15%;background:#FFB020"></div></div><span class="pb-pct">15%</span></div>
-    <div class="pb-row"><span class="pb-icon">&#247;</span><div class="pb-bar"><div class="pb-fill" style="width:8%;background:#4A6080"></div></div><span class="pb-pct">8%</span></div>
-  </div>
-  <div style="padding:10px 11px;display:flex;gap:8px">
-    <button style="flex:1;padding:11px;background:rgba(61,142,255,.1);border:1px solid rgba(61,142,255,.2);border-radius:11px;color:#3D8EFF;font-size:.78rem;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif">&#11015; Exportar CSV</button>
-    <button style="flex:1;padding:11px;background:#111820;border:1px solid #1A2230;border-radius:11px;color:#4A6080;font-size:.78rem;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif" onclick="tap(event,()=>goTo(7))">Empleados &#8594;</button>
-  </div>
-</div>
-
-<!-- ══ S7: EMPLEADOS ══ -->
-<div class="screen" id="s7">
-  <div class="shdr" style="background:#060810">
-    <div class="stitle">Personal</div>
-    <div style="margin-left:auto;display:flex;gap:6px">
-      <span class="chip chip-g">3 en turno</span>
-    </div>
-  </div>
-  <div style="display:flex;background:#060810;border-bottom:1px solid #1A2230">
-    <div style="flex:1;padding:9px 0;text-align:center;font-size:.68rem;font-weight:700;color:#00CC70;border-bottom:2px solid #00CC70">&#128101; Empleados</div>
-    <div style="flex:1;padding:9px 0;text-align:center;font-size:.68rem;font-weight:700;color:#4A6080">&#128336; Turnos hoy</div>
-  </div>
-  <div class="emp-card on">
-    <div class="emp-avatar" style="background:rgba(0,255,136,.1)">&#128104;&#8205;&#127859;</div>
-    <div><div class="emp-name">Carlos M.</div><div class="emp-rol">Mozo &#183; Turno ma&#241;ana</div></div>
-    <button class="emp-toggle on">SALIR</button>
-  </div>
-  <div class="emp-card on">
-    <div class="emp-avatar" style="background:rgba(61,142,255,.1)">&#128105;&#8205;&#127859;</div>
-    <div><div class="emp-name">Laura P.</div><div class="emp-rol">Moza &#183; Turno ma&#241;ana</div></div>
-    <button class="emp-toggle on">SALIR</button>
-  </div>
-  <div class="emp-card on">
-    <div class="emp-avatar" style="background:rgba(255,176,32,.1)">&#128104;&#8205;&#127859;</div>
-    <div><div class="emp-name">Diego R.</div><div class="emp-rol">Cocinero &#183; Turno tarde</div></div>
-    <button class="emp-toggle on">SALIR</button>
-  </div>
-  <div class="emp-card">
-    <div class="emp-avatar" style="background:#111820">&#128105;</div>
-    <div><div class="emp-name">Ana G.</div><div class="emp-rol">Cajera &#183; Sin turno</div></div>
-    <button class="emp-toggle off">ENTRAR</button>
-  </div>
-  <div class="section-hdr">TURNOS HOY</div>
-  <div class="turno-row">
-    <div><div class="turno-name">Carlos M.</div><div class="turno-time">09:00 &#8594; ahora (4h 22m)</div></div>
-    <span class="chip chip-g">ACTIVO</span>
-  </div>
-  <div class="turno-row">
-    <div><div class="turno-name">Laura P.</div><div class="turno-time">09:30 &#8594; ahora (3h 52m)</div></div>
-    <span class="chip chip-g">ACTIVO</span>
-  </div>
-  <div class="turno-row">
-    <div><div class="turno-name">Mar&#237;a T.</div><div class="turno-time">08:00 &#8594; 12:00 (4h)</div></div>
-    <span class="chip chip-b">FINALIZADO</span>
-  </div>
-  <button class="btn-d" onclick="tap(event,()=>goTo(8))">Ver Caja &#8594;</button>
-</div>
-
-<!-- ══ S8: CAJA — VENTA RÁPIDA ══ -->
-<div class="screen" id="s8">
-  <div class="shdr" style="background:#060810">
-    <div class="stitle">Caja &#183; Turno activo</div>
-    <div style="margin-left:auto" class="chip chip-g">&#9632; ABIERTO</div>
-  </div>
-  <div class="caja-tabs">
-    <div class="caja-tab active">&#9881;&#65039; Venta r&#225;pida</div>
-    <div class="caja-tab">&#128200; Cierre X</div>
-    <div class="caja-tab">&#9940; Cierre Z</div>
-  </div>
-  <div class="section-hdr">PRODUCTOS</div>
-  <div class="pos-grid">
-    <div class="pos-item" onclick="posAdd(event,'Porteño',5800)"><img src="https://fwovflsaghnutysjyaus.supabase.co/storage/v1/object/public/fotos/el-porteno/porteno.jpg" style="width:100%;height:52px;object-fit:cover;border-radius:7px;display:block;margin-bottom:4px"><div class="pos-nm">Porteño</div><div class="pos-pr">$5.800</div></div>
-    <div class="pos-item" onclick="posAdd(event,'Mexicano',5300)"><img src="https://fwovflsaghnutysjyaus.supabase.co/storage/v1/object/public/fotos/el-porteno/mexicano.jpg" style="width:100%;height:52px;object-fit:cover;border-radius:7px;display:block;margin-bottom:4px"><div class="pos-nm">Mexicano</div><div class="pos-pr">$5.300</div></div>
-    <div class="pos-item" onclick="posAdd(event,'Quilmes',2800)"><img src="https://fwovflsaghnutysjyaus.supabase.co/storage/v1/object/public/fotos/el-porteno/quilmes_473ml_.jpg" style="width:100%;height:52px;object-fit:cover;border-radius:7px;display:block;margin-bottom:4px"><div class="pos-nm">Quilmes</div><div class="pos-pr">$2.800</div></div>
-    <div class="pos-item" onclick="posAdd(event,'Coca-Cola',2200)"><img src="https://fwovflsaghnutysjyaus.supabase.co/storage/v1/object/public/fotos/el-porteno/coca_cola_500ml_.jpg" style="width:100%;height:52px;object-fit:cover;border-radius:7px;display:block;margin-bottom:4px"><div class="pos-nm">Coca-Cola</div><div class="pos-pr">$2.200</div></div>
-    <div class="pos-item" onclick="posAdd(event,'Lomito',6900)"><img src="https://fwovflsaghnutysjyaus.supabase.co/storage/v1/object/public/fotos/el-porteno/lomito.jpg" style="width:100%;height:52px;object-fit:cover;border-radius:7px;display:block;margin-bottom:4px"><div class="pos-nm">Lomito</div><div class="pos-pr">$6.900</div></div>
-    <div class="pos-item" onclick="posAdd(event,'Heineken',3200)"><img src="https://fwovflsaghnutysjyaus.supabase.co/storage/v1/object/public/fotos/el-porteno/heineken_330ml_.jpg" style="width:100%;height:52px;object-fit:cover;border-radius:7px;display:block;margin-bottom:4px"><div class="pos-nm">Heineken</div><div class="pos-pr">$3.200</div></div>
-  </div>
-  <div class="section-hdr">TICKET</div>
-  <div class="caja-ticket" id="posTicket">
-    <div style="font-size:.74rem;color:#4A6080;text-align:center;padding:6px 0">Toc&#225; un producto para agregar</div>
-  </div>
-  <div class="card" style="margin-top:8px">
-    <div class="row"><span class="lbl">TOTAL</span><span class="val green" style="font-size:1rem" id="posTotal">$ 0</span></div>
-  </div>
-  <div style="display:flex;gap:8px;margin:10px 11px">
-    <button style="flex:1;padding:13px;background:rgba(255,59,92,.1);border:1px solid rgba(255,59,92,.2);border-radius:11px;color:#ff3b5c;font-size:.82rem;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif" onclick="posClear()">Limpiar</button>
-    <button style="flex:2;padding:13px;background:linear-gradient(135deg,#00FF88,#00C870);border:none;border-radius:11px;color:#060810;font-size:.88rem;font-weight:800;cursor:pointer;font-family:'Outfit',sans-serif" onclick="tap(event,()=>goTo(9))">Cobrar &#8594;</button>
-  </div>
-</div>
-
-<!-- ══ S9: CIERRE X ══ -->
-<div class="screen" id="s9">
-  <div class="shdr" style="background:#060810">
-    <div class="stitle">Caja</div>
-  </div>
-  <div class="caja-tabs">
-    <div class="caja-tab">&#9881;&#65039; Venta r&#225;pida</div>
-    <div class="caja-tab active">&#128200; Cierre X</div>
-    <div class="caja-tab">&#9940; Cierre Z</div>
-  </div>
-  <div class="cierre-box">
-    <div class="cierre-title"><span style="font-family:'IBM Plex Mono',monospace;background:rgba(61,142,255,.15);border:1px solid rgba(61,142,255,.3);color:#3D8EFF;padding:2px 8px;border-radius:5px;font-size:.7rem">CIERRE X</span> Parcial &#8212; sin cerrar turno</div>
-    <div class="cierre-row"><span>Fondo apertura</span><span>$ 15.000</span></div>
-    <div class="cierre-row"><span>Ventas efectivo</span><span style="color:#00CC70">$ 89.400</span></div>
-    <div class="cierre-row"><span>Ventas Mercado Pago</span><span style="color:#3D8EFF">$ 54.200</span></div>
-    <div class="cierre-row"><span>Ventas tarjeta</span><span style="color:#FFB020">$ 23.800</span></div>
-    <div class="cierre-row"><span>Pedidos</span><span>24</span></div>
-    <div class="cierre-row" style="border-top:2px solid #1A2230;margin-top:4px;padding-top:10px"><span style="font-weight:800;color:#EDE0C8">TOTAL ACUMULADO</span><span style="color:#00CC70;font-size:.95rem">$ 167.400</span></div>
-  </div>
-  <div class="card" style="margin-top:8px;border-color:rgba(61,142,255,.2)">
-    <div class="row"><span class="lbl">En caj&#243;n (efectivo + fondo)</span><span class="val green">$ 104.400</span></div>
-    <div class="row"><span class="lbl">Digital (MP + tarjeta)</span><span class="val" style="color:#3D8EFF">$ 78.000</span></div>
-  </div>
-  <div style="padding:8px 11px 4px;font-size:.72rem;color:#4A6080;line-height:1.5">&#128200; El Cierre X no cierra el turno. Podés imprimir el resumen parcial y seguir operando.</div>
-  <button class="btn-gold" onclick="tap(event,()=>goTo(10))">&#128200; Imprimir Cierre X</button>
-  <button class="btn-red" onclick="tap(event,()=>goTo(10))">&#9940; Ejecutar Cierre Z (cerrar turno)</button>
-</div>
-
-<!-- ══ S10: CIERRE Z ══ -->
-<div class="screen" id="s10">
-  <div class="success-scr">
-    <div class="sico blue" style="animation:none">&#9940;</div>
-    <div style="font-size:1.25rem;font-weight:800;color:#EDE0C8">Cierre Z ejecutado</div>
-    <div style="font-size:.78rem;color:#4A6080;line-height:1.6;text-align:center">Turno cerrado. Datos guardados<br>en el historial permanente.</div>
-    <div class="card" style="width:100%;text-align:left">
-      <div class="row"><span class="lbl">Apertura</span><span class="val">09:00 hs</span></div>
-      <div class="row"><span class="lbl">Cierre</span><span class="val">22:00 hs (13h)</span></div>
-      <div class="row"><span class="lbl">Total vendido</span><span class="val green">$ 284.600</span></div>
-      <div class="row"><span class="lbl">Pedidos</span><span class="val">147</span></div>
-      <div class="row"><span class="lbl">Diferencia caj&#243;n</span><span class="val green">+ $ 200 &#128077;</span></div>
-    </div>
-    <button class="btn-d" style="width:100%" onclick="tap(event,()=>goTo(0))">&#8635; Volver al inicio</button>
-  </div>
-</div>
-
-</div><!-- /wrap -->
-
-<div class="infobar" id="infobar">
-  <div class="infolbl" id="slbl" style="color:#00CC70">CLIENTE · PASO 1 DE 11</div>
-  <div class="infotxt" id="stxt">El cliente llega, escanea el QR de la vitrina y activa el descuento del 10% para su primera visita.</div>
-  <div class="pbar"><div class="pfill" id="pfill" style="width:9%;background:linear-gradient(90deg,#00FF88,#3D8EFF)"></div></div>
-</div>
-<div class="ctrl">
-  <button class="cbtn cnav" id="bprev" onclick="prev()" disabled>&#8592;</button>
-  <span class="clbl" id="clbl">1/11</span>
-  <button class="cbtn cplay" id="bplay" onclick="autoPlay()">&#9654; Auto</button>
-  <button class="cbtn cnav" id="bnext" onclick="next()">&#8594;</button>
+<div id="controls">
+  <button class="ctrl-btn" onclick="prev()">&#9664;</button>
+  <div id="dots"></div>
+  <button class="ctrl-btn" id="pause-btn" onclick="togglePause()">&#9646;&#9646;</button>
+  <button class="ctrl-btn" onclick="next()">&#9654;</button>
 </div>
 
 <script>
-const STEPS=[
-  {sec:'CLIENTE',col:'#00FF88',bg:'rgba(0,255,136,.1)',border:'rgba(0,255,136,.25)',lbl:'CLIENTE · PASO 1 DE 11',txt:'El cliente llega a El Porteño, escanea el QR de la vitrina y activa el descuento del 10% para su primera visita.',prog:9},
-  {sec:'CLIENTE',col:'#00FF88',bg:'rgba(0,255,136,.1)',border:'rgba(0,255,136,.25)',lbl:'CLIENTE · PASO 2 DE 11',txt:'Ve la carta digital por categoría. Agrega productos al carrito — el chip verde confirma el descuento activo.',prog:18},
-  {sec:'CLIENTE',col:'#00FF88',bg:'rgba(0,255,136,.1)',border:'rgba(0,255,136,.25)',lbl:'CLIENTE · PASO 3 DE 11',txt:'Al pagar puede dividir la cuenta entre varias personas y elegir la forma de pago (efectivo, MP, tarjeta o mixto).',prog:27},
-  {sec:'CLIENTE',col:'#00FF88',bg:'rgba(0,255,136,.1)',border:'rgba(0,255,136,.25)',lbl:'CLIENTE · PASO 4 DE 11',txt:'Pedido enviado a cocina en tiempo real. El cliente ve el resumen con descuento y división aplicados.',prog:36},
-  {sec:'CAMPANITA',col:'#3D8EFF',bg:'rgba(61,142,255,.1)',border:'rgba(61,142,255,.25)',lbl:'CAMPANITA · PASO 5 DE 11',txt:'Desde la carta el cliente puede llamar al mozo con un toque: pedir la cuenta, necesitar atención o pedir algo extra.',prog:45},
-  {sec:'ADMIN',col:'#FFB020',bg:'rgba(255,176,32,.1)',border:'rgba(255,176,32,.25)',lbl:'ADMIN · PASO 6 DE 11',txt:'El panel recibe las alertas de la campanita en tiempo real. El mozo las ve y puede marcarlas como atendidas.',prog:54},
-  {sec:'ADMIN',col:'#FFB020',bg:'rgba(255,176,32,.1)',border:'rgba(255,176,32,.25)',lbl:'ADMIN · PASO 7 DE 11',txt:'Historial completo: ventas diarias, ticket promedio, ranking de productos y desglose por forma de pago. Exportable a CSV.',prog:63},
-  {sec:'PERSONAL',col:'#B050FF',bg:'rgba(176,80,255,.1)',border:'rgba(176,80,255,.25)',lbl:'PERSONAL · PASO 8 DE 11',txt:'Gestión de empleados: roles, turnos y horarios. El mozo toca ENTRAR/SALIR para registrar su turno automáticamente.',prog:72},
-  {sec:'CAJA',col:'#FF8C00',bg:'rgba(255,140,0,.1)',border:'rgba(255,140,0,.25)',lbl:'CAJA · PASO 9 DE 11',txt:'Venta rápida desde la caja: tocás los productos, armás el ticket y cobrás sin necesidad de que el cliente escanee nada.',prog:81},
-  {sec:'CAJA',col:'#FF8C00',bg:'rgba(255,140,0,.1)',border:'rgba(255,140,0,.25)',lbl:'CAJA · PASO 10 DE 11',txt:'Cierre X: resumen parcial del turno sin cerrarlo. Efectivo en cajón, ventas digitales y total acumulado. Imprimible.',prog:90},
-  {sec:'CAJA',col:'#FF8C00',bg:'rgba(255,140,0,.1)',border:'rgba(255,140,0,.25)',lbl:'CAJA · PASO 11 DE 11',txt:'Cierre Z: cierra el turno definitivamente, registra todo en el historial y verifica la diferencia del cajón.',prog:100},
+const SLIDES = [
+  {
+    num:"FUNCION 01 DE 13",
+    title:"El cliente escanea el QR",
+    desc:"Desde la mesa o la vitrina del local. Sin app, sin descarga. Solo abre la camara del celular.",
+    screen(){return`<div class="qr-scan fade-in"><div class="qr-icon-big">&#128241;</div><div class="qr-beam"></div><div class="qr-label">Escanear para ver la carta</div><div class="qr-sub-txt">menuqr-ten.vercel.app/el-porteno<br>Acceso instantaneo &middot; Sin registro</div></div>`}
+  },
+  {
+    num:"FUNCION 02 DE 13",
+    title:"Carta digital completa",
+    desc:"El menu entero con nombre, descripcion y precio de cada plato. Actualizable en cualquier momento.",
+    screen(){return`<div class="fade-in"><div class="app-header"><div class="app-emoji">&#127789;</div><div><div class="app-name">El Porte&ntilde;o</div><div class="app-sub">Pancher&iacute;a</div></div></div><div class="cat-bar"><div class="ctab on">Todo</div><div class="ctab">&#127789; Panchos</div><div class="ctab">&#127828; Burger</div><div class="ctab">&#129385; Milan.</div></div><div class="prod-grid"><div class="pc"><div class="pc-img">&#127789;<span class="pc-tag tag-c">CHEF</span></div><div class="pc-info"><div class="pc-name">Pancho Especial</div><div class="pc-bot"><span class="pc-price">$3.800</span><div class="pc-add">+</div></div></div></div><div class="pc"><div class="pc-img">&#127828;<span class="pc-tag tag-c">CHEF</span></div><div class="pc-info"><div class="pc-name">Hamburguesa Doble</div><div class="pc-bot"><span class="pc-price">$6.500</span><div class="pc-add">+</div></div></div></div><div class="pc"><div class="pc-img">&#129385;<span class="pc-tag tag-n">NUEVO</span></div><div class="pc-info"><div class="pc-name">Lomito</div><div class="pc-bot"><span class="pc-price">$5.800</span><div class="pc-add">+</div></div></div></div><div class="pc"><div class="pc-img">&#127839;</div><div class="pc-info"><div class="pc-name">Papas Cheddar</div><div class="pc-bot"><span class="pc-price">$3.200</span><div class="pc-add">+</div></div></div></div></div></div>`}
+  },
+  {
+    num:"FUNCION 03 DE 13",
+    title:"Filtro por categorias",
+    desc:"Tabs fijos arriba: Panchos, Hamburguesas, Milanesas, Papas, Bebidas. Un tap filtra al instante.",
+    screen(){return`<div class="fade-in"><div class="app-header"><div class="app-emoji">&#127789;</div><div><div class="app-name">El Porte&ntilde;o</div><div class="app-sub">Pancher&iacute;a</div></div></div><div class="cat-bar"><div class="ctab">Todo</div><div class="ctab on">&#127789; Panchos</div><div class="ctab">&#127828; Burger</div><div class="ctab">&#129385; Milan.</div><div class="ctab">&#127839; Papas</div></div><div class="prod-grid"><div class="pc"><div class="pc-img">&#127789;</div><div class="pc-info"><div class="pc-name">Pancho Clasico</div><div class="pc-bot"><span class="pc-price">$2.500</span><div class="pc-add">+</div></div></div></div><div class="pc"><div class="pc-img">&#127789;</div><div class="pc-info"><div class="pc-name">Pancho Completo</div><div class="pc-bot"><span class="pc-price">$3.200</span><div class="pc-add">+</div></div></div></div><div class="pc"><div class="pc-img">&#127789;<span class="pc-tag tag-c">CHEF</span></div><div class="pc-info"><div class="pc-name">Pancho Especial</div><div class="pc-bot"><span class="pc-price">$3.800</span><div class="pc-add">+</div></div></div></div><div class="pc"><div class="pc-img">&#127789;</div><div class="pc-info"><div class="pc-name">Pancho XXL</div><div class="pc-bot"><span class="pc-price">$4.200</span><div class="pc-add">+</div></div></div></div></div></div>`}
+  },
+  {
+    num:"FUNCION 04 DE 13",
+    title:"Agregar productos al carrito",
+    desc:"El cliente suma productos con el boton +. El carrito se arma abajo con el total en tiempo real.",
+    screen(){return`<div class="fade-in"><div class="app-header"><div class="app-emoji">&#127789;</div><div><div class="app-name">El Porte&ntilde;o</div><div class="app-sub">Pancher&iacute;a</div></div></div><div class="cat-bar"><div class="ctab on">Todo</div><div class="ctab">&#127789;</div><div class="ctab">&#127828;</div></div><div class="prod-grid"><div class="pc glow"><div class="pc-img">&#127789;<span class="pc-tag tag-c">CHEF</span></div><div class="pc-info"><div class="pc-name">Pancho Especial</div><div class="pc-bot"><span class="pc-price">$3.800</span><div class="qty-c"><div class="qb">&minus;</div><div class="qn">2</div><div class="qb p">+</div></div></div></div></div><div class="pc"><div class="pc-img">&#127828;<span class="pc-tag tag-c">CHEF</span></div><div class="pc-info"><div class="pc-name">Hamburguesa Doble</div><div class="pc-bot"><span class="pc-price">$6.500</span><div class="pc-add">+</div></div></div></div><div class="pc glow"><div class="pc-img">&#127839;</div><div class="pc-info"><div class="pc-name">Papas Cheddar</div><div class="pc-bot"><span class="pc-price">$3.200</span><div class="qty-c"><div class="qb">&minus;</div><div class="qn">1</div><div class="qb p">+</div></div></div></div></div><div class="pc"><div class="pc-img">&#129379;</div><div class="pc-info"><div class="pc-name">Gaseosa</div><div class="pc-bot"><span class="pc-price">$1.200</span><div class="pc-add">+</div></div></div></div></div><div class="cart-box"><div class="cart-row"><span>Pancho Especial &times;2</span><span>$7.600</span></div><div class="cart-row"><span>Papas Cheddar &times;1</span><span>$3.200</span></div><div class="cart-total"><span>TOTAL</span><span>$10.800</span></div></div></div>`}
+  },
+  {
+    num:"FUNCION 05 DE 13",
+    title:"Elegir forma de pago",
+    desc:"Efectivo, tarjeta, QR / MercadoPago o cuenta corriente. El cliente elige y confirma el pedido.",
+    screen(){return`<div class="fade-in" style="padding:12px;"><div style="font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;margin-bottom:10px;">&#128722; Tu pedido</div><div style="background:#141208;border-radius:10px;padding:10px 12px;margin-bottom:10px;"><div class="cart-row"><span>&#127789; Pancho Especial &times;2</span><span>$7.600</span></div><div class="cart-row"><span>&#127839; Papas Cheddar &times;1</span><span>$3.200</span></div><div class="cart-row"><span>&#127828; Hamburguesa Doble &times;1</span><span>$6.500</span></div><div class="cart-total"><span>TOTAL</span><span>$17.300</span></div></div><div style="font-size:9px;font-weight:700;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin-bottom:7px;">Forma de pago</div><div class="pay-grid"><div class="pb"><span class="pb-i">&#128181;</span>Efectivo</div><div class="pb on"><span class="pb-i">&#128179;</span>Tarjeta</div><div class="pb"><span class="pb-i">&#128241;</span>QR / MP</div><div class="pb"><span class="pb-i">&#129534;</span>Cuenta</div></div><div class="cart-btn">Confirmar pedido &rarr;</div></div>`}
+  },
+  {
+    num:"FUNCION 06 DE 13",
+    title:"Pedido confirmado — llega a cocina",
+    desc:"El pedido llega al instante a caja y a la pantalla de cocina. El cliente ve el numero de su pedido.",
+    screen(){return`<div class="confirm-screen fade-in"><div class="confirm-icon">&#10003;&#65039;</div><div class="confirm-title">Pedido enviado!</div><div class="confirm-sub">Tu pedido llego a la cocina.<br>Podes seguir el estado aca mismo.</div><div class="confirm-order-num"># 47</div><div class="confirm-msg">Avisamos cuando este listo</div></div>`}
+  },
+  {
+    num:"FUNCION 07 DE 13",
+    title:"Pantalla de cocina",
+    desc:"La cocina ve cada pedido con detalle: productos, cantidades y observaciones del cliente.",
+    screen(){return`<div class="kitchen-screen fade-in"><div class="kitch-head"><div class="kitch-title">&#127859; Cocina</div><div class="kitch-badge">3 pedidos activos</div></div><div class="kitch-order"><div class="ko-head"><div class="ko-num">Pedido #47</div><div class="ko-status prep">Preparando</div></div><div class="ko-item"><span class="ko-item-e">&#127789;</span> Pancho Especial &times;2</div><div class="ko-item"><span class="ko-item-e">&#127839;</span> Papas Cheddar &times;1</div><div class="ko-item"><span class="ko-item-e">&#127828;</span> Hamburguesa Doble &times;1</div><div class="ko-obs">&#128203; "Sin cebolla en la hamburguesa"</div><div class="ko-btn">&#10003; Marcar como listo</div></div><div class="kitch-order" style="opacity:.5;"><div class="ko-head"><div class="ko-num">Pedido #46</div><div class="ko-status prep">Recibido</div></div><div class="ko-item"><span class="ko-item-e">&#129385;</span> Lomito &times;1</div><div class="ko-item"><span class="ko-item-e">&#129379;</span> Gaseosa &times;2</div></div></div>`}
+  },
+  {
+    num:"FUNCION 08 DE 13",
+    title:"Tracking en vivo — Recibido",
+    desc:"Despues de confirmar, el cliente ve el estado de su pedido en tiempo real. Igual que Rappi.",
+    screen(){return`<div class="track-wrap fade-in"><div class="track-head"><div class="track-title">Estado del pedido</div><div class="track-live"><div class="tl-dot"></div>EN VIVO</div></div><div class="tstep now"><span class="ts-icon">&#128203;</span><div class="ts-info"><div class="ts-label">Recibido</div><div class="ts-sub">En espera de la cocina</div></div><div class="ts-dot v"></div></div><div class="tstep wait"><span class="ts-icon">&#127859;</span><div class="ts-info"><div class="ts-label">Preparando</div><div class="ts-sub">Tu pedido esta siendo preparado</div></div><div class="ts-dot w"></div></div><div class="tstep wait"><span class="ts-icon">&#128276;</span><div class="ts-info"><div class="ts-label">Listo!</div><div class="ts-sub">Ya va a salir</div></div><div class="ts-dot w"></div></div><div class="tstep wait"><span class="ts-icon">&#127881;</span><div class="ts-info"><div class="ts-label">Entregado</div><div class="ts-sub">Buen provecho!</div></div><div class="ts-dot w"></div></div></div>`}
+  },
+  {
+    num:"FUNCION 09 DE 13",
+    title:"Tracking en vivo — Preparando",
+    desc:"La cocina actualiza el estado y el cliente lo ve al instante. Sin recargar la pagina.",
+    screen(){return`<div class="track-wrap fade-in"><div class="track-head"><div class="track-title">Estado del pedido</div><div class="track-live"><div class="tl-dot"></div>EN VIVO</div></div><div class="tstep done"><span class="ts-icon">&#128203;</span><div class="ts-info"><div class="ts-label">Recibido</div><div class="ts-sub">En espera de la cocina</div></div><div class="ts-dot g"></div></div><div class="tstep now"><span class="ts-icon">&#127859;</span><div class="ts-info"><div class="ts-label">Preparando</div><div class="ts-sub">Tu pedido esta siendo preparado</div></div><div class="ts-dot v"></div></div><div class="tstep wait"><span class="ts-icon">&#128276;</span><div class="ts-info"><div class="ts-label">Listo!</div><div class="ts-sub">Ya va a salir</div></div><div class="ts-dot w"></div></div><div class="tstep wait"><span class="ts-icon">&#127881;</span><div class="ts-info"><div class="ts-label">Entregado</div><div class="ts-sub">Buen provecho!</div></div><div class="ts-dot w"></div></div></div>`}
+  },
+  {
+    num:"FUNCION 10 DE 13",
+    title:"Tracking en vivo — Entregado",
+    desc:"Cuando el pedido llega a la mesa cambia a Entregado. El cliente ve todo el proceso en su celular.",
+    screen(){return`<div class="track-wrap fade-in"><div class="track-head"><div class="track-title">Estado del pedido</div><div class="track-live"><div class="tl-dot"></div>EN VIVO</div></div><div class="tstep done"><span class="ts-icon">&#128203;</span><div class="ts-info"><div class="ts-label">Recibido</div><div class="ts-sub">En espera de la cocina</div></div><div class="ts-dot g"></div></div><div class="tstep done"><span class="ts-icon">&#127859;</span><div class="ts-info"><div class="ts-label">Preparando</div><div class="ts-sub">Tu pedido esta siendo preparado</div></div><div class="ts-dot g"></div></div><div class="tstep done"><span class="ts-icon">&#128276;</span><div class="ts-info"><div class="ts-label">Listo!</div><div class="ts-sub">Ya va a salir</div></div><div class="ts-dot g"></div></div><div class="tstep now" style="background:#C9A84C22;border-color:#C9A84C55;"><span class="ts-icon">&#127881;</span><div class="ts-info"><div class="ts-label" style="color:var(--gold);">Entregado!</div><div class="ts-sub">Buen provecho!</div></div><div class="ts-dot" style="background:var(--gold);box-shadow:0 0 8px var(--gold);"></div></div></div>`}
+  },
+  {
+    num:"FUNCION 11 DE 13",
+    title:"QR Vitrina — carta sin pedido",
+    desc:"Para la entrada del local. El cliente ve la carta completa pero no puede hacer pedidos.",
+    screen(){return`<div class="qrv-screen fade-in"><div class="qrv-title">Modo vitrina &mdash; solo lectura</div><div class="app-header" style="padding:8px 0 10px;"><div class="app-emoji">&#127789;</div><div><div class="app-name">El Porte&ntilde;o</div><div class="app-sub">Ver carta</div></div></div><div class="cat-bar" style="padding:0 0 10px;"><div class="ctab on">Todo</div><div class="ctab">&#127789; Panchos</div><div class="ctab">&#127828;</div></div><div class="qrv-list"><div class="qrv-item"><span class="qrv-e">&#127789;</span><div class="qrv-d"><div class="qrv-n">Pancho Especial</div><div class="qrv-p">$ 3.800</div></div></div><div class="qrv-item"><span class="qrv-e">&#127828;</span><div class="qrv-d"><div class="qrv-n">Hamburguesa Doble</div><div class="qrv-p">$ 6.500</div></div></div><div class="qrv-item"><span class="qrv-e">&#129385;</span><div class="qrv-d"><div class="qrv-n">Lomito</div><div class="qrv-p">$ 5.800</div></div></div><div class="qrv-item"><span class="qrv-e">&#127839;</span><div class="qrv-d"><div class="qrv-n">Papas con Cheddar</div><div class="qrv-p">$ 3.200</div></div></div></div><div style="margin-top:10px;font-size:9px;color:#2A1C0E;text-align:center;font-style:italic;">Sin boton de pedido &middot; Solo lectura</div></div>`}
+  },
+  {
+    num:"FUNCION 12 DE 13",
+    title:"Version para PC y tablet",
+    desc:"En pantallas grandes el layout cambia automatico: columna izquierda con la marca y carrito, grilla de productos a la derecha.",
+    screen(){return`<div class="pc-layout slide-in"><div class="pc-left"><div class="pc-logo-sm"><div class="e">&#127789;</div><div class="n">El Porteno</div></div><div class="pc-cat-item on"><span class="ci">&#127869;</span><span class="cl">Todo</span></div><div class="pc-cat-item"><span class="ci">&#127789;</span><span class="cl">Panchos</span></div><div class="pc-cat-item"><span class="ci">&#127828;</span><span class="cl">Burger</span></div><div class="pc-cat-item"><span class="ci">&#129385;</span><span class="cl">Milan.</span></div><div class="pc-cat-item"><span class="ci">&#127839;</span><span class="cl">Papas</span></div><div class="pc-cat-item"><span class="ci">&#129379;</span><span class="cl">Bebidas</span></div></div><div class="pc-main"><div class="pc-tabs"><div class="pc-t on">Todo</div><div class="pc-t">&#127789;</div><div class="pc-t">&#127828;</div><div class="pc-t">&#129385;</div></div><div class="pc-feat"><div class="pc-feat-e">&#127828;</div><div class="pc-feat-inf"><div class="badge">CHEF'S CHOICE</div><div class="fn">Hamburguesa Doble</div><div class="fp">$ 6.500</div></div></div><div class="pc-pgrid"><div class="pcg"><div class="pcg-img">&#127789;</div><div class="pcg-info"><div class="pcg-n">Pancho Especial</div><div class="pcg-p">$3.800</div></div></div><div class="pcg"><div class="pcg-img">&#129385;</div><div class="pcg-info"><div class="pcg-n">Lomito</div><div class="pcg-p">$5.800</div></div></div><div class="pcg"><div class="pcg-img">&#127839;</div><div class="pcg-info"><div class="pcg-n">Papas Cheddar</div><div class="pcg-p">$3.200</div></div></div></div></div><div class="pc-right"><div class="pc-right-title">Tu pedido</div><div class="pc-cart-item"><span class="pc-ci-e">&#127789;</span><div class="pc-ci-d"><div class="pc-ci-n">Pancho x2</div><div class="pc-ci-p">$7.600</div></div></div><div class="pc-cart-item"><span class="pc-ci-e">&#127839;</span><div class="pc-ci-d"><div class="pc-ci-n">Papas x1</div><div class="pc-ci-p">$3.200</div></div></div><div class="pc-total">$10.800</div><div class="pc-order-btn">Pedir &rarr;</div></div></div>`}
+  },
+  {
+    num:"FUNCION 13 DE 13",
+    title:"Un sistema — muchos restaurantes",
+    desc:"Cada nuevo restaurante tiene su propia carta, URL y QR. Se suma al sistema sin tocar los demas.",
+    screen(){return`<div class="multi-screen fade-in"><div class="multi-title">Restaurantes activos</div><div class="multi-item"><span class="mi-e">&#127789;</span><div class="mi-d"><div class="mi-n">El Porteno Pancheria</div><div class="mi-u">menuqr.app/el-porteno</div></div><div class="mi-dot"></div></div><div class="multi-item" style="opacity:.6;"><span class="mi-e">&#127829;</span><div class="mi-d"><div class="mi-n">La Piazza Ristorante</div><div class="mi-u">menuqr.app/la-piazza</div></div><div class="mi-dot off"></div></div><div class="multi-item" style="opacity:.6;"><span class="mi-e">&#129401;</span><div class="mi-d"><div class="mi-n">Green Salad Bar</div><div class="mi-u">menuqr.app/green-salad</div></div><div class="mi-dot off"></div></div><div style="background:#141208;border:1px dashed #2A2210;border-radius:10px;padding:10px 12px;display:flex;align-items:center;justify-content:center;gap:8px;"><span style="font-size:18px;">+</span><span style="font-size:11px;color:#3A2A10;">Agregar nuevo restaurante</span></div><div style="margin-top:10px;font-size:9px;color:#2A1C0E;text-align:center;font-style:italic;">Productos y precios ilimitados &middot; URL propia por local</div></div>`}
+  }
 ];
-let cur=0,playing=false,timer=null;
-const screens=document.querySelectorAll('.screen');
-function goTo(i){
-  if(i<0||i>=STEPS.length)return;
-  screens[cur].classList.remove('active');screens[cur].classList.add('exit');
-  const p=cur;cur=i;
-  setTimeout(()=>screens[p].classList.remove('exit'),500);
-  screens[cur].classList.add('active');
-  upUI();
+
+let cur=0, paused=false, timer=null;
+
+function show(i){
+  cur=i;
+  const s=SLIDES[i];
+  document.getElementById('phone-screen').innerHTML=s.screen();
+  document.getElementById('slide-num').textContent=s.num;
+  document.getElementById('slide-title').textContent=s.title;
+  document.getElementById('slide-desc').textContent=s.desc;
+  document.querySelectorAll('.dot').forEach((d,j)=>d.classList.toggle('active',j===i));
+  startProg();
 }
-function upUI(){
-  const s=STEPS[cur];
-  document.getElementById('slbl').textContent=s.lbl;
-  document.getElementById('slbl').style.color=s.col;
-  document.getElementById('stxt').textContent=s.txt;
-  document.getElementById('pfill').style.width=s.prog+'%';
-  document.getElementById('clbl').textContent=(cur+1)+'/'+STEPS.length;
-  document.getElementById('bprev').disabled=cur===0;
-  document.getElementById('bnext').disabled=cur===STEPS.length-1;
-  const b=document.getElementById('secBadge');
-  b.textContent=s.sec;b.style.background=s.bg;b.style.border='1px solid '+s.border;b.style.color=s.col;
-  const d=document.getElementById('dots');d.innerHTML='';
-  STEPS.forEach((_,i)=>{const dot=document.createElement('div');dot.className='dot'+(i===cur?' active':i<cur?' done':'');d.appendChild(dot);});
+
+function startProg(){
+  const bar=document.getElementById('prog-bar');
+  bar.style.transition='none';
+  bar.style.width='0%';
+  clearTimeout(timer);
+  if(paused)return;
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    bar.style.transition='width 8s linear';
+    bar.style.width='100%';
+  }));
+  timer=setTimeout(()=>show((cur+1)%SLIDES.length),8000);
 }
-function prev(){goTo(cur-1);}function next(){goTo(cur+1);}
-function autoPlay(){
-  if(playing){playing=false;clearTimeout(timer);document.getElementById('bplay').textContent='&#9654; Auto';return;}
-  playing=true;document.getElementById('bplay').textContent='&#9646;&#9646; Pausa';
-  function tick(){if(!playing)return;if(cur<STEPS.length-1){next();timer=setTimeout(tick,8000);}else{playing=false;document.getElementById('bplay').textContent='&#9654; Auto';}}
-  timer=setTimeout(tick,5000);
-}
-function tap(event,cb){
-  const ring=document.createElement('div');ring.className='tap-ring';
-  ring.style.left=event.clientX+'px';ring.style.top=event.clientY+'px';
-  document.body.appendChild(ring);setTimeout(()=>ring.remove(),700);
-  if(cb)setTimeout(cb,350);
-}
-let added={},ctot=0,cqty=0;
-function addIt(event,bid,cid,price){
-  tap(event,null);
-  const btn=document.getElementById(bid),card=document.getElementById(cid);
-  btn.classList.add('added');card.classList.add('hi');
-  setTimeout(()=>{btn.classList.remove('added');card.classList.remove('hi');},600);
-  if(!added[bid]){added[bid]=true;ctot+=price;cqty++;
-    document.getElementById('cqty').textContent=cqty;
-    document.getElementById('ctot').textContent='$ '+ctot.toLocaleString('es-AR');
-    if(cqty>0)document.getElementById('cbar').classList.add('vis');
+
+function next(){clearTimeout(timer);show((cur+1)%SLIDES.length);}
+function prev(){clearTimeout(timer);show((cur-1+SLIDES.length)%SLIDES.length);}
+function togglePause(){
+  paused=!paused;
+  document.getElementById('pause-btn').innerHTML=paused?'&#9654;':'&#9646;&#9646;';
+  if(!paused){startProg();}else{
+    clearTimeout(timer);
+    const bar=document.getElementById('prog-bar');
+    const w=bar.getBoundingClientRect().width/document.body.getBoundingClientRect().width*100;
+    bar.style.transition='none';
+    bar.style.width=w+'%';
   }
 }
-function divChange(d){
-  let n=parseInt(document.getElementById('divN').textContent)+d;
-  if(n<2)n=2;if(n>10)n=10;
-  document.getElementById('divN').textContent=n;
-  const pp=Math.ceil(12510/n);
-  document.getElementById('divPP').textContent='$ '+pp.toLocaleString('es-AR');
-  document.getElementById('divSub').textContent='por persona (de '+n+')';
-}
-function selPay(el){document.querySelectorAll('.pay-opt').forEach(e=>e.classList.remove('sel'));el.classList.add('sel');}
-function selBell(el){document.querySelectorAll('.bell-opt').forEach(e=>e.classList.remove('sel'));el.classList.add('sel');}
-let posItems={},posTotal=0;
-function posAdd(event,name,price){
-  tap(event,null);
-  posItems[name]=(posItems[name]||0)+1;posTotal+=price;
-  const ticket=document.getElementById('posTicket');
-  ticket.innerHTML=Object.entries(posItems).map(([k,v])=>`<div class="ticket-item"><span class="ticket-nm">x${v} ${k}</span><span class="ticket-pr">$${(v*({Muzzarella:3200,Especial:4100,'Coca-Cola':900,Fernet:1800,'Tiramisú':2200,Agua:600}[k]||0)).toLocaleString('es-AR')}</span></div>`).join('');
-  document.getElementById('posTotal').textContent='$ '+posTotal.toLocaleString('es-AR');
-}
-function posClear(){posItems={};posTotal=0;document.getElementById('posTicket').innerHTML='<div style="font-size:.74rem;color:#4A6080;text-align:center;padding:6px 0">Tocá un producto para agregar</div>';document.getElementById('posTotal').textContent='$ 0';}
-upUI();screens[0].classList.add('active');
+
+const dc=document.getElementById('dots');
+SLIDES.forEach((_,i)=>{
+  const d=document.createElement('div');
+  d.className='dot'+(i===0?' active':'');
+  d.onclick=()=>{clearTimeout(timer);show(i);};
+  dc.appendChild(d);
+});
+
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight')next();
+  else if(e.key==='ArrowLeft')prev();
+  else if(e.key===' '){e.preventDefault();togglePause();}
+});
+
+show(0);
 </script>
 </body>
 </html>
