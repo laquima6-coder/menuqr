@@ -1219,6 +1219,12 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
   const [note,setNote]   = useState("");
   const [tipPct,setTipPct] = useState(null); // null | 0 | 10 | 15 | 20
   const [tipCustom,setTC]  = useState("");
+  const [pcMode,setPCMode] = useState(()=>typeof window!=="undefined"&&window.innerWidth>=1024);
+  useEffect(()=>{
+    const h=()=>setPCMode(window.innerWidth>=1024);
+    window.addEventListener("resize",h);
+    return()=>window.removeEventListener("resize",h);
+  },[]);
   const [showSolicitudes, setShowSolicitudes] = useState(false);
   const [solicEnviada, setSolicEnviada]       = useState(null);
   const [showDividir, setShowDividir]         = useState(false);
@@ -1885,6 +1891,178 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
       </div>
     </div>
   );
+
+
+  /* ── PC MENU VIEW */
+  if(view==="menu"&&pcMode){
+    const ac=local.color||"#C9A84C";
+    const featured=prods.filter(p=>p.active||p.active==null).sort((a,b)=>(b.tag==="CHEF"?1:0)-(a.tag==="CHEF"?1:0)||b.price-a.price)[0];
+    return(
+      <div style={{display:"flex",height:"100vh",background:"#0A0806",overflow:"hidden",fontFamily:"'DM Sans',sans-serif"}}>
+        <GS/>
+        {/* LEFT PANEL */}
+        <div style={{width:290,flexShrink:0,background:"linear-gradient(160deg,#1C0D00 0%,#0A0806 100%)",borderRight:"1px solid #1E1200",padding:"40px 28px",display:"flex",flexDirection:"column",height:"100vh",overflow:"hidden",position:"relative",zIndex:5}}>
+          <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:"#C9A84C",letterSpacing:3,textTransform:"uppercase",marginBottom:12}}>EST. 1996</div>
+          <div style={{fontFamily:"'Playfair Display',serif",fontSize:42,fontWeight:900,fontStyle:"italic",color:"#FFF",lineHeight:1,marginBottom:8,wordBreak:"break-word"}}>{local.nombre}</div>
+          {local.descripcion&&<div style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,color:"#5A4A30",letterSpacing:1.5,textTransform:"uppercase",lineHeight:1.6,marginBottom:20}}>{local.descripcion}</div>}
+          {local.mesa&&<div style={{display:"flex",alignItems:"center",gap:6,marginTop:4}}>
+            <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,color:"#3A2A10",letterSpacing:2,textTransform:"uppercase"}}>MESA</span>
+            <span style={{fontFamily:"'Playfair Display',serif",fontSize:28,color:ac,fontWeight:700,marginLeft:6}}>{local.mesa}</span>
+          </div>}
+          <div style={{flex:1}}/>
+          {cartCount>0&&(
+            <div>
+              <div style={{height:1,background:"linear-gradient(to right,transparent,#2A1A00,transparent)",marginBottom:14}}/>
+              <div style={{marginBottom:10,maxHeight:140,overflowY:"auto"}}>
+                {items.map(i=>(
+                  <div key={i.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"5px 0",borderBottom:"1px solid #1A1200",fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"#8A7A60"}}>
+                    <span style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:140}}>{i.qty}× {i.name}</span>
+                    <span style={{color:ac,fontWeight:700,flexShrink:0,marginLeft:8}}>$ {fmt(i.price*i.qty)}</span>
+                  </div>
+                ))}
+              </div>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10,padding:"6px 0"}}>
+                <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:"#5A4A30",letterSpacing:1}}>TOTAL</span>
+                <span style={{fontFamily:"'Playfair Display',serif",fontSize:20,color:ac,fontWeight:700}}>$ {fmt(grandTotal)}</span>
+              </div>
+              <button onClick={()=>setView("cart")} className="pr" style={{width:"100%",background:ac,border:"none",borderRadius:12,padding:"13px 0",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:700,color:"#0A0806",cursor:"pointer",letterSpacing:0.5}}>
+                VER PEDIDO ({cartCount})
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* MAIN CONTENT */}
+        <div style={{flex:1,overflowY:"auto",display:"flex",flexDirection:"column"}}>
+          {/* Category tabs bar */}
+          <div style={{display:"flex",alignItems:"center",gap:8,padding:"18px 36px",position:"sticky",top:0,background:"#0A0806cc",backdropFilter:"blur(12px)",borderBottom:"1px solid #1A1200",zIndex:10,flexWrap:"wrap"}}>
+            {[{id:"TODO",icon:"",label:"Todo"},...activeCats].map(cat=>(
+              <button key={cat.id} onClick={()=>setAC(cat.id)} className="pr" style={{
+                flexShrink:0,borderRadius:20,padding:"7px 18px",
+                background:activeCat===cat.id?ac:"#141414",
+                border:"1px solid "+(activeCat===cat.id?"transparent":"#2A2A2A"),
+                color:activeCat===cat.id?"#0A0806":"#5A4A30",
+                fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,
+                cursor:"pointer",transition:"all .15s",whiteSpace:"nowrap"}}>
+                {cat.icon?cat.icon+" ":""}{cat.label}
+              </button>
+            ))}
+            <div style={{flex:1}}/>
+            <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:"#2A2A2A"}}>{nowStr()}</div>
+          </div>
+
+          <div style={{padding:"32px 36px 60px"}}>
+            {/* Featured product */}
+            {featured&&(activeCat==="TODO"||(()=>{const fc=activeCats.find(c=>c.id===featured.cat);return !fc||activeCat===featured.cat;})())&&(()=>{
+              const inCart=cart[featured.id]?.qty||0;
+              return(
+                <div style={{marginBottom:40}}>
+                  <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,color:ac,letterSpacing:3,textTransform:"uppercase",marginBottom:16}}>DESTACADO DEL DÍA</div>
+                  <div style={{background:"#141414",borderRadius:20,overflow:"hidden",border:`1px solid ${inCart>0?ac+"88":"#2A2A2A"}`,display:"grid",gridTemplateColumns:"1fr 1fr",transition:"all .3s",boxShadow:inCart>0?`0 0 30px ${ac}20`:"none"}}>
+                    <div style={{position:"relative",minHeight:220,overflow:"hidden",background:"#1A1A1A",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                      {featured.foto_url?(
+                        <img src={featured.foto_url} alt={featured.name} style={{width:"100%",height:"100%",objectFit:"cover",position:"absolute",inset:0}}
+                          onError={e=>{e.target.style.display="none";}}/>
+                      ):(
+                        <span style={{fontSize:80}}>{featured.emoji||"🍽️"}</span>
+                      )}
+                      <div style={{position:"absolute",top:14,left:14,background:ac,borderRadius:20,padding:"5px 12px",display:"flex",alignItems:"center",gap:5}}>
+                        <span style={{fontSize:11}}>⭐</span>
+                        <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,fontWeight:700,color:"#0A0806",letterSpacing:1}}>MÁS PEDIDO</span>
+                      </div>
+                    </div>
+                    <div style={{padding:"32px 32px",display:"flex",flexDirection:"column",justifyContent:"space-between"}}>
+                      <div>
+                        {featured.tag&&<Tag tag={featured.tag}/>}
+                        <div style={{fontFamily:"'Playfair Display',serif",fontSize:34,fontWeight:900,color:"#FFF",lineHeight:1.1,marginTop:8,marginBottom:10}}>{featured.name}</div>
+                        <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"#5A4A30",lineHeight:1.6}}>{featured.desc}</div>
+                      </div>
+                      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginTop:20}}>
+                        <div style={{fontFamily:"'Playfair Display',serif",fontSize:30,fontWeight:900,color:ac}}>$ {fmt(featured.price)}</div>
+                        {featured.sin_stock?(
+                          <span style={{fontSize:12,color:"#444",background:"#1A1A1A",border:"1px solid #222",borderRadius:8,padding:"8px 16px",fontFamily:"'DM Sans',sans-serif"}}>Agotado</span>
+                        ):inCart===0?(
+                          <button onClick={()=>add(featured)} className="pr" style={{background:ac,border:"none",borderRadius:12,padding:"12px 28px",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:700,color:"#0A0806",cursor:"pointer"}}>+ Agregar</button>
+                        ):(
+                          <div style={{display:"flex",alignItems:"center",gap:10}}>
+                            <button onClick={()=>rem(featured.id)} className="pr" style={{width:36,height:36,borderRadius:10,background:"#1E1E1E",border:"1px solid #2A2A2A",color:"#AAA",fontSize:20,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>−</button>
+                            <span style={{fontFamily:"'DM Sans',sans-serif",fontWeight:800,fontSize:18,color:ac,minWidth:24,textAlign:"center"}}>{inCart}</span>
+                            <button onClick={()=>add(featured)} className="pr" style={{width:36,height:36,borderRadius:10,background:ac,border:"none",color:"#0A0806",fontSize:20,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>+</button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Products grid */}
+            {activeCats.filter(cat=>activeCat==="TODO"||activeCat===cat.id).map(cat=>{
+              const catProds=prods.filter(p=>p.cat===cat.id&&(p.active||p.active==null));
+              if(!catProds.length) return null;
+              return(
+                <div key={cat.id} style={{marginBottom:44}}>
+                  <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:20}}>
+                    <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,color:ac,letterSpacing:2}}>◆</span>
+                    <span style={{fontFamily:"'Outfit',sans-serif",fontSize:11,fontWeight:800,color:"#FFF",letterSpacing:2,textTransform:"uppercase"}}>{cat.icon} {cat.label}</span>
+                    <div style={{flex:1,height:1,background:"linear-gradient(to right,#2A2A2A,transparent)",marginLeft:8}}/>
+                  </div>
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(210px,1fr))",gap:14}}>
+                    {catProds.map(item=>{
+                      const inCart=cart[item.id]?.qty||0;
+                      const disc=item.orig?Math.round((1-item.price/item.orig)*100):null;
+                      return(
+                        <div key={item.id} style={{background:"#141414",borderRadius:14,overflow:"hidden",border:`1px solid ${inCart>0?ac+"88":"#2A2A2A"}`,display:"flex",flexDirection:"column",boxShadow:inCart>0?`0 0 16px ${ac}25`:"0 2px 12px rgba(0,0,0,.4)",transition:"all .2s"}}>
+                          {item.foto_url?(
+                            <div style={{position:"relative",height:130,overflow:"hidden"}}>
+                              <img src={item.foto_url} alt={item.name} style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}}
+                                onError={e=>{const p=e.target.parentElement;p.style.cssText="height:130px;background:#1A1A1A;display:flex;align-items:center;justify-content:center;";e.target.remove();const s=document.createElement("span");s.style.fontSize="38px";s.textContent=item.emoji||"🍽️";p.appendChild(s);}}/>
+                              {disc&&<div style={{position:"absolute",top:7,left:7,background:"#22C55E",color:"#FFF",borderRadius:4,fontSize:8,fontWeight:800,padding:"2px 5px",fontFamily:"'DM Sans',sans-serif"}}>-{disc}%</div>}
+                              {item.tag&&<div style={{position:"absolute",top:7,right:7}}><Tag tag={item.tag}/></div>}
+                            </div>
+                          ):(
+                            <div style={{height:100,background:"linear-gradient(135deg,#181818,#101010)",display:"flex",alignItems:"center",justifyContent:"center",position:"relative"}}>
+                              <span style={{fontSize:38}}>{item.emoji||"🍽️"}</span>
+                              {disc&&<div style={{position:"absolute",top:7,left:7,background:"#22C55E",color:"#FFF",borderRadius:4,fontSize:8,fontWeight:800,padding:"2px 5px",fontFamily:"'DM Sans',sans-serif"}}>-{disc}%</div>}
+                              {item.tag&&<div style={{position:"absolute",top:7,right:7}}><Tag tag={item.tag}/></div>}
+                            </div>
+                          )}
+                          <div style={{padding:"12px 14px",flex:1,display:"flex",flexDirection:"column",justifyContent:"space-between"}}>
+                            <div>
+                              <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,color:"#EEE",lineHeight:1.2,marginBottom:3}}>{item.name}</div>
+                              {item.desc&&<div style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,color:"#3A3A3A",lineHeight:1.4,display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",overflow:"hidden"}}>{item.desc}</div>}
+                            </div>
+                            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:10}}>
+                              <div>
+                                <div style={{fontFamily:"'Outfit',sans-serif",fontSize:15,fontWeight:800,color:ac,lineHeight:1}}>$ {fmt(item.price)}</div>
+                                {item.orig&&<div style={{fontFamily:"'DM Sans',sans-serif",fontSize:9,color:"#2A2A2A",textDecoration:"line-through"}}>$ {fmt(item.orig)}</div>}
+                              </div>
+                              {item.sin_stock?(
+                                <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:9,fontWeight:700,color:"#444",background:"#1A1A1A",border:"1px solid #222",borderRadius:4,padding:"3px 6px"}}>Agotado</span>
+                              ):inCart===0?(
+                                <button onClick={()=>add(item)} className="pr" style={{width:30,height:30,borderRadius:8,background:ac,border:"none",color:"#0A0806",fontSize:19,fontWeight:900,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,touchAction:"manipulation",lineHeight:1}}>+</button>
+                              ):(
+                                <div style={{display:"flex",alignItems:"center",gap:5,flexShrink:0}}>
+                                  <button onClick={()=>rem(item.id)} className="pr" style={{width:24,height:24,borderRadius:6,background:"#1E1E1E",border:"1px solid #2A2A2A",color:"#AAA",fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",padding:0,touchAction:"manipulation",lineHeight:1}}>−</button>
+                                  <span style={{fontFamily:"'DM Sans',sans-serif",fontWeight:800,fontSize:13,color:ac,minWidth:14,textAlign:"center"}}>{inCart}</span>
+                                  <button onClick={()=>add(item)} className="pr" style={{width:24,height:24,borderRadius:6,background:ac,border:"none",color:"#0A0806",fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",padding:0,touchAction:"manipulation",lineHeight:1}}>+</button>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   /* ── MENU VIEW */
   return (
