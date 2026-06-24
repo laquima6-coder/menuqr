@@ -1526,7 +1526,18 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
     );
   };
 
-  if(view==="done") return (
+  if(view==="done") {
+    const STEPS=[
+      {key:"nuevo",     icon:"📋", label:"Recibido",    sub:"En espera de la cocina"},
+      {key:"preparando",icon:"🍳", label:"Preparando",  sub:"Tu pedido está siendo preparado"},
+      {key:"listo",     icon:"🔔", label:"¡Listo!",     sub:"Ya va a salir"},
+      {key:"entregado", icon:"🎉", label:"Entregado",   sub:"¡Buen provecho!"},
+    ];
+    const stepIdx = STEPS.findIndex(s=>s.key===orderStatus);
+    const curStep = STEPS[Math.max(0,stepIdx)];
+    const acColor = local.color||"#C9A84C";
+    const isDone  = orderStatus==="listo"||orderStatus==="entregado";
+  return (
     <div style={{maxWidth:430,margin:"0 auto",minHeight:"100vh",background:"var(--cb)",
       display:"flex",flexDirection:"column",alignItems:"center",
       justifyContent:"center",padding:24,textAlign:"center"}}>
@@ -1534,6 +1545,49 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
       <div style={{display:"flex",gap:4,flexWrap:"wrap",justifyContent:"center",marginBottom:16}}>
         {LANGS.map(l=><button key={l.code} onClick={()=>changeLang(l.code)} style={{background:lang===l.code?"rgba(201,168,76,.25)":"rgba(10,8,6,.7)",border:`1px solid ${lang===l.code?"var(--cg)":"rgba(255,255,255,.12)"}`,borderRadius:6,padding:"5px 8px",cursor:"pointer",fontFamily:"'IBM Plex Mono',monospace",fontSize:10,fontWeight:700,color:lang===l.code?"var(--cg)":"rgba(255,255,255,.6)",backdropFilter:"blur(8px)",lineHeight:1.2,minWidth:36,textAlign:"center"}}>{l.flag} {l.name}</button>)}
       </div>
+
+      {/* LIVE ORDER TRACKER */}
+      <div style={{width:"100%",maxWidth:340,background:"var(--cc)",border:"1px solid var(--cbr)",borderRadius:20,padding:"22px 20px",marginBottom:20,animation:"scaleIn .5s cubic-bezier(.34,1.56,.64,1) both"}}>
+        <div style={{marginBottom:18}}>
+          <div style={{fontSize:42,marginBottom:6,lineHeight:1}}>{curStep.icon}</div>
+          <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700,
+            color:isDone?"#4A9A5A":acColor,marginBottom:3}}>{curStep.label}</div>
+          <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"var(--cm)"}}>{curStep.sub}</div>
+        </div>
+        {/* Step progress */}
+        <div style={{display:"flex",alignItems:"center",justifyContent:"center"}}>
+          {STEPS.map((s,i)=>{
+            const done=i<=stepIdx; const active=i===stepIdx;
+            return(
+              <React.Fragment key={s.key}>
+                <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
+                  <div style={{
+                    width:active?34:26,height:active?34:26,borderRadius:"50%",
+                    background:done?(active?acColor:"rgba(201,168,76,.25)"):"rgba(255,255,255,.05)",
+                    border:`2px solid ${done?acColor:"rgba(255,255,255,.08)"}`,
+                    display:"flex",alignItems:"center",justifyContent:"center",
+                    fontSize:active?16:11,transition:"all .4s",
+                    boxShadow:active?`0 0 14px ${acColor}50`:"none"}}>
+                    {done&&!active?"✓":s.icon}
+                  </div>
+                  <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:7,fontWeight:700,
+                    color:done?acColor:"rgba(255,255,255,.18)",textTransform:"uppercase",
+                    letterSpacing:.5,maxWidth:52,lineHeight:1.2,textAlign:"center"}}>{s.label}</div>
+                </div>
+                {i<STEPS.length-1&&<div style={{width:22,height:2,flexShrink:0,marginBottom:14,
+                  background:i<stepIdx?acColor:"rgba(255,255,255,.07)",transition:"background .4s"}}/>}
+              </React.Fragment>
+            );
+          })}
+        </div>
+        {lastPedidoId&&(
+          <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:5,marginTop:10}}>
+            <div style={{width:6,height:6,borderRadius:"50%",background:"#4A9A5A"}}/>
+            <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,color:"#4A9A5A",letterSpacing:1}}>EN VIVO</div>
+          </div>
+        )}
+      </div>
+
       <div style={{animation:"scaleIn .5s cubic-bezier(.34,1.56,.64,1) both"}}>
         <div style={{width:80,height:80,borderRadius:"50%",
           background:"linear-gradient(135deg,var(--cg),var(--cg2))",
@@ -1605,6 +1659,7 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
       </div>
     </div>
   );
+  }
 
   /* ── CART */
   if(view==="cart") return (
@@ -1875,7 +1930,7 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
           }
           // Guardar resultado para mostrarlo en la pantalla "done"
           if(errorMsg) localStorage.setItem("menuqr_last_order_error", errorMsg);
-          else localStorage.removeItem("menuqr_last_order_error");
+          else { localStorage.removeItem("menuqr_last_order_error"); setLastPedidoId(pedidoId); setOrderStatus("nuevo"); }
           setView("done");
         }} className="pr" style={{
           width:"100%",
