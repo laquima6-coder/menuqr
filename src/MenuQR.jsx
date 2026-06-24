@@ -1220,6 +1220,8 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
   const [tipPct,setTipPct] = useState(null); // null | 0 | 10 | 15 | 20
   const [tipCustom,setTC]  = useState("");
   const [pcMode,setPCMode] = useState(()=>typeof window!=="undefined"&&window.innerWidth>=1024);
+  const [lastPedidoId,setLastPedidoId] = useState(null);
+  const [orderStatus,setOrderStatus]   = useState("nuevo");
   useEffect(()=>{
     const h=()=>setPCMode(window.innerWidth>=1024);
     window.addEventListener("resize",h);
