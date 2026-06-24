@@ -14,22 +14,22 @@ const GS = () => (
       --cb:  #0D0D0D; --cs: #171717; --cc: #1F1F1F; --cbr: #2D2D2D;
       --cm:  #6B6B6B; --cd: #8A8A8A; --ct: #AAAAAA; --cbri:#FFFFFF;
       --cg:  #F97316; --cg2:#FB923C; --cgr:#22C55E; --crd:#EF4444;
-      /* Admin — cockpit técnico */
-      --ab:  #0d1117; --as: #161b22; --ac: #1c2128; --abr:#2a3441;
-      --am:  #4a5a6a; --ad: #6a8090; --at: #a0b8c8; --abri:#d8ecf8;
-      --ag:  #00FF88; --aam:#FFB020; --ar: #FF3B5C; --abl:#3D8EFF;
-      /* Gestión — dashboard SaaS */
-      --gb:  #080B12; --gs: #0F1320; --gc: #111827; --gbr:#1E2A3A;
-      --gm:  #2A3A50; --gd: #4A6080; --gt: #7A9AB8; --gbri:#B8D0E8;
-      --gi:  #6366F1; --gi2:#818CF8; --gg: #10B981; --gr: #EF4444; --gam:#F59E0B;
+      /* Admin — Opción C: Bistró Clásico */
+      --ab:  #0D0804; --as: #1C1008; --ac: #241408; --abr:#2A1C0E;
+      --am:  #7A6050; --ad: #9A7A60; --at: #D4C4A8; --abri:#F5F0E8;
+      --ag:  #C9A84C; --aam:#E8C87A; --ar: #C85040; --abl:#A08050;
+      /* Gestión — Opción C: Bistró Clásico */
+      --gb:  #0D0804; --gs: #1C1008; --gc: #241408; --gbr:#2A1C0E;
+      --gm:  #3A2418; --gd: #7A6050; --gt: #D4C4A8; --gbri:#F5F0E8;
+      --gi:  #C9A84C; --gi2:#E8C87A; --gg: #4A9A5A; --gr: #C85040; --gam:#E8A030;
       --gg2: #C9A84C;
     }
 
     * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent }
-    body { background:#0d1117 }
+    body { background:#0D0804 }
     ::-webkit-scrollbar { width:4px }
     ::-webkit-scrollbar-track { background:transparent }
-    ::-webkit-scrollbar-thumb { background:#1E2A3A; border-radius:2px }
+    ::-webkit-scrollbar-thumb { background:#2A1C0E; border-radius:2px }
 
     @keyframes fadeUp   { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
     @keyframes fadeIn   { from{opacity:0} to{opacity:1} }
