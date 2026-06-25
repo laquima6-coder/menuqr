@@ -2819,13 +2819,32 @@ function QRTabComp({ mesaNum, setMesaNum, qrType, setQrType, promoUrl, setPromoU
               ctx.fillStyle="#999999";
               ctx.font="12px monospace";
               ctx.fillText(qrData.length>50?qrData.substring(0,50)+"...":qrData,totalW/2,lblY+44+footerH-8);
-              // download
-              const a=document.createElement("a");
-              a.href=canvas.toDataURL("image/png");
+              // download or share
               const fileSlug=(local.nombre||"menuqr").toLowerCase().replace(/\s+/g,"-");
               const fileLbl=qrType==="mesa"?`mesa-${mesaNum}`:qrType==="cocina"?"cocina":qrType==="vitrina"?"vitrina":"qr";
-              a.download=`qr-${fileSlug}-${fileLbl}.png`;
-              a.click();
+              const fileName=`qr-${fileSlug}-${fileLbl}.png`;
+              canvas.toBlob(async(blob)=>{
+                if(navigator.share && navigator.canShare && navigator.canShare({files:[new File([blob],"qr.png",{type:"image/png"})]})){
+                  try{
+                    await navigator.share({
+                      title:`QR ${lbl} — ${local.nombre||"MenuQR"}`,
+                      text:`Escaneá el QR para ver la carta de ${local.nombre||"tu restaurante"}`,
+                      files:[new File([blob],fileName,{type:"image/png"})]
+                    });
+                  }catch(e){
+                    // user cancelled share or error — fallback to download
+                    const a=document.createElement("a");
+                    a.href=URL.createObjectURL(blob);
+                    a.download=fileName;
+                    a.click();
+                  }
+                } else {
+                  const a=document.createElement("a");
+                  a.href=URL.createObjectURL(blob);
+                  a.download=fileName;
+                  a.click();
+                }
+              },"image/png");
             }} className="pr" style={{
               width:"100%",background:"#241408",color:"#D4C4A8",border:"1px solid #2A1C0E",
               borderRadius:12,padding:13,fontFamily:"'IBM Plex Mono',monospace",
