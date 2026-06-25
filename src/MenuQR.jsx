@@ -2716,10 +2716,14 @@ function QRTabComp({ mesaNum, setMesaNum, qrType, setQrType, promoUrl, setPromoU
         <div style={{fontFamily:"monospace",fontSize:8,color:current.color,opacity:.4,marginTop:6,wordBreak:"break-all",padding:"0 8px"}}>{qrData}</div>
       </div>
 
-      <button type="button" onClick={async()=>{
-        const qrUrl = await QRCodeLib.toDataURL(qrData,{width:280,margin:2,color:{dark:"#0A0806",light:"#FFFFFF"}});
-        const label = qrType==="mesa"?`Mesa ${mesaNum}`:qrType==="wifi"?"WiFi Gratis":qrType==="whatsapp"?"Pedí por WhatsApp":qrType==="vitrina"?"Ver la Carta":qrType==="cocina"?"Pantalla Cocina":"Promo Especial";
-        const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>QR</title>
+      {/* Helper to build the print card HTML */}
+      {(()=>{
+        const buildQRHtml = async(forPrint)=>{
+          const qrUrl = await QRCodeLib.toDataURL(qrData,{width:320,margin:2,color:{dark:"#0A0806",light:"#FFFFFF"}});
+          const label = qrType==="mesa"?`Mesa ${mesaNum}`:qrType==="wifi"?"WiFi Gratis":qrType==="whatsapp"?"Pedí por WhatsApp":qrType==="vitrina"?"Ver la Carta":qrType==="cocina"?"Pantalla Cocina":"Promo Especial";
+          return {qrUrl, label};
+        };
+        const getHtml=(qrUrl,label,forPrint)=>`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>QR ${label}</title>
 <style>
   @page{size:A4;margin:0}
   *{margin:0;padding:0;box-sizing:border-box}
@@ -2728,25 +2732,65 @@ function QRTabComp({ mesaNum, setMesaNum, qrType, setQrType, promoUrl, setPromoU
   .card{text-align:center;padding:40px 56px;border:3px solid ${current.color};border-radius:28px;background:#fff}
   .name{font-size:11px;letter-spacing:3px;text-transform:uppercase;color:${current.color};margin-bottom:18px;font-family:monospace}
   .qr{background:#fff;border:3px solid ${current.color};border-radius:14px;padding:12px;display:inline-block;margin-bottom:18px}
-  .label{background:${current.color};color:#0A0806;border-radius:30px;padding:9px 32px;display:inline-block;font-size:17px;font-weight:700;margin-bottom:12px;font-family:sans-serif}
+  .lbl{background:${current.color};color:#0A0806;border-radius:30px;padding:9px 32px;display:inline-block;font-size:17px;font-weight:700;margin-bottom:12px;font-family:sans-serif}
   .url{font-size:9px;color:#999;word-break:break-all;max-width:260px;margin:0 auto;font-family:monospace}
 </style></head><body>
 <div class="card">
   <div class="name">${local.nombre||"MenuQR"}</div>
-  <div class="qr"><img src="${qrUrl}" width="240" height="240"/></div><br>
-  <div class="label">${label}</div>
+  <div class="qr"><img src="${qrUrl}" width="260" height="260"/></div><br>
+  <div class="lbl">${label}</div>
   <div class="url">${qrData}</div>
-</div>
-<script>window.onload=function(){window.print();setTimeout(function(){window.close()},1500)}</script>
+</div>${forPrint?`<script>window.onload=function(){window.print();setTimeout(function(){window.close()},1500)}<\/script>`:""}
 </body></html>`;
-        const w=window.open("","_blank","width=520,height=640,toolbar=0,menubar=0");
-        if(w){w.document.write(html);w.document.close();}
-      }} className="pr" style={{
-        width:"100%",background:current.color,color:"#0A0806",border:"none",
-        borderRadius:14,padding:14,fontFamily:"'IBM Plex Mono',monospace",
-        fontSize:13,fontWeight:700,cursor:"pointer",letterSpacing:1}}>
-        🖨️ IMPRIMIR ESTE QR
-      </button>
+        return(
+          <div style={{display:"flex",flexDirection:"column",gap:8}}>
+            {/* IMPRIMIR */}
+            <button type="button" onClick={async()=>{
+              const {qrUrl,label}=await buildQRHtml(true);
+              const w=window.open("","_blank","width=520,height=640,toolbar=0,menubar=0");
+              if(w){w.document.write(getHtml(qrUrl,label,true));w.document.close();}
+            }} className="pr" style={{
+              width:"100%",background:current.color,color:"#0A0806",border:"none",
+              borderRadius:12,padding:13,fontFamily:"'IBM Plex Mono',monospace",
+              fontSize:13,fontWeight:700,cursor:"pointer",letterSpacing:1}}>
+              🖨️ IMPRIMIR
+            </button>
+            {/* DESCARGAR PDF */}
+            <button type="button" onClick={async()=>{
+              const {qrUrl,label}=await buildQRHtml(false);
+              const html=getHtml(qrUrl,label,false);
+              const blob=new Blob([html],{type:"text/html"});
+              const a=document.createElement("a");
+              a.href=URL.createObjectURL(blob);
+              const slug=(local.nombre||"menuqr").toLowerCase().replace(/\s+/g,"-");
+              const lbl=(label).toLowerCase().replace(/\s+/g,"-");
+              a.download=`qr-${slug}-${lbl}.html`;
+              a.click();
+              URL.revokeObjectURL(a.href);
+            }} className="pr" style={{
+              width:"100%",background:"#241408",color:current.color,border:`1px solid ${current.color}55`,
+              borderRadius:12,padding:13,fontFamily:"'IBM Plex Mono',monospace",
+              fontSize:13,fontWeight:700,cursor:"pointer",letterSpacing:1}}>
+              📥 DESCARGAR (PDF / imprenta)
+            </button>
+            {/* DESCARGAR IMAGEN PNG */}
+            <button type="button" onClick={async()=>{
+              const qrUrl = await QRCodeLib.toDataURL(qrData,{width:600,margin:3,color:{dark:"#0A0806",light:"#FFFFFF"}});
+              const a=document.createElement("a");
+              a.href=qrUrl;
+              const slug=(local.nombre||"menuqr").toLowerCase().replace(/\s+/g,"-");
+              const label2=qrType==="mesa"?`mesa-${mesaNum}`:qrType==="cocina"?"cocina":qrType==="vitrina"?"vitrina":"qr";
+              a.download=`qr-${slug}-${label2}.png`;
+              a.click();
+            }} className="pr" style={{
+              width:"100%",background:"#241408",color:"#D4C4A8",border:"1px solid #2A1C0E",
+              borderRadius:12,padding:13,fontFamily:"'IBM Plex Mono',monospace",
+              fontSize:13,fontWeight:700,cursor:"pointer",letterSpacing:1}}>
+              🖼️ DESCARGAR IMAGEN (.png)
+            </button>
+          </div>
+        );
+      })()}
     </div>
   );
 }
