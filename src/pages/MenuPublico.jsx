@@ -13,32 +13,41 @@ export default function MenuPublico({ vitrina = false }) {
   const [error,   setError]   = useState(null)
 
   useEffect(() => {
-    load()
+    load(true)
   }, [slug, mesa])
 
-  // Refresh when tab regains focus (admin may have updated products)
+  // Silent background refresh when tab regains focus — does NOT show the spinner
+  // so the user's selected category and cart state are preserved
   useEffect(() => {
-    const onVisible = () => { if (document.visibilityState === 'visible') load() }
+    const onVisible = () => { if (document.visibilityState === 'visible') load(false) }
     document.addEventListener('visibilitychange', onVisible)
     return () => document.removeEventListener('visibilitychange', onVisible)
   }, [slug, mesa])
 
-  async function load() {
-    setLoading(true)
-    setError(null)
+  async function load(showSpinner = true) {
+    if (showSpinner) {
+      setLoading(true)
+      setError(null)
+    }
 
     if (!supabase) {
       setLocal({ ...INIT_LOCAL, slug })
       setCats(INIT_CATS)
       setProds(INIT_PRODS)
-      setLoading(false)
+      if (showSpinner) setLoading(false)
       return
     }
 
     try {
       const restaurante = await getRestaurante(slug)
-      if (!restaurante) { setError('Restaurante no encontrado'); setLoading(false); return }
-      if (!restaurante.activo) { setError('Este menu no esta disponible en este momento'); setLoading(false); return }
+      if (!restaurante) {
+        if (showSpinner) { setError('Restaurante no encontrado'); setLoading(false) }
+        return
+      }
+      if (!restaurante.activo) {
+        if (showSpinner) { setError('Este menu no esta disponible en este momento'); setLoading(false) }
+        return
+      }
 
       const [categorias, productos] = await Promise.all([
         getCategorias(restaurante.id),
@@ -66,9 +75,9 @@ export default function MenuPublico({ vitrina = false }) {
         emoji: p.emoji, tag: p.tag, active: p.active, foto_url: p.foto_url, sin_stock: p.sin_stock,
       })))
     } catch (e) {
-      setError('Error al cargar el menu')
+      if (showSpinner) setError('Error al cargar el menu')
     } finally {
-      setLoading(false)
+      if (showSpinner) setLoading(false)
     }
   }
 
