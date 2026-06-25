@@ -1848,6 +1848,35 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
                 ))}
               </div>
             </div>
+            {/* MP/Transfer alias card — PC */}
+            {(pay==="mp"||pay==="trans") && local.mp_mostrar_alias && local.mp_alias && (
+              <div style={{marginBottom:20,background:"#FFF8EC",border:"1px solid #C9A84C66",borderRadius:14,padding:"16px 18px"}}>
+                <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:700,letterSpacing:2,textTransform:"uppercase",color:"#8A6A30",marginBottom:10}}>
+                  {pay==="mp"?"💳 Datos para pagar por Mercado Pago":"🏦 Datos para transferencia bancaria"}
+                </div>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,marginBottom:10}}>
+                  <div>
+                    <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:18,fontWeight:700,color:"#1C1008",letterSpacing:.5}}>{local.mp_alias}</div>
+                    {local.mp_titular&&<div style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"#7A6050",marginTop:2}}>Titular: {local.mp_titular}</div>}
+                  </div>
+                  <button onClick={()=>{navigator.clipboard.writeText(local.mp_alias);}} className="pr"
+                    style={{background:"#C9A84C",border:"none",borderRadius:8,padding:"8px 14px",fontFamily:"'IBM Plex Mono',monospace",fontSize:12,fontWeight:700,color:"#1C1008",cursor:"pointer",whiteSpace:"nowrap"}}>
+                    📋 Copiar alias
+                  </button>
+                </div>
+                {local.whatsapp&&(
+                  <a href={`https://wa.me/${local.whatsapp.replace(/\D/g,"")}?text=${encodeURIComponent("Hola! Te envío el comprobante de pago de mi pedido en "+local.name+".")}`}
+                    target="_blank" rel="noreferrer"
+                    style={{display:"flex",alignItems:"center",gap:8,background:"#25D366",borderRadius:9,padding:"9px 14px",textDecoration:"none",marginTop:4}}>
+                    <span style={{fontSize:18}}>📱</span>
+                    <div>
+                      <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,color:"#fff"}}>Enviar comprobante por WhatsApp</div>
+                      <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,color:"rgba(255,255,255,.8)"}}>Una vez abonado, compartí el comprobante al local</div>
+                    </div>
+                  </a>
+                )}
+              </div>
+            )}
             {/* Confirm */}
             <div style={{borderTop:`1px solid ${warmBorder}`,paddingTop:20}}>
               <div style={{display:"flex",justifyContent:"space-between",fontSize:20,fontWeight:700,color:warmText,marginBottom:16,fontFamily:"'DM Sans',sans-serif"}}>
@@ -2012,6 +2041,36 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
             </button>
           ))}
         </div>
+
+        {/* MP/Transfer alias card — Mobile */}
+        {(pay==="mp"||pay==="trans") && local.mp_mostrar_alias && local.mp_alias && (
+          <div style={{margin:"0 0 16px",background:"rgba(201,168,76,.08)",border:"1px solid rgba(201,168,76,.35)",borderRadius:16,padding:"16px"}}>
+            <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,fontWeight:700,letterSpacing:2,textTransform:"uppercase",color:"var(--cg)",marginBottom:10}}>
+              {pay==="mp"?"💳 Pagar con Mercado Pago":"🏦 Transferencia bancaria"}
+            </div>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,marginBottom:10}}>
+              <div>
+                <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:17,fontWeight:700,color:"var(--cbri)",letterSpacing:.5}}>{local.mp_alias}</div>
+                {local.mp_titular&&<div style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"var(--cm)",marginTop:2}}>Titular: {local.mp_titular}</div>}
+              </div>
+              <button onClick={()=>navigator.clipboard.writeText(local.mp_alias)} className="pr"
+                style={{background:"var(--cg)",border:"none",borderRadius:9,padding:"9px 14px",fontFamily:"'IBM Plex Mono',monospace",fontSize:11,fontWeight:700,color:"var(--cb)",cursor:"pointer",whiteSpace:"nowrap"}}>
+                📋 Copiar
+              </button>
+            </div>
+            {local.whatsapp&&(
+              <a href={`https://wa.me/${local.whatsapp.replace(/\D/g,"")}?text=${encodeURIComponent("Hola! Te envío el comprobante de pago de mi pedido en "+local.name+".")}`}
+                target="_blank" rel="noreferrer"
+                style={{display:"flex",alignItems:"center",gap:10,background:"#25D366",borderRadius:12,padding:"11px 14px",textDecoration:"none"}}>
+                <span style={{fontSize:20}}>📱</span>
+                <div>
+                  <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,color:"#fff"}}>Enviar comprobante por WhatsApp</div>
+                  <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,color:"rgba(255,255,255,.85)"}}>Una vez abonado, compartí el comprobante al local</div>
+                </div>
+              </a>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Dividir cuenta */}
@@ -3587,6 +3646,8 @@ function GestionTab({local,setLocal,cats,setCats,prods,setProds,gSubTab,setGSubT
       wifi_pass:    local.wifi_pass    || '',
       whatsapp:     local.whatsapp     || '',
       whatsapp_msg: local.whatsapp_msg || '',
+      mp_alias:     local.mp_alias     || '',
+      mp_titular:   local.mp_titular   || '',
     });
   },[local.restauranteId]);
 
@@ -4067,6 +4128,8 @@ function ConfigTab({local,setLocal,toast}) {
       wifi_pass:    local.wifi_pass    || '',
       whatsapp:     local.whatsapp     || '',
       whatsapp_msg: local.whatsapp_msg || '',
+      mp_alias:     local.mp_alias     || '',
+      mp_titular:   local.mp_titular   || '',
     });
   },[local.restauranteId]);
 
@@ -4098,6 +4161,9 @@ function ConfigTab({local,setLocal,toast}) {
           whatsapp_vitrina_numero: local.whatsapp_vitrina_numero || "",
           whatsapp_delivery:       !!local.whatsapp_delivery,
           whatsapp_retiro:         !!local.whatsapp_retiro,
+          mp_mostrar_alias:        !!local.mp_mostrar_alias,
+          mp_alias:                cfgDraft.mp_alias || "",
+          mp_titular:              cfgDraft.mp_titular || "",
         }
       }).eq("id", local.restauranteId);
       if(error) toast("Error al guardar: "+error.message,"err");
@@ -4326,6 +4392,37 @@ function ConfigTab({local,setLocal,toast}) {
                 <ToggleA on={local[op.k]} onChange={()=>setLocal(l=>({...l,[op.k]:!l[op.k]}))}/>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+    </div>
+
+    {/* Pagos digitales — alias MP / CVU */}
+    <div style={{background:"var(--ac)",border:"1px solid var(--abr)",borderRadius:16,overflow:"hidden",marginBottom:12}}>
+      <div style={{padding:"14px 18px 10px"}}><ALbl>Pagos digitales</ALbl></div>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",
+        padding:"14px 18px",borderTop:"1px solid var(--abr)"}}>
+        <div>
+          <p style={{fontFamily:"'Outfit',sans-serif",fontSize:15,fontWeight:600,color:"var(--abri)",marginBottom:2}}>📲 Mostrar alias al cliente</p>
+          <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"var(--ad)"}}>Cuando elige MP o Transferencia ve tu alias y puede copiarlo</p>
+        </div>
+        <ToggleA on={local.mp_mostrar_alias} onChange={()=>setLocal(l=>({...l,mp_mostrar_alias:!l.mp_mostrar_alias}))}/>
+      </div>
+      {local.mp_mostrar_alias&&(
+        <div style={{padding:"12px 18px 16px",borderTop:"1px solid var(--abr)",background:"rgba(201,168,76,.04)",display:"flex",flexDirection:"column",gap:10}}>
+          <GInput label="Alias de Mercado Pago / CVU" value={cfgDraft.mp_alias||""}
+            onChange={v=>setCfgDraft(d=>({...d,mp_alias:v}))} placeholder="tu.alias.mp"/>
+          <GInput label="Titular de la cuenta" value={cfgDraft.mp_titular||""}
+            onChange={v=>setCfgDraft(d=>({...d,mp_titular:v}))} placeholder="Juan Pérez"/>
+          <div style={{background:"var(--as)",border:"1px solid var(--abr)",borderRadius:10,padding:"10px 14px"}}>
+            <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,color:"var(--ad)",marginBottom:4}}>Vista previa — lo que verá el cliente</p>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8}}>
+              <div>
+                <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:13,fontWeight:700,color:"var(--ag)"}}>{cfgDraft.mp_alias||"tu.alias.mp"}</p>
+                {cfgDraft.mp_titular&&<p style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,color:"var(--at)"}}>{cfgDraft.mp_titular}</p>}
+              </div>
+              <div style={{background:"var(--ag)",borderRadius:7,padding:"5px 12px",fontFamily:"'IBM Plex Mono',monospace",fontSize:10,fontWeight:700,color:"var(--ab)"}}>COPIAR</div>
+            </div>
           </div>
         </div>
       )}
