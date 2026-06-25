@@ -2773,14 +2773,58 @@ function QRTabComp({ mesaNum, setMesaNum, qrType, setQrType, promoUrl, setPromoU
               fontSize:13,fontWeight:700,cursor:"pointer",letterSpacing:1}}>
               📥 DESCARGAR (PDF / imprenta)
             </button>
-            {/* DESCARGAR IMAGEN PNG */}
+            {/* DESCARGAR IMAGEN PNG — canvas con nombre + QR + mesa */}
             <button type="button" onClick={async()=>{
-              const qrUrl = await QRCodeLib.toDataURL(qrData,{width:600,margin:3,color:{dark:"#0A0806",light:"#FFFFFF"}});
+              const qrSize=500;
+              const pad=40;
+              const headerH=70;
+              const labelH=70;
+              const footerH=40;
+              const totalH=headerH+qrSize+labelH+footerH+pad*2;
+              const totalW=qrSize+pad*2;
+              const canvas=document.createElement("canvas");
+              canvas.width=totalW; canvas.height=totalH;
+              const ctx=canvas.getContext("2d");
+              // background
+              ctx.fillStyle="#FFFFFF";
+              ctx.fillRect(0,0,totalW,totalH);
+              // border
+              ctx.strokeStyle=current.color;
+              ctx.lineWidth=6;
+              const r=24;
+              ctx.beginPath();ctx.moveTo(r,3);ctx.lineTo(totalW-r,3);ctx.quadraticCurveTo(totalW-3,3,totalW-3,r);ctx.lineTo(totalW-3,totalH-r);ctx.quadraticCurveTo(totalW-3,totalH-3,totalW-r,totalH-3);ctx.lineTo(r,totalH-3);ctx.quadraticCurveTo(3,totalH-3,3,totalH-r);ctx.lineTo(3,r);ctx.quadraticCurveTo(3,3,r,3);ctx.closePath();ctx.stroke();
+              // restaurant name
+              ctx.fillStyle=current.color;
+              ctx.font="bold 22px monospace";
+              ctx.textAlign="center";
+              ctx.letterSpacing="4px";
+              ctx.fillText((local.nombre||"MenuQR").toUpperCase(),totalW/2,pad+36);
+              // QR image
+              const qrUrl=await QRCodeLib.toDataURL(qrData,{width:qrSize,margin:1,color:{dark:"#0A0806",light:"#FFFFFF"}});
+              const img=new Image();
+              await new Promise(res=>{img.onload=res;img.src=qrUrl;});
+              ctx.drawImage(img,pad,pad+headerH,qrSize,qrSize);
+              // label pill
+              const lbl=qrType==="mesa"?`Mesa ${mesaNum}`:qrType==="wifi"?"WiFi Gratis":qrType==="whatsapp"?"Pedí por WhatsApp":qrType==="vitrina"?"Ver la Carta":qrType==="cocina"?"Pantalla Cocina":"Promo";
+              const lblY=pad+headerH+qrSize+16;
+              const pillW=Math.min(260,totalW-pad*2);
+              const pillX=(totalW-pillW)/2;
+              ctx.fillStyle=current.color;
+              ctx.beginPath();ctx.roundRect(pillX,lblY,pillW,44,22);ctx.fill();
+              ctx.fillStyle="#0A0806";
+              ctx.font="bold 20px sans-serif";
+              ctx.textAlign="center";
+              ctx.fillText(lbl,totalW/2,lblY+28);
+              // url footer
+              ctx.fillStyle="#999999";
+              ctx.font="12px monospace";
+              ctx.fillText(qrData.length>50?qrData.substring(0,50)+"...":qrData,totalW/2,lblY+44+footerH-8);
+              // download
               const a=document.createElement("a");
-              a.href=qrUrl;
-              const slug=(local.nombre||"menuqr").toLowerCase().replace(/\s+/g,"-");
-              const label2=qrType==="mesa"?`mesa-${mesaNum}`:qrType==="cocina"?"cocina":qrType==="vitrina"?"vitrina":"qr";
-              a.download=`qr-${slug}-${label2}.png`;
+              a.href=canvas.toDataURL("image/png");
+              const fileSlug=(local.nombre||"menuqr").toLowerCase().replace(/\s+/g,"-");
+              const fileLbl=qrType==="mesa"?`mesa-${mesaNum}`:qrType==="cocina"?"cocina":qrType==="vitrina"?"vitrina":"qr";
+              a.download=`qr-${fileSlug}-${fileLbl}.png`;
               a.click();
             }} className="pr" style={{
               width:"100%",background:"#241408",color:"#D4C4A8",border:"1px solid #2A1C0E",
