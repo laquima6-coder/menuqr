@@ -119,10 +119,13 @@ function OrderCard({ order, onStatusChange }) {
           }}>✓ MARCAR LISTO</button>
         )}
         {order.status === 'listo' && (
-          <div style={{
-            flex: 1, padding: '10px 0', textAlign: 'center',
-            fontFamily: "'IBM Plex Mono',monospace", fontSize: 12, color: '#2A5040',
-          }}>ENTREGADO</div>
+          <button onClick={() => onStatusChange(order.id, 'entregado')} style={{
+            flex: 1, padding: '10px 0',
+            background: 'rgba(201,168,76,.12)', border: '1px solid rgba(201,168,76,.4)',
+            borderRadius: 10, color: '#C9A84C',
+            fontFamily: "'IBM Plex Mono',monospace", fontSize: 12, fontWeight: 700,
+            cursor: 'pointer', letterSpacing: .5, transition: 'all .15s',
+          }}>🛎 ENTREGADO</button>
         )}
       </div>
     </div>
