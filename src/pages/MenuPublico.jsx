@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { supabase, getRestaurante, getCategorias, getProductos } from '../lib/supabase.js'
 import { INIT_LOCAL, INIT_CATS, INIT_PRODS } from '../MenuQR.jsx'
@@ -11,27 +11,20 @@ export default function MenuPublico({ vitrina = false }) {
   const [prods, setProds]   = useState([])
   const [loading, setLoading] = useState(true)
   const [error,   setError]   = useState(null)
-  const mountCount = useRef(0)
 
   useEffect(() => {
-    mountCount.current++;
-    console.log('[MenuPublico] mount #', mountCount.current)
     load(true)
   }, [slug, mesa])
 
+  // Silent background refresh when tab regains focus — does NOT show the spinner
+  // so the user's selected category and cart state are preserved
   useEffect(() => {
-    const onVisible = () => {
-      if (document.visibilityState === 'visible') {
-        console.log('[MenuPublico] visibilitychange -> load(false)')
-        load(false)
-      }
-    }
+    const onVisible = () => { if (document.visibilityState === 'visible') load(false) }
     document.addEventListener('visibilitychange', onVisible)
     return () => document.removeEventListener('visibilitychange', onVisible)
   }, [slug, mesa])
 
   async function load(showSpinner = true) {
-    console.log('[MenuPublico] load() showSpinner=', showSpinner, 'loading=', loading)
     if (showSpinner) {
       setLoading(true)
       setError(null)
@@ -61,16 +54,15 @@ export default function MenuPublico({ vitrina = false }) {
         getProductos(restaurante.id),
       ])
 
-      console.log('[MenuPublico] setLocal/setCats/setProds showSpinner=', showSpinner)
       setLocal({
-        nombre: restaurante.nombre,
+        nombre:      restaurante.nombre,
         descripcion: restaurante.descripcion || '',
-        direccion: restaurante.direccion || '',
-        telefono: restaurante.telefono || '',
-        email: restaurante.email || '',
-        color: restaurante.color || '#C9A84C',
-        mesas: restaurante.mesas || 10,
-        logo_url: restaurante.logo_url || '',
+        direccion:   restaurante.direccion   || '',
+        telefono:    restaurante.telefono    || '',
+        email:       restaurante.email       || '',
+        color:       restaurante.color       || '#C9A84C',
+        mesas:       restaurante.mesas       || 10,
+        logo_url:    restaurante.logo_url    || '',
         restauranteId: restaurante.id,
         slug,
         mesa: mesa ? parseInt(mesa) : null,
@@ -83,14 +75,11 @@ export default function MenuPublico({ vitrina = false }) {
         emoji: p.emoji, tag: p.tag, active: p.active, foto_url: p.foto_url, sin_stock: p.sin_stock,
       })))
     } catch (e) {
-      console.error('[MenuPublico] load error:', e)
       if (showSpinner) setError('Error al cargar el menu')
     } finally {
       if (showSpinner) setLoading(false)
     }
   }
-
-  console.log('[MenuPublico] render loading=', loading, 'local=', !!local)
 
   if (loading) return (
     <div style={{background:'#0A0806',minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:16}}>

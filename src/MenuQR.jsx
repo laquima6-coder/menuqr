@@ -1215,12 +1215,7 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
   const [view,setView]   = useState("menu"); // menu | cart | done
   const [cart,setCart]   = useState({});
   const [activeCat,setAC]= useState("TODO");
-  const _clientMountRef = React.useRef(0);
-  React.useEffect(()=>{
-    _clientMountRef.current++;
-    console.log('[ClientApp] MOUNTED #', _clientMountRef.current);
-    return ()=>console.log('[ClientApp] UNMOUNTED');
-  },[]);
+
   const [pay,setPay]     = useState(null);
   const [note,setNote]   = useState("");
   const [tipPct,setTipPct] = useState(null); // null | 0 | 10 | 15 | 20
