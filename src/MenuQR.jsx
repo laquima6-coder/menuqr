@@ -4506,6 +4506,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
   /* ── State de venta rápida (pedido manual desde caja) */
   const [showVentaRapida, setShowVentaRapida] = useState(false);
   const [vrCart, setVrCart]                   = useState({});
+  const [vrActiveCat, setVrActiveCat]         = useState("");
   const [histDate, setHistDate]               = useState("");
   const [histOrders, setHistOrders]           = useState([]);
   const [histLoading, setHistLoading]         = useState(false);
@@ -5390,8 +5391,9 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
   ══════════════════════════════════════════ */
   const VentaRapidaModal = () => {
     const catIds = [...new Set(prods.filter(p=>p.active).map(p=>p.cat))];
-    const [vrActiveCat, setVrActiveCat] = useState(catIds[0]||"");
-    const visProd = prods.filter(p=>p.active && p.cat===vrActiveCat);
+    // vrActiveCat lives in parent so it survives re-renders of VentaRapidaModal
+    const effectiveVrCat = vrActiveCat && catIds.includes(vrActiveCat) ? vrActiveCat : (catIds[0]||"");
+    const visProd = prods.filter(p=>p.active && p.cat===effectiveVrCat);
     const VR_PAYS = [
       {id:"cash",  label:"Efectivo",      icon:"💵"},
       {id:"card",  label:"Tarjeta",       icon:"💳"},
@@ -5460,9 +5462,9 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
                   <button key={cid} onClick={()=>setVrActiveCat(cid)} style={{
                     flexShrink:0,padding:"7px 12px",borderRadius:20,cursor:"pointer",
                     fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:600,
-                    background:vrActiveCat===cid?"var(--abl)":"var(--ac)",
-                    color:vrActiveCat===cid?"#fff":"var(--ad)",
-                    border:`1px solid ${vrActiveCat===cid?"var(--abl)":"var(--abr)"}`}}>
+                    background:effectiveVrCat===cid?"var(--abl)":"var(--ac)",
+                    color:effectiveVrCat===cid?"#fff":"var(--ad)",
+                    border:`1px solid ${effectiveVrCat===cid?"var(--abl)":"var(--abr)"}`}}>
                     {cat?.icon||""} {cat?.label||cid}
                   </button>
                 );
