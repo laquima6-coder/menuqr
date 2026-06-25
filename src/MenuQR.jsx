@@ -2723,8 +2723,9 @@ function QRTabComp({ mesaNum, setMesaNum, qrType, setQrType, promoUrl, setPromoU
 <style>
   @page{size:A4;margin:0}
   *{margin:0;padding:0;box-sizing:border-box}
-  body{display:flex;align-items:center;justify-content:center;min-height:100vh;background:#fff}
-  .card{text-align:center;padding:48px 60px;border:3px solid ${current.color};border-radius:28px;background:#fff}
+  html,body{height:100%;overflow:hidden;background:#fff}
+  body{display:flex;align-items:center;justify-content:center;height:100%;background:#fff}
+  .card{text-align:center;padding:40px 56px;border:3px solid ${current.color};border-radius:28px;background:#fff}
   .name{font-size:11px;letter-spacing:3px;text-transform:uppercase;color:${current.color};margin-bottom:18px;font-family:monospace}
   .qr{background:#fff;border:3px solid ${current.color};border-radius:14px;padding:12px;display:inline-block;margin-bottom:18px}
   .label{background:${current.color};color:#0A0806;border-radius:30px;padding:9px 32px;display:inline-block;font-size:17px;font-weight:700;margin-bottom:12px;font-family:sans-serif}
