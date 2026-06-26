@@ -322,7 +322,7 @@ export const INIT_LOCAL = {
   descripcion:"Cocina italiana contemporánea en el corazón de Buenos Aires.",
   color:"#C9A84C", mesas:12,
   propina:true, happyHour:true, happyDesde:"17:00", happyHasta:"21:00",
-  feat_solicitudes:true, feat_promo10:false,
+  feat_solicitudes:true, feat_promo10:true,
   wifi_nombre:"LaTrattoria_WiFi", wifi_pass:"bienvenido2024",
   whatsapp:"5491112345678", whatsapp_msg:"Hola! Quiero hacer una consulta.",
   baseUrl:"latrattoria.menuqr.app",
@@ -1502,7 +1502,7 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
         })()}
 
         {/* WhatsApp pedidos */}
-        {!!local.feat_whatsapp_vitrina && local.whatsapp_vitrina_numero && (local.whatsapp_delivery||local.whatsapp_retiro) && (
+        {(!!local.feat_whatsapp_vitrina && local.whatsapp_vitrina_numero && (local.whatsapp_delivery||local.whatsapp_retiro)) ? (
           <div style={{background:"rgba(37,211,102,.06)",border:"1px solid rgba(37,211,102,.25)",borderRadius:14,padding:"14px 16px"}}>
             <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347zM11.996 0C5.374 0 0 5.373 0 11.996c0 2.133.56 4.133 1.54 5.867L.047 23.53a.5.5 0 00.612.632l5.828-1.528A11.935 11.935 0 0011.996 24C18.619 24 24 18.619 24 11.996 24 5.373 18.619 0 11.996 0zm0 21.818a9.794 9.794 0 01-4.992-1.367l-.358-.212-3.718.975 1.002-3.618-.234-.372a9.794 9.794 0 01-1.518-5.228c0-5.419 4.409-9.818 9.818-9.818s9.818 4.399 9.818 9.818-4.399 9.822-9.818 9.822z"/></svg>
@@ -1534,7 +1534,46 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
             </div>
           </div>
         )}
+        ) : local.whatsapp ? (
+          <a href={"https://wa.me/"+local.whatsapp.replace(/\D/g,"")} target="_blank" rel="noreferrer"
+            style={{display:"flex",alignItems:"center",gap:14,background:"rgba(37,211,102,.06)",
+              border:"1px solid rgba(37,211,102,.25)",borderRadius:14,padding:"16px",
+              textDecoration:"none"}}>
+            <div style={{width:42,height:42,background:"#25D366",borderRadius:12,display:"flex",
+              alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:22}}>💬</div>
+            <div>
+              <div style={{fontFamily:"'Outfit',sans-serif",fontWeight:700,fontSize:14,
+                color:"#25D366",lineHeight:1.1}}>Consultanos por WhatsApp</div>
+              <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"rgba(255,255,255,.4)",marginTop:3}}>
+                Escribinos cualquier consulta sobre el menú o el local
+              </div>
+            </div>
+          </a>
+        ) : null}
         {waFlow && <WAOrderFlow local={local} prods={prods} cats={cats} tipo={waFlow} onClose={()=>setWaFlow(null)}/>}
+
+        {/* Formas de pago */}
+        <div style={{background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.08)",
+          borderRadius:14,padding:"12px 16px",marginBottom:4}}>
+          <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:11,color:"#7A6A50",
+            letterSpacing:2,marginBottom:12}}>FORMAS DE PAGO</div>
+          <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
+            {[
+              {id:"cash", icon:"💵", label:"Efectivo"},
+              {id:"mp",   icon:"💳", label:"Mercado Pago"},
+              {id:"trans",icon:"🏦", label:"Transferencia"},
+              {id:"card", icon:"💰", label:"Débito / Crédito"},
+            ].filter(m=>!local.pay_disabled||!local.pay_disabled.includes(m.id)).map(m=>(
+              <div key={m.id} style={{display:"flex",alignItems:"center",gap:6,
+                background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.1)",
+                borderRadius:8,padding:"7px 12px"}}>
+                <span style={{fontSize:16}}>{m.icon}</span>
+                <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:600,
+                  color:"#C8B898"}}>{m.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
 
       </div>
     );
