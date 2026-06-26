@@ -5350,6 +5350,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
     {id:"carta",     icon:"≡", label:"Carta"},
     {id:"qr",        icon:"⬛", label:"QRs"},
     {id:"caja",      icon:"◉", label:"Caja"},
+    {id:"mostrador", icon:"🏪", label:"Mostrador"},
     {id:"reportes",  icon:"📊", label:"Reportes"},
     {id:"gestion",   icon:"✏", label:"Gestión"},
     {id:"config",    icon:"⚙", label:"Config"},
@@ -7784,6 +7785,105 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
       {tab==="carta"   && <CartaTab/>}
       {tab==="qr"      && <QRTabComp mesaNum={mesaNumAdmin} setMesaNum={setMesaNumAdmin} qrType={qrType} setQrType={setQrType} promoUrl={promoUrl} setPromoUrl={setPromoUrl} local={local}/>}
       {tab==="caja"    && <CajaTab/>}
+      {tab==="mostrador" && (()=>{
+        // Ventas de mostrador: pedidos con mesa_numero=0 o nota que contenga "mostrador"
+        const mostradorOrders = orders.filter(o=>
+          o.table===0||o.table==="0"||o.table===null||
+          (o.nota||"").toLowerCase().includes("mostrador")
+        );
+        const cerrados = mostradorOrders.filter(o=>o.status==="entregado");
+        const activos  = mostradorOrders.filter(o=>o.status!=="entregado");
+        const totalDia = cerrados.reduce((s,o)=>s+(o.total||0),0);
+        const PAY_LBL4={cash:"Efectivo",mp:"Mercado Pago",card:"Tarjeta",trans:"Transferencia"};
+        return (
+          <div style={{padding:"18px 16px 0"}}>
+            {/* Header */}
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+              <div>
+                <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:"var(--am)",letterSpacing:1.5,marginBottom:2}}>MOSTRADOR</p>
+                <h2 style={{fontFamily:"'Outfit',sans-serif",fontSize:20,fontWeight:800,color:"var(--abri)"}}>Ventas en mostrador</h2>
+              </div>
+              <button onClick={()=>{setVrMesa("mostrador");setShowVentaRapida(true);}} className="pr" style={{
+                background:"var(--ag)",color:"#060810",border:"none",borderRadius:12,
+                padding:"10px 14px",fontFamily:"'IBM Plex Mono',monospace",fontSize:11,
+                fontWeight:800,cursor:"pointer",letterSpacing:.5,
+                boxShadow:"0 0 14px rgba(0,255,136,.25)"}}>
+                ⚡ NUEVA VENTA
+              </button>
+            </div>
+
+            {/* Stats */}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:16}}>
+              <div style={{background:"linear-gradient(135deg,#040D0A,#081812)",
+                border:"1px solid rgba(0,255,136,.18)",borderRadius:14,padding:"14px 16px"}}>
+                <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,color:"rgba(0,255,136,.6)",letterSpacing:1,marginBottom:4}}>VENTAS HOY</p>
+                <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:20,fontWeight:700,color:"var(--ag)"}}>${fmt(totalDia)}</p>
+                <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:"var(--am)",marginTop:2}}>{cerrados.length} transacciones</p>
+              </div>
+              <div style={{background:"var(--as)",border:"1px solid var(--abr)",borderRadius:14,padding:"14px 16px"}}>
+                <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,color:"var(--am)",letterSpacing:1,marginBottom:4}}>EN CURSO</p>
+                <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:20,fontWeight:700,color:"var(--abri)"}}>{activos.length}</p>
+                <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:"var(--am)",marginTop:2}}>pedidos activos</p>
+              </div>
+            </div>
+
+            {/* Pedidos activos */}
+            {activos.length>0 && (
+              <div style={{marginBottom:16}}>
+                <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:"var(--am)",letterSpacing:1.5,marginBottom:8}}>EN CURSO</p>
+                {activos.map(o=>{
+                  const s=STATUS_CFG[o.status];
+                  return (
+                    <div key={o.id} style={{background:"var(--as)",border:`1px solid ${s.color}44`,
+                      borderLeft:`3px solid ${s.color}`,borderRadius:10,padding:"10px 14px",marginBottom:7}}>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
+                        <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,
+                          color:s.color,fontWeight:700,letterSpacing:1}}>{s.label}</span>
+                        <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:12,
+                          fontWeight:700,color:"var(--ag)"}}>${fmt(o.total)}</span>
+                      </div>
+                      <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"var(--ad)",
+                        whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+                        {(o.items||[]).map(i=>`${i.qty}× ${i.name}`).join(", ")}
+                      </div>
+                      <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,color:"var(--am)",marginTop:4}}>
+                        #{String(o.id).slice(-4)} · {o.time}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Últimas ventas cerradas */}
+            <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:"var(--am)",letterSpacing:1.5,marginBottom:8}}>ÚLTIMAS VENTAS</p>
+            {cerrados.length===0 && (
+              <div style={{textAlign:"center",padding:"30px 20px",
+                fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"var(--am)"}}>
+                Sin ventas cerradas hoy
+              </div>
+            )}
+            {cerrados.slice(0,20).map(o=>(
+              <div key={o.id} style={{background:"var(--as)",border:"1px solid var(--abr)",
+                borderRadius:10,padding:"10px 14px",marginBottom:7,
+                display:"flex",justifyContent:"space-between",alignItems:"center",gap:10}}>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"var(--abri)",
+                    whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+                    {(o.items||[]).map(i=>`${i.qty}× ${i.name}`).join(", ")}
+                  </div>
+                  <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,color:"var(--am)",marginTop:3}}>
+                    #{String(o.id).slice(-4)} · {o.time} · {PAY_LBL4[o.pay]||o.pay||"—"}
+                  </div>
+                </div>
+                <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:13,
+                  fontWeight:700,color:"var(--abri)",flexShrink:0}}>${fmt(o.total)}</div>
+              </div>
+            ))}
+            <div style={{height:100}}/>
+          </div>
+        );
+      })()}
       {tab==="reportes" && <ReportesTab local={local}/>}
       {tab==="gestion" && <GestionTab local={local} setLocal={setLocal} cats={cats} setCats={setCats} prods={prods} setProds={setProds} gSubTab={gSubTab} setGSubTab={setGSubTab} gActiveCat={gActiveCat} setGActiveCat={setGActiveCat} gModal={gModal} setGModal={setGModal} toast={toast} orders={orders} setOrders={setOrders} onEditOrder={o=>setEditOrderModal(o)}/>}
       {tab==="config"   && <ConfigTab local={local} setLocal={setLocal} toast={toast} adminPinUnlocked={adminPinUnlocked}/>}
