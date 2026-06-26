@@ -4862,11 +4862,27 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
     setTimeout(()=>setToastM(null),2400);
   },[]);
 
-  /* ── Cargar turno activo de caja desde Supabase */
+  /* ── Cargar turnos de caja desde Supabase */
   useEffect(()=>{
     if(!supabase || !local.restauranteId) return;
     getTurnos(local.restauranteId).then(turnos=>{
-      const open = turnos?.find(t=>t.estado==="abierto");
+      if(!turnos?.length) return;
+      const open = turnos.find(t=>t.estado==="abierto");
+      // Load closed turnos into histTurnos
+      const closed = turnos.filter(t=>t.estado==="cerrado").map(t=>({
+        id: t.id, supabaseId: t.id,
+        cajero: t.cajero||"Cajero",
+        horaApertura: new Date(t.hora_apertura).toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"}),
+        fecha: new Date(t.hora_apertura).toLocaleDateString("es-AR",{day:"2-digit",month:"2-digit",year:"numeric"}),
+        fondoApertura: t.fondo_apertura||0,
+        arqueoAp: t.arqueo_apertura||{},
+        arqueoFinal: t.arqueo_cierre||{},
+        horaCierre: t.hora_cierre ? new Date(t.hora_cierre).toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"}) : null,
+        ventas: t.ventas||{efectivo:0,mercadopago:0,debito:0,credito:0,transferencia:0},
+        estado: "cerrado",
+      }));
+      if(closed.length) setHist(closed);
+      // Restore open turno
       if(open){
         setTurno({
           id: open.id, supabaseId: open.id,
@@ -5098,7 +5114,12 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
     setHist(h=>[c,...h]); setTurno(null); setTkt(null);
     setCajaScr("inicio"); toast("Cierre Z ejecutado ✓");
     if(supabase && turno?.supabaseId){
-      await closeTurno(turno.supabaseId, arqVals, new Date().toISOString());
+      await supabase.from("turnos_caja").update({
+        arqueo_cierre: arqVals,
+        hora_cierre: new Date().toISOString(),
+        estado: "cerrado",
+        ventas: makeVentas(),
+      }).eq("id", turno.supabaseId);
     }
   };
 

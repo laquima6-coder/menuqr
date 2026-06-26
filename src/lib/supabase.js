@@ -219,7 +219,7 @@ export const getTurnos = async (restauranteId) => {
     .select('*')
     .eq('restaurante_id', restauranteId)
     .order('hora_apertura', { ascending: false })
-    .limit(10)
+    .limit(30)
   if (error) { console.error('getTurnos:', error); return [] }
   return data
 }
