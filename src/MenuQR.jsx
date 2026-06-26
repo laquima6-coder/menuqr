@@ -1213,7 +1213,7 @@ function WAOrderFlow({local, prods, cats, tipo, onClose}) {
                 color:"#fff",border:"none",borderRadius:12,padding:14,
                 fontFamily:"'Outfit',sans-serif",fontSize:15,fontWeight:700,cursor:"pointer",
                 display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-              <WASVG/>{saving?"Abriendo WhatsApp...":"Enviar por WhatsApp"}
+              {WASVG()}{saving?"Abriendo WhatsApp...":"Enviar por WhatsApp"}
             </button>
           </div>
         )}
@@ -4635,6 +4635,205 @@ class AdminErrorBoundary extends React.Component {
   }
 }
 
+
+function CocinaTab({local, QRCodeLib}) {
+const slug = local.slug || local.baseUrl || "";
+const cocinaUrl = slug ? `${window.location.origin}/${slug}/cocina` : "";
+const [qrImg, setQrImg] = React.useState(null);
+React.useEffect(()=>{
+  if(!cocinaUrl) return;
+  QRCodeLib.toDataURL(cocinaUrl,{width:260,margin:2,color:{dark:"#0A0806",light:"#FFFFFF"}})
+    .then(setQrImg).catch(()=>{});
+},[cocinaUrl]);
+return (
+  <div style={{padding:"18px 16px 0"}}>
+    <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:"var(--am)",letterSpacing:1.5,marginBottom:4}}>COCINA</p>
+    <h2 style={{fontFamily:"'Outfit',sans-serif",fontSize:20,fontWeight:800,color:"var(--abri)",marginBottom:6}}>Pantalla de cocina</h2>
+    <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"var(--ad)",marginBottom:20,lineHeight:1.5}}>
+      Escaneá este QR desde la tablet de la cocina. Se abre la pantalla con todos los pedidos activos en tiempo real — sin login, sin panel.
+    </p>
+    {!slug ? (
+      <div style={{background:"rgba(255,59,92,.08)",border:"1px solid rgba(255,59,92,.3)",borderRadius:12,padding:16,textAlign:"center"}}>
+        <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"var(--ar)"}}>Configurá el slug de tu local en Config para generar el QR.</p>
+      </div>
+    ) : (<>
+      <div style={{background:"#fff",borderRadius:16,padding:20,display:"flex",flexDirection:"column",alignItems:"center",gap:12,marginBottom:16,maxWidth:300,margin:"0 auto 16px"}}>
+        {qrImg
+          ? <img src={qrImg} alt="QR Cocina" style={{width:220,height:220,borderRadius:8}}/>
+          : <div style={{width:220,height:220,background:"#f0f0f0",borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"monospace",fontSize:12,color:"#999"}}>Generando QR...</div>}
+        <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:"#333",textAlign:"center",letterSpacing:.5}}>👨‍🍳 COCINA</div>
+      </div>
+      <div style={{background:"var(--as)",border:"1px solid var(--abr)",borderRadius:12,padding:"12px 14px",marginBottom:12}}>
+        <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:"var(--am)",marginBottom:4,letterSpacing:1}}>URL COCINA</p>
+        <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:11,color:"var(--abl)",wordBreak:"break-all",lineHeight:1.4}}>{cocinaUrl}</p>
+      </div>
+      <div style={{display:"flex",gap:8,marginBottom:16}}>
+        <button onClick={()=>{navigator.clipboard?.writeText(cocinaUrl);}} style={{flex:1,padding:"11px",borderRadius:10,border:"1px solid var(--abr)",background:"var(--ac)",color:"var(--abri)",fontFamily:"'IBM Plex Mono',monospace",fontSize:11,fontWeight:700,cursor:"pointer"}}>📋 Copiar link</button>
+        <button onClick={()=>window.open(cocinaUrl,"_blank")} style={{flex:1,padding:"11px",borderRadius:10,border:"none",background:"var(--abl)",color:"#fff",fontFamily:"'IBM Plex Mono',monospace",fontSize:11,fontWeight:700,cursor:"pointer"}}>🔗 Abrir</button>
+      </div>
+      <div style={{background:"rgba(61,142,255,.06)",border:"1px solid rgba(61,142,255,.2)",borderRadius:12,padding:"12px 14px"}}>
+        <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"var(--ad)",lineHeight:1.8}}>
+          ✅ Pedidos en tiempo real<br/>
+          🔔 Suena cuando entra uno nuevo<br/>
+          👆 Pueden marcar En cocina → Listo → Entregado<br/>
+          🔒 Sin login
+        </p>
+      </div>
+      <div style={{height:100}}/>
+    </>)}
+  </div>
+);
+}
+
+function EditPayModal({editPayModal, setEditPayModal, setOrders, toast}) {
+const METHODS = [
+  {id:"cash", label:"Efectivo",       icon:"💵"},
+  {id:"mp",   label:"Mercado Pago",   icon:"📲"},
+  {id:"card", label:"Débito/Créd.",   icon:"💳"},
+  {id:"trans",label:"Transferencia",  icon:"🏦"},
+];
+const [selPay, setSelPay] = useState(editPayModal.pay);
+const savePay = async () => {
+  if(!supabase||!selPay||selPay===editPayModal.pay){setEditPayModal(null);return;}
+  await supabase.from("pedidos").update({metodo_pago:selPay}).eq("id",editPayModal.id);
+  setOrders(os=>os.map(o=>o.id===editPayModal.id?{...o,pay:selPay}:o));
+  toast("✓ Método de pago actualizado");
+  setEditPayModal(null);
+};
+return (
+  <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.65)",zIndex:9999,
+    display:"flex",alignItems:"flex-end",justifyContent:"center"}}
+    onClick={e=>{if(e.target===e.currentTarget)setEditPayModal(null);}}>
+    <div style={{background:"var(--ab)",borderRadius:"20px 20px 0 0",
+      padding:"24px 20px 40px",width:"100%",maxWidth:480}}>
+      <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,
+        color:"var(--am)",letterSpacing:1.5,marginBottom:6}}>EDITAR PAGO</p>
+      <h3 style={{fontFamily:"'Outfit',sans-serif",fontSize:17,fontWeight:800,
+        color:"var(--gi2)",marginBottom:18}}>
+        ¿Cómo se cobró?
+      </h3>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:20}}>
+        {METHODS.map(m=>(
+          <button key={m.id} onClick={()=>setSelPay(m.id)} style={{
+            padding:"14px 10px",borderRadius:12,cursor:"pointer",
+            display:"flex",flexDirection:"column",alignItems:"center",gap:6,
+            fontFamily:"'Outfit',sans-serif",fontSize:13,fontWeight:700,
+            background:selPay===m.id?"var(--gi)":"var(--ac)",
+            color:selPay===m.id?"#fff":"var(--ad)",
+            border:`1.5px solid ${selPay===m.id?"var(--gi)":"var(--abr)"}`,
+            transition:"all .15s"}}>
+            <span style={{fontSize:22}}>{m.icon}</span>
+            {m.label}
+          </button>
+        ))}
+      </div>
+      <div style={{display:"flex",gap:10}}>
+        <button onClick={()=>setEditPayModal(null)} style={{
+          flex:1,padding:13,borderRadius:12,border:"1px solid var(--abr)",
+          background:"var(--ac)",color:"var(--ad)",
+          fontFamily:"'Outfit',sans-serif",fontSize:14,fontWeight:700,cursor:"pointer"}}>
+          Cancelar
+        </button>
+        <button onClick={savePay} style={{
+          flex:1.5,padding:13,borderRadius:12,border:"none",
+          background:"linear-gradient(135deg,var(--gi),var(--gi2))",color:"#fff",
+          fontFamily:"'Outfit',sans-serif",fontSize:14,fontWeight:800,cursor:"pointer"}}>
+          Guardar
+        </button>
+      </div>
+    </div>
+  </div>
+);
+}
+
+function EditOrderModal({editOrderModal, setEditOrderModal, setOrders, toast}) {
+const o = editOrderModal;
+const PAY_LBL2={cash:"Efectivo",mp:"Mercado Pago",card:"Tarjeta Débito",trans:"Transferencia"};
+const [items, setItems] = useState(o.items.map(it=>({...it})));
+const total = items.reduce((s,it)=>s+(it.price||0)*(it.qty||1),0);
+const saveEdit = async () => {
+  if(!supabase) return;
+  // Update pedido total
+  await supabase.from("pedidos").update({total}).eq("id",o.id);
+  // Delete old items and reinsert
+  await supabase.from("pedido_items").delete().eq("pedido_id",o.id);
+  if(items.length>0){
+    await supabase.from("pedido_items").insert(
+      items.map(it=>({pedido_id:o.id,producto_id:it.id||null,nombre:it.name,precio:it.price,cantidad:it.qty}))
+    );
+  }
+  setOrders(os=>os.map(x=>x.id===o.id?{...x,items,total}:x));
+  toast("✓ Ticket actualizado");
+  setEditOrderModal(null);
+};
+const mesaLabel=(o.table===0||o.table==="0"||o.table===null)?"Mostrador":"Mesa "+o.table;
+return (
+  <div style={{position:"fixed",inset:0,zIndex:600,background:"rgba(0,0,0,.85)",
+    display:"flex",alignItems:"center",justifyContent:"center",padding:"20px 16px"}}
+    onClick={e=>{if(e.target===e.currentTarget)setEditOrderModal(null);}}>
+    <div style={{background:"var(--ab)",borderRadius:16,padding:"20px 18px",
+      width:"100%",maxWidth:380,maxHeight:"85vh",overflowY:"auto"}}>
+      <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,
+        color:"var(--am)",letterSpacing:2,marginBottom:4}}>EDITAR TICKET</div>
+      <div style={{fontFamily:"'Outfit',sans-serif",fontSize:17,fontWeight:800,
+        color:"var(--abri)",marginBottom:4}}>{mesaLabel}</div>
+      <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,
+        color:"var(--am)",marginBottom:16}}>#{String(o.id).slice(-4)} · {o.time}</div>
+      {/* Items */}
+      {items.map((it,i)=>(
+        <div key={i} style={{display:"flex",alignItems:"center",gap:8,
+          padding:"8px 0",borderBottom:"1px solid var(--abr)"}}>
+          <div style={{flex:1}}>
+            <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"var(--abri)"}}>{it.qty}× {it.name}</div>
+            {it.price>0&&<div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:"var(--am)"}}>
+              ${(it.price*it.qty).toFixed(0)}
+            </div>}
+          </div>
+          <div style={{display:"flex",alignItems:"center",gap:6}}>
+            <button onClick={()=>setItems(prev=>{
+              const n=[...prev];
+              if(n[i].qty>1){n[i]={...n[i],qty:n[i].qty-1};}
+              else{n.splice(i,1);}
+              return n;
+            })} style={{width:28,height:28,borderRadius:8,border:"1px solid var(--abr)",
+              background:"var(--ac)",color:"var(--ar)",fontSize:16,cursor:"pointer",
+              display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700}}>−</button>
+            <button onClick={()=>setItems(prev=>{
+              const n=[...prev];n[i]={...n[i],qty:n[i].qty+1};return n;
+            })} style={{width:28,height:28,borderRadius:8,border:"1px solid var(--abr)",
+              background:"var(--ac)",color:"var(--ag)",fontSize:16,cursor:"pointer",
+              display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700}}>+</button>
+          </div>
+        </div>
+      ))}
+      {items.length===0&&<div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,
+        color:"var(--am)",fontStyle:"italic",padding:"12px 0"}}>Sin productos</div>}
+      {/* Total */}
+      <div style={{display:"flex",justifyContent:"space-between",padding:"12px 0 4px",
+        fontFamily:"'IBM Plex Mono',monospace",fontWeight:700,fontSize:14,color:"var(--abri)"}}>
+        <span>TOTAL</span><span>${total.toFixed(0)}</span>
+      </div>
+      <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,
+        color:"var(--am)",marginBottom:16}}>
+        Pago: {PAY_LBL2[o.pay]||o.pay||"—"}
+      </div>
+      <div style={{display:"flex",gap:8}}>
+        <button onClick={()=>setEditOrderModal(null)} style={{flex:1,padding:"12px",
+          borderRadius:12,border:"1px solid var(--abr)",background:"var(--ac)",
+          color:"var(--ad)",fontFamily:"'Outfit',sans-serif",fontSize:14,fontWeight:700,cursor:"pointer"}}>
+          Cancelar
+        </button>
+        <button onClick={saveEdit} style={{flex:1.5,padding:"12px",borderRadius:12,
+          border:"none",background:"linear-gradient(135deg,#00FF88,#00C870)",
+          color:"#060810",fontFamily:"'Outfit',sans-serif",fontSize:14,fontWeight:800,cursor:"pointer"}}>
+          Guardar
+        </button>
+      </div>
+    </div>
+  </div>
+);
+}
+
 function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
 
   /* ── State del admin */
@@ -6245,66 +6444,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
         )}
 
       {/* ── Modal editar método de pago ── */}
-      {editPayModal && (()=>{
-        const METHODS = [
-          {id:"cash", label:"Efectivo",       icon:"💵"},
-          {id:"mp",   label:"Mercado Pago",   icon:"📲"},
-          {id:"card", label:"Débito/Créd.",   icon:"💳"},
-          {id:"trans",label:"Transferencia",  icon:"🏦"},
-        ];
-        const [selPay, setSelPay] = useState(editPayModal.pay);
-        const savePay = async () => {
-          if(!supabase||!selPay||selPay===editPayModal.pay){setEditPayModal(null);return;}
-          await supabase.from("pedidos").update({metodo_pago:selPay}).eq("id",editPayModal.id);
-          setOrders(os=>os.map(o=>o.id===editPayModal.id?{...o,pay:selPay}:o));
-          toast("✓ Método de pago actualizado");
-          setEditPayModal(null);
-        };
-        return (
-          <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.65)",zIndex:9999,
-            display:"flex",alignItems:"flex-end",justifyContent:"center"}}
-            onClick={e=>{if(e.target===e.currentTarget)setEditPayModal(null);}}>
-            <div style={{background:"var(--ab)",borderRadius:"20px 20px 0 0",
-              padding:"24px 20px 40px",width:"100%",maxWidth:480}}>
-              <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,
-                color:"var(--am)",letterSpacing:1.5,marginBottom:6}}>EDITAR PAGO</p>
-              <h3 style={{fontFamily:"'Outfit',sans-serif",fontSize:17,fontWeight:800,
-                color:"var(--gi2)",marginBottom:18}}>
-                ¿Cómo se cobró?
-              </h3>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:20}}>
-                {METHODS.map(m=>(
-                  <button key={m.id} onClick={()=>setSelPay(m.id)} style={{
-                    padding:"14px 10px",borderRadius:12,cursor:"pointer",
-                    display:"flex",flexDirection:"column",alignItems:"center",gap:6,
-                    fontFamily:"'Outfit',sans-serif",fontSize:13,fontWeight:700,
-                    background:selPay===m.id?"var(--gi)":"var(--ac)",
-                    color:selPay===m.id?"#fff":"var(--ad)",
-                    border:`1.5px solid ${selPay===m.id?"var(--gi)":"var(--abr)"}`,
-                    transition:"all .15s"}}>
-                    <span style={{fontSize:22}}>{m.icon}</span>
-                    {m.label}
-                  </button>
-                ))}
-              </div>
-              <div style={{display:"flex",gap:10}}>
-                <button onClick={()=>setEditPayModal(null)} style={{
-                  flex:1,padding:13,borderRadius:12,border:"1px solid var(--abr)",
-                  background:"var(--ac)",color:"var(--ad)",
-                  fontFamily:"'Outfit',sans-serif",fontSize:14,fontWeight:700,cursor:"pointer"}}>
-                  Cancelar
-                </button>
-                <button onClick={savePay} style={{
-                  flex:1.5,padding:13,borderRadius:12,border:"none",
-                  background:"linear-gradient(135deg,var(--gi),var(--gi2))",color:"#fff",
-                  fontFamily:"'Outfit',sans-serif",fontSize:14,fontWeight:800,cursor:"pointer"}}>
-                  Guardar
-                </button>
-              </div>
-            </div>
-          </div>
-        );
-      })()}
+      {editPayModal && <EditPayModal editPayModal={editPayModal} setEditPayModal={setEditPayModal} setOrders={setOrders} toast={toast}/>}
       </div>
     );
   };
@@ -6822,7 +6962,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
                         <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:13,
                           fontWeight:700,color:"var(--abri)",flexShrink:0}}>${fmt(i.price*i.qty)}</span>
                         <button onClick={()=>cajaSub(i)}
-                          style={{width:22,height:22,borderRadius:6,border:"none",
+                          style={{width:22,height:22,borderRadius:6,
                             background:"var(--as)",color:"var(--abri)",
                             border:"1px solid var(--abr)",
                             fontSize:16,cursor:"pointer",flexShrink:0,
@@ -7711,7 +7851,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
         </div>
       )}
       {showVentaRapida && VentaRapidaModal()}
-      {showMovModal && <MovModal/>}
+      {showMovModal && MovModal()}
 
       {/* DESKTOP SIDEBAR */}
       <div className="admin-sidebar" style={{display:"none"}}>
@@ -7810,11 +7950,11 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
       <div className="admin-content-scroll">
 
       {/* CONTENT */}
-      {tab==="home"    && <HomeTab/>}
-      {tab==="orders"  && <OrdersTab/>}
-      {tab==="carta"   && <CartaTab/>}
+      {tab==="home"    && HomeTab()}
+      {tab==="orders"  && OrdersTab()}
+      {tab==="carta"   && CartaTab()}
       {tab==="qr"      && <QRTabComp mesaNum={mesaNumAdmin} setMesaNum={setMesaNumAdmin} qrType={qrType} setQrType={setQrType} promoUrl={promoUrl} setPromoUrl={setPromoUrl} local={local}/>}
-      {tab==="caja"    && <CajaTab/>}
+      {tab==="caja"    && CajaTab()}
       {tab==="mostrador" && (()=>{
         // Ventas de mostrador: pedidos con mesa_numero=0 o nota que contenga "mostrador"
         const mostradorOrders = orders.filter(o=>
@@ -7914,54 +8054,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
           </div>
         );
       })()}
-      {tab==="cocina" && (()=>{
-        const slug = local.slug || local.baseUrl || "";
-        const cocinaUrl = slug ? `${window.location.origin}/${slug}/cocina` : "";
-        const [qrImg, setQrImg] = React.useState(null);
-        React.useEffect(()=>{
-          if(!cocinaUrl) return;
-          QRCodeLib.toDataURL(cocinaUrl,{width:260,margin:2,color:{dark:"#0A0806",light:"#FFFFFF"}})
-            .then(setQrImg).catch(()=>{});
-        },[cocinaUrl]);
-        return (
-          <div style={{padding:"18px 16px 0"}}>
-            <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:"var(--am)",letterSpacing:1.5,marginBottom:4}}>COCINA</p>
-            <h2 style={{fontFamily:"'Outfit',sans-serif",fontSize:20,fontWeight:800,color:"var(--abri)",marginBottom:6}}>Pantalla de cocina</h2>
-            <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"var(--ad)",marginBottom:20,lineHeight:1.5}}>
-              Escaneá este QR desde la tablet de la cocina. Se abre la pantalla con todos los pedidos activos en tiempo real — sin login, sin panel.
-            </p>
-            {!slug ? (
-              <div style={{background:"rgba(255,59,92,.08)",border:"1px solid rgba(255,59,92,.3)",borderRadius:12,padding:16,textAlign:"center"}}>
-                <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"var(--ar)"}}>Configurá el slug de tu local en Config para generar el QR.</p>
-              </div>
-            ) : (<>
-              <div style={{background:"#fff",borderRadius:16,padding:20,display:"flex",flexDirection:"column",alignItems:"center",gap:12,marginBottom:16,maxWidth:300,margin:"0 auto 16px"}}>
-                {qrImg
-                  ? <img src={qrImg} alt="QR Cocina" style={{width:220,height:220,borderRadius:8}}/>
-                  : <div style={{width:220,height:220,background:"#f0f0f0",borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"monospace",fontSize:12,color:"#999"}}>Generando QR...</div>}
-                <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:"#333",textAlign:"center",letterSpacing:.5}}>👨‍🍳 COCINA</div>
-              </div>
-              <div style={{background:"var(--as)",border:"1px solid var(--abr)",borderRadius:12,padding:"12px 14px",marginBottom:12}}>
-                <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:"var(--am)",marginBottom:4,letterSpacing:1}}>URL COCINA</p>
-                <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:11,color:"var(--abl)",wordBreak:"break-all",lineHeight:1.4}}>{cocinaUrl}</p>
-              </div>
-              <div style={{display:"flex",gap:8,marginBottom:16}}>
-                <button onClick={()=>{navigator.clipboard?.writeText(cocinaUrl);}} style={{flex:1,padding:"11px",borderRadius:10,border:"1px solid var(--abr)",background:"var(--ac)",color:"var(--abri)",fontFamily:"'IBM Plex Mono',monospace",fontSize:11,fontWeight:700,cursor:"pointer"}}>📋 Copiar link</button>
-                <button onClick={()=>window.open(cocinaUrl,"_blank")} style={{flex:1,padding:"11px",borderRadius:10,border:"none",background:"var(--abl)",color:"#fff",fontFamily:"'IBM Plex Mono',monospace",fontSize:11,fontWeight:700,cursor:"pointer"}}>🔗 Abrir</button>
-              </div>
-              <div style={{background:"rgba(61,142,255,.06)",border:"1px solid rgba(61,142,255,.2)",borderRadius:12,padding:"12px 14px"}}>
-                <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"var(--ad)",lineHeight:1.8}}>
-                  ✅ Pedidos en tiempo real<br/>
-                  🔔 Suena cuando entra uno nuevo<br/>
-                  👆 Pueden marcar En cocina → Listo → Entregado<br/>
-                  🔒 Sin login
-                </p>
-              </div>
-              <div style={{height:100}}/>
-            </>)}
-          </div>
-        );
-      })()}
+      {tab==="cocina" && <CocinaTab local={local} QRCodeLib={QRCodeLib}/>}
       {tab==="reportes" && <ReportesTab local={local}/>}
       {tab==="gestion" && <GestionTab local={local} setLocal={setLocal} cats={cats} setCats={setCats} prods={prods} setProds={setProds} gSubTab={gSubTab} setGSubTab={setGSubTab} gActiveCat={gActiveCat} setGActiveCat={setGActiveCat} gModal={gModal} setGModal={setGModal} toast={toast} orders={orders} setOrders={setOrders} onEditOrder={o=>setEditOrderModal(o)}/>}
       {tab==="config"   && <ConfigTab local={local} setLocal={setLocal} toast={toast} adminPinUnlocked={adminPinUnlocked}/>}
@@ -8076,93 +8169,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
       )}
 
       {/* ── Edit Order Modal ──────────────────────────────────────── */}
-      {editOrderModal && (()=>{
-        const o = editOrderModal;
-        const PAY_LBL2={cash:"Efectivo",mp:"Mercado Pago",card:"Tarjeta Débito",trans:"Transferencia"};
-        const [items, setItems] = useState(o.items.map(it=>({...it})));
-        const total = items.reduce((s,it)=>s+(it.price||0)*(it.qty||1),0);
-        const saveEdit = async () => {
-          if(!supabase) return;
-          // Update pedido total
-          await supabase.from("pedidos").update({total}).eq("id",o.id);
-          // Delete old items and reinsert
-          await supabase.from("pedido_items").delete().eq("pedido_id",o.id);
-          if(items.length>0){
-            await supabase.from("pedido_items").insert(
-              items.map(it=>({pedido_id:o.id,producto_id:it.id||null,nombre:it.name,precio:it.price,cantidad:it.qty}))
-            );
-          }
-          setOrders(os=>os.map(x=>x.id===o.id?{...x,items,total}:x));
-          toast("✓ Ticket actualizado");
-          setEditOrderModal(null);
-        };
-        const mesaLabel=(o.table===0||o.table==="0"||o.table===null)?"Mostrador":"Mesa "+o.table;
-        return (
-          <div style={{position:"fixed",inset:0,zIndex:600,background:"rgba(0,0,0,.85)",
-            display:"flex",alignItems:"center",justifyContent:"center",padding:"20px 16px"}}
-            onClick={e=>{if(e.target===e.currentTarget)setEditOrderModal(null);}}>
-            <div style={{background:"var(--ab)",borderRadius:16,padding:"20px 18px",
-              width:"100%",maxWidth:380,maxHeight:"85vh",overflowY:"auto"}}>
-              <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,
-                color:"var(--am)",letterSpacing:2,marginBottom:4}}>EDITAR TICKET</div>
-              <div style={{fontFamily:"'Outfit',sans-serif",fontSize:17,fontWeight:800,
-                color:"var(--abri)",marginBottom:4}}>{mesaLabel}</div>
-              <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,
-                color:"var(--am)",marginBottom:16}}>#{String(o.id).slice(-4)} · {o.time}</div>
-              {/* Items */}
-              {items.map((it,i)=>(
-                <div key={i} style={{display:"flex",alignItems:"center",gap:8,
-                  padding:"8px 0",borderBottom:"1px solid var(--abr)"}}>
-                  <div style={{flex:1}}>
-                    <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"var(--abri)"}}>{it.qty}× {it.name}</div>
-                    {it.price>0&&<div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:"var(--am)"}}>
-                      ${(it.price*it.qty).toFixed(0)}
-                    </div>}
-                  </div>
-                  <div style={{display:"flex",alignItems:"center",gap:6}}>
-                    <button onClick={()=>setItems(prev=>{
-                      const n=[...prev];
-                      if(n[i].qty>1){n[i]={...n[i],qty:n[i].qty-1};}
-                      else{n.splice(i,1);}
-                      return n;
-                    })} style={{width:28,height:28,borderRadius:8,border:"1px solid var(--abr)",
-                      background:"var(--ac)",color:"var(--ar)",fontSize:16,cursor:"pointer",
-                      display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700}}>−</button>
-                    <button onClick={()=>setItems(prev=>{
-                      const n=[...prev];n[i]={...n[i],qty:n[i].qty+1};return n;
-                    })} style={{width:28,height:28,borderRadius:8,border:"1px solid var(--abr)",
-                      background:"var(--ac)",color:"var(--ag)",fontSize:16,cursor:"pointer",
-                      display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700}}>+</button>
-                  </div>
-                </div>
-              ))}
-              {items.length===0&&<div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,
-                color:"var(--am)",fontStyle:"italic",padding:"12px 0"}}>Sin productos</div>}
-              {/* Total */}
-              <div style={{display:"flex",justifyContent:"space-between",padding:"12px 0 4px",
-                fontFamily:"'IBM Plex Mono',monospace",fontWeight:700,fontSize:14,color:"var(--abri)"}}>
-                <span>TOTAL</span><span>${total.toFixed(0)}</span>
-              </div>
-              <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,
-                color:"var(--am)",marginBottom:16}}>
-                Pago: {PAY_LBL2[o.pay]||o.pay||"—"}
-              </div>
-              <div style={{display:"flex",gap:8}}>
-                <button onClick={()=>setEditOrderModal(null)} style={{flex:1,padding:"12px",
-                  borderRadius:12,border:"1px solid var(--abr)",background:"var(--ac)",
-                  color:"var(--ad)",fontFamily:"'Outfit',sans-serif",fontSize:14,fontWeight:700,cursor:"pointer"}}>
-                  Cancelar
-                </button>
-                <button onClick={saveEdit} style={{flex:1.5,padding:"12px",borderRadius:12,
-                  border:"none",background:"linear-gradient(135deg,#00FF88,#00C870)",
-                  color:"#060810",fontFamily:"'Outfit',sans-serif",fontSize:14,fontWeight:800,cursor:"pointer"}}>
-                  Guardar
-                </button>
-              </div>
-            </div>
-          </div>
-        );
-      })()}
+      {editOrderModal && <EditOrderModal editOrderModal={editOrderModal} setEditOrderModal={setEditOrderModal} setOrders={setOrders} toast={toast}/>}
 
       {showArqAp && (
         <ArqModal title="Arqueo de apertura" onConfirm={abrirTurno}
