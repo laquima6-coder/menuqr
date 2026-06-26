@@ -4621,7 +4621,13 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
   },[]);
 
   /* ── Print ticket (recibo para el cliente) */
-  const printTicket = (o) => { setTicketPreview(o); };
+  const PAY_LBL={cash:"Efectivo",mp:"Mercado Pago",card:"Tarjeta Débito",trans:"Transferencia"};
+  const fmtPay=(raw)=>{
+    if(!raw) return "—";
+    // Handle "cash($500)+mp($300)" style
+    return raw.replace(/([a-z]+)(\([^)]*\))?/g,(m,key,amt)=>(PAY_LBL[key]||key)+(amt||""));
+  };
+    const printTicket = (o) => { setTicketPreview(o); };
 
   const doPrint = (o) => {
     const PAY_LABELS={cash:"Efectivo",mp:"Mercado Pago",card:"Tarjeta Débito",trans:"Transferencia"};
@@ -7390,7 +7396,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
             </div>
             <div style={{display:"flex",justifyContent:"space-between",fontSize:11,padding:"2px 0"}}>
               <span>Pago</span>
-              <span><b>{{cash:"Efectivo",mp:"Mercado Pago",card:"Tarjeta",trans:"Transferencia"}[ticketPreview.pay]||ticketPreview.pay||"—"}</b></span>
+              <span><b>{fmtPay(ticketPreview.pay)}</b></span>
             </div>
             <div style={{borderTop:"1px dashed #000",margin:"8px 0"}}/>
             <div style={{fontSize:13,fontWeight:"bold",textAlign:"center",margin:"8px 0 4px"}}>¡Gracias!</div>
@@ -7403,7 +7409,6 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
               </button>
               {typeof navigator!=="undefined"&&navigator.share&&(
                 <button onClick={()=>{
-                  const PAY_L={cash:"Efectivo",mp:"Mercado Pago",card:"Tarjeta",trans:"Transferencia"};
                   const lines=[
                     `🧾 *Ticket — ${local.nombre||"Restaurante"}*`,
                     `📍 ${ticketPreview.table===0||ticketPreview.table==="0"?"Mostrador":"Mesa "+ticketPreview.table}  |  Pedido #${String(ticketPreview.id).slice(-4)}`,
@@ -7411,7 +7416,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
                     ...(ticketPreview.items||[]).map(it=>`${it.qty}× ${it.name}${it.price?" — $"+fmt(it.qty*(it.price||0)):""}`) ,
                     `━━━━━━━━━━━━━━━━`,
                     `💰 *TOTAL: $${fmt(ticketPreview.total)}*`,
-                    `💳 ${PAY_L[ticketPreview.pay]||ticketPreview.pay||"—"}`,
+                    `💳 ${fmtPay(ticketPreview.pay)}`,
                     ticketPreview.nota&&ticketPreview.nota!=="Venta en mostrador"?`📝 ${ticketPreview.nota}`:"",
                     ``,
                     `_Emitido por MenuQR_`,
