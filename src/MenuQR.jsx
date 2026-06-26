@@ -3677,7 +3677,7 @@ function PersonalSection({local, toast}) {
   );
 }
 
-function GestionTab({local,setLocal,cats,setCats,prods,setProds,gSubTab,setGSubTab,gActiveCat,setGActiveCat,gModal,setGModal,toast}) {
+function GestionTab({local,setLocal,cats,setCats,prods,setProds,gSubTab,setGSubTab,gActiveCat,setGActiveCat,gModal,setGModal,toast,orders=[],setOrders,onEditOrder}) {
   const subTab    = gSubTab;
   const setSubTab = setGSubTab;
 
@@ -4135,6 +4135,7 @@ function GestionTab({local,setLocal,cats,setCats,prods,setProds,gSubTab,setGSubT
     {id:"local",   label:"🏠 Local"},
     {id:"carta",   label:"📋 Carta"},
     {id:"personal",label:"👥 Personal"},
+    {id:"tickets", label:"🎫 Tickets"},
   ];
 
   return (
@@ -4161,6 +4162,54 @@ function GestionTab({local,setLocal,cats,setCats,prods,setProds,gSubTab,setGSubT
       {subTab==="local"    && LocalSection()}
       {subTab==="carta"    && CartaSection()}
       {subTab==="personal" && <PersonalSection local={local} toast={toast}/>}
+      {subTab==="tickets"  && (()=>{
+        const PAY_L3={cash:"Efectivo",mp:"Mercado Pago",card:"Tarjeta",trans:"Transferencia"};
+        const closed = [...orders].filter(o=>o.status==="entregado").sort((a,b)=>b.id>a.id?1:-1);
+        return (
+          <div>
+            <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:"var(--am)",marginBottom:12}}>
+              Pedidos cerrados de hoy. Tocá uno para editar productos o corregir errores.
+            </p>
+            {closed.length===0 && (
+              <div style={{textAlign:"center",padding:"40px 20px",
+                fontFamily:"'DM Sans',sans-serif",fontSize:14,color:"var(--am)"}}>
+                No hay pedidos cerrados aún
+              </div>
+            )}
+            {closed.map(o=>{
+              const mesa=(o.table===0||o.table==="0"||o.table===null)?"Mostrador":"Mesa "+o.table;
+              return (
+                <div key={o.id} style={{background:"var(--as)",border:"1px solid var(--abr)",
+                  borderRadius:12,padding:"12px 14px",marginBottom:8,
+                  display:"flex",justifyContent:"space-between",alignItems:"center",gap:12}}>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontFamily:"'IBM Plex Mono',monospace",fontWeight:700,
+                      fontSize:13,color:"var(--abri)"}}>{mesa}</div>
+                    <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,
+                      color:"var(--am)",marginTop:2}}>#{String(o.id).slice(-4)} · {o.time}</div>
+                    <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,
+                      color:"var(--ad)",marginTop:4,whiteSpace:"nowrap",overflow:"hidden",
+                      textOverflow:"ellipsis"}}>
+                      {(o.items||[]).map(it=>`${it.qty}× ${it.name}`).join(", ")}
+                    </div>
+                  </div>
+                  <div style={{textAlign:"right",flexShrink:0}}>
+                    <div style={{fontFamily:"'IBM Plex Mono',monospace",fontWeight:700,
+                      fontSize:14,color:"var(--abri)"}}>${(o.total||0).toFixed(0)}</div>
+                    <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,
+                      color:"var(--am)"}}>{PAY_L3[o.pay]||o.pay||"—"}</div>
+                    <button onClick={()=>onEditOrder&&onEditOrder(o)} style={{
+                      marginTop:6,padding:"5px 12px",borderRadius:8,border:"1px solid var(--abl)",
+                      background:"transparent",color:"var(--abl)",
+                      fontFamily:"'IBM Plex Mono',monospace",fontSize:10,fontWeight:700,
+                      cursor:"pointer",letterSpacing:.5}}>✏️ Editar</button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        );
+      })()}
     </div>
   );
 }
@@ -4168,7 +4217,7 @@ function GestionTab({local,setLocal,cats,setCats,prods,setProds,gSubTab,setGSubT
 /* ══════════════════════════════════════════
    CONFIG TAB
 ══════════════════════════════════════════ */
-function ConfigTab({local,setLocal,toast}) {
+function ConfigTab({local,setLocal,toast,adminPinUnlocked}) {
   const [cfgDraft, setCfgDraft] = useState({});
   useEffect(()=>{
     if(local.restauranteId) setCfgDraft({
@@ -4186,6 +4235,28 @@ function ConfigTab({local,setLocal,toast}) {
       mp_titular:   local.mp_titular   || '',
     });
   },[local.restauranteId]);
+
+  const [newPin, setNewPin]     = React.useState("");
+  const [pinMsg, setPinMsg]     = React.useState("");
+  const savePin = async () => {
+    const p = newPin.trim();
+    if(p.length!==4||!/^\d{4}$/.test(p)){ setPinMsg("La clave debe ser 4 dígitos"); return; }
+    setLocal(l=>({...l,admin_pin:p}));
+    setPinMsg("✓ Clave guardada");
+    setNewPin("");
+    if(local.restauranteId&&supabase){
+      const {data:cur}=await supabase.from("restaurantes").select("config").eq("id",local.restauranteId).single();
+      await supabase.from("restaurantes").update({config:{...(cur?.config||{}),admin_pin:p}}).eq("id",local.restauranteId);
+    }
+  };
+  const removePin = async () => {
+    setLocal(l=>({...l,admin_pin:""}));
+    setPinMsg("Clave eliminada");
+    if(local.restauranteId&&supabase){
+      const {data:cur}=await supabase.from("restaurantes").select("config").eq("id",local.restauranteId).single();
+      await supabase.from("restaurantes").update({config:{...(cur?.config||{}),admin_pin:""}}).eq("id",local.restauranteId);
+    }
+  };
 
   const saveAll = async () => {
     setLocal(l=>({...l,...cfgDraft}));
@@ -4487,6 +4558,47 @@ function ConfigTab({local,setLocal,toast}) {
         padding:14,fontFamily:"'Outfit',sans-serif",fontSize:15,fontWeight:700,cursor:"pointer",marginBottom:8}}>
       Guardar cambios
     </button>
+
+    {/* ── Clave de acceso ─────────────────────────────────── */}
+    <div style={{background:"var(--as)",border:"1px solid var(--abr)",
+      borderRadius:14,padding:18,marginBottom:16}}>
+      <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,letterSpacing:1.5,
+        color:"var(--am)",marginBottom:6}}>SEGURIDAD</p>
+      <h3 style={{fontFamily:"'Outfit',sans-serif",fontSize:15,fontWeight:800,
+        color:"var(--abri)",marginBottom:4}}>Clave de Gestión y Configuración</h3>
+      <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"var(--am)",marginBottom:14,lineHeight:1.5}}>
+        {local.admin_pin
+          ? `Clave activa: ${"•".repeat(4)}  (podés cambiarla o eliminarla)`
+          : "Sin clave. Cualquiera con acceso al panel puede entrar a Gestión y Config."}
+      </p>
+      <div style={{display:"flex",gap:8,marginBottom:10}}>
+        <input
+          type="number"
+          value={newPin}
+          onChange={e=>{ setPinMsg(""); setNewPin(e.target.value.replace(/\D/g,"").slice(0,4)); }}
+          placeholder="Nueva clave (4 dígitos)"
+          maxLength={4}
+          style={{flex:1,padding:"10px 12px",borderRadius:10,border:"1px solid var(--abr)",
+            background:"var(--ac)",color:"var(--abri)",fontFamily:"'IBM Plex Mono',monospace",
+            fontSize:18,letterSpacing:6,outline:"none",textAlign:"center"}}
+        />
+        <button onClick={savePin} style={{padding:"10px 16px",borderRadius:10,
+          border:"none",background:"var(--abl)",color:"#fff",
+          fontFamily:"'Outfit',sans-serif",fontSize:13,fontWeight:700,cursor:"pointer",flexShrink:0}}>
+          Guardar
+        </button>
+      </div>
+      {local.admin_pin && (
+        <button onClick={removePin} style={{width:"100%",padding:"9px",borderRadius:10,
+          border:"1px solid rgba(255,59,92,.4)",background:"rgba(255,59,92,.08)",
+          color:"var(--ar)",fontFamily:"'Outfit',sans-serif",fontSize:13,fontWeight:600,cursor:"pointer"}}>
+          🗑 Eliminar clave
+        </button>
+      )}
+      {pinMsg && <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,
+        color:pinMsg.startsWith("✓")?"var(--ag)":"var(--ar)",marginTop:8}}>{pinMsg}</p>}
+    </div>
+    <div style={{height:100}}/>
   </div>
   );
 }
@@ -4527,6 +4639,10 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
 
   /* ── State del admin */
   const [tab,setTab]         = useState("home");
+  const [adminPinUnlocked, setAdminPinUnlocked] = useState(false);
+  const [showPinModal, setShowPinModal]         = useState(null); // "gestion"|"config"
+  const [pinInput, setPinInput]                 = useState("");
+  const [editOrderModal, setEditOrderModal]     = useState(null); // pedido to edit
   const [orders,setOrders]   = useState(INIT_ORDERS);
   const [clock,setClock]     = useState(new Date());
   const [toastMsg,setToastM] = useState(null);
@@ -7458,7 +7574,10 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
           {TABS.map(t=>{
             const a = tab===t.id;
             return (
-              <button key={t.id} onClick={()=>setTab(t.id)} className="pr" style={{
+              <button key={t.id} onClick={()=>{
+                const locked=(t.id==="gestion"||t.id==="config")&&local.admin_pin&&!adminPinUnlocked;
+                if(locked){setShowPinModal(t.id);setPinInput("");}else setTab(t.id);
+              }} className="pr" style={{
                 display:"flex",alignItems:"center",gap:10,
                 padding:"10px 12px",borderRadius:10,border:"none",cursor:"pointer",
                 background:a?"rgba(61,142,255,.15)":"transparent",
@@ -7536,8 +7655,8 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
       {tab==="qr"      && <QRTabComp mesaNum={mesaNumAdmin} setMesaNum={setMesaNumAdmin} qrType={qrType} setQrType={setQrType} promoUrl={promoUrl} setPromoUrl={setPromoUrl} local={local}/>}
       {tab==="caja"    && <CajaTab/>}
       {tab==="reportes" && <ReportesTab local={local}/>}
-      {tab==="gestion" && <GestionTab local={local} setLocal={setLocal} cats={cats} setCats={setCats} prods={prods} setProds={setProds} gSubTab={gSubTab} setGSubTab={setGSubTab} gActiveCat={gActiveCat} setGActiveCat={setGActiveCat} gModal={gModal} setGModal={setGModal} toast={toast}/>}
-      {tab==="config"   && <ConfigTab local={local} setLocal={setLocal} toast={toast}/>}
+      {tab==="gestion" && <GestionTab local={local} setLocal={setLocal} cats={cats} setCats={setCats} prods={prods} setProds={setProds} gSubTab={gSubTab} setGSubTab={setGSubTab} gActiveCat={gActiveCat} setGActiveCat={setGActiveCat} gModal={gModal} setGModal={setGModal} toast={toast} orders={orders} setOrders={setOrders} onEditOrder={o=>setEditOrderModal(o)}/>}
+      {tab==="config"   && <ConfigTab local={local} setLocal={setLocal} toast={toast} adminPinUnlocked={adminPinUnlocked}/>}
       {tab==="whatsapp" && <WhatsAppTab/>}
 
       </div>{/* end admin-content-scroll */}
@@ -7552,7 +7671,11 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
         {TABS.map(t=>{
           const a = tab===t.id;
           return (
-            <button key={t.id} onClick={()=>setTab(t.id)} className="pr" style={{
+            <button key={t.id} onClick={()=>{
+              const locked = (t.id==="gestion"||t.id==="config") && local.admin_pin && !adminPinUnlocked;
+              if(locked){ setShowPinModal(t.id); setPinInput(""); }
+              else setTab(t.id);
+            }} className="pr" style={{
               flex:1,background:"none",border:"none",
               display:"flex",flexDirection:"column",
               alignItems:"center",gap:4,cursor:"pointer",position:"relative",
@@ -7586,6 +7709,153 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
       </nav>
 
       {/* ADMIN MODALS */}
+
+      {/* ── PIN Modal ─────────────────────────────────────────────── */}
+      {showPinModal && (
+        <div style={{position:"fixed",inset:0,zIndex:600,background:"rgba(0,0,0,.85)",
+          display:"flex",alignItems:"center",justifyContent:"center",padding:24}}>
+          <div style={{background:"var(--ab)",borderRadius:20,padding:"28px 24px",
+            width:"100%",maxWidth:320,textAlign:"center"}}>
+            <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,
+              color:"var(--am)",letterSpacing:2,marginBottom:8}}>CLAVE DE ACCESO</div>
+            <div style={{fontFamily:"'Outfit',sans-serif",fontSize:18,fontWeight:800,
+              color:"var(--abri)",marginBottom:20}}>
+              {showPinModal==="gestion"?"Gestión":"Configuración"}
+            </div>
+            {/* 4 dot indicators */}
+            <div style={{display:"flex",gap:12,justifyContent:"center",marginBottom:24}}>
+              {[0,1,2,3].map(i=>(
+                <div key={i} style={{width:14,height:14,borderRadius:"50%",
+                  background:pinInput.length>i?"var(--abl)":"var(--abr)",
+                  transition:"background .15s"}}/>
+              ))}
+            </div>
+            {/* Numpad */}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:16}}>
+              {[1,2,3,4,5,6,7,8,9,"","0","⌫"].map((k,i)=>(
+                <button key={i} onClick={()=>{
+                  if(k==="⌫"){ setPinInput(p=>p.slice(0,-1)); return; }
+                  if(k===""){ return; }
+                  if(pinInput.length>=4) return;
+                  const next = pinInput + String(k);
+                  setPinInput(next);
+                  if(next.length===4){
+                    if(next===String(local.admin_pin)){
+                      setAdminPinUnlocked(true);
+                      setTab(showPinModal);
+                      setShowPinModal(null);
+                      setPinInput("");
+                    } else {
+                      setTimeout(()=>setPinInput(""),400);
+                    }
+                  }
+                }} style={{
+                  padding:"16px 0",borderRadius:12,border:"1px solid var(--abr)",
+                  background:k==="⌫"?"var(--ac)":"var(--as)",
+                  fontFamily:"'Outfit',sans-serif",fontSize:20,fontWeight:700,
+                  color:"var(--abri)",cursor:k===""?"default":"pointer",
+                  opacity:k===""?0:1}}>
+                  {k}
+                </button>
+              ))}
+            </div>
+            <button onClick={()=>{setShowPinModal(null);setPinInput("");}} style={{
+              width:"100%",padding:"12px",borderRadius:12,border:"1px solid var(--abr)",
+              background:"transparent",color:"var(--am)",fontFamily:"'Outfit',sans-serif",
+              fontSize:14,fontWeight:600,cursor:"pointer"}}>Cancelar</button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Edit Order Modal ──────────────────────────────────────── */}
+      {editOrderModal && (()=>{
+        const o = editOrderModal;
+        const PAY_LBL2={cash:"Efectivo",mp:"Mercado Pago",card:"Tarjeta Débito",trans:"Transferencia"};
+        const [items, setItems] = useState(o.items.map(it=>({...it})));
+        const total = items.reduce((s,it)=>s+(it.price||0)*(it.qty||1),0);
+        const saveEdit = async () => {
+          if(!supabase) return;
+          // Update pedido total
+          await supabase.from("pedidos").update({total}).eq("id",o.id);
+          // Delete old items and reinsert
+          await supabase.from("pedido_items").delete().eq("pedido_id",o.id);
+          if(items.length>0){
+            await supabase.from("pedido_items").insert(
+              items.map(it=>({pedido_id:o.id,producto_id:it.id||null,nombre:it.name,precio:it.price,cantidad:it.qty}))
+            );
+          }
+          setOrders(os=>os.map(x=>x.id===o.id?{...x,items,total}:x));
+          toast("✓ Ticket actualizado");
+          setEditOrderModal(null);
+        };
+        const mesaLabel=(o.table===0||o.table==="0"||o.table===null)?"Mostrador":"Mesa "+o.table;
+        return (
+          <div style={{position:"fixed",inset:0,zIndex:600,background:"rgba(0,0,0,.85)",
+            display:"flex",alignItems:"center",justifyContent:"center",padding:"20px 16px"}}
+            onClick={e=>{if(e.target===e.currentTarget)setEditOrderModal(null);}}>
+            <div style={{background:"var(--ab)",borderRadius:16,padding:"20px 18px",
+              width:"100%",maxWidth:380,maxHeight:"85vh",overflowY:"auto"}}>
+              <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,
+                color:"var(--am)",letterSpacing:2,marginBottom:4}}>EDITAR TICKET</div>
+              <div style={{fontFamily:"'Outfit',sans-serif",fontSize:17,fontWeight:800,
+                color:"var(--abri)",marginBottom:4}}>{mesaLabel}</div>
+              <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,
+                color:"var(--am)",marginBottom:16}}>#{String(o.id).slice(-4)} · {o.time}</div>
+              {/* Items */}
+              {items.map((it,i)=>(
+                <div key={i} style={{display:"flex",alignItems:"center",gap:8,
+                  padding:"8px 0",borderBottom:"1px solid var(--abr)"}}>
+                  <div style={{flex:1}}>
+                    <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"var(--abri)"}}>{it.qty}× {it.name}</div>
+                    {it.price>0&&<div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:"var(--am)"}}>
+                      ${(it.price*it.qty).toFixed(0)}
+                    </div>}
+                  </div>
+                  <div style={{display:"flex",alignItems:"center",gap:6}}>
+                    <button onClick={()=>setItems(prev=>{
+                      const n=[...prev];
+                      if(n[i].qty>1){n[i]={...n[i],qty:n[i].qty-1};}
+                      else{n.splice(i,1);}
+                      return n;
+                    })} style={{width:28,height:28,borderRadius:8,border:"1px solid var(--abr)",
+                      background:"var(--ac)",color:"var(--ar)",fontSize:16,cursor:"pointer",
+                      display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700}}>−</button>
+                    <button onClick={()=>setItems(prev=>{
+                      const n=[...prev];n[i]={...n[i],qty:n[i].qty+1};return n;
+                    })} style={{width:28,height:28,borderRadius:8,border:"1px solid var(--abr)",
+                      background:"var(--ac)",color:"var(--ag)",fontSize:16,cursor:"pointer",
+                      display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700}}>+</button>
+                  </div>
+                </div>
+              ))}
+              {items.length===0&&<div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,
+                color:"var(--am)",fontStyle:"italic",padding:"12px 0"}}>Sin productos</div>}
+              {/* Total */}
+              <div style={{display:"flex",justifyContent:"space-between",padding:"12px 0 4px",
+                fontFamily:"'IBM Plex Mono',monospace",fontWeight:700,fontSize:14,color:"var(--abri)"}}>
+                <span>TOTAL</span><span>${total.toFixed(0)}</span>
+              </div>
+              <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,
+                color:"var(--am)",marginBottom:16}}>
+                Pago: {PAY_LBL2[o.pay]||o.pay||"—"}
+              </div>
+              <div style={{display:"flex",gap:8}}>
+                <button onClick={()=>setEditOrderModal(null)} style={{flex:1,padding:"12px",
+                  borderRadius:12,border:"1px solid var(--abr)",background:"var(--ac)",
+                  color:"var(--ad)",fontFamily:"'Outfit',sans-serif",fontSize:14,fontWeight:700,cursor:"pointer"}}>
+                  Cancelar
+                </button>
+                <button onClick={saveEdit} style={{flex:1.5,padding:"12px",borderRadius:12,
+                  border:"none",background:"linear-gradient(135deg,#00FF88,#00C870)",
+                  color:"#060810",fontFamily:"'Outfit',sans-serif",fontSize:14,fontWeight:800,cursor:"pointer"}}>
+                  Guardar
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       {showArqAp && (
         <ArqModal title="Arqueo de apertura" onConfirm={abrirTurno}
           onCancel={()=>setArqAp(false)} btnLabel="▶ ABRIR TURNO"
