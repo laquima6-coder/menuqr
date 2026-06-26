@@ -1341,39 +1341,39 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
       return mins>=(hd*60+md) && mins<(hh*60+mh);
     })();
 
+    const [promoActivada, setPromoActivada] = React.useState(()=>{
+      try { return !!JSON.parse(localStorage.getItem("menuqr_promo10_"+(local.restauranteId||"x"))||"null"); } catch{ return false; }
+    });
+    const activarPromo = () => {
+      localStorage.setItem("menuqr_promo10_"+(local.restauranteId||"x"), JSON.stringify({active:true,ts:Date.now()}));
+      setPromoActivada(true);
+    };
+
     return (
       <div style={{margin:"10px 10px 0",display:"flex",flexDirection:"column",gap:8}}>
 
         {/* 10% primera vez */}
-        {!!local.feat_promo10 && (()=>{
-          const [activado, setActivado] = React.useState(()=>{
-            try { return !!JSON.parse(localStorage.getItem("menuqr_promo10_"+(local.restauranteId||"x"))||"null"); } catch{ return false; }
-          });
-          const activar = () => {
-            localStorage.setItem("menuqr_promo10_"+(local.restauranteId||"x"), JSON.stringify({active:true,ts:Date.now()}));
-            setActivado(true);
-          };
-          return (
+        {!!local.feat_promo10 && (
             <div style={{background:"linear-gradient(135deg,rgba(201,168,76,.15),rgba(201,168,76,.05))",
-              border:`1px solid ${activado?"rgba(0,204,112,.5)":"rgba(201,168,76,.4)"}`,
+              border:`1px solid ${promoActivada?"rgba(0,204,112,.5)":"rgba(201,168,76,.4)"}`,
               borderRadius:14,padding:"14px 16px"}}>
-              <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:activado?0:12}}>
-                <div style={{fontSize:28,flexShrink:0}}>{activado?"✅":"🎁"}</div>
+              <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:promoActivada?0:12}}>
+                <div style={{fontSize:28,flexShrink:0}}>{promoActivada?"✅":"🎁"}</div>
                 <div>
                   <div style={{fontFamily:"'Outfit',sans-serif",fontWeight:800,fontSize:14,
-                    color:activado?"#00CC70":"#C9A84C",lineHeight:1.1}}>
-                    {activado?"¡Descuento activado!":"10% de descuento en tu primera visita"}
+                    color:promoActivada?"#00CC70":"#C9A84C",lineHeight:1.1}}>
+                    {promoActivada?"¡Descuento activado!":"10% de descuento en tu primera visita"}
                   </div>
                   <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,
-                    color:activado?"#4A7A5A":"#8A7A50",marginTop:3}}>
-                    {activado
+                    color:promoActivada?"#4A7A5A":"#8A7A50",marginTop:3}}>
+                    {promoActivada
                       ? "Escaneá el QR de tu mesa — se aplica solo"
                       : "Tocá el botón para activarlo antes de pedir"}
                   </div>
                 </div>
               </div>
-              {!activado && (
-                <button onClick={activar} style={{
+              {!promoActivada && (
+                <button onClick={activarPromo} style={{
                   width:"100%",background:"linear-gradient(135deg,#C9A84C,#E8C97A)",
                   border:"none",borderRadius:10,padding:"12px",
                   fontFamily:"'Outfit',sans-serif",fontSize:14,fontWeight:800,
@@ -1382,8 +1382,7 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
                 </button>
               )}
             </div>
-          );
-        })()}
+        )}
 
         {/* Mesas en tiempo real */}
         <div style={{background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.08)",
@@ -3830,9 +3829,14 @@ function GestionTab({local,setLocal,cats,setCats,prods,setProds,gSubTab,setGSubT
               <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,
                 color:"var(--gd)"}}>{f.sub}</p>
             </div>
-            <ToggleG on={local[f.k]} onChange={()=>{
-              setLocal(l=>({...l,[f.k]:!l[f.k]}));
-              toast(`${f.label} ${!local[f.k]?"activado":"desactivado"}`);
+            <ToggleG on={local[f.k]} onChange={async ()=>{
+              const newVal = !local[f.k];
+              setLocal(l=>({...l,[f.k]:newVal}));
+              toast(`${f.label} ${newVal?"activado":"desactivado"}`);
+              if(local.restauranteId && supabase){
+                const {data:cur} = await supabase.from("restaurantes").select("config").eq("id",local.restauranteId).single();
+                await supabase.from("restaurantes").update({config:{...(cur?.config||{}),[f.k]:newVal}}).eq("id",local.restauranteId);
+              }
             }}/>
           </div>
         ))}
