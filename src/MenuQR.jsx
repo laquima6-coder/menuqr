@@ -5351,6 +5351,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
     {id:"qr",        icon:"⬛", label:"QRs"},
     {id:"caja",      icon:"◉", label:"Caja"},
     {id:"mostrador", icon:"🏪", label:"Mostrador"},
+    {id:"cocina",    icon:"👨‍🍳", label:"Cocina"},
     {id:"reportes",  icon:"📊", label:"Reportes"},
     {id:"gestion",   icon:"✏", label:"Gestión"},
     {id:"config",    icon:"⚙", label:"Config"},
@@ -7881,6 +7882,54 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
               </div>
             ))}
             <div style={{height:100}}/>
+          </div>
+        );
+      })()}
+      {tab==="cocina" && (()=>{
+        const slug = local.slug || local.baseUrl || "";
+        const cocinaUrl = slug ? `${window.location.origin}/${slug}/cocina` : "";
+        const [qrImg, setQrImg] = React.useState(null);
+        React.useEffect(()=>{
+          if(!cocinaUrl) return;
+          QRCodeLib.toDataURL(cocinaUrl,{width:260,margin:2,color:{dark:"#0A0806",light:"#FFFFFF"}})
+            .then(setQrImg).catch(()=>{});
+        },[cocinaUrl]);
+        return (
+          <div style={{padding:"18px 16px 0"}}>
+            <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:"var(--am)",letterSpacing:1.5,marginBottom:4}}>COCINA</p>
+            <h2 style={{fontFamily:"'Outfit',sans-serif",fontSize:20,fontWeight:800,color:"var(--abri)",marginBottom:6}}>Pantalla de cocina</h2>
+            <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"var(--ad)",marginBottom:20,lineHeight:1.5}}>
+              Escaneá este QR desde la tablet de la cocina. Se abre la pantalla con todos los pedidos activos en tiempo real — sin login, sin panel.
+            </p>
+            {!slug ? (
+              <div style={{background:"rgba(255,59,92,.08)",border:"1px solid rgba(255,59,92,.3)",borderRadius:12,padding:16,textAlign:"center"}}>
+                <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"var(--ar)"}}>Configurá el slug de tu local en Config para generar el QR.</p>
+              </div>
+            ) : (<>
+              <div style={{background:"#fff",borderRadius:16,padding:20,display:"flex",flexDirection:"column",alignItems:"center",gap:12,marginBottom:16,maxWidth:300,margin:"0 auto 16px"}}>
+                {qrImg
+                  ? <img src={qrImg} alt="QR Cocina" style={{width:220,height:220,borderRadius:8}}/>
+                  : <div style={{width:220,height:220,background:"#f0f0f0",borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"monospace",fontSize:12,color:"#999"}}>Generando QR...</div>}
+                <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:"#333",textAlign:"center",letterSpacing:.5}}>👨‍🍳 COCINA</div>
+              </div>
+              <div style={{background:"var(--as)",border:"1px solid var(--abr)",borderRadius:12,padding:"12px 14px",marginBottom:12}}>
+                <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:"var(--am)",marginBottom:4,letterSpacing:1}}>URL COCINA</p>
+                <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:11,color:"var(--abl)",wordBreak:"break-all",lineHeight:1.4}}>{cocinaUrl}</p>
+              </div>
+              <div style={{display:"flex",gap:8,marginBottom:16}}>
+                <button onClick={()=>{navigator.clipboard?.writeText(cocinaUrl);}} style={{flex:1,padding:"11px",borderRadius:10,border:"1px solid var(--abr)",background:"var(--ac)",color:"var(--abri)",fontFamily:"'IBM Plex Mono',monospace",fontSize:11,fontWeight:700,cursor:"pointer"}}>📋 Copiar link</button>
+                <button onClick={()=>window.open(cocinaUrl,"_blank")} style={{flex:1,padding:"11px",borderRadius:10,border:"none",background:"var(--abl)",color:"#fff",fontFamily:"'IBM Plex Mono',monospace",fontSize:11,fontWeight:700,cursor:"pointer"}}>🔗 Abrir</button>
+              </div>
+              <div style={{background:"rgba(61,142,255,.06)",border:"1px solid rgba(61,142,255,.2)",borderRadius:12,padding:"12px 14px"}}>
+                <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"var(--ad)",lineHeight:1.8}}>
+                  ✅ Pedidos en tiempo real<br/>
+                  🔔 Suena cuando entra uno nuevo<br/>
+                  👆 Pueden marcar En cocina → Listo → Entregado<br/>
+                  🔒 Sin login
+                </p>
+              </div>
+              <div style={{height:100}}/>
+            </>)}
           </div>
         );
       })()}
