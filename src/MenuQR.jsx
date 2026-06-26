@@ -7710,7 +7710,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
           </div>
         </div>
       )}
-      {showVentaRapida && <VentaRapidaModal/>}
+      {showVentaRapida && VentaRapidaModal()}
       {showMovModal && <MovModal/>}
 
       {/* DESKTOP SIDEBAR */}
