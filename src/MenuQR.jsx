@@ -4684,6 +4684,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
   const [vrPay, setVrPay]                     = useState(null);
   const [vrPay2, setVrPay2]                   = useState(null);
   const [vrSplitAmt, setVrSplitAmt]           = useState("");
+  const [vrSplitAmt2, setVrSplitAmt2]         = useState("");
   const [vrNota, setVrNota]                     = useState("");
   const [ticketPreview, setTicketPreview]       = useState(null);
   const [solicitudes, setSolicitudes]         = useState([]);
@@ -4698,6 +4699,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
   const [cajaPay, setCajaPay]           = useState(null);
   const [cajaPay2, setCajaPay2]         = useState(null);
   const [cajaSplitAmt, setCajaSplitAmt] = useState("");
+  const [cajaSplitAmt2, setCajaSplitAmt2] = useState("");
   const [cajaMesaTipo, setCajaMesaTipo] = useState("mostrador");
   const [cajaMesaNum, setCajaMesaNum]   = useState(1);
   const [cajaOpenCat, setCajaOpenCat]   = useState(null);
@@ -4814,9 +4816,9 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
         await supabase.from("pedido_items").insert(
           items.map(i=>({pedido_id:pedido.id,producto_id:i.id,nombre:i.name,precio:i.price,cantidad:i.qty}))
         );
-        const _split=vrPay2&&vrPay2!=="pending"?Number(vrSplitAmt)||Math.ceil(vrTotal/2):0;printTicket({id:pedido.id,table:mesaNum,items,total:vrTotal,pay:vrPay2&&vrPay2!=="pending"?`${vrPay}($${_split})+${vrPay2}($${fmt(vrTotal-_split)})`:vrPay,tip:0,nota:vrNota||null});
+        const _split=vrPay2&&vrPay2!=="pending"?Number(vrSplitAmt)||Math.ceil(vrTotal/2):0;const _split2=Number(vrSplitAmt2)||vrTotal-_split;printTicket({id:pedido.id,table:mesaNum,items,total:vrTotal,pay:vrPay2&&vrPay2!=="pending"?`${vrPay}($${fmt(_split)})+${vrPay2}($${fmt(_split2)})`:vrPay,tip:0,nota:vrNota||null});
       }
-      setVrCart({}); setVrPay(null); setVrPay2(null); setVrSplitAmt(""); setVrNota(""); setShowVentaRapida(false);
+      setVrCart({}); setVrPay(null); setVrPay2(null); setVrSplitAmt(""); setVrSplitAmt2(""); setVrNota(""); setShowVentaRapida(false);
       toast("✓ Venta registrada");
     } catch(e){ toast("Error al guardar","err"); }
     finally { setVrLoading(false); }
@@ -4841,7 +4843,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
         await supabase.from("pedido_items").insert(
           items.map(i=>({pedido_id:pedido.id,producto_id:i.id,nombre:i.name,precio:i.price,cantidad:i.qty}))
         );
-        printTicket({id:pedido.id,table:mesaNum,items,total:cajaTotal,pay:cajaPay2&&cajaPay2!=="pending"?`${cajaPay}($${cajaSplitAmt})+${cajaPay2}($${fmt(cajaTotal-Number(cajaSplitAmt))})`:cajaPay,tip:0});
+        const _cs2=cajaSplitAmt2||fmt(cajaTotal-Number(cajaSplitAmt||0));printTicket({id:pedido.id,table:mesaNum,items,total:cajaTotal,pay:cajaPay2&&cajaPay2!=="pending"?`${cajaPay}($${cajaSplitAmt})+${cajaPay2}($${_cs2})`:cajaPay,tip:0});
       }
       setCajaCart({}); setCajaPay(null); setCajaPay2(null); setCajaSplitAmt(""); setCajaDescPct(0);
       toast("✓ Venta registrada");
@@ -5616,7 +5618,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
               <h2 style={{fontFamily:"'Outfit',sans-serif",fontSize:20,fontWeight:800,
                 color:"var(--abri)"}}>Venta Rápida</h2>
             </div>
-            <button onClick={()=>{setShowVentaRapida(false);setVrCart({});setVrPay(null);setVrPay2(null);setVrSplitAmt("");setVrNota("");}}
+            <button onClick={()=>{setShowVentaRapida(false);setVrCart({});setVrPay(null);setVrPay2(null);setVrSplitAmt("");setVrSplitAmt2("");setVrNota("");}}
               style={{background:"var(--ac)",border:"1px solid var(--abr)",borderRadius:8,
                 color:"var(--ad)",fontSize:18,width:36,height:36,cursor:"pointer",
                 display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
@@ -5726,7 +5728,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
                 return (<>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
                     <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:"var(--am)",letterSpacing:1,margin:0}}>MÉTODO DE PAGO</p>
-                    <button onClick={()=>{if(splitMode){setVrPay2(null);setVrSplitAmt("");}else{setVrPay2("pending");}}} style={{background:"none",border:"none",color:splitMode?"var(--ar)":"var(--abl)",fontSize:10,cursor:"pointer",fontFamily:"'IBM Plex Mono',monospace",letterSpacing:.5}}>
+                    <button onClick={()=>{if(splitMode){setVrPay2(null);setVrSplitAmt("");setVrSplitAmt2("");}else{setVrPay2("pending");}}} style={{background:"none",border:"none",color:splitMode?"var(--ar)":"var(--abl)",fontSize:10,cursor:"pointer",fontFamily:"'IBM Plex Mono',monospace",letterSpacing:.5}}>
                       {splitMode?"✕ cancelar mixto":"÷ pago mixto"}
                     </button>
                   </div>
@@ -5766,11 +5768,14 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
                             </button>
                           ))}
                         </div>
-                        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",background:"var(--as)",borderRadius:8,padding:"8px 10px"}}>
-                          <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:12,color:"var(--am)"}}>Resto:</span>
-                          <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:15,fontWeight:700,color:splitResto<0?"var(--ar)":"var(--ag)"}}>${fmt(Math.max(0,splitResto))}</span>
+                        <div style={{display:"flex",alignItems:"center",gap:8}}>
+                          <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:13,color:"var(--am)"}}>$</span>
+                          <input type="number" value={vrSplitAmt2} onChange={e=>setVrSplitAmt2(e.target.value)}
+                            placeholder={String(Math.max(0,vrTotal-Number(vrSplitAmt||0)))}
+                            style={{flex:1,background:"var(--as)",border:"1px solid var(--abr)",borderRadius:8,padding:"8px 10px",color:"var(--abri)",fontFamily:"'IBM Plex Mono',monospace",fontSize:15,fontWeight:700,outline:"none"}}/>
                         </div>
                       </div>
+                      {(vrSplitAmt||vrSplitAmt2)&&(()=>{const a1=Number(vrSplitAmt||0),a2=Number(vrSplitAmt2||0),diff=vrTotal-(a1+a2);return(<div style={{background:diff===0?"rgba(0,255,136,.08)":"rgba(255,176,32,.08)",border:`1px solid ${diff===0?"rgba(0,255,136,.3)":"rgba(255,176,32,.3)"}`,borderRadius:8,padding:"8px 10px",display:"flex",justifyContent:"space-between",marginTop:6}}><span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:diff===0?"var(--ag)":"#FFB020"}}>{diff===0?"✓ Balanceado":diff>0?`Falta: $${fmt(diff)}`:`Excede: $${fmt(Math.abs(diff))}`}</span><span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:12,fontWeight:700,color:diff===0?"var(--ag)":"#FFB020"}}>Total: ${fmt(vrTotal)}</span></div>);})()}
                     </div>
                   )}
                 </>);
@@ -5782,7 +5787,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
             <div style={{padding:"14px 16px",borderTop:"1px solid var(--abr)",
               background:"var(--as)",flexShrink:0}}>
               <div style={{display:"flex",justifyContent:"flex-end",marginBottom:6}}>
-                <button onClick={()=>{setVrCart({});setVrPay(null);setVrPay2(null);setVrSplitAmt("");setVrNota("");}} style={{background:"rgba(255,59,92,.1)",border:"none",color:"var(--ar)",borderRadius:8,padding:"5px 12px",fontSize:11,fontFamily:"'IBM Plex Mono',monospace",cursor:"pointer",letterSpacing:.5}}>🗑 Vaciar pedido</button>
+                <button onClick={()=>{setVrCart({});setVrPay(null);setVrPay2(null);setVrSplitAmt("");setVrSplitAmt2("");setVrNota("");}} style={{background:"rgba(255,59,92,.1)",border:"none",color:"var(--ar)",borderRadius:8,padding:"5px 12px",fontSize:11,fontFamily:"'IBM Plex Mono',monospace",cursor:"pointer",letterSpacing:.5}}>🗑 Vaciar pedido</button>
               </div>
               <div style={{display:"flex",justifyContent:"space-between",
                 alignItems:"center",marginBottom:12}}>
@@ -6844,7 +6849,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
                       <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:11,
                         fontWeight:700,color:"var(--am)",letterSpacing:1}}>TOTAL</span>
                       {cajaTotal>0 && (
-                        <button onClick={()=>{setCajaCart({});setCajaPay(null);setCajaPay2(null);setCajaDescPct(0);}}
+                        <button onClick={()=>{setCajaCart({});setCajaPay(null);setCajaPay2(null);setCajaSplitAmt("");setCajaSplitAmt2("");setCajaDescPct(0);}}
                           style={{background:"none",border:"none",color:"var(--ar)",
                             fontSize:10,cursor:"pointer",fontFamily:"'IBM Plex Mono',monospace",
                             letterSpacing:.5}}>limpiar ×</button>
@@ -6891,7 +6896,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
                       return (<>
                         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:7}}>
                           <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,color:"var(--am)",letterSpacing:1.5,margin:0}}>MÉTODO DE PAGO</p>
-                          <button onClick={()=>{if(splitMode){setCajaPay2(null);setCajaSplitAmt("");}else{setCajaPay2("pending");}}} style={{background:"none",border:"none",color:splitMode?"var(--ar)":"var(--abl)",fontSize:10,cursor:"pointer",fontFamily:"'IBM Plex Mono',monospace",letterSpacing:.5}}>
+                          <button onClick={()=>{if(splitMode){setCajaPay2(null);setCajaSplitAmt("");setCajaSplitAmt2("");}else{setCajaPay2("pending");}}} style={{background:"none",border:"none",color:splitMode?"var(--ar)":"var(--abl)",fontSize:10,cursor:"pointer",fontFamily:"'IBM Plex Mono',monospace",letterSpacing:.5}}>
                             {splitMode?"✕ cancelar mixto":"÷ pago mixto"}
                           </button>
                         </div>
@@ -6931,11 +6936,14 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
                                   </button>
                                 ))}
                               </div>
-                              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",background:"var(--as)",borderRadius:8,padding:"7px 10px"}}>
-                                <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:12,color:"var(--am)"}}>Resto:</span>
-                                <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:14,fontWeight:700,color:splitResto<0?"var(--ar)":"var(--ag)"}}>${fmt(Math.max(0,splitResto))}</span>
+                              <div style={{display:"flex",alignItems:"center",gap:8}}>
+                                <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:13,color:"var(--am)"}}>$</span>
+                                <input type="number" value={cajaSplitAmt2} onChange={e=>setCajaSplitAmt2(e.target.value)}
+                                  placeholder={String(Math.max(0,cajaTotal-Number(cajaSplitAmt||0)))}
+                                  style={{flex:1,background:"var(--as)",border:"1px solid var(--abr)",borderRadius:8,padding:"7px 10px",color:"var(--abri)",fontFamily:"'IBM Plex Mono',monospace",fontSize:14,fontWeight:700,outline:"none"}}/>
                               </div>
                             </div>
+                            {(cajaSplitAmt||cajaSplitAmt2)&&(()=>{const a1=Number(cajaSplitAmt||0),a2=Number(cajaSplitAmt2||0),diff=cajaTotal-(a1+a2);return(<div style={{background:diff===0?"rgba(0,255,136,.08)":"rgba(255,176,32,.08)",border:`1px solid ${diff===0?"rgba(0,255,136,.3)":"rgba(255,176,32,.3)"}`,borderRadius:8,padding:"8px 10px",display:"flex",justifyContent:"space-between",marginTop:6}}><span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:diff===0?"var(--ag)":"#FFB020"}}>{diff===0?"✓ Balanceado":diff>0?`Falta: $${fmt(diff)}`:`Excede: $${fmt(Math.abs(diff))}`}</span><span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:12,fontWeight:700,color:diff===0?"var(--ag)":"#FFB020"}}>Total: ${fmt(cajaTotal)}</span></div>);})()}
                           </div>
                         )}
                       </>);
