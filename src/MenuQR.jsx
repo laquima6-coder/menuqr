@@ -4686,7 +4686,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
         await supabase.from("pedido_items").insert(
           items.map(i=>({pedido_id:pedido.id,producto_id:i.id,nombre:i.name,precio:i.price,cantidad:i.qty}))
         );
-        const _split=vrPay2&&vrPay2!=="pending"?Number(vrSplitAmt)||Math.ceil(vrTotal/2):0;if(shouldPrint) printTicket({id:pedido.id,table:mesaNum,items,total:vrTotal,pay:vrPay2&&vrPay2!=="pending"?`${vrPay}($${_split})+${vrPay2}($${fmt(vrTotal-_split)})`:vrPay,tip:0,nota:vrNota||null});
+        const _split=vrPay2&&vrPay2!=="pending"?Number(vrSplitAmt)||Math.ceil(vrTotal/2):0;printTicket({id:pedido.id,table:mesaNum,items,total:vrTotal,pay:vrPay2&&vrPay2!=="pending"?`${vrPay}($${_split})+${vrPay2}($${fmt(vrTotal-_split)})`:vrPay,tip:0,nota:vrNota||null});
       }
       setVrCart({}); setVrPay(null); setVrPay2(null); setVrSplitAmt(""); setVrNota(""); setShowVentaRapida(false);
       toast("✓ Venta registrada");
@@ -4713,7 +4713,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
         await supabase.from("pedido_items").insert(
           items.map(i=>({pedido_id:pedido.id,producto_id:i.id,nombre:i.name,precio:i.price,cantidad:i.qty}))
         );
-        if(shouldPrint) printTicket({id:pedido.id,table:mesaNum,items,total:cajaTotal,pay:cajaPay2&&cajaPay2!=="pending"?`${cajaPay}($${cajaSplitAmt})+${cajaPay2}($${fmt(cajaTotal-Number(cajaSplitAmt))})`:cajaPay,tip:0});
+        printTicket({id:pedido.id,table:mesaNum,items,total:cajaTotal,pay:cajaPay2&&cajaPay2!=="pending"?`${cajaPay}($${cajaSplitAmt})+${cajaPay2}($${fmt(cajaTotal-Number(cajaSplitAmt))})`:cajaPay,tip:0});
       }
       setCajaCart({}); setCajaPay(null); setCajaPay2(null); setCajaSplitAmt("");
       toast("✓ Venta registrada");
@@ -4899,6 +4899,18 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
       await supabase.from("pedidos").update({status:next}).eq("id",id);
     }
     toast("Estado actualizado ✓");
+    // Mostrar ticket cuando el pedido pasa a entregado
+    if(next==="entregado"){
+      printTicket({
+        id:  o.id,
+        table: o.table,
+        items: o.items||[],
+        total: o.total,
+        pay:   o.pay||"",
+        tip:   o.tip||0,
+        nota:  o.nota||null,
+      });
+    }
     // WhatsApp al restaurante cuando el pedido está listo para entregar
     if(next==="listo" && local.whatsapp) {
       const mesa = o.table || "Mostrador";
@@ -7385,11 +7397,31 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
             {local.email&&<div style={{fontSize:9,color:"#888",textAlign:"center"}}>{local.email}</div>}
             <div style={{fontSize:9,color:"#888",textAlign:"center"}}>Emitido por MenuQR</div>
             {/* Buttons */}
-            <div style={{display:"flex",gap:8,marginTop:16}}>
-              <button onClick={()=>setTicketPreview(null)} style={{flex:1,padding:"10px",borderRadius:8,background:"#f0f0f0",border:"1px solid #ddd",fontFamily:"'Outfit',sans-serif",fontSize:13,fontWeight:700,cursor:"pointer",color:"#333"}}>
+            <div style={{display:"flex",gap:8,marginTop:16,flexWrap:"wrap"}}>
+              <button onClick={()=>setTicketPreview(null)} style={{flex:"1 1 auto",padding:"10px",borderRadius:8,background:"#f0f0f0",border:"1px solid #ddd",fontFamily:"'Outfit',sans-serif",fontSize:13,fontWeight:700,cursor:"pointer",color:"#333"}}>
                 Cerrar
               </button>
-              <button onClick={()=>{doPrint(ticketPreview);}} style={{flex:1,padding:"10px",borderRadius:8,background:"#000",border:"none",fontFamily:"'Outfit',sans-serif",fontSize:13,fontWeight:700,cursor:"pointer",color:"#fff"}}>
+              {typeof navigator!=="undefined"&&navigator.share&&(
+                <button onClick={()=>{
+                  const PAY_L={cash:"Efectivo",mp:"Mercado Pago",card:"Tarjeta",trans:"Transferencia"};
+                  const lines=[
+                    `🧾 *Ticket — ${local.nombre||"Restaurante"}*`,
+                    `📍 ${ticketPreview.table===0||ticketPreview.table==="0"?"Mostrador":"Mesa "+ticketPreview.table}  |  Pedido #${String(ticketPreview.id).slice(-4)}`,
+                    `━━━━━━━━━━━━━━━━`,
+                    ...(ticketPreview.items||[]).map(it=>`${it.qty}× ${it.name}${it.price?" — $"+fmt(it.qty*(it.price||0)):""}`) ,
+                    `━━━━━━━━━━━━━━━━`,
+                    `💰 *TOTAL: $${fmt(ticketPreview.total)}*`,
+                    `💳 ${PAY_L[ticketPreview.pay]||ticketPreview.pay||"—"}`,
+                    ticketPreview.nota&&ticketPreview.nota!=="Venta en mostrador"?`📝 ${ticketPreview.nota}`:"",
+                    ``,
+                    `_Emitido por MenuQR_`,
+                  ].filter(Boolean);
+                  navigator.share({title:"Ticket",text:lines.join("\n")}).catch(()=>{});
+                }} style={{flex:"1 1 auto",padding:"10px",borderRadius:8,background:"#1d9bf0",border:"none",fontFamily:"'Outfit',sans-serif",fontSize:13,fontWeight:700,cursor:"pointer",color:"#fff"}}>
+                  📤 Compartir
+                </button>
+              )}
+              <button onClick={()=>{doPrint(ticketPreview);}} style={{flex:"1 1 auto",padding:"10px",borderRadius:8,background:"#000",border:"none",fontFamily:"'Outfit',sans-serif",fontSize:13,fontWeight:700,cursor:"pointer",color:"#fff"}}>
                 🖨️ Imprimir
               </button>
             </div>
