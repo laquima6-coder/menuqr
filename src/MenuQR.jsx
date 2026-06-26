@@ -4704,13 +4704,19 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
   const [cajaLoading, setCajaLoading]   = useState(false);
   const [editPayModal, setEditPayModal] = useState(null); // {id, pay} pedido cerrado a editar
   const [cajaMov, setCajaMov]           = useState([]);    // movimientos manuales de caja
+  const [cajaDescPct, setCajaDescPct]   = useState(0);     // % descuento aplicado en caja
+  const [showDescModal, setShowDescModal] = useState(false);
+  const [showPrecioModal, setShowPrecioModal] = useState(false);
+  const [precioName, setPrecioName]     = useState("");
+  const [precioAmt, setPrecioAmt]       = useState("");
   const [showMovModal, setShowMovModal] = useState(false);
   const [movTipo, setMovTipo]           = useState("egreso");
   const [movMonto, setMovMonto]         = useState("");
   const [movDesc, setMovDesc]           = useState("");
 
   const vrTotal    = Object.values(vrCart).reduce((s,i)=>s+i.price*i.qty,0);
-  const cajaTotal  = Object.values(cajaCart).reduce((s,i)=>s+i.price*i.qty,0);
+  const cajaRawTotal = Object.values(cajaCart).reduce((s,i)=>s+i.price*i.qty,0);
+  const cajaTotal  = cajaDescPct>0 ? Math.round(cajaRawTotal*(1-cajaDescPct/100)) : cajaRawTotal;
 
   const vrAdd  = (prod) => setVrCart(c=>({...c,[prod.id]:{...prod,qty:(c[prod.id]?.qty||0)+1}}));
   const vrSub  = (prod) => setVrCart(c=>{const qty=(c[prod.id]?.qty||0)-1;if(qty<=0){const n={...c};delete n[prod.id];return n;}return{...c,[prod.id]:{...prod,qty}};});
@@ -4837,7 +4843,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
         );
         printTicket({id:pedido.id,table:mesaNum,items,total:cajaTotal,pay:cajaPay2&&cajaPay2!=="pending"?`${cajaPay}($${cajaSplitAmt})+${cajaPay2}($${fmt(cajaTotal-Number(cajaSplitAmt))})`:cajaPay,tip:0});
       }
-      setCajaCart({}); setCajaPay(null); setCajaPay2(null); setCajaSplitAmt("");
+      setCajaCart({}); setCajaPay(null); setCajaPay2(null); setCajaSplitAmt(""); setCajaDescPct(0);
       toast("✓ Venta registrada");
     } catch(e){ toast("Error al guardar","err"); }
     finally { setCajaLoading(false); }
@@ -6836,14 +6842,43 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
                       <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:11,
                         fontWeight:700,color:"var(--am)",letterSpacing:1}}>TOTAL</span>
                       {cajaTotal>0 && (
-                        <button onClick={()=>{setCajaCart({});setCajaPay(null);}}
+                        <button onClick={()=>{setCajaCart({});setCajaPay(null);setCajaPay2(null);setCajaDescPct(0);}}
                           style={{background:"none",border:"none",color:"var(--ar)",
                             fontSize:10,cursor:"pointer",fontFamily:"'IBM Plex Mono',monospace",
                             letterSpacing:.5}}>limpiar ×</button>
                       )}
                     </div>
-                    <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:26,
-                      fontWeight:700,color:"var(--ag)"}}>${fmt(cajaTotal)}</span>
+                    <div style={{textAlign:"right"}}>
+                      {cajaDescPct>0 && (
+                        <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,
+                          color:"var(--ar)",textDecoration:"line-through",marginBottom:2}}>
+                          ${fmt(cajaRawTotal)}
+                        </div>
+                      )}
+                      <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:26,
+                        fontWeight:700,color:"var(--ag)"}}>${fmt(cajaTotal)}</span>
+                      {cajaDescPct>0 && (
+                        <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,
+                          color:"rgba(0,255,136,.7)",marginTop:1}}>-{cajaDescPct}% aplicado</div>
+                      )}
+                    </div>
+                  </div>
+                  {/* Precio especial + Descuento */}
+                  <div style={{padding:"8px 12px",display:"flex",gap:7,borderBottom:"1px solid var(--abr)"}}>
+                    <button onClick={()=>{setPrecioName("");setPrecioAmt("");setShowPrecioModal(true);}} style={{
+                      flex:1,padding:"9px 6px",borderRadius:9,border:"1px solid var(--abl)",
+                      background:"rgba(61,142,255,.08)",color:"var(--abl)",cursor:"pointer",
+                      fontFamily:"'IBM Plex Mono',monospace",fontSize:10,fontWeight:700,letterSpacing:.3}}>
+                      💲 Precio especial
+                    </button>
+                    <button onClick={()=>setShowDescModal(true)} style={{
+                      flex:1,padding:"9px 6px",borderRadius:9,
+                      border:`1px solid ${cajaDescPct>0?"var(--ag)":"var(--abr)"}`,
+                      background:cajaDescPct>0?"rgba(0,255,136,.08)":"var(--as)",
+                      color:cajaDescPct>0?"var(--ag)":"var(--abri)",cursor:"pointer",
+                      fontFamily:"'IBM Plex Mono',monospace",fontSize:10,fontWeight:700,letterSpacing:.3}}>
+                      {cajaDescPct>0?`🏷 -${cajaDescPct}% desc.`:"🏷 Descuento"}
+                    </button>
                   </div>
                   {/* Método de pago */}
                   <div style={{padding:"10px 12px",borderBottom:"1px solid var(--abr)"}}>
@@ -7473,6 +7508,101 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
     <div className="admin-wrap" style={{maxWidth:700,margin:"0 auto",minHeight:"100vh",
       background:"var(--ab)",position:"relative",paddingTop:"env(safe-area-inset-top,0px)"}}>
       <GS/>
+      {/* ── Descuento modal ───────────────────────────────────── */}
+      {showDescModal && (
+        <div style={{position:"fixed",inset:0,zIndex:500,background:"rgba(0,0,0,.8)",
+          display:"flex",alignItems:"flex-end",justifyContent:"center"}}
+          onClick={e=>{if(e.target===e.currentTarget)setShowDescModal(false);}}>
+          <div style={{background:"var(--ab)",borderRadius:"20px 20px 0 0",
+            padding:"24px 20px 40px",width:"100%",maxWidth:480}}>
+            <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,
+              color:"var(--am)",letterSpacing:1.5,marginBottom:6}}>DESCUENTO</p>
+            <h3 style={{fontFamily:"'Outfit',sans-serif",fontSize:17,fontWeight:800,
+              color:"var(--abri)",marginBottom:16}}>¿Cuánto de descuento?</h3>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:16}}>
+              {[5,10,15,20,25,30].map(pct=>(
+                <button key={pct} onClick={()=>{setCajaDescPct(pct);setShowDescModal(false);}} style={{
+                  padding:"14px 0",borderRadius:12,cursor:"pointer",
+                  fontFamily:"'Outfit',sans-serif",fontSize:16,fontWeight:800,
+                  background:cajaDescPct===pct?"var(--abl)":"var(--ac)",
+                  color:cajaDescPct===pct?"#fff":"var(--abri)",
+                  border:`1.5px solid ${cajaDescPct===pct?"var(--abl)":"var(--abr)"}`}}>
+                  {pct}%
+                </button>
+              ))}
+            </div>
+            <div style={{display:"flex",gap:8,marginBottom:12}}>
+              <input type="number" min="1" max="99"
+                placeholder="% personalizado"
+                onKeyDown={e=>{if(e.key==="Enter"&&e.target.value){setCajaDescPct(Math.min(99,Math.max(1,Number(e.target.value))));setShowDescModal(false);}}}
+                style={{flex:1,padding:"11px 12px",borderRadius:10,border:"1px solid var(--abr)",
+                  background:"var(--ac)",color:"var(--abri)",fontFamily:"'IBM Plex Mono',monospace",
+                  fontSize:15,outline:"none"}}/>
+              <button onClick={e=>{const inp=e.target.previousSibling?.value||e.target.parentNode?.querySelector("input")?.value;if(inp){setCajaDescPct(Math.min(99,Math.max(1,Number(inp))));setShowDescModal(false);}}} style={{
+                padding:"11px 18px",borderRadius:10,background:"var(--abl)",
+                border:"none",color:"#fff",fontFamily:"'Outfit',sans-serif",
+                fontSize:14,fontWeight:700,cursor:"pointer"}}>OK</button>
+            </div>
+            {cajaDescPct>0 && (
+              <button onClick={()=>{setCajaDescPct(0);setShowDescModal(false);}} style={{
+                width:"100%",padding:"11px",borderRadius:10,
+                border:"1px solid rgba(255,59,92,.4)",background:"rgba(255,59,92,.08)",
+                color:"var(--ar)",fontFamily:"'Outfit',sans-serif",
+                fontSize:14,fontWeight:700,cursor:"pointer"}}>
+                Quitar descuento
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── Precio especial modal ───────────────────────────────── */}
+      {showPrecioModal && (
+        <div style={{position:"fixed",inset:0,zIndex:500,background:"rgba(0,0,0,.8)",
+          display:"flex",alignItems:"flex-end",justifyContent:"center"}}
+          onClick={e=>{if(e.target===e.currentTarget)setShowPrecioModal(false);}}>
+          <div style={{background:"var(--ab)",borderRadius:"20px 20px 0 0",
+            padding:"24px 20px 40px",width:"100%",maxWidth:480}}>
+            <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,
+              color:"var(--am)",letterSpacing:1.5,marginBottom:6}}>PRECIO ESPECIAL</p>
+            <h3 style={{fontFamily:"'Outfit',sans-serif",fontSize:17,fontWeight:800,
+              color:"var(--abri)",marginBottom:16}}>Agregar item manual</h3>
+            <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:16}}>
+              <input value={precioName} onChange={e=>setPrecioName(e.target.value)}
+                placeholder="Descripción (ej: Café con leche)"
+                style={{padding:"11px 12px",borderRadius:10,border:"1px solid var(--abr)",
+                  background:"var(--ac)",color:"var(--abri)",fontFamily:"'DM Sans',sans-serif",
+                  fontSize:14,outline:"none"}}/>
+              <input type="number" value={precioAmt} onChange={e=>setPrecioAmt(e.target.value)}
+                placeholder="Precio $"
+                style={{padding:"11px 12px",borderRadius:10,border:"1px solid var(--abr)",
+                  background:"var(--ac)",color:"var(--abri)",fontFamily:"'IBM Plex Mono',monospace",
+                  fontSize:16,outline:"none"}}/>
+            </div>
+            <div style={{display:"flex",gap:8}}>
+              <button onClick={()=>setShowPrecioModal(false)} style={{
+                flex:1,padding:"12px",borderRadius:12,border:"1px solid var(--abr)",
+                background:"var(--ac)",color:"var(--ad)",
+                fontFamily:"'Outfit',sans-serif",fontSize:14,fontWeight:700,cursor:"pointer"}}>
+                Cancelar
+              </button>
+              <button onClick={()=>{
+                const name=precioName.trim()||"Precio especial";
+                const price=Math.max(0,Number(precioAmt)||0);
+                const id="custom_"+Date.now();
+                setCajaCart(c=>({...c,[id]:{id,name,price,qty:1}}));
+                setShowPrecioModal(false);
+              }} style={{
+                flex:1.5,padding:"12px",borderRadius:12,border:"none",
+                background:"linear-gradient(135deg,var(--abl),#5B8DEF)",
+                color:"#fff",fontFamily:"'Outfit',sans-serif",fontSize:14,fontWeight:800,cursor:"pointer"}}>
+                Agregar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {ticketPreview && (
         <div style={{position:"fixed",inset:0,zIndex:500,background:"rgba(0,0,0,.9)",
           display:"flex",alignItems:"center",justifyContent:"center",padding:"20px 16px"}}>
