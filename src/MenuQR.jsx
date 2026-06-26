@@ -27,9 +27,10 @@ const GS = () => (
 
     * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent }
     body { background:#0D0804 }
-    ::-webkit-scrollbar { width:4px }
+    ::-webkit-scrollbar { width:7px }
     ::-webkit-scrollbar-track { background:transparent }
-    ::-webkit-scrollbar-thumb { background:#2A1C0E; border-radius:2px }
+    ::-webkit-scrollbar-thumb { background:#3A2A1A; border-radius:4px }
+    ::-webkit-scrollbar-thumb:hover { background:#5A3A20 }
 
     @keyframes fadeUp   { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
     @keyframes fadeIn   { from{opacity:0} to{opacity:1} }
@@ -128,6 +129,10 @@ const GS = () => (
         overflow-x: hidden;
         padding-bottom: 24px !important;
       }
+      .admin-content-scroll::-webkit-scrollbar { width:8px }
+      .admin-content-scroll::-webkit-scrollbar-track { background:rgba(0,0,0,.2) }
+      .admin-content-scroll::-webkit-scrollbar-thumb { background:#3A2A18; border-radius:4px }
+      .admin-content-scroll::-webkit-scrollbar-thumb:hover { background:#5A4020 }
       .admin-bottomnav { display: none !important; }
       .admin-sidebar-nav { display: flex !important; }
       .admin-sidebar-logo { display: flex !important; }
@@ -1377,26 +1382,26 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
         {/* Mesas en tiempo real */}
         <div style={{background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.08)",
           borderRadius:14,padding:"12px 16px"}}>
-          <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,color:"#3A3A3A",
-            letterSpacing:2,marginBottom:10}}>MESAS EN TIEMPO REAL</div>
+          <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:11,color:"#7A6A50",
+            letterSpacing:2,marginBottom:12}}>MESAS EN TIEMPO REAL</div>
           <div style={{display:"flex",gap:10,marginBottom:10}}>
             <div style={{flex:1,background:"rgba(0,255,136,.06)",border:"1px solid rgba(0,255,136,.2)",
               borderRadius:10,padding:"10px 12px",textAlign:"center"}}>
               <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:24,fontWeight:700,
                 color:"#00CC70",lineHeight:1}}>{libres}</div>
-              <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,color:"#4A7A5A",marginTop:3}}>LIBRES</div>
+              <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:600,color:"#4A7A5A",marginTop:4}}>LIBRES</div>
             </div>
             <div style={{flex:1,background:"rgba(255,176,32,.06)",border:"1px solid rgba(255,176,32,.2)",
               borderRadius:10,padding:"10px 12px",textAlign:"center"}}>
               <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:24,fontWeight:700,
                 color:"#FFB020",lineHeight:1}}>{mesasOcupadas.length}</div>
-              <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,color:"#7A6A30",marginTop:3}}>OCUPADAS</div>
+              <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:600,color:"#7A6A30",marginTop:4}}>OCUPADAS</div>
             </div>
             <div style={{flex:1,background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.08)",
               borderRadius:10,padding:"10px 12px",textAlign:"center"}}>
               <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:24,fontWeight:700,
                 color:"#C9A84C",lineHeight:1}}>{pct}%</div>
-              <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,color:"#6A5A40",marginTop:3}}>OCUPACIÓN</div>
+              <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:600,color:"#6A5A40",marginTop:4}}>OCUPACIÓN</div>
             </div>
           </div>
           {/* Barra visual */}
@@ -1409,8 +1414,8 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
         {/* Cómo funciona */}
         <div style={{background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.08)",
           borderRadius:14,padding:"12px 16px"}}>
-          <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,color:"#3A3A3A",
-            letterSpacing:2,marginBottom:10}}>CÓMO FUNCIONA</div>
+          <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:11,color:"#7A6A50",
+            letterSpacing:2,marginBottom:12}}>CÓMO FUNCIONA</div>
           {[
             {n:"1",ico:"📱",t:"Escaneá el QR de tu mesa",d:"Cada mesa tiene su propio código QR"},
             {n:"2",ico:"🍽️",t:"Elegí tu pedido",d:"Navegá la carta y sumá lo que quieras"},
@@ -1421,9 +1426,9 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
                 border:"1px solid rgba(201,168,76,.25)",display:"flex",alignItems:"center",
                 justifyContent:"center",fontSize:14,flexShrink:0}}>{s.ico}</div>
               <div>
-                <div style={{fontFamily:"'Outfit',sans-serif",fontWeight:600,fontSize:12,
+                <div style={{fontFamily:"'Outfit',sans-serif",fontWeight:600,fontSize:14,
                   color:"#C8B898",lineHeight:1.2}}>{s.t}</div>
-                <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,color:"#4A4A4A",marginTop:2}}>{s.d}</div>
+                <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"#5A5A5A",marginTop:3}}>{s.d}</div>
               </div>
             </div>
           ))}
@@ -1438,7 +1443,7 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
             <div>
               <div style={{fontFamily:"'Outfit',sans-serif",fontWeight:800,fontSize:13,
                 color:"#FF8C00",lineHeight:1.1}}>Happy Hour activo ahora</div>
-              <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,color:"#7A4A20",marginTop:3}}>
+              <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"#7A4A20",marginTop:3}}>
                 Hasta las {local.happyHasta} · Entrá y aprovechá los precios especiales
               </div>
             </div>
@@ -1462,7 +1467,7 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
           return (
             <div style={{background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.08)",borderRadius:14,padding:"12px 16px"}}>
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
-                <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,color:"#3A3A3A",letterSpacing:2}}>HORARIOS</div>
+                <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:11,color:"#7A6A50",letterSpacing:2}}>HORARIOS</div>
                 <div style={{background:abiertaAhora?"rgba(0,204,112,.15)":"rgba(255,80,80,.12)",
                   border:`1px solid ${abiertaAhora?"rgba(0,204,112,.4)":"rgba(255,80,80,.3)"}`,
                   borderRadius:6,padding:"3px 8px",fontFamily:"'IBM Plex Mono',monospace",fontSize:9,fontWeight:700,
