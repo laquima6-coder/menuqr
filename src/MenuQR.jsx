@@ -2438,13 +2438,13 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
                 <div style={{flex:1,height:1,background:"linear-gradient(to right,transparent,#1E1E1E)"}}/>
                 <div style={{display:"flex",alignItems:"center",gap:4,whiteSpace:"nowrap"}}>
                   <span style={{color:ac,fontSize:8}}>◆</span>
-                  <span className="mcat-hdr-label" style={{fontFamily:"'Outfit',sans-serif",fontSize:9,fontWeight:800,color:"#FFF",letterSpacing:1.5,textTransform:"uppercase"}}>{cat.icon} {(cat.label||"").toUpperCase()}</span>
+                  <span className="mcat-hdr-label" style={{fontFamily:"'Outfit',sans-serif",fontSize:11,fontWeight:800,color:"#FFF",letterSpacing:1.5,textTransform:"uppercase"}}>{cat.icon} {(cat.label||"").toUpperCase()}</span>
                   <span style={{color:ac,fontSize:8}}>◆</span>
                 </div>
                 <div style={{flex:1,height:1,background:"linear-gradient(to left,transparent,#1E1E1E)"}}/>
               </div>
-              {/* 3-col grid */}
-              <div className="mpg" style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:5,padding:"0 5px 5px"}}>
+              {/* 2-col grid */}
+              <div className="mpg" style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:8,padding:"0 8px 8px"}}>
                 {catProds.map(item=>{
                   const inCart=cart[item.id]?.qty||0;
                   const disc=item.orig?Math.round((1-item.price/item.orig)*100):null;
@@ -2471,26 +2471,26 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
                         </div>
                       )}
                       {/* Product info */}
-                      <div className="mpc-info" style={{padding:"5px 5px 6px",flex:1,display:"flex",flexDirection:"column",justifyContent:"space-between"}}>
+                      <div className="mpc-info" style={{padding:"8px 8px 8px",flex:1,display:"flex",flexDirection:"column",justifyContent:"space-between"}}>
                         <div>
-                          <div className="mpc-name" style={{fontFamily:"'DM Sans',sans-serif",fontSize:9,fontWeight:700,color:"#EEE",lineHeight:1.2,marginBottom:2}}>{item.name}</div>
-                          {item.desc&&<div className="mpc-desc" style={{fontFamily:"'DM Sans',sans-serif",fontSize:7.5,color:"#333",lineHeight:1.3,display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",overflow:"hidden"}}>{item.desc}</div>}
+                          <div className="mpc-name" style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:700,color:"#EEE",lineHeight:1.2,marginBottom:3}}>{item.name}</div>
+                          {item.desc&&<div className="mpc-desc" style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,color:"#444",lineHeight:1.3,display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",overflow:"hidden"}}>{item.desc}</div>}
                         </div>
                         <div style={{marginTop:4}}>
                           <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end"}}>
                             <div>
-                              <div className="mpc-price" style={{fontFamily:"'Outfit',sans-serif",fontSize:11,fontWeight:800,color:ac,lineHeight:1}}>$ {fmt(item.price)}</div>
-                              {item.orig&&<div style={{fontFamily:"'DM Sans',sans-serif",fontSize:7,color:"#2A2A2A",textDecoration:"line-through"}}>$ {fmt(item.orig)}</div>}
+                              <div className="mpc-price" style={{fontFamily:"'Outfit',sans-serif",fontSize:14,fontWeight:800,color:ac,lineHeight:1}}>$ {fmt(item.price)}</div>
+                              {item.orig&&<div style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,color:"#3A3A3A",textDecoration:"line-through"}}>$ {fmt(item.orig)}</div>}
                             </div>
                             {!vitrina&&(item.sin_stock?(
                               <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:6,fontWeight:700,color:"#444",background:"#1A1A1A",border:"1px solid #222",borderRadius:3,padding:"1px 3px"}}>Agotado</span>
                             ):inCart===0?(
-                              <button onClick={()=>add(item)} className="pr mpc-add" style={{width:22,height:22,borderRadius:6,background:ac,border:"none",color:"#0A0806",fontSize:17,fontWeight:900,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,touchAction:"manipulation",lineHeight:1}}>+</button>
+                              <button onClick={()=>add(item)} className="pr mpc-add" style={{width:28,height:28,borderRadius:7,background:ac,border:"none",color:"#0A0806",fontSize:20,fontWeight:900,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,touchAction:"manipulation",lineHeight:1}}>+</button>
                             ):(
                               <div style={{display:"flex",alignItems:"center",gap:2,flexShrink:0}}>
-                                <button onClick={()=>rem(item.id)} className="pr" style={{width:19,height:19,borderRadius:5,background:"#1E1E1E",border:"1px solid #2A2A2A",color:"#AAA",fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",padding:0,touchAction:"manipulation",lineHeight:1}}>−</button>
+                                <button onClick={()=>rem(item.id)} className="pr" style={{width:24,height:24,borderRadius:6,background:"#1E1E1E",border:"1px solid #2A2A2A",color:"#AAA",fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",padding:0,touchAction:"manipulation",lineHeight:1}}>−</button>
                                 <span style={{fontFamily:"'DM Sans',sans-serif",fontWeight:800,fontSize:10,color:ac,minWidth:10,textAlign:"center"}}>{inCart}</span>
-                                <button onClick={()=>add(item)} className="pr" style={{width:19,height:19,borderRadius:5,background:ac,border:"none",color:"#0A0806",fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",padding:0,touchAction:"manipulation",lineHeight:1}}>+</button>
+                                <button onClick={()=>add(item)} className="pr" style={{width:24,height:24,borderRadius:6,background:ac,border:"none",color:"#0A0806",fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",padding:0,touchAction:"manipulation",lineHeight:1}}>+</button>
                               </div>
                             ))}
                           </div>
