@@ -4680,7 +4680,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
         await supabase.from("pedido_items").insert(
           items.map(i=>({pedido_id:pedido.id,producto_id:i.id,nombre:i.name,precio:i.price,cantidad:i.qty}))
         );
-        if(shouldPrint) printTicket({id:pedido.id,table:mesaNum,items,total:vrTotal,pay:vrPay2&&vrPay2!=="pending"?`${vrPay}($${vrSplitAmt})+${vrPay2}($${fmt(vrTotal-Number(vrSplitAmt))})`:vrPay,tip:0});
+        const _split=vrPay2&&vrPay2!=="pending"?Number(vrSplitAmt)||Math.ceil(vrTotal/2):0;if(shouldPrint) printTicket({id:pedido.id,table:mesaNum,items,total:vrTotal,pay:vrPay2&&vrPay2!=="pending"?`${vrPay}($${_split})+${vrPay2}($${fmt(vrTotal-_split)})`:vrPay,tip:0});
       }
       setVrCart({}); setVrPay(null); setVrPay2(null); setVrSplitAmt(""); setShowVentaRapida(false);
       toast("✓ Venta registrada");
@@ -5468,7 +5468,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
               <h2 style={{fontFamily:"'Outfit',sans-serif",fontSize:20,fontWeight:800,
                 color:"var(--abri)"}}>Venta Rápida</h2>
             </div>
-            <button onClick={()=>{setShowVentaRapida(false);setVrCart({});setVrPay(null);}}
+            <button onClick={()=>{setShowVentaRapida(false);setVrCart({});setVrPay(null);setVrPay2(null);setVrSplitAmt("");}}
               style={{background:"var(--ac)",border:"1px solid var(--abr)",borderRadius:8,
                 color:"var(--ad)",fontSize:18,width:36,height:36,cursor:"pointer",
                 display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
@@ -5636,7 +5636,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
                 <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:22,
                   fontWeight:700,color:"var(--ag)"}}>${fmt(vrTotal)}</p>
               </div>
-              {(vrPay && (!vrPay2 || (vrPay2!=="pending" && Number(vrSplitAmt)>0))) ? (
+              {(vrPay && vrPay2!=="pending") ? (
                 <div style={{display:"flex",gap:8}}>
                   <button onClick={()=>vrConfirm(true)} disabled={vrLoading} style={{
                     flex:1,padding:"13px 10px",
@@ -6753,7 +6753,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
                   </div>
                   {/* Cobrar buttons */}
                   <div style={{padding:"10px 12px",display:"flex",gap:7}}>
-                    {(()=>{const cajaReady=cajaPay&&cajaPay2!=="pending"&&(!cajaPay2||Number(cajaSplitAmt)>0);return(<>
+                    {(()=>{const cajaReady=cajaPay&&cajaPay2!=="pending";return(<>
                     <button onClick={()=>cajaConfirm(true)} disabled={!cajaReady||cajaLoading}
                       className="pr"
                       style={{flex:1,padding:"11px 6px",borderRadius:10,
