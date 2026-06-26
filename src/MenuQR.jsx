@@ -1222,6 +1222,277 @@ function WAOrderFlow({local, prods, cats, tipo, onClose}) {
   );
 }
 
+
+function VitrinaInfo({local, cats, prods}) {
+const [mesasOcupadas, setMesasOcupadas] = React.useState([]);
+const [waFlow, setWaFlow] = React.useState(null); // null | "delivery" | "retiro"
+
+const totalMesas = local.mesas || 10;
+const libres = totalMesas - mesasOcupadas.length;
+const pct = Math.round((mesasOcupadas.length/totalMesas)*100);
+
+React.useEffect(()=>{
+  if(!supabase||!local.restauranteId) return;
+  const load = async () => {
+    const {data} = await supabase.from("pedidos")
+      .select("mesa_numero")
+      .eq("restaurante_id", local.restauranteId)
+      .in("status",["nuevo","preparando","listo"]);
+    if(data) setMesasOcupadas([...new Set(data.map(p=>p.mesa_numero))]);
+  };
+  load();
+  const ch = supabase.channel("vitrina-mesas-"+local.restauranteId)
+    .on("postgres_changes",{event:"*",schema:"public",table:"pedidos",
+      filter:`restaurante_id=eq.${local.restauranteId}`}, load)
+    .subscribe();
+  return ()=>supabase.removeChannel(ch);
+},[]);
+
+const isHappyHour = (() => {
+  if(!local.happyHour||!local.happyDesde||!local.happyHasta) return false;
+  const now = new Date();
+  const [hd,md]=local.happyDesde.split(":").map(Number);
+  const [hh,mh]=local.happyHasta.split(":").map(Number);
+  const mins = now.getHours()*60+now.getMinutes();
+  return mins>=(hd*60+md) && mins<(hh*60+mh);
+})();
+
+const [promoActivada, setPromoActivada] = React.useState(()=>{
+  try { return !!JSON.parse(localStorage.getItem("menuqr_promo10_"+(local.restauranteId||"x"))||"null"); } catch{ return false; }
+});
+const activarPromo = () => {
+  localStorage.setItem("menuqr_promo10_"+(local.restauranteId||"x"), JSON.stringify({active:true,ts:Date.now()}));
+  setPromoActivada(true);
+};
+
+return (
+  <div style={{margin:"10px 10px 0",display:"flex",flexDirection:"column",gap:8}}>
+
+    {/* 10% primera vez */}
+    {!!local.feat_promo10 && (
+        <div style={{background:"linear-gradient(135deg,rgba(201,168,76,.15),rgba(201,168,76,.05))",
+          border:`1px solid ${promoActivada?"rgba(0,204,112,.5)":"rgba(201,168,76,.4)"}`,
+          borderRadius:14,padding:"14px 16px"}}>
+          <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:promoActivada?0:12}}>
+            <div style={{fontSize:28,flexShrink:0}}>{promoActivada?"✅":"🎁"}</div>
+            <div>
+              <div style={{fontFamily:"'Outfit',sans-serif",fontWeight:800,fontSize:14,
+                color:promoActivada?"#00CC70":"#C9A84C",lineHeight:1.1}}>
+                {promoActivada?"¡Descuento activado!":"10% de descuento en tu primera visita"}
+              </div>
+              <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,
+                color:promoActivada?"#4A7A5A":"#8A7A50",marginTop:3}}>
+                {promoActivada
+                  ? "Escaneá el QR de tu mesa — se aplica solo"
+                  : "Tocá el botón para activarlo antes de pedir"}
+              </div>
+            </div>
+          </div>
+          {!promoActivada && (
+            <button onClick={activarPromo} style={{
+              width:"100%",background:"linear-gradient(135deg,#C9A84C,#E8C97A)",
+              border:"none",borderRadius:10,padding:"12px",
+              fontFamily:"'Outfit',sans-serif",fontSize:14,fontWeight:800,
+              color:"#0A0806",cursor:"pointer",letterSpacing:.3}}>
+              🎁 Activar mi descuento
+            </button>
+          )}
+        </div>
+    )}
+
+    {/* Mesas en tiempo real */}
+    <div style={{background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.08)",
+      borderRadius:14,padding:"12px 16px"}}>
+      <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:11,color:"#7A6A50",
+        letterSpacing:2,marginBottom:12}}>MESAS EN TIEMPO REAL</div>
+      <div style={{display:"flex",gap:10,marginBottom:10}}>
+        <div style={{flex:1,background:"rgba(0,255,136,.06)",border:"1px solid rgba(0,255,136,.2)",
+          borderRadius:10,padding:"10px 12px",textAlign:"center"}}>
+          <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:24,fontWeight:700,
+            color:"#00CC70",lineHeight:1}}>{libres}</div>
+          <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:600,color:"#4A7A5A",marginTop:4}}>LIBRES</div>
+        </div>
+        <div style={{flex:1,background:"rgba(255,176,32,.06)",border:"1px solid rgba(255,176,32,.2)",
+          borderRadius:10,padding:"10px 12px",textAlign:"center"}}>
+          <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:24,fontWeight:700,
+            color:"#FFB020",lineHeight:1}}>{mesasOcupadas.length}</div>
+          <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:600,color:"#7A6A30",marginTop:4}}>OCUPADAS</div>
+        </div>
+        <div style={{flex:1,background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.08)",
+          borderRadius:10,padding:"10px 12px",textAlign:"center"}}>
+          <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:24,fontWeight:700,
+            color:"#C9A84C",lineHeight:1}}>{pct}%</div>
+          <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:600,color:"#6A5A40",marginTop:4}}>OCUPACIÓN</div>
+        </div>
+      </div>
+      {/* Barra visual */}
+      <div style={{height:4,background:"rgba(255,255,255,.06)",borderRadius:2,overflow:"hidden"}}>
+        <div style={{height:"100%",width:`${pct}%`,background:"linear-gradient(90deg,#00CC70,#FFB020)",
+          borderRadius:2,transition:"width .5s ease"}}/>
+      </div>
+    </div>
+
+    {/* Cómo funciona */}
+    <div style={{background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.08)",
+      borderRadius:14,padding:"12px 16px"}}>
+      <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:11,color:"#7A6A50",
+        letterSpacing:2,marginBottom:12}}>CÓMO FUNCIONA</div>
+      {[
+        {n:"1",ico:"📱",t:"Escaneá el QR de tu mesa",d:"Cada mesa tiene su propio código QR"},
+        {n:"2",ico:"🍽️",t:"Elegí tu pedido",d:"Navegá la carta y sumá lo que quieras"},
+        {n:"3",ico:"✅",t:"Confirmá y listo",d:"El pedido llega directo a cocina — sin esperas"},
+      ].map(s=>(
+        <div key={s.n} style={{display:"flex",alignItems:"flex-start",gap:12,marginBottom:10}}>
+          <div style={{width:28,height:28,borderRadius:8,background:"rgba(201,168,76,.12)",
+            border:"1px solid rgba(201,168,76,.25)",display:"flex",alignItems:"center",
+            justifyContent:"center",fontSize:14,flexShrink:0}}>{s.ico}</div>
+          <div>
+            <div style={{fontFamily:"'Outfit',sans-serif",fontWeight:600,fontSize:14,
+              color:"#C8B898",lineHeight:1.2}}>{s.t}</div>
+            <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"#5A5A5A",marginTop:3}}>{s.d}</div>
+          </div>
+        </div>
+      ))}
+    </div>
+
+    {/* Happy Hour activo */}
+    {isHappyHour && (
+      <div style={{background:"linear-gradient(135deg,rgba(255,92,0,.12),rgba(255,176,32,.08))",
+        border:"1px solid rgba(255,120,0,.3)",borderRadius:14,padding:"12px 16px",
+        display:"flex",alignItems:"center",gap:12}}>
+        <div style={{fontSize:26,flexShrink:0}}>🔥</div>
+        <div>
+          <div style={{fontFamily:"'Outfit',sans-serif",fontWeight:800,fontSize:13,
+            color:"#FF8C00",lineHeight:1.1}}>Happy Hour activo ahora</div>
+          <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"#7A4A20",marginTop:3}}>
+            Hasta las {local.happyHasta} · Entrá y aprovechá los precios especiales
+          </div>
+        </div>
+      </div>
+    )}
+
+    {/* Horarios */}
+    {local.horarios && Object.values(local.horarios).some(d=>d.abierto) && (()=>{
+      const DIAS=[{k:"lun",n:"Lun"},{k:"mar",n:"Mar"},{k:"mie",n:"Mié"},
+                  {k:"jue",n:"Jue"},{k:"vie",n:"Vie"},{k:"sab",n:"Sáb"},{k:"dom",n:"Dom"}];
+      const hoyIdx = new Date().getDay();
+      const hoyKey = ["dom","lun","mar","mie","jue","vie","sab"][hoyIdx];
+      const hoyDia = (local.horarios||{})[hoyKey]||{};
+      const abiertaAhora = (()=>{
+        if(!hoyDia.abierto||!hoyDia.desde||!hoyDia.hasta) return false;
+        const now=new Date(), mins=now.getHours()*60+now.getMinutes();
+        const [hd,md]=hoyDia.desde.split(":").map(Number);
+        const [hh,mh]=hoyDia.hasta.split(":").map(Number);
+        return mins>=(hd*60+md) && mins<(hh*60+mh);
+      })();
+      return (
+        <div style={{background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.08)",borderRadius:14,padding:"12px 16px"}}>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
+            <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:11,color:"#7A6A50",letterSpacing:2}}>HORARIOS</div>
+            <div style={{background:abiertaAhora?"rgba(0,204,112,.15)":"rgba(255,80,80,.12)",
+              border:`1px solid ${abiertaAhora?"rgba(0,204,112,.4)":"rgba(255,80,80,.3)"}`,
+              borderRadius:6,padding:"3px 8px",fontFamily:"'IBM Plex Mono',monospace",fontSize:9,fontWeight:700,
+              color:abiertaAhora?"#00CC70":"#FF5050",letterSpacing:1}}>
+              {abiertaAhora?"● ABIERTO":"● CERRADO"}
+            </div>
+          </div>
+          {DIAS.map(d=>{
+            const dia=(local.horarios||{})[d.k]||{};
+            const esHoy=d.k===hoyKey;
+            return (
+              <div key={d.k} style={{display:"flex",alignItems:"center",gap:8,padding:"5px 0",
+                borderBottom:"1px solid rgba(255,255,255,.04)",opacity:dia.abierto?1:.4}}>
+                <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:11,fontWeight:700,
+                  color:esHoy?"#C9A84C":"#5A5A5A",width:28,flexShrink:0}}>{d.n}</span>
+                {dia.abierto
+                  ? <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:esHoy?"#C8B898":"#4A4A4A"}}>{dia.desde} – {dia.hasta}</span>
+                  : <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"#3A3A3A"}}>Cerrado</span>
+                }
+                {esHoy && <span style={{marginLeft:"auto",fontFamily:"'IBM Plex Mono',monospace",fontSize:8,color:"#C9A84C",letterSpacing:1}}>HOY</span>}
+              </div>
+            );
+          })}
+        </div>
+      );
+    })()}
+
+    {/* WhatsApp pedidos */}
+    {(!!local.feat_whatsapp_vitrina && local.whatsapp_vitrina_numero && (local.whatsapp_delivery||local.whatsapp_retiro)) ? (
+      <div style={{background:"rgba(37,211,102,.06)",border:"1px solid rgba(37,211,102,.25)",borderRadius:14,padding:"14px 16px"}}>
+        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347zM11.996 0C5.374 0 0 5.373 0 11.996c0 2.133.56 4.133 1.54 5.867L.047 23.53a.5.5 0 00.612.632l5.828-1.528A11.935 11.935 0 0011.996 24C18.619 24 24 18.619 24 11.996 24 5.373 18.619 0 11.996 0zm0 21.818a9.794 9.794 0 01-4.992-1.367l-.358-.212-3.718.975 1.002-3.618-.234-.372a9.794 9.794 0 01-1.518-5.228c0-5.419 4.409-9.818 9.818-9.818s9.818 4.399 9.818 9.818-4.399 9.822-9.818 9.822z"/></svg>
+          <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,color:"#25D366",letterSpacing:2}}>PEDIDOS POR WHATSAPP</span>
+        </div>
+        <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"rgba(255,255,255,.4)",marginBottom:12,lineHeight:1.5}}>
+          Elegí los productos, dejá tus datos y te armamos el mensaje listo para enviar
+        </p>
+        <div style={{display:"flex",flexDirection:"column",gap:8}}>
+          {!!local.whatsapp_delivery && (
+            <button onClick={()=>setWaFlow("delivery")}
+              style={{display:"flex",alignItems:"center",justifyContent:"center",gap:10,
+                background:"#25D366",border:"none",borderRadius:12,padding:"14px",
+                fontFamily:"'Outfit',sans-serif",fontSize:15,fontWeight:800,
+                color:"#fff",cursor:"pointer",width:"100%"}}>
+              🛵 Pedir con delivery
+            </button>
+          )}
+          {!!local.whatsapp_retiro && (
+            <button onClick={()=>setWaFlow("retiro")}
+              style={{display:"flex",alignItems:"center",justifyContent:"center",gap:10,
+                background:"rgba(37,211,102,.12)",border:"1px solid rgba(37,211,102,.4)",
+                borderRadius:12,padding:"14px",
+                fontFamily:"'Outfit',sans-serif",fontSize:15,fontWeight:800,
+                color:"#25D366",cursor:"pointer",width:"100%"}}>
+              🏪 Retirar en el local
+            </button>
+          )}
+        </div>
+      </div>
+    ) : local.whatsapp ? (
+      <a href={"https://wa.me/"+local.whatsapp.replace(/\D/g,"")} target="_blank" rel="noreferrer"
+        style={{display:"flex",alignItems:"center",gap:14,background:"rgba(37,211,102,.06)",
+          border:"1px solid rgba(37,211,102,.25)",borderRadius:14,padding:"16px",
+          textDecoration:"none"}}>
+        <div style={{width:42,height:42,background:"#25D366",borderRadius:12,display:"flex",
+          alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:22}}>💬</div>
+        <div>
+          <div style={{fontFamily:"'Outfit',sans-serif",fontWeight:700,fontSize:14,
+            color:"#25D366",lineHeight:1.1}}>Consultanos por WhatsApp</div>
+          <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"rgba(255,255,255,.4)",marginTop:3}}>
+            Escribinos cualquier consulta sobre el menú o el local
+          </div>
+        </div>
+      </a>
+    ) : null}
+    {waFlow && <WAOrderFlow local={local} prods={prods} cats={cats} tipo={waFlow} onClose={()=>setWaFlow(null)}/>}
+
+    {/* Formas de pago */}
+    <div style={{background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.08)",
+      borderRadius:14,padding:"12px 16px",marginBottom:4}}>
+      <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:11,color:"#7A6A50",
+        letterSpacing:2,marginBottom:12}}>FORMAS DE PAGO</div>
+      <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
+        {[
+          {id:"cash", icon:"💵", label:"Efectivo"},
+          {id:"mp",   icon:"💳", label:"Mercado Pago"},
+          {id:"trans",icon:"🏦", label:"Transferencia"},
+          {id:"card", icon:"💰", label:"Débito / Crédito"},
+        ].filter(m=>!local.pay_disabled||!local.pay_disabled.includes(m.id)).map(m=>(
+          <div key={m.id} style={{display:"flex",alignItems:"center",gap:6,
+            background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.1)",
+            borderRadius:8,padding:"7px 12px"}}>
+            <span style={{fontSize:16}}>{m.icon}</span>
+            <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:600,
+              color:"#C8B898"}}>{m.label}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+
+  </div>
+);
+}
+
 function ClientApp({onBack, local, cats, prods, vitrina=false}) {
   const [view,setView]   = useState("menu"); // menu | cart | done
   const [cart,setCart]   = useState({});
@@ -1307,275 +1578,7 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
   /* ═══════════════════════════════════════
      VITRINA INFO — mesas + cómo funciona + promo
   ═══════════════════════════════════════ */
-  const VitrinaInfo = () => {
-    const [mesasOcupadas, setMesasOcupadas] = React.useState([]);
-    const [waFlow, setWaFlow] = React.useState(null); // null | "delivery" | "retiro"
 
-    const totalMesas = local.mesas || 10;
-    const libres = totalMesas - mesasOcupadas.length;
-    const pct = Math.round((mesasOcupadas.length/totalMesas)*100);
-
-    React.useEffect(()=>{
-      if(!supabase||!local.restauranteId) return;
-      const load = async () => {
-        const {data} = await supabase.from("pedidos")
-          .select("mesa_numero")
-          .eq("restaurante_id", local.restauranteId)
-          .in("status",["nuevo","preparando","listo"]);
-        if(data) setMesasOcupadas([...new Set(data.map(p=>p.mesa_numero))]);
-      };
-      load();
-      const ch = supabase.channel("vitrina-mesas-"+local.restauranteId)
-        .on("postgres_changes",{event:"*",schema:"public",table:"pedidos",
-          filter:`restaurante_id=eq.${local.restauranteId}`}, load)
-        .subscribe();
-      return ()=>supabase.removeChannel(ch);
-    },[]);
-
-    const isHappyHour = (() => {
-      if(!local.happyHour||!local.happyDesde||!local.happyHasta) return false;
-      const now = new Date();
-      const [hd,md]=local.happyDesde.split(":").map(Number);
-      const [hh,mh]=local.happyHasta.split(":").map(Number);
-      const mins = now.getHours()*60+now.getMinutes();
-      return mins>=(hd*60+md) && mins<(hh*60+mh);
-    })();
-
-    const [promoActivada, setPromoActivada] = React.useState(()=>{
-      try { return !!JSON.parse(localStorage.getItem("menuqr_promo10_"+(local.restauranteId||"x"))||"null"); } catch{ return false; }
-    });
-    const activarPromo = () => {
-      localStorage.setItem("menuqr_promo10_"+(local.restauranteId||"x"), JSON.stringify({active:true,ts:Date.now()}));
-      setPromoActivada(true);
-    };
-
-    return (
-      <div style={{margin:"10px 10px 0",display:"flex",flexDirection:"column",gap:8}}>
-
-        {/* 10% primera vez */}
-        {!!local.feat_promo10 && (
-            <div style={{background:"linear-gradient(135deg,rgba(201,168,76,.15),rgba(201,168,76,.05))",
-              border:`1px solid ${promoActivada?"rgba(0,204,112,.5)":"rgba(201,168,76,.4)"}`,
-              borderRadius:14,padding:"14px 16px"}}>
-              <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:promoActivada?0:12}}>
-                <div style={{fontSize:28,flexShrink:0}}>{promoActivada?"✅":"🎁"}</div>
-                <div>
-                  <div style={{fontFamily:"'Outfit',sans-serif",fontWeight:800,fontSize:14,
-                    color:promoActivada?"#00CC70":"#C9A84C",lineHeight:1.1}}>
-                    {promoActivada?"¡Descuento activado!":"10% de descuento en tu primera visita"}
-                  </div>
-                  <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,
-                    color:promoActivada?"#4A7A5A":"#8A7A50",marginTop:3}}>
-                    {promoActivada
-                      ? "Escaneá el QR de tu mesa — se aplica solo"
-                      : "Tocá el botón para activarlo antes de pedir"}
-                  </div>
-                </div>
-              </div>
-              {!promoActivada && (
-                <button onClick={activarPromo} style={{
-                  width:"100%",background:"linear-gradient(135deg,#C9A84C,#E8C97A)",
-                  border:"none",borderRadius:10,padding:"12px",
-                  fontFamily:"'Outfit',sans-serif",fontSize:14,fontWeight:800,
-                  color:"#0A0806",cursor:"pointer",letterSpacing:.3}}>
-                  🎁 Activar mi descuento
-                </button>
-              )}
-            </div>
-        )}
-
-        {/* Mesas en tiempo real */}
-        <div style={{background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.08)",
-          borderRadius:14,padding:"12px 16px"}}>
-          <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:11,color:"#7A6A50",
-            letterSpacing:2,marginBottom:12}}>MESAS EN TIEMPO REAL</div>
-          <div style={{display:"flex",gap:10,marginBottom:10}}>
-            <div style={{flex:1,background:"rgba(0,255,136,.06)",border:"1px solid rgba(0,255,136,.2)",
-              borderRadius:10,padding:"10px 12px",textAlign:"center"}}>
-              <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:24,fontWeight:700,
-                color:"#00CC70",lineHeight:1}}>{libres}</div>
-              <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:600,color:"#4A7A5A",marginTop:4}}>LIBRES</div>
-            </div>
-            <div style={{flex:1,background:"rgba(255,176,32,.06)",border:"1px solid rgba(255,176,32,.2)",
-              borderRadius:10,padding:"10px 12px",textAlign:"center"}}>
-              <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:24,fontWeight:700,
-                color:"#FFB020",lineHeight:1}}>{mesasOcupadas.length}</div>
-              <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:600,color:"#7A6A30",marginTop:4}}>OCUPADAS</div>
-            </div>
-            <div style={{flex:1,background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.08)",
-              borderRadius:10,padding:"10px 12px",textAlign:"center"}}>
-              <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:24,fontWeight:700,
-                color:"#C9A84C",lineHeight:1}}>{pct}%</div>
-              <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:600,color:"#6A5A40",marginTop:4}}>OCUPACIÓN</div>
-            </div>
-          </div>
-          {/* Barra visual */}
-          <div style={{height:4,background:"rgba(255,255,255,.06)",borderRadius:2,overflow:"hidden"}}>
-            <div style={{height:"100%",width:`${pct}%`,background:"linear-gradient(90deg,#00CC70,#FFB020)",
-              borderRadius:2,transition:"width .5s ease"}}/>
-          </div>
-        </div>
-
-        {/* Cómo funciona */}
-        <div style={{background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.08)",
-          borderRadius:14,padding:"12px 16px"}}>
-          <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:11,color:"#7A6A50",
-            letterSpacing:2,marginBottom:12}}>CÓMO FUNCIONA</div>
-          {[
-            {n:"1",ico:"📱",t:"Escaneá el QR de tu mesa",d:"Cada mesa tiene su propio código QR"},
-            {n:"2",ico:"🍽️",t:"Elegí tu pedido",d:"Navegá la carta y sumá lo que quieras"},
-            {n:"3",ico:"✅",t:"Confirmá y listo",d:"El pedido llega directo a cocina — sin esperas"},
-          ].map(s=>(
-            <div key={s.n} style={{display:"flex",alignItems:"flex-start",gap:12,marginBottom:10}}>
-              <div style={{width:28,height:28,borderRadius:8,background:"rgba(201,168,76,.12)",
-                border:"1px solid rgba(201,168,76,.25)",display:"flex",alignItems:"center",
-                justifyContent:"center",fontSize:14,flexShrink:0}}>{s.ico}</div>
-              <div>
-                <div style={{fontFamily:"'Outfit',sans-serif",fontWeight:600,fontSize:14,
-                  color:"#C8B898",lineHeight:1.2}}>{s.t}</div>
-                <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"#5A5A5A",marginTop:3}}>{s.d}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Happy Hour activo */}
-        {isHappyHour && (
-          <div style={{background:"linear-gradient(135deg,rgba(255,92,0,.12),rgba(255,176,32,.08))",
-            border:"1px solid rgba(255,120,0,.3)",borderRadius:14,padding:"12px 16px",
-            display:"flex",alignItems:"center",gap:12}}>
-            <div style={{fontSize:26,flexShrink:0}}>🔥</div>
-            <div>
-              <div style={{fontFamily:"'Outfit',sans-serif",fontWeight:800,fontSize:13,
-                color:"#FF8C00",lineHeight:1.1}}>Happy Hour activo ahora</div>
-              <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"#7A4A20",marginTop:3}}>
-                Hasta las {local.happyHasta} · Entrá y aprovechá los precios especiales
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Horarios */}
-        {local.horarios && Object.values(local.horarios).some(d=>d.abierto) && (()=>{
-          const DIAS=[{k:"lun",n:"Lun"},{k:"mar",n:"Mar"},{k:"mie",n:"Mié"},
-                      {k:"jue",n:"Jue"},{k:"vie",n:"Vie"},{k:"sab",n:"Sáb"},{k:"dom",n:"Dom"}];
-          const hoyIdx = new Date().getDay();
-          const hoyKey = ["dom","lun","mar","mie","jue","vie","sab"][hoyIdx];
-          const hoyDia = (local.horarios||{})[hoyKey]||{};
-          const abiertaAhora = (()=>{
-            if(!hoyDia.abierto||!hoyDia.desde||!hoyDia.hasta) return false;
-            const now=new Date(), mins=now.getHours()*60+now.getMinutes();
-            const [hd,md]=hoyDia.desde.split(":").map(Number);
-            const [hh,mh]=hoyDia.hasta.split(":").map(Number);
-            return mins>=(hd*60+md) && mins<(hh*60+mh);
-          })();
-          return (
-            <div style={{background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.08)",borderRadius:14,padding:"12px 16px"}}>
-              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
-                <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:11,color:"#7A6A50",letterSpacing:2}}>HORARIOS</div>
-                <div style={{background:abiertaAhora?"rgba(0,204,112,.15)":"rgba(255,80,80,.12)",
-                  border:`1px solid ${abiertaAhora?"rgba(0,204,112,.4)":"rgba(255,80,80,.3)"}`,
-                  borderRadius:6,padding:"3px 8px",fontFamily:"'IBM Plex Mono',monospace",fontSize:9,fontWeight:700,
-                  color:abiertaAhora?"#00CC70":"#FF5050",letterSpacing:1}}>
-                  {abiertaAhora?"● ABIERTO":"● CERRADO"}
-                </div>
-              </div>
-              {DIAS.map(d=>{
-                const dia=(local.horarios||{})[d.k]||{};
-                const esHoy=d.k===hoyKey;
-                return (
-                  <div key={d.k} style={{display:"flex",alignItems:"center",gap:8,padding:"5px 0",
-                    borderBottom:"1px solid rgba(255,255,255,.04)",opacity:dia.abierto?1:.4}}>
-                    <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:11,fontWeight:700,
-                      color:esHoy?"#C9A84C":"#5A5A5A",width:28,flexShrink:0}}>{d.n}</span>
-                    {dia.abierto
-                      ? <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:esHoy?"#C8B898":"#4A4A4A"}}>{dia.desde} – {dia.hasta}</span>
-                      : <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"#3A3A3A"}}>Cerrado</span>
-                    }
-                    {esHoy && <span style={{marginLeft:"auto",fontFamily:"'IBM Plex Mono',monospace",fontSize:8,color:"#C9A84C",letterSpacing:1}}>HOY</span>}
-                  </div>
-                );
-              })}
-            </div>
-          );
-        })()}
-
-        {/* WhatsApp pedidos */}
-        {(!!local.feat_whatsapp_vitrina && local.whatsapp_vitrina_numero && (local.whatsapp_delivery||local.whatsapp_retiro)) ? (
-          <div style={{background:"rgba(37,211,102,.06)",border:"1px solid rgba(37,211,102,.25)",borderRadius:14,padding:"14px 16px"}}>
-            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347zM11.996 0C5.374 0 0 5.373 0 11.996c0 2.133.56 4.133 1.54 5.867L.047 23.53a.5.5 0 00.612.632l5.828-1.528A11.935 11.935 0 0011.996 24C18.619 24 24 18.619 24 11.996 24 5.373 18.619 0 11.996 0zm0 21.818a9.794 9.794 0 01-4.992-1.367l-.358-.212-3.718.975 1.002-3.618-.234-.372a9.794 9.794 0 01-1.518-5.228c0-5.419 4.409-9.818 9.818-9.818s9.818 4.399 9.818 9.818-4.399 9.822-9.818 9.822z"/></svg>
-              <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,color:"#25D366",letterSpacing:2}}>PEDIDOS POR WHATSAPP</span>
-            </div>
-            <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"rgba(255,255,255,.4)",marginBottom:12,lineHeight:1.5}}>
-              Elegí los productos, dejá tus datos y te armamos el mensaje listo para enviar
-            </p>
-            <div style={{display:"flex",flexDirection:"column",gap:8}}>
-              {!!local.whatsapp_delivery && (
-                <button onClick={()=>setWaFlow("delivery")}
-                  style={{display:"flex",alignItems:"center",justifyContent:"center",gap:10,
-                    background:"#25D366",border:"none",borderRadius:12,padding:"14px",
-                    fontFamily:"'Outfit',sans-serif",fontSize:15,fontWeight:800,
-                    color:"#fff",cursor:"pointer",width:"100%"}}>
-                  🛵 Pedir con delivery
-                </button>
-              )}
-              {!!local.whatsapp_retiro && (
-                <button onClick={()=>setWaFlow("retiro")}
-                  style={{display:"flex",alignItems:"center",justifyContent:"center",gap:10,
-                    background:"rgba(37,211,102,.12)",border:"1px solid rgba(37,211,102,.4)",
-                    borderRadius:12,padding:"14px",
-                    fontFamily:"'Outfit',sans-serif",fontSize:15,fontWeight:800,
-                    color:"#25D366",cursor:"pointer",width:"100%"}}>
-                  🏪 Retirar en el local
-                </button>
-              )}
-            </div>
-          </div>
-        ) : local.whatsapp ? (
-          <a href={"https://wa.me/"+local.whatsapp.replace(/\D/g,"")} target="_blank" rel="noreferrer"
-            style={{display:"flex",alignItems:"center",gap:14,background:"rgba(37,211,102,.06)",
-              border:"1px solid rgba(37,211,102,.25)",borderRadius:14,padding:"16px",
-              textDecoration:"none"}}>
-            <div style={{width:42,height:42,background:"#25D366",borderRadius:12,display:"flex",
-              alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:22}}>💬</div>
-            <div>
-              <div style={{fontFamily:"'Outfit',sans-serif",fontWeight:700,fontSize:14,
-                color:"#25D366",lineHeight:1.1}}>Consultanos por WhatsApp</div>
-              <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"rgba(255,255,255,.4)",marginTop:3}}>
-                Escribinos cualquier consulta sobre el menú o el local
-              </div>
-            </div>
-          </a>
-        ) : null}
-        {waFlow && <WAOrderFlow local={local} prods={prods} cats={cats} tipo={waFlow} onClose={()=>setWaFlow(null)}/>}
-
-        {/* Formas de pago */}
-        <div style={{background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.08)",
-          borderRadius:14,padding:"12px 16px",marginBottom:4}}>
-          <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:11,color:"#7A6A50",
-            letterSpacing:2,marginBottom:12}}>FORMAS DE PAGO</div>
-          <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
-            {[
-              {id:"cash", icon:"💵", label:"Efectivo"},
-              {id:"mp",   icon:"💳", label:"Mercado Pago"},
-              {id:"trans",icon:"🏦", label:"Transferencia"},
-              {id:"card", icon:"💰", label:"Débito / Crédito"},
-            ].filter(m=>!local.pay_disabled||!local.pay_disabled.includes(m.id)).map(m=>(
-              <div key={m.id} style={{display:"flex",alignItems:"center",gap:6,
-                background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.1)",
-                borderRadius:8,padding:"7px 12px"}}>
-                <span style={{fontSize:16}}>{m.icon}</span>
-                <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:600,
-                  color:"#C8B898"}}>{m.label}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-      </div>
-    );
-  };
 
   /* ── PC DONE VIEW — OPCION C */
   if(view==="done"&&pcMode){
@@ -2454,7 +2457,7 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
         {/* Happy Hour banner — isolated component with own timer */}
         <HappyHourBanner happyHasta={local.happyHasta} happyHour={local.happyHour} lang={lang}/>
         {/* Vitrina info — solo en modo vitrina */}
-        {vitrina && <VitrinaInfo/>}
+        {vitrina && <VitrinaInfo local={local} cats={cats} prods={prods}/>}
         {/* Horizontal category tabs */}
         <div style={{display:"flex",gap:7,padding:"10px 12px 8px",overflowX:"auto",scrollbarWidth:"none",WebkitOverflowScrolling:"touch",background:"#0A0806",position:"sticky",top:0,zIndex:10,borderBottom:"1px solid #1A1A1A"}}>
             {[{id:"TODO",icon:"",label:"Todo"},...activeCats].map(cat=>(
