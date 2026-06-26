@@ -207,10 +207,10 @@ const GS = () => (
     }
 
     /* ── PRODUCT CARD MOBILE BASE ───────────────────────────── */
-    .mpc-name  { font-size: 14px; font-weight: 700; line-height: 1.2; }
-    .mpc-desc  { font-size: 12px; color: #888; }
-    .mpc-price { font-size: 16px; font-weight: 800; }
-    .mpg       { grid-template-columns: repeat(2,1fr) !important; gap: 8px !important; }
+    .mpc-name  { font-size: 17px !important; font-weight: 700 !important; line-height: 1.25 !important; }
+    .mpc-desc  { font-size: 13px !important; color: #999 !important; }
+    .mpc-price { font-size: 20px !important; font-weight: 800 !important; }
+    .mpg       { grid-template-columns: repeat(2,1fr) !important; gap: 10px !important; }
 
     /* ── PRODUCT CARD HOVER ──────────────────────────────────── */
     .mpc-card {
@@ -227,17 +227,17 @@ const GS = () => (
         transform: translateY(-4px) scale(1.02);
       }
       /* Bigger text on desktop */
-      .mpc-name  { font-size: 15px !important; line-height: 1.3 !important; margin-bottom: 5px !important; }
-      .mpc-desc  { font-size: 11.5px !important; color: #777 !important; -webkit-line-clamp: 3 !important; }
-      .mpc-price { font-size: 18px !important; font-weight: 800 !important; }
+      .mpc-name  { font-size: 17px !important; line-height: 1.3 !important; margin-bottom: 5px !important; }
+      .mpc-desc  { font-size: 13px !important; color: #888 !important; -webkit-line-clamp: 3 !important; }
+      .mpc-price { font-size: 20px !important; font-weight: 800 !important; }
       .mpc-add   { width: 32px !important; height: 32px !important; font-size: 22px !important; border-radius: 9px !important; }
       /* Card inner padding */
       .mpc-info  { padding: 8px 8px 9px !important; }
     }
     @media (min-width: 1100px) {
-      .mpc-name  { font-size: 17px !important; }
-      .mpc-desc  { font-size: 12.5px !important; color: #888 !important; }
-      .mpc-price { font-size: 20px !important; }
+      .mpc-name  { font-size: 19px !important; }
+      .mpc-desc  { font-size: 14px !important; color: #888 !important; }
+      .mpc-price { font-size: 23px !important; }
       .mpc-add   { width: 36px !important; height: 36px !important; font-size: 24px !important; }
     }
     /* ── PUBLIC MENU — RESPONSIVE DESKTOP / TABLET ────────── */
@@ -273,18 +273,18 @@ const GS = () => (
       /* Product grid: auto-fill with min 170px columns */
       .mpg { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)) !important; gap: 14px !important; padding: 0 18px 18px !important; }
       /* Product card text */
-      .mpc-name { font-size: 14px !important; line-height: 1.3 !important; margin-bottom: 4px !important; }
-      .mpc-desc { font-size: 11px !important; color: #666 !important; -webkit-line-clamp: 3 !important; }
-      .mpc-price { font-size: 16px !important; }
+      .mpc-name { font-size: 17px !important; line-height: 1.3 !important; margin-bottom: 4px !important; }
+      .mpc-desc { font-size: 13px !important; color: #777 !important; -webkit-line-clamp: 3 !important; }
+      .mpc-price { font-size: 20px !important; }
       .mpc-add { width: 30px !important; height: 30px !important; font-size: 20px !important; border-radius: 8px !important; }
     }
     @media (min-width: 1100px) {
       .msr { width: 220px !important; min-width: 220px !important; }
       .mpg { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)) !important; gap: 16px !important; }
       .mhd-title { font-size: 38px !important; }
-      .mpc-name { font-size: 16px !important; }
-      .mpc-desc { font-size: 12px !important; }
-      .mpc-price { font-size: 19px !important; }
+      .mpc-name { font-size: 19px !important; }
+      .mpc-desc { font-size: 14px !important; }
+      .mpc-price { font-size: 23px !important; }
       .mpc-add { width: 34px !important; height: 34px !important; font-size: 22px !important; }
     }
     /* Cart view: wider on desktop */
@@ -2479,13 +2479,13 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
                       {/* Product info */}
                       <div className="mpc-info" style={{padding:"8px 8px 8px",flex:1,display:"flex",flexDirection:"column",justifyContent:"space-between"}}>
                         <div>
-                          <div className="mpc-name" style={{fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:700,color:"#EEE",lineHeight:1.2,marginBottom:4}}>{item.name}</div>
-                          {item.desc&&<div className="mpc-desc" style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"#888",lineHeight:1.3,display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",overflow:"hidden"}}>{item.desc}</div>}
+                          <div className="mpc-name" style={{fontFamily:"'DM Sans',sans-serif",fontSize:17,fontWeight:700,color:"#EEE",lineHeight:1.25,marginBottom:4}}>{item.name}</div>
+                          {item.desc&&<div className="mpc-desc" style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"#999",lineHeight:1.35,display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",overflow:"hidden"}}>{item.desc}</div>}
                         </div>
                         <div style={{marginTop:4}}>
                           <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end"}}>
                             <div>
-                              <div className="mpc-price" style={{fontFamily:"'Outfit',sans-serif",fontSize:16,fontWeight:800,color:ac,lineHeight:1}}>$ {fmt(item.price)}</div>
+                              <div className="mpc-price" style={{fontFamily:"'Outfit',sans-serif",fontSize:20,fontWeight:800,color:ac,lineHeight:1}}>$ {fmt(item.price)}</div>
                               {item.orig&&<div style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,color:"#3A3A3A",textDecoration:"line-through"}}>$ {fmt(item.orig)}</div>}
                             </div>
                             {!vitrina&&(item.sin_stock?(
