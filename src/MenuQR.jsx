@@ -206,6 +206,12 @@ const GS = () => (
       .admin-topbar { position: sticky !important; top: 0 !important; }
     }
 
+    /* ── PRODUCT CARD MOBILE BASE ───────────────────────────── */
+    .mpc-name  { font-size: 14px; font-weight: 700; line-height: 1.2; }
+    .mpc-desc  { font-size: 12px; color: #888; }
+    .mpc-price { font-size: 16px; font-weight: 800; }
+    .mpg       { grid-template-columns: repeat(2,1fr) !important; gap: 8px !important; }
+
     /* ── PRODUCT CARD HOVER ──────────────────────────────────── */
     .mpc-card {
       cursor: pointer;
@@ -2473,13 +2479,13 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
                       {/* Product info */}
                       <div className="mpc-info" style={{padding:"8px 8px 8px",flex:1,display:"flex",flexDirection:"column",justifyContent:"space-between"}}>
                         <div>
-                          <div className="mpc-name" style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:700,color:"#EEE",lineHeight:1.2,marginBottom:3}}>{item.name}</div>
-                          {item.desc&&<div className="mpc-desc" style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,color:"#444",lineHeight:1.3,display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",overflow:"hidden"}}>{item.desc}</div>}
+                          <div className="mpc-name" style={{fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:700,color:"#EEE",lineHeight:1.2,marginBottom:4}}>{item.name}</div>
+                          {item.desc&&<div className="mpc-desc" style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"#888",lineHeight:1.3,display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",overflow:"hidden"}}>{item.desc}</div>}
                         </div>
                         <div style={{marginTop:4}}>
                           <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end"}}>
                             <div>
-                              <div className="mpc-price" style={{fontFamily:"'Outfit',sans-serif",fontSize:14,fontWeight:800,color:ac,lineHeight:1}}>$ {fmt(item.price)}</div>
+                              <div className="mpc-price" style={{fontFamily:"'Outfit',sans-serif",fontSize:16,fontWeight:800,color:ac,lineHeight:1}}>$ {fmt(item.price)}</div>
                               {item.orig&&<div style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,color:"#3A3A3A",textDecoration:"line-through"}}>$ {fmt(item.orig)}</div>}
                             </div>
                             {!vitrina&&(item.sin_stock?(
