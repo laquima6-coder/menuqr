@@ -4568,6 +4568,8 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
   const [vrPay, setVrPay]                     = useState(null);
   const [vrPay2, setVrPay2]                   = useState(null);
   const [vrSplitAmt, setVrSplitAmt]           = useState("");
+  const [vrNota, setVrNota]                     = useState("");
+  const [ticketPreview, setTicketPreview]       = useState(null);
   const [solicitudes, setSolicitudes]         = useState([]);
   const [vrLoading, setVrLoading]             = useState(false);
 
@@ -4619,7 +4621,9 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
   },[]);
 
   /* ── Print ticket (recibo para el cliente) */
-  const printTicket = (o) => {
+  const printTicket = (o) => { setTicketPreview(o); };
+
+  const doPrint = (o) => {
     const PAY_LABELS={cash:"Efectivo",mp:"Mercado Pago",card:"Tarjeta Débito",trans:"Transferencia"};
     const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Ticket</title>
     <style>
@@ -4635,6 +4639,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
       .iname{flex:1;font-size:12px}
       .iprice{min-width:56px;text-align:right;font-weight:bold;font-size:12px}
       .total{display:flex;justify-content:space-between;padding:5px 0;font-size:15px;font-weight:bold}
+      .obs{font-size:10px;color:#444;font-style:italic;padding:4px 0;border-bottom:1px dotted #ccc}
       .thanks{font-size:13px;font-weight:bold;text-align:center;margin:9px 0 4px;letter-spacing:1px}
       .footer{font-size:9px;color:#888;text-align:center;line-height:1.5}
     </style></head><body>
@@ -4648,6 +4653,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
       <div class="row"><span>Pedido #${String(o.id).slice(-4)}</span><span>${o.table===0||o.table==="0"?"Mostrador":"Mesa "+o.table}</span></div>
       <div class="line"></div>
       ${o.items.map(it=>`<div class="item"><span class="iname">${it.qty}× ${it.name}</span><span class="iprice">${it.price?"$"+fmt(it.qty*(it.price||0)):""}</span></div>`).join("")}
+      ${o.nota&&o.nota!=="Venta en mostrador"?`<div class="obs">📝 ${o.nota}</div>`:""}
       <div class="line"></div>
       <div class="total"><span>TOTAL</span><span>$${fmt(o.total)}</span></div>
       ${o.tip>0?`<div class="row"><span>Propina</span><span>+$${fmt(o.tip)}</span></div>`:""}
@@ -4674,15 +4680,15 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
         metodo_pago:    vrPay2&&vrPay2!=="pending"?`${vrPay}+${vrPay2}`:vrPay,
         propina:        0,
         total:          vrTotal,
-        nota:           vrMesa==="mostrador"?"Venta en mostrador":null,
+        nota:           [vrMesa==="mostrador"?"Venta en mostrador":null, vrNota||null].filter(Boolean).join(" | ")||null,
       }).select().single();
       if(!error && pedido){
         await supabase.from("pedido_items").insert(
           items.map(i=>({pedido_id:pedido.id,producto_id:i.id,nombre:i.name,precio:i.price,cantidad:i.qty}))
         );
-        const _split=vrPay2&&vrPay2!=="pending"?Number(vrSplitAmt)||Math.ceil(vrTotal/2):0;if(shouldPrint) printTicket({id:pedido.id,table:mesaNum,items,total:vrTotal,pay:vrPay2&&vrPay2!=="pending"?`${vrPay}($${_split})+${vrPay2}($${fmt(vrTotal-_split)})`:vrPay,tip:0});
+        const _split=vrPay2&&vrPay2!=="pending"?Number(vrSplitAmt)||Math.ceil(vrTotal/2):0;if(shouldPrint) printTicket({id:pedido.id,table:mesaNum,items,total:vrTotal,pay:vrPay2&&vrPay2!=="pending"?`${vrPay}($${_split})+${vrPay2}($${fmt(vrTotal-_split)})`:vrPay,tip:0,nota:vrNota||null});
       }
-      setVrCart({}); setVrPay(null); setVrPay2(null); setVrSplitAmt(""); setShowVentaRapida(false);
+      setVrCart({}); setVrPay(null); setVrPay2(null); setVrSplitAmt(""); setVrNota(""); setShowVentaRapida(false);
       toast("✓ Venta registrada");
     } catch(e){ toast("Error al guardar","err"); }
     finally { setVrLoading(false); }
@@ -5468,7 +5474,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
               <h2 style={{fontFamily:"'Outfit',sans-serif",fontSize:20,fontWeight:800,
                 color:"var(--abri)"}}>Venta Rápida</h2>
             </div>
-            <button onClick={()=>{setShowVentaRapida(false);setVrCart({});setVrPay(null);setVrPay2(null);setVrSplitAmt("");}}
+            <button onClick={()=>{setShowVentaRapida(false);setVrCart({});setVrPay(null);setVrPay2(null);setVrSplitAmt("");setVrNota("");}}
               style={{background:"var(--ac)",border:"1px solid var(--abr)",borderRadius:8,
                 color:"var(--ad)",fontSize:18,width:36,height:36,cursor:"pointer",
                 display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
@@ -5557,6 +5563,19 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
                 );
               })}
             </div>
+            {/* Observaciones del cliente */}
+            <div style={{marginBottom:10}}>
+              <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:"var(--am)",letterSpacing:1,marginBottom:6}}>OBSERVACIONES</p>
+              <textarea
+                value={vrNota}
+                onChange={e=>setVrNota(e.target.value)}
+                placeholder="Ej: cocido, sin sal, extra salsa..."
+                rows={2}
+                style={{width:"100%",background:"var(--ac)",border:"1px solid var(--abr)",
+                  borderRadius:10,padding:"10px 12px",color:"var(--abri)",
+                  fontFamily:"'DM Sans',sans-serif",fontSize:13,resize:"none",
+                  outline:"none",lineHeight:1.4}}/>
+            </div>
             {/* Método de pago — siempre visible, vertical */}
             <div style={{marginTop:8,marginBottom:4}}>
               {(()=>{
@@ -5621,7 +5640,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
             <div style={{padding:"14px 16px",borderTop:"1px solid var(--abr)",
               background:"var(--as)",flexShrink:0}}>
               <div style={{display:"flex",justifyContent:"flex-end",marginBottom:6}}>
-                <button onClick={()=>{setVrCart({});setVrPay(null);setVrPay2(null);setVrSplitAmt("");}} style={{background:"rgba(255,59,92,.1)",border:"none",color:"var(--ar)",borderRadius:8,padding:"5px 12px",fontSize:11,fontFamily:"'IBM Plex Mono',monospace",cursor:"pointer",letterSpacing:.5}}>🗑 Vaciar pedido</button>
+                <button onClick={()=>{setVrCart({});setVrPay(null);setVrPay2(null);setVrSplitAmt("");setVrNota("");}} style={{background:"rgba(255,59,92,.1)",border:"none",color:"var(--ar)",borderRadius:8,padding:"5px 12px",fontSize:11,fontFamily:"'IBM Plex Mono',monospace",cursor:"pointer",letterSpacing:.5}}>🗑 Vaciar pedido</button>
               </div>
               <div style={{display:"flex",justifyContent:"space-between",
                 alignItems:"center",marginBottom:12}}>
@@ -7318,8 +7337,65 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
   ══════════════════════════════════════════ */
   return (
     <div className="admin-wrap" style={{maxWidth:700,margin:"0 auto",minHeight:"100vh",
-      background:"var(--ab)",position:"relative"}}>
+      background:"var(--ab)",position:"relative",paddingTop:"env(safe-area-inset-top,0px)"}}>
       <GS/>
+      {ticketPreview && (
+        <div style={{position:"fixed",inset:0,zIndex:500,background:"rgba(0,0,0,.9)",
+          display:"flex",alignItems:"center",justifyContent:"center",padding:"20px 16px"}}>
+          <div style={{background:"#fff",borderRadius:12,padding:"20px 18px",
+            width:"100%",maxWidth:320,maxHeight:"85vh",overflowY:"auto",
+            fontFamily:"'Courier New',monospace",color:"#000",fontSize:12}}>
+            {/* Ticket content */}
+            <div style={{textAlign:"center",marginBottom:10}}>
+              <div style={{fontSize:17,fontWeight:"bold",textTransform:"uppercase",letterSpacing:2}}>{local.nombre||"Restaurante"}</div>
+              {local.direccion&&<div style={{fontSize:9,color:"#555",marginTop:2}}>{local.direccion}</div>}
+              {local.telefono&&<div style={{fontSize:9,color:"#555"}}>Tel: {local.telefono}</div>}
+            </div>
+            <div style={{borderTop:"1px dashed #000",margin:"8px 0"}}/>
+            <div style={{display:"flex",justifyContent:"space-between",fontSize:11,padding:"2px 0"}}>
+              <span>{new Date().toLocaleDateString("es-AR")}</span>
+              <span>{new Date().toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"})}</span>
+            </div>
+            <div style={{display:"flex",justifyContent:"space-between",fontSize:11,padding:"2px 0"}}>
+              <span>Pedido #{String(ticketPreview.id).slice(-4)}</span>
+              <span>{ticketPreview.table===0||ticketPreview.table==="0"?"Mostrador":"Mesa "+ticketPreview.table}</span>
+            </div>
+            <div style={{borderTop:"1px dashed #000",margin:"8px 0"}}/>
+            {ticketPreview.items.map((it,i)=>(
+              <div key={i} style={{display:"flex",justifyContent:"space-between",padding:"4px 0",borderBottom:"1px dotted #ccc"}}>
+                <span style={{flex:1}}>{it.qty}× {it.name}</span>
+                <span style={{minWidth:56,textAlign:"right",fontWeight:"bold"}}>{it.price?"$"+fmt(it.qty*(it.price||0)):""}</span>
+              </div>
+            ))}
+            {ticketPreview.nota&&ticketPreview.nota!=="Venta en mostrador"&&(
+              <div style={{fontSize:10,color:"#444",fontStyle:"italic",padding:"6px 0",borderBottom:"1px dotted #ccc"}}>
+                📝 {ticketPreview.nota}
+              </div>
+            )}
+            <div style={{borderTop:"1px dashed #000",margin:"8px 0"}}/>
+            <div style={{display:"flex",justifyContent:"space-between",fontSize:15,fontWeight:"bold",padding:"4px 0"}}>
+              <span>TOTAL</span><span>${fmt(ticketPreview.total)}</span>
+            </div>
+            <div style={{display:"flex",justifyContent:"space-between",fontSize:11,padding:"2px 0"}}>
+              <span>Pago</span>
+              <span><b>{{cash:"Efectivo",mp:"Mercado Pago",card:"Tarjeta",trans:"Transferencia"}[ticketPreview.pay]||ticketPreview.pay||"—"}</b></span>
+            </div>
+            <div style={{borderTop:"1px dashed #000",margin:"8px 0"}}/>
+            <div style={{fontSize:13,fontWeight:"bold",textAlign:"center",margin:"8px 0 4px"}}>¡Gracias!</div>
+            {local.email&&<div style={{fontSize:9,color:"#888",textAlign:"center"}}>{local.email}</div>}
+            <div style={{fontSize:9,color:"#888",textAlign:"center"}}>Emitido por MenuQR</div>
+            {/* Buttons */}
+            <div style={{display:"flex",gap:8,marginTop:16}}>
+              <button onClick={()=>setTicketPreview(null)} style={{flex:1,padding:"10px",borderRadius:8,background:"#f0f0f0",border:"1px solid #ddd",fontFamily:"'Outfit',sans-serif",fontSize:13,fontWeight:700,cursor:"pointer",color:"#333"}}>
+                Cerrar
+              </button>
+              <button onClick={()=>{doPrint(ticketPreview);}} style={{flex:1,padding:"10px",borderRadius:8,background:"#000",border:"none",fontFamily:"'Outfit',sans-serif",fontSize:13,fontWeight:700,cursor:"pointer",color:"#fff"}}>
+                🖨️ Imprimir
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {showVentaRapida && <VentaRapidaModal/>}
       {showMovModal && <MovModal/>}
 
@@ -7373,7 +7449,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
 
       {/* TOP BAR */}
       <div className="admin-topbar" style={{background:"var(--as)",borderBottom:"1px solid var(--abr)",
-        padding:"14px 18px 10px",position:"sticky",top:0,zIndex:40,
+        padding:"calc(env(safe-area-inset-top,0px) + 10px) 18px 10px",position:"sticky",top:"env(safe-area-inset-top,0px)",zIndex:40,
         display:"flex",justifyContent:"space-between",alignItems:"center"}}>
         <div style={{display:"flex",alignItems:"center",gap:10}}>
           <button onClick={onBack} style={{background:"none",border:"none",
