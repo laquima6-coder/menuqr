@@ -1533,7 +1533,6 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
               )}
             </div>
           </div>
-        )}
         ) : local.whatsapp ? (
           <a href={"https://wa.me/"+local.whatsapp.replace(/\D/g,"")} target="_blank" rel="noreferrer"
             style={{display:"flex",alignItems:"center",gap:14,background:"rgba(37,211,102,.06)",
