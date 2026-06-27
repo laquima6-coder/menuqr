@@ -2063,24 +2063,28 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
             {PAYS.map(p=>(
               <button key={p.id} onClick={()=>{setPay(p.id);setPay2(null);setSplitAmt("");setSplitAmt2("");}} className="pr" style={{
-                background:pay===p.id?p.bg:"#FAFAFA",
-                border:`2px solid ${pay===p.id?p.color:"#EBEBEB"}`,
-                borderRadius:14,padding:"14px 12px",cursor:"pointer",textAlign:"left",transition:"all .15s",
-                boxShadow:pay===p.id?`0 2px 12px ${p.color}30`:"none"}}>
-                <span style={{fontSize:26,display:"block",marginBottom:6}}>{p.icon}</span>
-                <div style={{fontSize:13,fontWeight:800,color:pay===p.id?p.color:"#444",marginBottom:1}}>{p.label}</div>
-                <div style={{fontSize:10,color:pay===p.id?p.color+"99":"#BBB"}}>{p.sub}</div>
+                background:p.bg,
+                border:`2px solid ${pay===p.id?p.color:p.color+"44"}`,
+                borderRadius:14,padding:"14px 12px",cursor:"pointer",textAlign:"left",transition:"all .15s",position:"relative",
+                boxShadow:pay===p.id?`0 4px 16px ${p.color}35`:"0 1px 4px rgba(0,0,0,.06)",
+                transform:pay===p.id?"scale(1.02)":"scale(1)"}}>
+                <span style={{fontSize:28,display:"block",marginBottom:7}}>{p.icon}</span>
+                <div style={{fontSize:13,fontWeight:800,color:p.color,marginBottom:2}}>{p.label}</div>
+                <div style={{fontSize:10,color:p.color+"99"}}>{p.sub}</div>
+                {pay===p.id&&<div style={{position:"absolute",top:8,right:8,width:18,height:18,borderRadius:"50%",background:p.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,color:"#fff",fontWeight:800}}>✓</div>}
               </button>
             ))}
             {/* Pago mixto */}
             <button onClick={()=>{setPay("mixto");setPay2(null);setSplitAmt("");setSplitAmt2("");}} className="pr" style={{
-              background:pay==="mixto"?"#FFF8F0":"#FAFAFA",
-              border:`2px solid ${pay==="mixto"?"#F59E0B":"#EBEBEB"}`,
+              background:"#FFFBEB",
+              border:`2px solid ${pay==="mixto"?"#F59E0B":"#F59E0B44"}`,
               borderRadius:14,padding:"14px 12px",cursor:"pointer",textAlign:"left",transition:"all .15s",
-              boxShadow:pay==="mixto"?"0 2px 12px #F59E0B30":"none"}}>
-              <span style={{fontSize:26,display:"block",marginBottom:6}}>÷</span>
-              <div style={{fontSize:13,fontWeight:800,color:pay==="mixto"?"#F59E0B":"#444",marginBottom:1}}>Pago mixto</div>
-              <div style={{fontSize:10,color:pay==="mixto"?"#F59E0B99":"#BBB"}}>2 métodos</div>
+              boxShadow:pay==="mixto"?"0 4px 16px #F59E0B35":"0 1px 4px rgba(0,0,0,.06)",
+              transform:pay==="mixto"?"scale(1.02)":"scale(1)",position:"relative"}}>
+              <span style={{fontSize:28,display:"block",marginBottom:7}}>÷</span>
+              <div style={{fontSize:13,fontWeight:800,color:"#F59E0B",marginBottom:2}}>Pago mixto</div>
+              <div style={{fontSize:10,color:"#F59E0B99"}}>2 métodos</div>
+              {pay==="mixto"&&<div style={{position:"absolute",top:8,right:8,width:18,height:18,borderRadius:"50%",background:"#F59E0B",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,color:"#fff",fontWeight:800}}>✓</div>}
             </button>
           </div>
 
