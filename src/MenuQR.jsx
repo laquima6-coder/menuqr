@@ -17,12 +17,12 @@ const GS = () => (
       /* Admin — Opción C: Bistró Clásico */
       --ab:  #F8F8F8; --as: #FFFFFF; --ac: #F2F2F2; --abr:#E3E3E3;
       --am:  #888888; --ad: #666666; --at: #333333; --abri:#1A1A1A;
-      --ag:  #0A7A70; --aam:#27BDB0; --ar: #E53935; --abl:#3D8EFF;
+      --ag:  #065F52; --aam:#1A9B8F; --ar: #E53935; --abl:#3D8EFF;
       /* Gestión — Opción C: Bistró Clásico */
       --gb:  #F8F8F8; --gs: #FFFFFF; --gc: #F2F2F2; --gbr:#E3E3E3;
       --gm:  #888888; --gd: #666666; --gt: #333333; --gbri:#1A1A1A;
-      --gi:  #0A7A70; --gi2:#27BDB0; --gg: #4A9A5A; --gr: #C85040; --gam:#E8A030;
-      --gg2: #0A7A70;
+      --gi:  #065F52; --gi2:#1A9B8F; --gg: #4A9A5A; --gr: #C85040; --gam:#E8A030;
+      --gg2: #065F52;
     }
 
     * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent }
@@ -320,7 +320,7 @@ export const INIT_LOCAL = {
   nombre:"La Trattoria", direccion:"Av. Corrientes 1234, CABA",
   telefono:"+54 11 1234-5678", email:"hola@latrattoria.com",
   descripcion:"Cocina italiana contemporánea en el corazón de Buenos Aires.",
-  color:"#0A7A70", mesas:12,
+  color:"#065F52", mesas:12,
   propina:true, happyHour:true, happyDesde:"17:00", happyHasta:"21:00",
   feat_solicitudes:true, feat_promo10:true,
   wifi_nombre:"LaTrattoria_WiFi", wifi_pass:"bienvenido2024",
@@ -624,7 +624,7 @@ function LoginModal({ onSuccess, onClose }) {
     tab:     (a) => ({ flex:1,padding:"9px 0",borderRadius:8,border:"none",cursor:"pointer",fontSize:".85rem",fontWeight:600,fontFamily:"'DM Sans',sans-serif",transition:".2s",background:a?"#2A1C0E":"transparent",color:a?"#F5F0E8":"#7A6050" }),
     label:   { display:"block",fontSize:".75rem",color:"#7A6050",marginBottom:5,textTransform:"uppercase",letterSpacing:".04em",fontFamily:"'DM Sans',sans-serif" },
     input:   { width:"100%",padding:"11px 14px",background:"#F5F5F5",border:"1px solid #E0E0E0",borderRadius:8,color:"#1A1A1A",fontSize:".95rem",outline:"none",marginBottom:14,fontFamily:"'DM Sans',sans-serif" },
-    btn:     { width:"100%",padding:13,background:"#0A7A70",border:"none",borderRadius:8,color:"#0D0804",fontSize:"1rem",fontWeight:800,cursor:"pointer",fontFamily:"'DM Sans',sans-serif" },
+    btn:     { width:"100%",padding:13,background:"#065F52",border:"none",borderRadius:8,color:"#0D0804",fontSize:"1rem",fontWeight:800,cursor:"pointer",fontFamily:"'DM Sans',sans-serif" },
     err:     { background:"#1a0808",border:"1px solid #7f1d1d",color:"#f87171",padding:"9px 12px",borderRadius:7,fontSize:".82rem",marginBottom:12,fontFamily:"'DM Sans',sans-serif" },
     close:   { position:"absolute",top:14,right:16,background:"none",border:"none",color:"#7A6050",cursor:"pointer",fontSize:20 },
   };
@@ -772,7 +772,7 @@ function Landing({setMode}) {
           border:"1px solid rgba(201,168,76,.35)",
           display:"flex",alignItems:"center",justifyContent:"center",
           fontSize:36,margin:"0 auto 20px"}}>🍽️</div>
-        <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:"#0A7A70",
+        <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:"#065F52",
           letterSpacing:3,marginBottom:8}}>MENUQR</p>
         <h1 style={{fontFamily:"'Playfair Display',serif",fontSize:32,fontWeight:900,
           color:"#EDE0C8",lineHeight:1.1,marginBottom:8}}>La Trattoria</h1>
@@ -785,7 +785,7 @@ function Landing({setMode}) {
         {[
           {mode:"client",icon:"📱",title:"Vista del Cliente",
            sub:"Lo que ve el comensal al escanear el QR",
-           accent:"#0A7A70",bg:"linear-gradient(135deg,#1A140A,#241A0E)"},
+           accent:"#065F52",bg:"linear-gradient(135deg,#1A140A,#241A0E)"},
           {mode:"admin", icon:"⚙️",title:"Panel del Dueño",
            sub:"Pedidos, carta, QRs, caja y gestión completa",
            accent:"#00FF88",bg:"linear-gradient(135deg,#080C14,#0C1420)"},
@@ -900,8 +900,8 @@ function HappyHourBanner({happyHasta, happyHour, lang}) {
   if(!happyHour||secs<=0) return null;
   return (
     <div style={{background:"linear-gradient(90deg,#1A0D00,#120900)",borderBottom:"1px solid rgba(201,168,76,.15)",padding:"7px 10px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-      <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,color:"#0A7A70",fontWeight:600}}>Happy Hour · hasta {happyHasta}hs</div>
-      <span style={{fontFamily:"monospace",fontSize:14,fontWeight:900,color:"#0A7A70",letterSpacing:2}}>{fmt(secs)}</span>
+      <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,color:"#065F52",fontWeight:600}}>Happy Hour · hasta {happyHasta}hs</div>
+      <span style={{fontFamily:"monospace",fontSize:14,fontWeight:900,color:"#065F52",letterSpacing:2}}>{fmt(secs)}</span>
     </div>
   );
 }
@@ -1291,7 +1291,7 @@ return (
             <div style={{fontSize:28,flexShrink:0}}>{promoActivada?"✅":"🎁"}</div>
             <div>
               <div style={{fontFamily:"'Outfit',sans-serif",fontWeight:800,fontSize:14,
-                color:promoActivada?"#00CC70":"#0A7A70",lineHeight:1.1}}>
+                color:promoActivada?"#00CC70":"#065F52",lineHeight:1.1}}>
                 {promoActivada?"¡Descuento activado!":"10% de descuento en tu primera visita"}
               </div>
               <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,
@@ -1304,7 +1304,7 @@ return (
           </div>
           {!promoActivada && (
             <button onClick={activarPromo} style={{
-              width:"100%",background:"linear-gradient(135deg,#0A7A70,#E8C97A)",
+              width:"100%",background:"linear-gradient(135deg,#065F52,#E8C97A)",
               border:"none",borderRadius:10,padding:"12px",
               fontFamily:"'Outfit',sans-serif",fontSize:14,fontWeight:800,
               color:"#0A0806",cursor:"pointer",letterSpacing:.3}}>
@@ -1335,7 +1335,7 @@ return (
         <div style={{flex:1,background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.08)",
           borderRadius:10,padding:"10px 12px",textAlign:"center"}}>
           <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:24,fontWeight:700,
-            color:"#0A7A70",lineHeight:1}}>{pct}%</div>
+            color:"#065F52",lineHeight:1}}>{pct}%</div>
           <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:600,color:"#6A5A40",marginTop:4}}>OCUPACIÓN</div>
         </div>
       </div>
@@ -1417,12 +1417,12 @@ return (
               <div key={d.k} style={{display:"flex",alignItems:"center",gap:8,padding:"5px 0",
                 borderBottom:"1px solid rgba(255,255,255,.04)",opacity:dia.abierto?1:.4}}>
                 <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:11,fontWeight:700,
-                  color:esHoy?"#0A7A70":"#5A5A5A",width:28,flexShrink:0}}>{d.n}</span>
+                  color:esHoy?"#065F52":"#5A5A5A",width:28,flexShrink:0}}>{d.n}</span>
                 {dia.abierto
                   ? <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:esHoy?"#C8B898":"#4A4A4A"}}>{dia.desde} – {dia.hasta}</span>
                   : <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"#3A3A3A"}}>Cerrado</span>
                 }
-                {esHoy && <span style={{marginLeft:"auto",fontFamily:"'IBM Plex Mono',monospace",fontSize:8,color:"#0A7A70",letterSpacing:1}}>HOY</span>}
+                {esHoy && <span style={{marginLeft:"auto",fontFamily:"'IBM Plex Mono',monospace",fontSize:8,color:"#065F52",letterSpacing:1}}>HOY</span>}
               </div>
             );
           })}
@@ -1643,7 +1643,7 @@ function ClientApp({onBack, local, cats, prods, vitrina=false, sinPedidos=false}
   const Tag = ({tag}) => {
     if(!tag) return null;
     const c = tag.startsWith("−") ? "#C84040"
-            : tag==="CHEF"  ? "#0A7A70"
+            : tag==="CHEF"  ? "#065F52"
             : tag==="NUEVO" ? "#4A9A5A"
             : tag==="VEG"   ? "#4A9A5A"
             : "#7A6A50";
@@ -1663,12 +1663,12 @@ function ClientApp({onBack, local, cats, prods, vitrina=false, sinPedidos=false}
 
   /* ── PC DONE VIEW — OPCION C */
   if(view==="done"&&pcMode){
-    const ac=local.color||"#0A7A70";
+    const ac=local.color||"#065F52";
     const creamBg="#F5F0E8";
     const warmBorder="#D4C4A8";
     const warmMuted="#7A6050";
     const warmText="#2C1810";
-    const darkPanel="#0A7A70";
+    const darkPanel="#065F52";
     const STEPS2=[
       {key:"nuevo",     icon:"📋", label:"Recibido",    sub:"En espera de la cocina"},
       {key:"preparando",icon:"🍳", label:"Preparando",  sub:"Tu pedido está siendo preparado"},
@@ -1719,7 +1719,7 @@ function ClientApp({onBack, local, cats, prods, vitrina=false, sinPedidos=false}
               {STEPS2.map((s,i)=>{
                 const done=i<=stepIdx2; const active=i===stepIdx2;
                 return(
-                  <div key={s.key} style={{display:"flex",alignItems:"center",gap:14,padding:"12px 16px",borderRadius:12,border:`1px solid ${active?"#4A9A5A44":done?"#0A7A7033":warmBorder}`,background:active?"#4A9A5A0A":done?"#0A7A700A":creamBg,transition:".3s"}}>
+                  <div key={s.key} style={{display:"flex",alignItems:"center",gap:14,padding:"12px 16px",borderRadius:12,border:`1px solid ${active?"#4A9A5A44":done?"#065F5233":warmBorder}`,background:active?"#4A9A5A0A":done?"#065F520A":creamBg,transition:".3s"}}>
                     <span style={{fontSize:22,flexShrink:0}}>{s.icon}</span>
                     <div style={{flex:1}}>
                       <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:700,color:active?"#4A7A50":done?warmText:warmMuted}}>{s.label}</div>
@@ -1760,7 +1760,7 @@ function ClientApp({onBack, local, cats, prods, vitrina=false, sinPedidos=false}
     ];
     const stepIdx = STEPS.findIndex(s=>s.key===orderStatus);
     const curStep = STEPS[Math.max(0,stepIdx)];
-    const acColor = local.color||"#0A7A70";
+    const acColor = local.color||"#065F52";
     const isDone  = orderStatus==="listo"||orderStatus==="entregado";
   return (
     <div style={{maxWidth:430,margin:"0 auto",minHeight:"100vh",background:"var(--cb)",
@@ -1901,7 +1901,7 @@ function ClientApp({onBack, local, cats, prods, vitrina=false, sinPedidos=false}
   /* ── CART */
   /* ── PC CART VIEW — OPCION C */
   if(view==="cart"&&pcMode){
-    const ac=local.color||"#0A7A70";
+    const ac=local.color||"#065F52";
     const creamBg="#F5F0E8";
     const warmBorder="#D4C4A8";
     const warmMuted="#7A6050";
@@ -2020,7 +2020,7 @@ function ClientApp({onBack, local, cats, prods, vitrina=false, sinPedidos=false}
             </div>
             {/* MP/Transfer alias card — PC */}
             {(pay==="mp"||pay==="trans"||(pay==="mixto"&&(mixto1==="mp"||mixto1==="trans"||mixto2==="mp"||mixto2==="trans"))) && local.mp_mostrar_alias && local.mp_alias && (
-              <div style={{marginBottom:20,background:"#FFF8EC",border:"1px solid #0A7A7066",borderRadius:14,padding:"16px 18px"}}>
+              <div style={{marginBottom:20,background:"#FFF8EC",border:"1px solid #065F5266",borderRadius:14,padding:"16px 18px"}}>
                 <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:700,letterSpacing:2,textTransform:"uppercase",color:"#8A6A30",marginBottom:10}}>
                   {pay==="mp"?"💳 Datos para pagar por Mercado Pago":"🏦 Datos para transferencia bancaria"}
                 </div>
@@ -2030,7 +2030,7 @@ function ClientApp({onBack, local, cats, prods, vitrina=false, sinPedidos=false}
                     {local.mp_titular&&<div style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"#7A6050",marginTop:2}}>Titular: {local.mp_titular}</div>}
                   </div>
                   <button onClick={()=>{navigator.clipboard.writeText(local.mp_alias);}} className="pr"
-                    style={{background:"#0A7A70",border:"none",borderRadius:8,padding:"8px 14px",fontFamily:"'IBM Plex Mono',monospace",fontSize:12,fontWeight:700,color:"#1C1008",cursor:"pointer",whiteSpace:"nowrap"}}>
+                    style={{background:"#065F52",border:"none",borderRadius:8,padding:"8px 14px",fontFamily:"'IBM Plex Mono',monospace",fontSize:12,fontWeight:700,color:"#1C1008",cursor:"pointer",whiteSpace:"nowrap"}}>
                     📋 Copiar alias
                   </button>
                 </div>
@@ -2072,7 +2072,7 @@ function ClientApp({onBack, local, cats, prods, vitrina=false, sinPedidos=false}
           <div style={{fontFamily:"'Outfit',sans-serif",fontSize:18,fontWeight:800,color:"#111"}}>{T('myOrder')}</div>
           <div style={{fontSize:12,color:"#999",marginTop:1}}>{local.mesa?`Mesa ${local.mesa} · `:"Pedido · "}{items.length} producto{items.length!==1?"s":""}</div>
         </div>
-        <div style={{fontFamily:"'Outfit',sans-serif",fontSize:16,fontWeight:800,color:local.color||"#0A7A70"}}>$ {fmt(grandTotal)}</div>
+        <div style={{fontFamily:"'Outfit',sans-serif",fontSize:16,fontWeight:800,color:local.color||"#065F52"}}>$ {fmt(grandTotal)}</div>
       </div>
 
       <div style={{padding:"12px 14px"}}>
@@ -2085,18 +2085,18 @@ function ClientApp({onBack, local, cats, prods, vitrina=false, sinPedidos=false}
                 <img src={item.foto_url} alt={item.name} style={{width:54,height:54,borderRadius:10,objectFit:"cover",flexShrink:0,border:"1px solid #F0F0F0"}}
                   onError={e=>{e.target.style.display="none";e.target.nextSibling&&(e.target.nextSibling.style.display="flex");}}/>
               ):(
-                <div style={{width:54,height:54,borderRadius:10,background:(local.color||"#0A7A70")+"15",display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,flexShrink:0}}>{item.emoji||"🍽️"}</div>
+                <div style={{width:54,height:54,borderRadius:10,background:(local.color||"#065F52")+"15",display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,flexShrink:0}}>{item.emoji||"🍽️"}</div>
               )}
               <div style={{flex:1,minWidth:0}}>
                 <div style={{fontSize:14,fontWeight:700,color:"#111",lineHeight:1.25,marginBottom:2}}>{item.name}</div>
                 <div style={{fontSize:12,color:"#999"}}>$ {fmt(item.price)} c/u</div>
               </div>
               <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:6,flexShrink:0}}>
-                <div style={{fontFamily:"'Outfit',sans-serif",fontSize:14,fontWeight:800,color:local.color||"#0A7A70"}}>$ {fmt(item.price*item.qty)}</div>
+                <div style={{fontFamily:"'Outfit',sans-serif",fontSize:14,fontWeight:800,color:local.color||"#065F52"}}>$ {fmt(item.price*item.qty)}</div>
                 <div style={{display:"flex",alignItems:"center",gap:5}}>
                   <button onClick={()=>rem(item.id)} className="pr" style={{width:26,height:26,borderRadius:7,background:"#F5F5F5",border:"1px solid #E8E8E8",color:"#555",fontSize:15,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>−</button>
                   <span style={{fontFamily:"'Outfit',sans-serif",fontWeight:800,fontSize:13,color:"#111",minWidth:16,textAlign:"center"}}>{item.qty}</span>
-                  <button onClick={()=>add(item)} className="pr" style={{width:26,height:26,borderRadius:7,background:local.color||"#0A7A70",border:"none",color:"#fff",fontSize:15,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>+</button>
+                  <button onClick={()=>add(item)} className="pr" style={{width:26,height:26,borderRadius:7,background:local.color||"#065F52",border:"none",color:"#fff",fontSize:15,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>+</button>
                 </div>
               </div>
             </div>
@@ -2104,7 +2104,7 @@ function ClientApp({onBack, local, cats, prods, vitrina=false, sinPedidos=false}
           {/* Total row */}
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 16px",background:"#FAFAFA",borderTop:"1px solid #EBEBEB"}}>
             <span style={{fontSize:12,color:"#999",fontWeight:700,textTransform:"uppercase",letterSpacing:.5}}>Total</span>
-            <span style={{fontFamily:"'Outfit',sans-serif",fontSize:18,fontWeight:800,color:local.color||"#0A7A70"}}>$ {fmt(subTotal)}</span>
+            <span style={{fontFamily:"'Outfit',sans-serif",fontSize:18,fontWeight:800,color:local.color||"#065F52"}}>$ {fmt(subTotal)}</span>
           </div>
         </div>
 
@@ -2125,7 +2125,7 @@ function ClientApp({onBack, local, cats, prods, vitrina=false, sinPedidos=false}
             <div style={{fontSize:11,fontWeight:700,color:"#999",letterSpacing:1,textTransform:"uppercase",marginBottom:10}}>¿Dejás propina? 💝</div>
             <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}}>
               {[{label:"No",val:0},{label:"10%",val:10},{label:"15%",val:15},{label:"20%",val:20}].map(t=>(
-                <button key={t.val} onClick={()=>{setTipPct(t.val);setTC("");}} className="pr" style={{background:tipPct===t.val?(local.color||"#0A7A70"):"#F5F5F5",border:"none",borderRadius:10,padding:"10px 4px",cursor:"pointer",textAlign:"center",transition:".15s"}}>
+                <button key={t.val} onClick={()=>{setTipPct(t.val);setTC("");}} className="pr" style={{background:tipPct===t.val?(local.color||"#065F52"):"#F5F5F5",border:"none",borderRadius:10,padding:"10px 4px",cursor:"pointer",textAlign:"center",transition:".15s"}}>
                   <div style={{fontSize:12,fontWeight:700,color:tipPct===t.val?"#fff":"#333"}}>{t.label}</div>
                   {t.val>0&&<div style={{fontSize:10,color:tipPct===t.val?"rgba(255,255,255,.8)":"#999",marginTop:1}}>$ {fmt(Math.round(subTotal*t.val/100))}</div>}
                 </button>
@@ -2179,7 +2179,7 @@ function ClientApp({onBack, local, cats, prods, vitrina=false, sinPedidos=false}
               {/* Total a dividir */}
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12,padding:"8px 10px",background:"#FFF",borderRadius:8,border:"1px solid #E8E8E8"}}>
                 <span style={{fontSize:11,fontWeight:700,color:"#999"}}>TOTAL A DIVIDIR</span>
-                <span style={{fontFamily:"'Outfit',sans-serif",fontSize:15,fontWeight:800,color:local.color||"#0A7A70"}}>$ {fmt(grandTotal)}</span>
+                <span style={{fontFamily:"'Outfit',sans-serif",fontSize:15,fontWeight:800,color:local.color||"#065F52"}}>$ {fmt(grandTotal)}</span>
               </div>
               {/* Método 1 */}
               <div style={{fontSize:11,fontWeight:700,color:"#999",letterSpacing:1,marginBottom:8}}>MÉTODO 1</div>
@@ -2222,7 +2222,7 @@ function ClientApp({onBack, local, cats, prods, vitrina=false, sinPedidos=false}
               {/* 50/50 */}
               {mixto1&&mixto2&&(
                 <button onClick={()=>{const h=Math.ceil(grandTotal/2);setSplitAmt(String(h));setSplitAmt2(String(grandTotal-h));}}
-                  style={{background:"none",border:`1.5px solid ${local.color||"#0A7A70"}`,borderRadius:8,padding:"6px 14px",color:local.color||"#0A7A70",fontSize:12,fontWeight:800,cursor:"pointer"}}>
+                  style={{background:"none",border:`1.5px solid ${local.color||"#065F52"}`,borderRadius:8,padding:"6px 14px",color:local.color||"#065F52",fontSize:12,fontWeight:800,cursor:"pointer"}}>
                   ÷ 50/50
                 </button>
               )}
@@ -2242,7 +2242,7 @@ function ClientApp({onBack, local, cats, prods, vitrina=false, sinPedidos=false}
                 {local.mp_titular&&<div style={{fontSize:11,color:"#888",marginTop:2}}>Titular: {local.mp_titular}</div>}
               </div>
               <button onClick={()=>navigator.clipboard.writeText(local.mp_alias)} className="pr"
-                style={{background:local.color||"#0A7A70",border:"none",borderRadius:9,padding:"8px 14px",fontFamily:"'IBM Plex Mono',monospace",fontSize:11,fontWeight:700,color:"#fff",cursor:"pointer",whiteSpace:"nowrap"}}>
+                style={{background:local.color||"#065F52",border:"none",borderRadius:9,padding:"8px 14px",fontFamily:"'IBM Plex Mono',monospace",fontSize:11,fontWeight:700,color:"#fff",cursor:"pointer",whiteSpace:"nowrap"}}>
                 📋 Copiar
               </button>
             </div>
@@ -2271,12 +2271,12 @@ function ClientApp({onBack, local, cats, prods, vitrina=false, sinPedidos=false}
               <div style={{padding:"0 16px 14px",borderTop:"1px solid #F0F0F0"}}>
                 <div style={{display:"flex",alignItems:"center",gap:12,margin:"10px 0"}}>
                   <button onClick={()=>setDividirN(n=>Math.max(2,n-1))} style={{width:34,height:34,borderRadius:10,background:"#F5F5F5",border:"1px solid #E8E8E8",color:"#333",fontSize:20,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>−</button>
-                  <span style={{fontFamily:"'Outfit',sans-serif",fontSize:20,fontWeight:800,color:local.color||"#0A7A70",flex:1,textAlign:"center"}}>{dividirN} personas</span>
+                  <span style={{fontFamily:"'Outfit',sans-serif",fontSize:20,fontWeight:800,color:local.color||"#065F52",flex:1,textAlign:"center"}}>{dividirN} personas</span>
                   <button onClick={()=>setDividirN(n=>n+1)} style={{width:34,height:34,borderRadius:10,background:"#F5F5F5",border:"1px solid #E8E8E8",color:"#333",fontSize:20,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>+</button>
                 </div>
                 <div style={{background:"#F8F8F8",borderRadius:10,padding:"10px 14px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                   <span style={{fontSize:12,color:"#999"}}>Cada uno paga:</span>
-                  <span style={{fontFamily:"'Outfit',sans-serif",fontSize:18,fontWeight:800,color:local.color||"#0A7A70"}}>$ {fmt(Math.ceil(grandTotal/dividirN))}</span>
+                  <span style={{fontFamily:"'Outfit',sans-serif",fontSize:18,fontWeight:800,color:local.color||"#065F52"}}>$ {fmt(Math.ceil(grandTotal/dividirN))}</span>
                 </div>
               </div>
             )}
@@ -2290,7 +2290,7 @@ function ClientApp({onBack, local, cats, prods, vitrina=false, sinPedidos=false}
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 16px",background:"#FFF",border:"1px solid #EBEBEB",borderRadius:14,marginBottom:10,boxShadow:"0 2px 8px rgba(0,0,0,.06)"}}>
             <div>
               <div style={{fontSize:11,color:"#999"}}>{tipAmt>0?"Subtotal + propina":"Total"}</div>
-              <div style={{fontFamily:"'Outfit',sans-serif",fontSize:18,fontWeight:800,color:local.color||"#0A7A70"}}>$ {fmt(grandTotal)}</div>
+              <div style={{fontFamily:"'Outfit',sans-serif",fontSize:18,fontWeight:800,color:local.color||"#065F52"}}>$ {fmt(grandTotal)}</div>
             </div>
             {tipAmt>0&&<div style={{fontSize:12,color:"#16A34A"}}>💝 +$ {fmt(tipAmt)}</div>}
           </div>
@@ -2330,7 +2330,7 @@ function ClientApp({onBack, local, cats, prods, vitrina=false, sinPedidos=false}
           setView("done");
         }} className="pr" style={{
           width:"100%",
-          background:(pay&&(pay!=="mixto"||(mixto1&&mixto2)))?(local.color||"#0A7A70"):"#E0E0E0",
+          background:(pay&&(pay!=="mixto"||(mixto1&&mixto2)))?(local.color||"#065F52"):"#E0E0E0",
           color:(pay&&(pay!=="mixto"||(mixto1&&mixto2)))?"#fff":"#999",
           border:"none",borderRadius:16,padding:"16px",
           fontFamily:"'Outfit',sans-serif",fontSize:15,fontWeight:800,
@@ -2345,7 +2345,7 @@ function ClientApp({onBack, local, cats, prods, vitrina=false, sinPedidos=false}
 
   /* ── PC MENU VIEW — OPCION C: BISTRO CLASICO */
   if(view==="menu"&&pcMode){
-    const ac=local.color||"#0A7A70";
+    const ac=local.color||"#065F52";
     const featured=prods.filter(p=>p.active||p.active==null).sort((a,b)=>(b.tag==="CHEF"?1:0)-(a.tag==="CHEF"?1:0)||b.price-a.price)[0];
     const creamBg="#F5F0E8";
     const warmBorder="#D4C4A8";
@@ -2499,7 +2499,7 @@ function ClientApp({onBack, local, cats, prods, vitrina=false, sinPedidos=false}
                           </div>
                           <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:6,flexShrink:0}}>
                             <span style={{fontSize:15,color:"#8A6A30"}}>{disc?<><span style={{textDecoration:"line-through",fontSize:11,color:warmMuted,marginRight:4}}>$ {fmt(item.orig)}</span></>:""}$ {fmt(item.price)}</span>
-                            {item.tag&&<span style={{fontFamily:"'DM Sans',sans-serif",fontSize:8,fontWeight:700,padding:"2px 6px",borderRadius:4,background:item.tag==="CHEF"?"#0A7A7022":"#4A9A5A22",color:item.tag==="CHEF"?"#8A6A30":"#4A7A50",border:`1px solid ${item.tag==="CHEF"?"#0A7A7055":"#4A9A5A44"}`}}>{item.tag}</span>}
+                            {item.tag&&<span style={{fontFamily:"'DM Sans',sans-serif",fontSize:8,fontWeight:700,padding:"2px 6px",borderRadius:4,background:item.tag==="CHEF"?"#065F5222":"#4A9A5A22",color:item.tag==="CHEF"?"#8A6A30":"#4A7A50",border:`1px solid ${item.tag==="CHEF"?"#065F5255":"#4A9A5A44"}`}}>{item.tag}</span>}
                             {item.sin_stock?(
                               <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:9,color:"#888"}}>Agotado</span>
                             ):inCart===0?(
@@ -2536,15 +2536,15 @@ function ClientApp({onBack, local, cats, prods, vitrina=false, sinPedidos=false}
           {local.logo_url?(
             <img src={local.logo_url} alt="" style={{width:44,height:44,borderRadius:12,objectFit:"cover",flexShrink:0,border:"1px solid #EBEBEB"}}/>
           ):(
-            <div style={{width:44,height:44,borderRadius:12,background:local.color||"#0A7A70",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}>{local.emoji||"🍽️"}</div>
+            <div style={{width:44,height:44,borderRadius:12,background:local.color||"#065F52",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}>{local.emoji||"🍽️"}</div>
           )}
           <div style={{flex:1,minWidth:0}}>
             <div style={{fontFamily:"'Outfit',sans-serif",fontSize:17,fontWeight:800,color:"#111",lineHeight:1.1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{local.nombre}</div>
             {local.descripcion&&<div style={{fontSize:11,color:"#999",lineHeight:1.3,marginTop:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{local.descripcion}</div>}
-            {local.mesa?<div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,fontWeight:700,color:local.color||"#0A7A70",marginTop:2}}>Mesa {local.mesa}</div>:null}
+            {local.mesa?<div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,fontWeight:700,color:local.color||"#065F52",marginTop:2}}>Mesa {local.mesa}</div>:null}
           </div>
           {!effectiveVitrina&&cartCount>0&&(
-            <button onClick={()=>setView("cart")} style={{flexShrink:0,background:local.color||"#0A7A70",border:"none",borderRadius:22,padding:"8px 14px",cursor:"pointer",display:"flex",alignItems:"center",gap:6}}>
+            <button onClick={()=>setView("cart")} style={{flexShrink:0,background:local.color||"#065F52",border:"none",borderRadius:22,padding:"8px 14px",cursor:"pointer",display:"flex",alignItems:"center",gap:6}}>
               <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:11,fontWeight:800,color:"#fff"}}>🛒 {cartCount}</span>
             </button>
           )}
@@ -2565,7 +2565,7 @@ function ClientApp({onBack, local, cats, prods, vitrina=false, sinPedidos=false}
           {[{id:"TODO",icon:"",label:lang==="en"?"All":lang==="pt"?"Tudo":lang==="fr"?"Tout":lang==="de"?"Alle":lang==="it"?"Tutto":lang==="zh"?"全部":lang==="ja"?"全て":lang==="ko"?"전체":lang==="gn"?"Mba'etéva":"Todo"},...activeCats].map(cat=>(
             <button key={cat.id} onClick={()=>setAC(cat.id)} className="pr" style={{
               flexShrink:0,borderRadius:20,padding:"7px 16px",
-              background:activeCat===cat.id?(local.color||"#0A7A70"):"#F0F0F0",
+              background:activeCat===cat.id?(local.color||"#065F52"):"#F0F0F0",
               color:activeCat===cat.id?"#fff":"#444",
               border:"none",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,
               cursor:"pointer",transition:"all .15s",whiteSpace:"nowrap",
@@ -2586,7 +2586,7 @@ function ClientApp({onBack, local, cats, prods, vitrina=false, sinPedidos=false}
         {activeCats.filter(cat=>activeCat==="TODO"||activeCat===cat.id).map(cat=>{
           const catProds=translatedProds.filter(p=>p.cat===cat.id&&(p.active||p.active==null));
           if(!catProds.length) return null;
-          const ac=local.color||"#0A7A70";
+          const ac=local.color||"#065F52";
           return(
             <section key={cat.id} id={`cat-${cat.id}`} style={{marginBottom:8}}>
               {/* Category header */}
@@ -2660,7 +2660,7 @@ function ClientApp({onBack, local, cats, prods, vitrina=false, sinPedidos=false}
       {/* ══ FLOATING CART BUTTON ══ */}
       {!effectiveVitrina&&cartCount>0&&(
         <div style={{position:"fixed",bottom:24,left:"50%",transform:"translateX(-50%)",zIndex:40,width:"calc(100% - 32px)",maxWidth:398}}>
-          <button onClick={()=>setView("cart")} className="pr" style={{width:"100%",background:local.color||"#0A7A70",border:"none",borderRadius:16,padding:"15px 20px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between",boxShadow:"0 8px 28px rgba(0,0,0,.25)",transition:"all .2s"}}>
+          <button onClick={()=>setView("cart")} className="pr" style={{width:"100%",background:local.color||"#065F52",border:"none",borderRadius:16,padding:"15px 20px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between",boxShadow:"0 8px 28px rgba(0,0,0,.25)",transition:"all .2s"}}>
             <div style={{background:"rgba(0,0,0,.15)",borderRadius:10,width:30,height:30,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Outfit',sans-serif",fontSize:14,fontWeight:900,color:"#fff"}}>{cartCount}</div>
             <div style={{fontFamily:"'Outfit',sans-serif",fontSize:15,fontWeight:800,color:"#fff",letterSpacing:.3}}>Ver mi pedido</div>
             <div style={{fontFamily:"'Outfit',sans-serif",fontSize:15,fontWeight:800,color:"#fff"}}>$ {fmt(grandTotal)}</div>
@@ -2748,12 +2748,12 @@ function QRTabComp({ mesaNum, setMesaNum, qrType, setQrType, promoUrl, setPromoU
     }
   };
   const QR_TYPES = [
-    {id:"mesa",     icon:"🪑", label:"Mesa",      desc:"Un QR único por mesa",               color:"#0A7A70"},
-    {id:"vitrina",  icon:"🪟", label:"Vitrina",   desc:"Carta en la puerta / vidrio",        color:"#0A7A70"},
-    {id:"cocina",   icon:"👨‍🍳", label:"Cocina",    desc:"Pantalla de pedidos en cocina",      color:"#0A7A70"},
-    {id:"wifi",     icon:"📶", label:"WiFi",      desc:"Conectarse al escanear",             color:"#0A7A70"},
-    {id:"whatsapp", icon:"💬", label:"WhatsApp",  desc:"Pedidos por WA — flujo completo",    color:"#0A7A70"},
-    {id:"promo",    icon:"🔥", label:"Promo",     desc:"URL personalizada de promo",         color:"#0A7A70"},
+    {id:"mesa",     icon:"🪑", label:"Mesa",      desc:"Un QR único por mesa",               color:"#065F52"},
+    {id:"vitrina",  icon:"🪟", label:"Vitrina",   desc:"Carta en la puerta / vidrio",        color:"#065F52"},
+    {id:"cocina",   icon:"👨‍🍳", label:"Cocina",    desc:"Pantalla de pedidos en cocina",      color:"#065F52"},
+    {id:"wifi",     icon:"📶", label:"WiFi",      desc:"Conectarse al escanear",             color:"#065F52"},
+    {id:"whatsapp", icon:"💬", label:"WhatsApp",  desc:"Pedidos por WA — flujo completo",    color:"#065F52"},
+    {id:"promo",    icon:"🔥", label:"Promo",     desc:"URL personalizada de promo",         color:"#065F52"},
   ];
   const current = QR_TYPES.find(t=>t.id===qrType) || QR_TYPES[0];
   const qrData  = getQRData();
@@ -2944,7 +2944,7 @@ function QRTabComp({ mesaNum, setMesaNum, qrType, setQrType, promoUrl, setPromoU
               a.click();
               URL.revokeObjectURL(a.href);
             }} className="pr" style={{
-              width:"100%",background:"#0A7A70",color:"#fff",border:"none",
+              width:"100%",background:"#065F52",color:"#fff",border:"none",
               borderRadius:12,padding:13,fontFamily:"'IBM Plex Mono',monospace",
               fontSize:13,fontWeight:700,cursor:"pointer",letterSpacing:1}}>
               📥 DESCARGAR (PDF / imprenta)
@@ -3022,7 +3022,7 @@ function QRTabComp({ mesaNum, setMesaNum, qrType, setQrType, promoUrl, setPromoU
                 }
               },"image/png");
             }} className="pr" style={{
-              width:"100%",background:"#0A7A70",color:"#fff",border:"none",
+              width:"100%",background:"#065F52",color:"#fff",border:"none",
               borderRadius:12,padding:13,fontFamily:"'IBM Plex Mono',monospace",
               fontSize:13,fontWeight:700,cursor:"pointer",letterSpacing:1}}>
               🖼️ DESCARGAR IMAGEN (.png)
@@ -3857,15 +3857,15 @@ function GestionTab({local,setLocal,cats,setCats,prods,setProds,gSubTab,setGSubT
         <GLbl c="var(--gi2)">Apariencia</GLbl>
         <GLbl>Color principal de la carta</GLbl>
         <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:14}}>
-          <input type="color" value={local.color||"#0A7A70"}
+          <input type="color" value={local.color||"#065F52"}
             onChange={e=>setLocal(l=>({...l,color:e.target.value}))}
             style={{width:52,height:42,border:"1px solid var(--gbr)",
               borderRadius:10,cursor:"pointer",background:"none",padding:4}}/>
           <div style={{flex:1,background:"var(--gb)",border:"1px solid var(--gbr)",
             borderRadius:10,padding:"11px 14px",color:"var(--gbri)",fontSize:14,
-            fontFamily:"'IBM Plex Mono',monospace"}}>{local.color||"#0A7A70"}</div>
+            fontFamily:"'IBM Plex Mono',monospace"}}>{local.color||"#065F52"}</div>
           <div style={{width:42,height:42,borderRadius:10,
-            background:local.color||"#0A7A70",border:"1px solid var(--gbr)",flexShrink:0}}/>
+            background:local.color||"#065F52",border:"1px solid var(--gbr)",flexShrink:0}}/>
         </div>
         <GLbl>Cantidad de mesas</GLbl>
         <div style={{display:"flex",alignItems:"center",gap:14}}>
@@ -4443,12 +4443,12 @@ function ConfigTab({local,setLocal,toast,adminPinUnlocked}) {
       <ALbl>Apariencia</ALbl>
       <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,letterSpacing:2.5,textTransform:"uppercase",color:"var(--ad)",marginBottom:7}}>Color principal de la carta</p>
       <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:16}}>
-        <input type="color" value={local.color||"#0A7A70"}
+        <input type="color" value={local.color||"#065F52"}
           onChange={e=>setLocal(l=>({...l,color:e.target.value}))}
           style={{width:52,height:42,border:"1px solid var(--abr)",borderRadius:10,cursor:"pointer",background:"none",padding:4}}/>
         <div style={{flex:1,background:"var(--as)",border:"1px solid var(--abr)",borderRadius:10,
-          padding:"11px 14px",color:"var(--abri)",fontSize:14,fontFamily:"'IBM Plex Mono',monospace"}}>{local.color||"#0A7A70"}</div>
-        <div style={{width:42,height:42,borderRadius:10,background:local.color||"#0A7A70",border:"1px solid var(--abr)",flexShrink:0}}/>
+          padding:"11px 14px",color:"var(--abri)",fontSize:14,fontFamily:"'IBM Plex Mono',monospace"}}>{local.color||"#065F52"}</div>
+        <div style={{width:42,height:42,borderRadius:10,background:local.color||"#065F52",border:"1px solid var(--abr)",flexShrink:0}}/>
       </div>
       <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,letterSpacing:2.5,textTransform:"uppercase",color:"var(--ad)",marginBottom:7}}>Cantidad de mesas</p>
       <div style={{display:"flex",alignItems:"center",gap:14}}>
@@ -5588,18 +5588,18 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
           <h3 style={{fontFamily:"'Outfit',sans-serif",fontSize:20,fontWeight:700,
             color:"var(--abri)",marginBottom:20}}>Mesa {tableNum}</h3>
           <div style={{display:"inline-block",background:"#F5ECD7",borderRadius:20,
-            padding:"20px 24px",marginBottom:16,border:"2px solid #0A7A70",
+            padding:"20px 24px",marginBottom:16,border:"2px solid #065F52",
             boxShadow:"0 8px 40px rgba(0,0,0,.4)"}}>
             <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,
-              color:"#0A7A70",letterSpacing:3,textTransform:"uppercase",marginBottom:6}}>
+              color:"#065F52",letterSpacing:3,textTransform:"uppercase",marginBottom:6}}>
               {local.nombre}
             </p>
-            <div style={{width:32,height:2,background:"#0A7A70",margin:"0 auto 12px",borderRadius:1}}/>
+            <div style={{width:32,height:2,background:"#065F52",margin:"0 auto 12px",borderRadius:1}}/>
             <div style={{background:"#fff",borderRadius:12,padding:8,
-              border:"3px solid #0A7A70",display:"inline-block"}}>
+              border:"3px solid #065F52",display:"inline-block"}}>
               <QRImage data={data} size={160}/>
             </div>
-            <div style={{background:"#0A7A70",borderRadius:30,padding:"6px 24px",
+            <div style={{background:"#065F52",borderRadius:30,padding:"6px 24px",
               display:"inline-block",marginTop:12}}>
               <p style={{fontFamily:"'Playfair Display',serif",fontSize:18,
                 fontWeight:700,color:"#1A1408"}}>Mesa {tableNum}</p>
@@ -5619,10 +5619,10 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
   @page{size:A4;margin:0}
   *{margin:0;padding:0;box-sizing:border-box}
   body{display:flex;align-items:center;justify-content:center;min-height:100vh;background:#fff}
-  .card{text-align:center;padding:48px 60px;border:3px solid #0A7A70;border-radius:28px;background:#fff}
-  .name{font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#0A7A70;margin-bottom:18px;font-family:monospace}
-  .qr{background:#fff;border:3px solid #0A7A70;border-radius:14px;padding:12px;display:inline-block;margin-bottom:18px}
-  .label{background:#0A7A70;color:#0A0806;border-radius:30px;padding:9px 32px;display:inline-block;font-size:17px;font-weight:700;margin-bottom:12px;font-family:sans-serif}
+  .card{text-align:center;padding:48px 60px;border:3px solid #065F52;border-radius:28px;background:#fff}
+  .name{font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#065F52;margin-bottom:18px;font-family:monospace}
+  .qr{background:#fff;border:3px solid #065F52;border-radius:14px;padding:12px;display:inline-block;margin-bottom:18px}
+  .label{background:#065F52;color:#0A0806;border-radius:30px;padding:9px 32px;display:inline-block;font-size:17px;font-weight:700;margin-bottom:12px;font-family:sans-serif}
   .url{font-size:9px;color:#999;word-break:break-all;max-width:260px;margin:0 auto;font-family:monospace}
 </style></head><body>
 <div class="card">
@@ -5654,16 +5654,16 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
      TABS DE NAVEGACIÓN
   ══════════════════════════════════════════ */
   const TABS = [
-    {id:"home",      icon:"◈", label:"Inicio",    color:"#0A7A70"},
-    {id:"orders",    icon:"⊞", label:"Pedidos",   color:"#0A7A70", badge:newCount+solicitudes.length},
-    {id:"carta",     icon:"≡", label:"Carta",     color:"#0A7A70"},
-    {id:"qr",        icon:"⬛", label:"QRs",       color:"#0A7A70"},
-    {id:"caja",      icon:"◉", label:"Caja",      color:"#0A7A70"},
-    {id:"mostrador", icon:"🏪", label:"Mostrador", color:"#0A7A70"},
-    {id:"cocina",    icon:"👨‍🍳", label:"Cocina",   color:"#0A7A70"},
-    {id:"reportes",  icon:"📊", label:"Reportes",  color:"#0A7A70"},
-    {id:"gestion",   icon:"✏", label:"Gestión",   color:"#0A7A70"},
-    {id:"config",    icon:"⚙", label:"Config",    color:"#0A7A70"},
+    {id:"home",      icon:"◈", label:"Inicio",    color:"#065F52"},
+    {id:"orders",    icon:"⊞", label:"Pedidos",   color:"#065F52", badge:newCount+solicitudes.length},
+    {id:"carta",     icon:"≡", label:"Carta",     color:"#065F52"},
+    {id:"qr",        icon:"⬛", label:"QRs",       color:"#065F52"},
+    {id:"caja",      icon:"◉", label:"Caja",      color:"#065F52"},
+    {id:"mostrador", icon:"🏪", label:"Mostrador", color:"#065F52"},
+    {id:"cocina",    icon:"👨‍🍳", label:"Cocina",   color:"#065F52"},
+    {id:"reportes",  icon:"📊", label:"Reportes",  color:"#065F52"},
+    {id:"gestion",   icon:"✏", label:"Gestión",   color:"#065F52"},
+    {id:"config",    icon:"⚙", label:"Config",    color:"#065F52"},
     {id:"whatsapp",  icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347zM11.996 0C5.374 0 0 5.373 0 11.996c0 2.133.56 4.133 1.54 5.867L.047 23.53a.5.5 0 00.612.632l5.828-1.528A11.935 11.935 0 0011.996 24C18.619 24 24 18.619 24 11.996 24 5.373 18.619 0 11.996 0zm0 21.818a9.794 9.794 0 01-4.992-1.367l-.358-.212-3.718.975 1.002-3.618-.234-.372a9.794 9.794 0 01-1.518-5.228c0-5.419 4.409-9.818 9.818-9.818s9.818 4.399 9.818 9.818-4.399 9.822-9.818 9.822z"/></svg>, label:"WhatsApp"},
   ];
 
@@ -7948,7 +7948,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
                   </button>
                 </>);
               })()}
-              <button onClick={()=>{doPrint(ticketPreview);}} style={{flex:"1 1 auto",padding:"10px",borderRadius:8,background:"#0A7A70",border:"none",fontFamily:"'Outfit',sans-serif",fontSize:13,fontWeight:700,cursor:"pointer",color:"#fff"}}>
+              <button onClick={()=>{doPrint(ticketPreview);}} style={{flex:"1 1 auto",padding:"10px",borderRadius:8,background:"#065F52",border:"none",fontFamily:"'Outfit',sans-serif",fontSize:13,fontWeight:700,cursor:"pointer",color:"#fff"}}>
                 🖨️ Imprimir
               </button>
             </div>
@@ -8308,7 +8308,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
             <div style={{textAlign:"center",marginBottom:24}}>
               <div style={{fontSize:40,marginBottom:8}}>🎉</div>
               <h2 style={{margin:0,fontSize:"1.35rem",fontWeight:800,
-                background:"linear-gradient(135deg,#6366F1,#0A7A70)",
+                background:"linear-gradient(135deg,#6366F1,#065F52)",
                 WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>
                 ¡Bienvenido a MenuQR!
               </h2>
@@ -8458,7 +8458,7 @@ export default function MenuQR({
       setLocal({
         nombre: rest.nombre, descripcion: rest.descripcion || "",
         direccion: rest.direccion || "", telefono: rest.telefono || "",
-        email: rest.email || "", color: rest.color || "#0A7A70",
+        email: rest.email || "", color: rest.color || "#065F52",
         mesas: rest.mesas || 10, restauranteId: rest.id,
         slug: rest.slug, baseUrl: rest.base_url || "",
         plan: rest.plan || "free",
@@ -8497,7 +8497,7 @@ export default function MenuQR({
   if (authLoading) return (
     <div style={{background:"#060810",minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center"}}>
       <GS/>
-      <div style={{width:40,height:40,border:"3px solid #1A2230",borderTopColor:"#0A7A70",borderRadius:"50%",animation:"spin .8s linear infinite"}}/>
+      <div style={{width:40,height:40,border:"3px solid #1A2230",borderTopColor:"#065F52",borderRadius:"50%",animation:"spin .8s linear infinite"}}/>
     </div>
   );
 
@@ -8534,7 +8534,7 @@ export default function MenuQR({
 /* ── Landing con Auth ─────────────────────────────────────── */
 function LandingAuth({ setMode, goAdmin, authUser, onLogout }) {
   return (
-    <div style={{maxWidth:430,margin:"0 auto",minHeight:"100vh",background:"#0A7A70",
+    <div style={{maxWidth:430,margin:"0 auto",minHeight:"100vh",background:"#065F52",
       display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
       padding:28,position:"relative",overflow:"hidden"}}>
       {/* Decorative blobs */}
