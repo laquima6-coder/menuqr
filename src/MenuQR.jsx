@@ -7941,7 +7941,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
                   </button>
                 </>);
               })()}
-              <button onClick={()=>{doPrint(ticketPreview);}} style={{flex:"1 1 auto",padding:"10px",borderRadius:8,background:"#0D9488",border:"none",fontFamily:"'Outfit',sans-serif",fontSize:13,fontWeight:700,cursor:"pointer",color:"#fff"}>
+              <button onClick={()=>{doPrint(ticketPreview);}} style={{flex:"1 1 auto",padding:"10px",borderRadius:8,background:"#0D9488",border:"none",fontFamily:"'Outfit',sans-serif",fontSize:13,fontWeight:700,cursor:"pointer",color:"#fff"}}>
                 🖨️ Imprimir
               </button>
             </div>
