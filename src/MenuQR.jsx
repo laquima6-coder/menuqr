@@ -953,7 +953,7 @@ function WAOrderFlow({local, prods, cats, tipo, onClose}) {
         await supabase.from("pedidos").insert({
           id:pedidoId, restaurante_id:local.restauranteId,
           mesa_numero:0, status:"nuevo", metodo_pago:"whatsapp",
-          propina:0, total, nota:notaStr, idioma:"es", fuente:"wa",
+          propina:0, total, nota:notaStr, idioma:"es",
         });
         await supabase.from("pedido_items").insert(
           cartItems.map(i=>({pedido_id:pedidoId,producto_id:i.id,nombre:i.name,precio:i.price,cantidad:i.qty}))
@@ -1926,7 +1926,7 @@ export function ClientApp({onBack, local, cats, prods, vitrina=false, sinPedidos
       else {
         try {
           pedidoId=crypto.randomUUID();
-          const {error}=await supabase.from("pedidos").insert({id:pedidoId,restaurante_id:local.restauranteId,mesa_numero:mesa,status:"nuevo",metodo_pago:pagoFinalPC,fuente:"bistro_pc",propina:tipAmount,total:subtotal-descuentoAplicado+tipAmount,nota:[note,descuentoAplicado>0?`DESCUENTO_PRIMERA_VEZ_10%_$${descuentoAplicado}`:null].filter(Boolean).join(" | ")||null,idioma:lang||"es"});
+          const {error}=await supabase.from("pedidos").insert({id:pedidoId,restaurante_id:local.restauranteId,mesa_numero:mesa,status:"nuevo",metodo_pago:pagoFinalPC,propina:tipAmount,total:subtotal-descuentoAplicado+tipAmount,nota:[note,descuentoAplicado>0?`DESCUENTO_PRIMERA_VEZ_10%_$${descuentoAplicado}`:null].filter(Boolean).join(" | ")||null,idioma:lang||"es"});
           if(error){errorMsg=error.message;}
           else{
             if(descuentoAplicado>0){localStorage.removeItem("menuqr_promo10_"+(local.restauranteId||"x"));setPromoActiva(false);}
@@ -2317,7 +2317,7 @@ export function ClientApp({onBack, local, cats, prods, vitrina=false, sinPedidos
           else {
             try {
               pedidoId=crypto.randomUUID();
-              const {error}=await supabase.from("pedidos").insert({id:pedidoId,restaurante_id:local.restauranteId,mesa_numero:mesa,status:"nuevo",metodo_pago:pagoFinal,fuente:"qr_mesa",propina:tipAmount,total:totalFinal,nota:[note,descuentoAplicado>0?`DESCUENTO_PRIMERA_VEZ_10%_$${descuentoAplicado}`:null].filter(Boolean).join(" | ")||null,idioma:lang||"es"});
+              const {error}=await supabase.from("pedidos").insert({id:pedidoId,restaurante_id:local.restauranteId,mesa_numero:mesa,status:"nuevo",metodo_pago:pagoFinal,propina:tipAmount,total:totalFinal,nota:[note,descuentoAplicado>0?`DESCUENTO_PRIMERA_VEZ_10%_$${descuentoAplicado}`:null].filter(Boolean).join(" | ")||null,idioma:lang||"es"});
               if(error){errorMsg=error.message;}
               else{
                 if(descuentoAplicado>0){localStorage.removeItem("menuqr_promo10_"+(local.restauranteId||"x"));setPromoActiva(false);}
@@ -5101,8 +5101,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
         propina:        0,
         total:          vrTotal,
         nota:           [vrMesa==="mostrador"?"Venta en mostrador":null, vrNota||null].filter(Boolean).join(" | ")||null,
-        fuente:         "mostrador",
-      }).select().single();
+              }).select().single();
       if(!error && pedido){
         await supabase.from("pedido_items").insert(
           items.map(i=>({pedido_id:pedido.id,producto_id:i.id,nombre:i.name,precio:i.price,cantidad:i.qty}))
@@ -5129,8 +5128,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
         propina:        0,
         total:          cajaTotal,
         nota:           cajaMesaTipo==="mostrador"?"Venta en mostrador":null,
-        fuente:         "caja",
-      }).select().single();
+              }).select().single();
       if(!error && pedido){
         await supabase.from("pedido_items").insert(
           items.map(i=>({pedido_id:pedido.id,producto_id:i.id,nombre:i.name,precio:i.price,cantidad:i.qty}))
