@@ -1560,9 +1560,9 @@ export function ClientApp({onBack, local, cats, prods, vitrina=false, sinPedidos
   const [showDividir, setShowDividir]         = useState(false);
   const [dividirN, setDividirN]               = useState(2);
   const [lang,setLang]     = useState(()=>localStorage.getItem("menuqr_lang")||"es");
+  const effectiveVitrina = vitrina || sinPedidos;
   const [promoActiva,setPromoActiva] = useState(()=>{
-    const effectiveVitrina = vitrina || sinPedidos;
-    if(effectiveVitrina) return false;
+    if(vitrina || sinPedidos) return false;
     try { return !!JSON.parse(localStorage.getItem("menuqr_promo10_"+(local.restauranteId||"x"))||"null"); } catch{ return false; }
   });
   const T = (key) => t(key,lang);
