@@ -2548,20 +2548,7 @@ function ClientApp({onBack, local, cats, prods, vitrina=false, sinPedidos=false}
       <div style={{flex:1,overflowY:"auto",paddingBottom:effectiveVitrina?24:100}}>
         <HappyHourBanner happyHasta={local.happyHasta} happyHour={local.happyHour} lang={lang}/>
         {effectiveVitrina && <VitrinaInfo local={local} cats={cats} prods={prods}/>}
-        {sinPedidos && local.whatsapp && (
-          <div style={{margin:"0 16px 16px",padding:"14px 16px",background:"#F0FFF4",borderRadius:14,border:"1px solid #BBF7D0",display:"flex",alignItems:"center",gap:12}}>
-            <span style={{fontSize:28}}>💬</span>
-            <div style={{flex:1}}>
-              <p style={{fontFamily:"'Outfit',sans-serif",fontSize:14,fontWeight:700,color:"#166534",margin:0}}>¿Querés hacer un pedido?</p>
-              <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"#15803D",margin:"2px 0 0"}}>Escribinos por WhatsApp</p>
-            </div>
-            <a href={`https://wa.me/${local.whatsapp.replace(/\D/g,"")}?text=${encodeURIComponent("Hola! Quiero hacer un pedido en "+local.nombre)}`}
-              target="_blank" rel="noreferrer"
-              style={{background:"#25D366",border:"none",borderRadius:10,padding:"9px 14px",color:"#fff",fontFamily:"'Outfit',sans-serif",fontSize:13,fontWeight:700,textDecoration:"none",whiteSpace:"nowrap"}}>
-              Pedir 📲
-            </a>
-          </div>
-        )}
+
 
         {/* Products by category */}
         {activeCats.filter(cat=>activeCat==="TODO"||activeCat===cat.id).map(cat=>{
