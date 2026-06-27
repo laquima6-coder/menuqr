@@ -1655,6 +1655,17 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
                 );
               })}
             </div>
+            {lastPedidoId&&local.slug&&(
+              <a href={`/${local.slug}/pedido/${lastPedidoId}`} target="_blank" rel="noreferrer"
+                style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,
+                  padding:"12px",marginBottom:10,
+                  background:"rgba(74,154,90,.08)",border:"1px solid rgba(74,154,90,.3)",
+                  borderRadius:10,textDecoration:"none",
+                  fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,color:"#4A7A50"}}>
+                <span style={{width:6,height:6,borderRadius:"50%",background:"#4A9A5A",flexShrink:0}}/>
+                Seguir mi pedido en vivo →
+              </a>
+            )}
             <div style={{display:"flex",gap:12}}>
               <button onClick={reset} className="pr" style={{flex:1,background:"#EEE8D8",border:`1px solid ${warmBorder}`,borderRadius:10,padding:13,fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:600,color:warmMuted,cursor:"pointer"}}>Hacer otro pedido</button>
               <button onClick={onBack} className="pr" style={{flex:1,background:warmText,border:"none",borderRadius:10,padding:13,fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,color:creamBg,cursor:"pointer"}}>Volver al inicio</button>
@@ -1777,6 +1788,18 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
             <span>{T('total')}</span><span>$ {fmt(grandTotal)}</span>
           </div>
         </div>
+        {/* Tracking link */}
+        {lastPedidoId&&local.slug&&(
+          <a href={`/${local.slug}/pedido/${lastPedidoId}`} target="_blank" rel="noreferrer"
+            style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,
+              width:"100%",maxWidth:340,padding:"12px",marginBottom:12,
+              background:"rgba(74,154,90,.1)",border:"1px solid rgba(74,154,90,.3)",
+              borderRadius:14,textDecoration:"none",
+              fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,color:"#4A9A5A"}}>
+            <span style={{width:6,height:6,borderRadius:"50%",background:"#4A9A5A",flexShrink:0}}/>
+            Seguir mi pedido en vivo →
+          </a>
+        )}
         {/* Debug: mostrar error de guardado si hubo uno */}
         {typeof window!=="undefined" && localStorage.getItem("menuqr_last_order_error") && (
           <div style={{background:"#1a0808",border:"1px solid #7f1d1d",color:"#f87171",

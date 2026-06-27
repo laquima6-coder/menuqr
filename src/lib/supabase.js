@@ -241,3 +241,29 @@ export const getSession = async () => {
   const { data: { session } } = await supabase.auth.getSession()
   return session
 }
+
+/* PEDIDO INDIVIDUAL — para tracking del cliente */
+export const getPedidoById = async (id) => {
+  if (!supabase) return null
+  const { data, error } = await supabase
+    .from('pedidos')
+    .select('*, pedido_items(*)')
+    .eq('id', id)
+    .single()
+  if (error) { console.error('getPedidoById:', error); return null }
+  return data
+}
+
+export const subscribePedido = (id, onUpdate) => {
+  if (!supabase) return () => {}
+  const channel = supabase
+    .channel(`pedido-track-${id}`)
+    .on('postgres_changes', {
+      event:  'UPDATE',
+      schema: 'public',
+      table:  'pedidos',
+      filter: `id=eq.${id}`,
+    }, payload => onUpdate?.(payload.new))
+    .subscribe()
+  return () => supabase.removeChannel(channel)
+}
