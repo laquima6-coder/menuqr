@@ -7891,25 +7891,29 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
               <button onClick={()=>setTicketPreview(null)} style={{flex:"1 1 auto",padding:"10px",borderRadius:8,background:"#f0f0f0",border:"1px solid #ddd",fontFamily:"'Outfit',sans-serif",fontSize:13,fontWeight:700,cursor:"pointer",color:"#333"}}>
                 Cerrar
               </button>
-              {typeof navigator!=="undefined"&&navigator.share&&(
-                <button onClick={()=>{
-                  const lines=[
-                    `🧾 *Ticket — ${local.nombre||"Restaurante"}*`,
-                    `📍 ${ticketPreview.table===0||ticketPreview.table==="0"?"Mostrador":"Mesa "+ticketPreview.table}  |  Pedido #${String(ticketPreview.id).slice(-4)}`,
-                    `━━━━━━━━━━━━━━━━`,
-                    ...(ticketPreview.items||[]).map(it=>`${it.qty}× ${it.name}${it.price?" — $"+fmt(it.qty*(it.price||0)):""}`) ,
-                    `━━━━━━━━━━━━━━━━`,
-                    `💰 *TOTAL: $${fmt(ticketPreview.total)}*`,
-                    `💳 ${fmtPay(ticketPreview.pay)}`,
-                    ticketPreview.nota&&ticketPreview.nota!=="Venta en mostrador"?`📝 ${ticketPreview.nota}`:"",
-                    ``,
-                    `_Emitido por MenuQR_`,
-                  ].filter(Boolean);
-                  navigator.share({title:"Ticket",text:lines.join("\n")}).catch(()=>{});
-                }} style={{flex:"1 1 auto",padding:"10px",borderRadius:8,background:"#1d9bf0",border:"none",fontFamily:"'Outfit',sans-serif",fontSize:13,fontWeight:700,cursor:"pointer",color:"#fff"}}>
-                  📤 Compartir
-                </button>
-              )}
+              (()=>{
+                const lines=[
+                  `🧾 *Ticket — ${local.nombre||"Restaurante"}*`,
+                  `📍 ${ticketPreview.table===0||ticketPreview.table==="0"?"Mostrador":"Mesa "+ticketPreview.table}  |  Pedido #${String(ticketPreview.id).slice(-4)}`,
+                  `━━━━━━━━━━━━━━━━`,
+                  ...(ticketPreview.items||[]).map(it=>`${it.qty}× ${it.name}${it.price?" — $"+fmt(it.qty*(it.price||0)):""}`),
+                  `━━━━━━━━━━━━━━━━`,
+                  `💰 *TOTAL: $${fmt(ticketPreview.total)}*`,
+                  `💳 ${fmtPay(ticketPreview.pay)}`,
+                  ticketPreview.nota&&ticketPreview.nota!=="Venta en mostrador"?`📝 ${ticketPreview.nota}`:"",
+                  ``,`_Emitido por MenuQR_`,
+                ].filter(Boolean).join("\n");
+                return (<>
+                  <button onClick={()=>{navigator.clipboard?.writeText(lines);toast&&toast("Ticket copiado");}}
+                    style={{flex:"1 1 auto",padding:"10px",borderRadius:8,background:"#F3F4F6",border:"1px solid #E5E7EB",fontFamily:"'Outfit',sans-serif",fontSize:13,fontWeight:700,cursor:"pointer",color:"#333"}}>
+                    📋 Copiar
+                  </button>
+                  <button onClick={()=>window.open("https://wa.me/?text="+encodeURIComponent(lines),"_blank")}
+                    style={{flex:"1 1 auto",padding:"10px",borderRadius:8,background:"#25D366",border:"none",fontFamily:"'Outfit',sans-serif",fontSize:13,fontWeight:700,cursor:"pointer",color:"#fff"}}>
+                    📱 WhatsApp
+                  </button>
+                </>);
+              })()
               <button onClick={()=>{doPrint(ticketPreview);}} style={{flex:"1 1 auto",padding:"10px",borderRadius:8,background:"#000",border:"none",fontFamily:"'Outfit',sans-serif",fontSize:13,fontWeight:700,cursor:"pointer",color:"#fff"}}>
                 🖨️ Imprimir
               </button>
