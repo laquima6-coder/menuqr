@@ -4653,7 +4653,7 @@ class AdminErrorBoundary extends React.Component {
 }
 
 
-function CocinaTab({local, QRCodeLib}) {
+function CocinaTab({local, QRCodeLib, toast}) {
 const slug = local.slug || local.baseUrl || "";
 const cocinaUrl = slug ? `${window.location.origin}/${slug}/cocina` : "";
 const [qrImg, setQrImg] = React.useState(null);
@@ -4684,9 +4684,10 @@ return (
         <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:"var(--am)",marginBottom:4,letterSpacing:1}}>URL COCINA</p>
         <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:11,color:"var(--abl)",wordBreak:"break-all",lineHeight:1.4}}>{cocinaUrl}</p>
       </div>
-      <div style={{display:"flex",gap:8,marginBottom:16}}>
-        <button onClick={()=>{navigator.clipboard?.writeText(cocinaUrl);}} style={{flex:1,padding:"11px",borderRadius:10,border:"1px solid var(--abr)",background:"var(--ac)",color:"var(--abri)",fontFamily:"'IBM Plex Mono',monospace",fontSize:11,fontWeight:700,cursor:"pointer"}}>📋 Copiar link</button>
-        <button onClick={()=>window.open(cocinaUrl,"_blank")} style={{flex:1,padding:"11px",borderRadius:10,border:"none",background:"var(--abl)",color:"#fff",fontFamily:"'IBM Plex Mono',monospace",fontSize:11,fontWeight:700,cursor:"pointer"}}>🔗 Abrir</button>
+      <div style={{display:"flex",gap:8,marginBottom:16,flexWrap:"wrap"}}>
+        <button onClick={()=>{navigator.clipboard?.writeText(cocinaUrl);toast&&toast("Link copiado");}} style={{flex:1,minWidth:100,padding:"11px",borderRadius:10,border:"1px solid var(--abr)",background:"var(--ac)",color:"var(--abri)",fontFamily:"'IBM Plex Mono',monospace",fontSize:11,fontWeight:700,cursor:"pointer"}}>📋 Copiar link</button>
+        <button onClick={()=>window.open(cocinaUrl,"_blank")} style={{flex:1,minWidth:100,padding:"11px",borderRadius:10,border:"none",background:"var(--abl)",color:"#fff",fontFamily:"'IBM Plex Mono',monospace",fontSize:11,fontWeight:700,cursor:"pointer"}}>🔗 Abrir</button>
+        <button onClick={()=>{if(navigator.share){navigator.share({title:"Pantalla Cocina",text:"Pantalla de cocina en tiempo real",url:cocinaUrl}).catch(()=>{});}else{navigator.clipboard?.writeText(cocinaUrl);toast&&toast("Link copiado");}}} style={{flex:1,minWidth:100,padding:"11px",borderRadius:10,border:"none",background:"#10b981",color:"#fff",fontFamily:"'IBM Plex Mono',monospace",fontSize:11,fontWeight:700,cursor:"pointer"}}>📤 Compartir</button>
       </div>
       <div style={{background:"rgba(61,142,255,.06)",border:"1px solid rgba(61,142,255,.2)",borderRadius:12,padding:"12px 14px"}}>
         <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"var(--ad)",lineHeight:1.8}}>
@@ -8085,7 +8086,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
           </div>
         );
       })()}
-      {tab==="cocina" && <CocinaTab local={local} QRCodeLib={QRCodeLib}/>}
+      {tab==="cocina" && <CocinaTab local={local} QRCodeLib={QRCodeLib} toast={toast}/>}
       {tab==="reportes" && <ReportesTab local={local}/>}
       {tab==="gestion" && <GestionTab local={local} setLocal={setLocal} cats={cats} setCats={setCats} prods={prods} setProds={setProds} gSubTab={gSubTab} setGSubTab={setGSubTab} gActiveCat={gActiveCat} setGActiveCat={setGActiveCat} gModal={gModal} setGModal={setGModal} toast={toast} orders={orders} setOrders={setOrders} onEditOrder={o=>setEditOrderModal(o)}/>}
       {tab==="config"   && <ConfigTab local={local} setLocal={setLocal} toast={toast} adminPinUnlocked={adminPinUnlocked}/>}
