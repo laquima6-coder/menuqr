@@ -2727,7 +2727,7 @@ function QRTabComp({ mesaNum, setMesaNum, qrType, setQrType, promoUrl, setPromoU
   const qrData  = getQRData();
 
   return (
-    <div style={{background:"#0A0806",minHeight:"100%",padding:"18px 14px 32px"}}>
+    <div style={{background:"#F8F8F8",minHeight:"100%",padding:"18px 14px 32px"}}>
       {/* Header */}
       <div style={{marginBottom:18}}>
         <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:"#3A2A10",letterSpacing:2,textTransform:"uppercase",marginBottom:4}}>Panel del dueño</div>
@@ -2845,10 +2845,10 @@ function QRTabComp({ mesaNum, setMesaNum, qrType, setQrType, promoUrl, setPromoU
       <div style={{background:"#0F0F0F",borderRadius:20,padding:"24px 16px",marginBottom:16,textAlign:"center",border:`1px solid ${current.color}44`,boxShadow:`0 4px 32px ${current.color}11`}}>
         <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,color:current.color,letterSpacing:2.5,textTransform:"uppercase",marginBottom:10}}>{local.nombre}</div>
         <div style={{background:"#FFF",borderRadius:14,padding:10,border:`3px solid ${current.color}`,display:"inline-block",marginBottom:14}}>
-          <QRImage data={qrData} size={200} light="#FFFFFF" dark="#0A0806"/>
+          <QRImage data={qrData} size={200} light="#FFFFFF" dark="#1A1A1A"/>
         </div>
         <div style={{background:current.color,borderRadius:30,padding:"7px 24px",display:"inline-block",marginBottom:6}}>
-          <div style={{fontFamily:"'Outfit',sans-serif",fontSize:14,fontWeight:700,color:"#0A0806"}}>
+          <div style={{fontFamily:"'Outfit',sans-serif",fontSize:14,fontWeight:700,color:"#fff"}}>
             {qrType==="mesa"?`Mesa ${mesaNum}`:
              qrType==="wifi"?"WiFi Gratis":
              qrType==="whatsapp"?"Pedí por WhatsApp ▶":
