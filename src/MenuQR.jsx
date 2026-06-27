@@ -1539,6 +1539,42 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
   });
   const T = (key) => t(key,lang);
   const changeLang = (code) => { setLang(code); localStorage.setItem("menuqr_lang",code); };
+
+  /* ── Auto-traducción de productos ── */
+  const transCacheRef = React.useRef({});
+  const [translatedProds, setTranslatedProds] = useState(prods);
+
+  const mtTranslate = React.useCallback(async(text, tgt)=>{
+    if(!text||!tgt||tgt==="es") return text;
+    const key=tgt+"::"+text;
+    if(transCacheRef.current[key]) return transCacheRef.current[key];
+    try{
+      const r=await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text.slice(0,400))}&langpair=es|${tgt}&de=laquima6@gmail.com`);
+      const d=await r.json();
+      const tr=d.responseData?.translatedText||text;
+      transCacheRef.current[key]=tr;
+      return tr;
+    }catch{ return text; }
+  },[]);
+
+  React.useEffect(()=>{
+    if(lang==="es"){ setTranslatedProds(prods); return; }
+    let cancelled=false;
+    const run=async()=>{
+      const result=[];
+      for(const p of prods){
+        if(cancelled) break;
+        const [name,desc]=await Promise.all([
+          mtTranslate(p.name,lang),
+          p.desc?mtTranslate(p.desc,lang):Promise.resolve(p.desc),
+        ]);
+        result.push({...p,name,desc});
+        if(!cancelled) setTranslatedProds([...result]);
+      }
+    };
+    run();
+    return()=>{ cancelled=true; };
+  },[lang, prods]);
   // secs timer moved to HappyHourBanner component to prevent full re-renders
 
   // Solo productos activos
@@ -2473,7 +2509,7 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
 
         {/* Products by category */}
         {activeCats.filter(cat=>activeCat==="TODO"||activeCat===cat.id).map(cat=>{
-          const catProds=prods.filter(p=>p.cat===cat.id&&(p.active||p.active==null));
+          const catProds=translatedProds.filter(p=>p.cat===cat.id&&(p.active||p.active==null));
           if(!catProds.length) return null;
           const ac=local.color||"#C9A84C";
           return(
