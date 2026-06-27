@@ -4764,12 +4764,12 @@ return (
 );
 }
 
-function EditOrderModal({editOrderModal, setEditOrderModal, setOrders, toast}) {
+function EditOrderModal({editOrderModal, setEditOrderModal, setOrders, toast, doPrint}) {
 const o = editOrderModal;
 const PAY_LBL2={cash:"Efectivo",mp:"Mercado Pago",card:"Tarjeta Débito",trans:"Transferencia"};
 const [items, setItems] = useState(o.items.map(it=>({...it})));
 const total = items.reduce((s,it)=>s+(it.price||0)*(it.qty||1),0);
-const saveEdit = async () => {
+const saveEdit = async (andPrint=false) => {
   if(!supabase) return;
   // Update pedido total
   await supabase.from("pedidos").update({total}).eq("id",o.id);
@@ -4780,8 +4780,10 @@ const saveEdit = async () => {
       items.map(it=>({pedido_id:o.id,producto_id:it.id||null,nombre:it.name,precio:it.price,cantidad:it.qty}))
     );
   }
-  setOrders(os=>os.map(x=>x.id===o.id?{...x,items,total}:x));
+  const updated = {...o, items, total};
+  setOrders(os=>os.map(x=>x.id===o.id?updated:x));
   toast("✓ Ticket actualizado");
+  if(andPrint && doPrint) doPrint(updated);
   setEditOrderModal(null);
 };
 const mesaLabel=(o.table===0||o.table==="0"||o.table===null)?"Mostrador":"Mesa "+o.table;
@@ -4835,17 +4837,22 @@ return (
         color:"var(--am)",marginBottom:16}}>
         Pago: {PAY_LBL2[o.pay]||o.pay||"—"}
       </div>
-      <div style={{display:"flex",gap:8}}>
-        <button onClick={()=>setEditOrderModal(null)} style={{flex:1,padding:"12px",
+      <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+        <button onClick={()=>setEditOrderModal(null)} style={{flex:1,minWidth:90,padding:"12px",
           borderRadius:12,border:"1px solid var(--abr)",background:"var(--ac)",
           color:"var(--ad)",fontFamily:"'Outfit',sans-serif",fontSize:14,fontWeight:700,cursor:"pointer"}}>
           Cancelar
         </button>
-        <button onClick={saveEdit} style={{flex:1.5,padding:"12px",borderRadius:12,
+        <button onClick={()=>saveEdit(false)} style={{flex:1,minWidth:90,padding:"12px",borderRadius:12,
           border:"none",background:"linear-gradient(135deg,#00FF88,#00C870)",
           color:"#060810",fontFamily:"'Outfit',sans-serif",fontSize:14,fontWeight:800,cursor:"pointer"}}>
           Guardar
         </button>
+        {doPrint&&<button onClick={()=>saveEdit(true)} style={{flex:2,minWidth:140,padding:"12px",borderRadius:12,
+          border:"none",background:"linear-gradient(135deg,#3D8EFF,#2563eb)",
+          color:"#fff",fontFamily:"'Outfit',sans-serif",fontSize:13,fontWeight:800,cursor:"pointer"}}>
+          🖨️ Guardar e Imprimir
+        </button>}
       </div>
     </div>
   </div>
@@ -8201,7 +8208,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
       )}
 
       {/* ── Edit Order Modal ──────────────────────────────────────── */}
-      {editOrderModal && <EditOrderModal editOrderModal={editOrderModal} setEditOrderModal={setEditOrderModal} setOrders={setOrders} toast={toast}/>}
+      {editOrderModal && <EditOrderModal editOrderModal={editOrderModal} setEditOrderModal={setEditOrderModal} setOrders={setOrders} toast={toast} doPrint={doPrint}/>}
 
       {showArqAp && (
         <ArqModal title="Arqueo de apertura" onConfirm={abrirTurno}
