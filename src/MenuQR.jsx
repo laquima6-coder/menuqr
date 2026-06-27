@@ -1520,6 +1520,7 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
     return()=>window.removeEventListener("resize",h);
   },[]);
   const [showSolicitudes, setShowSolicitudes] = useState(false);
+  const [showLang, setShowLang] = useState(false);
   const [solicEnviada, setSolicEnviada]       = useState(null);
   const [showDividir, setShowDividir]         = useState(false);
   const [dividirN, setDividirN]               = useState(2);
@@ -2418,9 +2419,9 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
               {local.mesa&&local.feat_solicitudes!==false&&(
                 <button onClick={()=>setShowSolicitudes(true)} className="pr" style={{width:36,height:36,borderRadius:10,background:"#F5F5F5",border:"1px solid #EBEBEB",fontSize:18,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>🛎️</button>
               )}
-              {LANGS.map(l=>(
-                <button key={l.code} onClick={()=>changeLang(l.code)} style={{background:lang===l.code?"rgba(0,0,0,.07)":"none",border:"none",borderRadius:6,padding:"4px 3px",cursor:"pointer",fontSize:13,lineHeight:1}}>{l.flag}</button>
-              ))}
+              <button onClick={()=>setShowLang(true)} style={{width:36,height:36,borderRadius:10,background:"#F5F5F5",border:"1px solid #EBEBEB",fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                {LANGS.find(l=>l.code===lang)?.flag||"🌐"}
+              </button>
             </div>
           )}
         </div>
@@ -2532,6 +2533,28 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
         </div>
       )}
 
+      {/* ══ LANG MODAL ══ */}
+      {showLang&&(
+        <div style={{position:"fixed",inset:0,zIndex:300,background:"rgba(0,0,0,.4)",display:"flex",alignItems:"flex-end"}} onClick={()=>setShowLang(false)}>
+          <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:430,margin:"0 auto",background:"#FFF",borderRadius:"22px 22px 0 0",padding:"20px 16px 36px",boxShadow:"0 -8px 40px rgba(0,0,0,.15)"}}>
+            <div style={{width:36,height:4,borderRadius:2,background:"#DDD",margin:"0 auto 18px"}}/>
+            <div style={{fontFamily:"'Outfit',sans-serif",fontSize:17,fontWeight:800,color:"#111",textAlign:"center",marginBottom:16}}>Idioma / Language</div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+              {LANGS.map(l=>(
+                <button key={l.code} onClick={()=>{changeLang(l.code);setShowLang(false);}} className="pr" style={{
+                  display:"flex",alignItems:"center",gap:10,
+                  padding:"12px 14px",borderRadius:12,cursor:"pointer",textAlign:"left",
+                  background:lang===l.code?"#F0FDF4":"#FAFAFA",
+                  border:`1px solid ${lang===l.code?"#BBF7D0":"#EBEBEB"}`}}>
+                  <span style={{fontSize:22}}>{l.flag}</span>
+                  <span style={{fontSize:14,fontWeight:700,color:lang===l.code?"#16A34A":"#333"}}>{l.name}</span>
+                  {lang===l.code&&<span style={{marginLeft:"auto",color:"#16A34A",fontSize:14}}>✓</span>}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
       {/* ══ SOLICITUDES MODAL ══ */}
       {!vitrina&&showSolicitudes&&(
         <div style={{position:"fixed",inset:0,zIndex:200,background:"rgba(0,0,0,.5)",display:"flex",alignItems:"flex-end"}} onClick={()=>setShowSolicitudes(false)}>
