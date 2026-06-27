@@ -7552,6 +7552,18 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
         return null;
   };
 
+
+  /* QR helper for WhatsApp tab */
+  function QRImg({data, size=160, dark="#000", light="#fff"}) {
+    const [src, setSrc] = React.useState(null);
+    React.useEffect(()=>{
+      if(!data||!QRCodeLib) return;
+      QRCodeLib.toDataURL(data,{width:size,margin:1,color:{dark,light}}).then(setSrc).catch(()=>{});
+    },[data,size,dark,light]);
+    if(!src) return <div style={{width:size,height:size,background:light,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,color:"#999"}}>...</div>;
+    return <img src={src} alt="QR" style={{width:size,height:size,borderRadius:8}}/>;
+  }
+
   /* ── WhatsApp Tab ── */
   function WhatsAppTab() {
     const waNum = local.whatsapp_vitrina_numero || "";
@@ -8077,7 +8089,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
       {tab==="reportes" && <ReportesTab local={local}/>}
       {tab==="gestion" && <GestionTab local={local} setLocal={setLocal} cats={cats} setCats={setCats} prods={prods} setProds={setProds} gSubTab={gSubTab} setGSubTab={setGSubTab} gActiveCat={gActiveCat} setGActiveCat={setGActiveCat} gModal={gModal} setGModal={setGModal} toast={toast} orders={orders} setOrders={setOrders} onEditOrder={o=>setEditOrderModal(o)}/>}
       {tab==="config"   && <ConfigTab local={local} setLocal={setLocal} toast={toast} adminPinUnlocked={adminPinUnlocked}/>}
-      {tab==="whatsapp" && <WhatsAppTab/>}
+      {tab==="whatsapp" && WhatsAppTab()}
 
       </div>{/* end admin-content-scroll */}
       </div>{/* end admin-main */}
