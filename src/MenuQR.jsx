@@ -1264,6 +1264,12 @@ const activarPromo = () => {
   localStorage.setItem("menuqr_promo10_"+(local.restauranteId||"x"), JSON.stringify({active:true,ts:Date.now()}));
   setPromoActivada(true);
 };
+// Auto-activar en primera visita
+React.useEffect(()=>{
+  if(local.feat_promo10 && !promoActivada){
+    activarPromo();
+  }
+},[local.feat_promo10]);
 
 return (
   <div style={{margin:"10px 10px 0",display:"flex",flexDirection:"column",gap:8}}>
@@ -4409,7 +4415,15 @@ function ConfigTab({local,setLocal,toast,adminPinUnlocked}) {
             <p style={{fontFamily:"'Outfit',sans-serif",fontSize:15,fontWeight:600,color:"var(--abri)",marginBottom:2}}>{f.icon} {f.label}</p>
             <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"var(--ad)"}}>{f.sub}</p>
           </div>
-          <ToggleA on={local[f.k]} onChange={()=>setLocal(l=>({...l,[f.k]:!l[f.k]}))}/>
+          <ToggleA on={local[f.k]} onChange={async ()=>{
+            const newVal=!local[f.k];
+            setLocal(l=>({...l,[f.k]:newVal}));
+            if(local.restauranteId&&supabase){
+              const {data:cur}=await supabase.from("restaurantes").select("config").eq("id",local.restauranteId).single();
+              await supabase.from("restaurantes").update({config:{...(cur?.config||{}),[f.k]:newVal}}).eq("id",local.restauranteId);
+              toast(`${f.label} ${newVal?"activado":"desactivado"}`);
+            }
+          }}/>
         </div>
       ))}
       {local.happyHour && (
