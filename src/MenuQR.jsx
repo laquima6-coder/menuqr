@@ -2470,106 +2470,123 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
       </div>
     );
   }
-  /* ── MENU VIEW */
+  /* ── MENU VIEW — REDISEÑO MOBILE LIMPIO */
   return (
-    <div className="mpo" style={{maxWidth:430,margin:"0 auto",minHeight:"100vh",background:"#0A0806",display:"flex",position:"relative",overflow:"hidden"}}>
+    <div style={{maxWidth:430,margin:"0 auto",minHeight:"100vh",background:"#F6F6F6",display:"flex",flexDirection:"column",position:"relative",fontFamily:"'DM Sans',sans-serif"}}>
       <GS/>
-      {/* ── MAIN CONTENT ── */}
-      <div style={{flex:1,overflowX:"hidden",overflowY:"auto",maxHeight:"100vh"}}>
+
+      {/* ══ STICKY TOP: Header + Category chips ══ */}
+      <div style={{position:"sticky",top:0,zIndex:30,background:"#FFF",borderBottom:"1px solid #EBEBEB",boxShadow:"0 1px 8px rgba(0,0,0,.06)"}}>
         {/* Header */}
-        <div className="mhd" style={{background:"linear-gradient(135deg,#1A0800 0%,#0D0D0D 100%)",padding:"14px 10px 12px",textAlign:"center",borderBottom:"1px solid #1A1A1A"}}>
-          <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:7,color:"#3A2A10",letterSpacing:2,textTransform:"uppercase",marginBottom:3}}>{T("welcome")}</div>
-          <div className="mhd-title" style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:900,color:"#FFF",lineHeight:1.1,marginBottom:2}}>{local.nombre}</div>
-          {local.descripcion&&<div className="mhd-desc" style={{fontFamily:"'DM Sans',sans-serif",fontSize:9,color:"#444",lineHeight:1.3,marginTop:2}}>{local.descripcion}</div>}
-          <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,color:"#2A2A2A",marginTop:4}}>{local.mesa?`Mesa ${local.mesa} · `:""}{nowStr()}</div>
+        <div style={{display:"flex",alignItems:"center",gap:12,padding:"14px 16px 10px"}}>
+          {local.logo_url?(
+            <img src={local.logo_url} alt="" style={{width:44,height:44,borderRadius:12,objectFit:"cover",flexShrink:0,border:"1px solid #EBEBEB"}}/>
+          ):(
+            <div style={{width:44,height:44,borderRadius:12,background:local.color||"#C9A84C",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}>{local.emoji||"🍽️"}</div>
+          )}
+          <div style={{flex:1,minWidth:0}}>
+            <div style={{fontFamily:"'Outfit',sans-serif",fontSize:17,fontWeight:800,color:"#111",lineHeight:1.1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{local.nombre}</div>
+            {local.descripcion&&<div style={{fontSize:11,color:"#999",lineHeight:1.3,marginTop:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{local.descripcion}</div>}
+            {local.mesa?<div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,fontWeight:700,color:local.color||"#C9A84C",marginTop:2}}>Mesa {local.mesa}</div>:null}
+          </div>
+          {!vitrina&&cartCount>0&&(
+            <button onClick={()=>setView("cart")} style={{flexShrink:0,background:local.color||"#C9A84C",border:"none",borderRadius:22,padding:"8px 14px",cursor:"pointer",display:"flex",alignItems:"center",gap:6}}>
+              <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:11,fontWeight:800,color:"#fff"}}>🛒 {cartCount}</span>
+            </button>
+          )}
+          {!vitrina&&(
+            <div style={{flexShrink:0,display:"flex",gap:6,alignItems:"center"}}>
+              {local.mesa&&local.feat_solicitudes!==false&&(
+                <button onClick={()=>setShowSolicitudes(true)} className="pr" style={{width:36,height:36,borderRadius:10,background:"#F5F5F5",border:"1px solid #EBEBEB",fontSize:18,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>🛎️</button>
+              )}
+              {LANGS.map(l=>(
+                <button key={l.code} onClick={()=>changeLang(l.code)} style={{background:lang===l.code?"rgba(0,0,0,.07)":"none",border:"none",borderRadius:6,padding:"4px 3px",cursor:"pointer",fontSize:13,lineHeight:1}}>{l.flag}</button>
+              ))}
+            </div>
+          )}
         </div>
-        {/* Happy Hour banner — isolated component with own timer */}
+
+        {/* Category chips */}
+        <div style={{display:"flex",gap:8,padding:"0 14px 12px",overflowX:"auto",scrollbarWidth:"none",WebkitOverflowScrolling:"touch"}}>
+          {[{id:"TODO",icon:"",label:"Todo"},...activeCats].map(cat=>(
+            <button key={cat.id} onClick={()=>setAC(cat.id)} className="pr" style={{
+              flexShrink:0,borderRadius:20,padding:"7px 16px",
+              background:activeCat===cat.id?(local.color||"#C9A84C"):"#F0F0F0",
+              color:activeCat===cat.id?"#fff":"#444",
+              border:"none",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,
+              cursor:"pointer",transition:"all .15s",whiteSpace:"nowrap",
+              boxShadow:activeCat===cat.id?"0 2px 8px rgba(0,0,0,.18)":"none"}}>
+              {cat.icon?cat.icon+" ":""}{cat.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ══ SCROLLABLE CONTENT ══ */}
+      <div style={{flex:1,overflowY:"auto",paddingBottom:vitrina?24:100}}>
         <HappyHourBanner happyHasta={local.happyHasta} happyHour={local.happyHour} lang={lang}/>
-        {/* Vitrina info — solo en modo vitrina */}
         {vitrina && <VitrinaInfo local={local} cats={cats} prods={prods}/>}
-        {/* Horizontal category tabs */}
-        <div style={{display:"flex",gap:7,padding:"10px 12px 8px",overflowX:"auto",scrollbarWidth:"none",WebkitOverflowScrolling:"touch",background:"#0A0806",position:"sticky",top:0,zIndex:10,borderBottom:"1px solid #1A1A1A"}}>
-            {[{id:"TODO",icon:"",label:"Todo"},...activeCats].map(cat=>(
-              <button key={cat.id} onClick={()=>setAC(cat.id)} className="pr" style={{
-                flexShrink:0,borderRadius:20,padding:"6px 14px",
-                background:activeCat===cat.id?(local.color||"#C9A84C"):"#141414",
-                border:"1px solid "+(activeCat===cat.id?"transparent":"#2A2A2A"),
-                color:activeCat===cat.id?"#0A0806":"#5A4A30",
-                fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:700,
-                cursor:"pointer",transition:"all .15s",whiteSpace:"nowrap"}}>
-                {cat.icon?cat.icon+" ":""}{cat.label}
-              </button>
-            ))}
-        </div>
-        {/* All categories */}
+
+        {/* Products by category */}
         {activeCats.filter(cat=>activeCat==="TODO"||activeCat===cat.id).map(cat=>{
           const catProds=prods.filter(p=>p.cat===cat.id&&(p.active||p.active==null));
           if(!catProds.length) return null;
           const ac=local.color||"#C9A84C";
           return(
-            <section key={cat.id} id={`cat-${cat.id}`} style={{marginBottom:2}}>
-              {/* Section header */}
-              <div style={{display:"flex",alignItems:"center",gap:5,padding:"14px 8px 8px"}}>
-                <div style={{flex:1,height:1,background:"linear-gradient(to right,transparent,#1E1E1E)"}}/>
-                <div style={{display:"flex",alignItems:"center",gap:4,whiteSpace:"nowrap"}}>
-                  <span style={{color:ac,fontSize:8}}>◆</span>
-                  <span className="mcat-hdr-label" style={{fontFamily:"'Outfit',sans-serif",fontSize:11,fontWeight:800,color:"#FFF",letterSpacing:1.5,textTransform:"uppercase"}}>{cat.icon} {(cat.label||"").toUpperCase()}</span>
-                  <span style={{color:ac,fontSize:8}}>◆</span>
-                </div>
-                <div style={{flex:1,height:1,background:"linear-gradient(to left,transparent,#1E1E1E)"}}/>
+            <section key={cat.id} id={`cat-${cat.id}`} style={{marginBottom:8}}>
+              {/* Category header */}
+              <div style={{padding:"18px 16px 10px",background:"#F6F6F6"}}>
+                <div style={{fontFamily:"'Outfit',sans-serif",fontSize:18,fontWeight:800,color:"#111",letterSpacing:-.2}}>{cat.icon?cat.icon+" ":""}{cat.label}</div>
               </div>
-              {/* 2-col grid */}
-              <div className="mpg" style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:8,padding:"0 8px 8px"}}>
-                {catProds.map(item=>{
+
+              {/* Product list */}
+              <div style={{background:"#FFF",borderRadius:0}}>
+                {catProds.map((item,idx)=>{
                   const inCart=cart[item.id]?.qty||0;
                   const disc=item.orig?Math.round((1-item.price/item.orig)*100):null;
                   return(
-                    <div key={item.id} className="mpc-card" style={{
-                      background:"#141414",borderRadius:12,overflow:"hidden",
-                      border:`1px solid ${inCart>0?ac+"88":"#2A2A2A"}`,
-                      display:"flex",flexDirection:"column",
-                      boxShadow:inCart>0?`0 0 12px ${ac}30`:"0 2px 8px rgba(0,0,0,.4)",
-                      transition:"border-color .2s,box-shadow .2s"}}>
-                      {/* Photo or emoji */}
-                      {item.foto_url?(
-                        <div style={{position:"relative",aspectRatio:"1",overflow:"hidden",flexShrink:0}}>
-                          <img src={item.foto_url} alt={item.name} style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}}
-                            onError={e=>{const p=e.target.parentElement;p.style.cssText="aspect-ratio:1;background:#1A1A1A;display:flex;align-items:center;justify-content:center;";e.target.remove();const s=document.createElement("span");s.style.fontSize="30px";s.textContent=item.emoji||"🍽️";p.appendChild(s);}}/>
-                          {disc&&<div style={{position:"absolute",top:3,left:3,background:"#22C55E",color:"#FFF",borderRadius:3,fontSize:7,fontWeight:800,padding:"1px 3px",fontFamily:"'DM Sans',sans-serif"}}>-{disc}%</div>}
-                          {item.tag&&<div style={{position:"absolute",top:3,right:3}}><Tag tag={item.tag}/></div>}
+                    <div key={item.id} style={{
+                      display:"flex",alignItems:"center",gap:14,
+                      padding:"14px 16px",
+                      borderBottom:idx<catProds.length-1?"1px solid #F5F5F5":"none",
+                      background:inCart>0?ac+"08":"#FFF",
+                      transition:"background .15s"}}>
+                      {/* Text content */}
+                      <div style={{flex:1,minWidth:0}}>
+                        {item.tag&&<Tag tag={item.tag}/>}
+                        <div style={{fontFamily:"'Outfit',sans-serif",fontSize:15,fontWeight:700,color:"#111",lineHeight:1.25,marginBottom:3}}>{item.name}</div>
+                        {item.desc&&<div style={{fontSize:12,color:"#999",lineHeight:1.4,display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",overflow:"hidden",marginBottom:4}}>{item.desc}</div>}
+                        <div style={{display:"flex",alignItems:"center",gap:8}}>
+                          <div style={{fontFamily:"'Outfit',sans-serif",fontSize:17,fontWeight:800,color:ac,lineHeight:1}}>$ {fmt(item.price)}</div>
+                          {item.orig&&<div style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,color:"#BBB",textDecoration:"line-through"}}>$ {fmt(item.orig)}</div>}
+                          {disc&&<div style={{fontSize:10,fontWeight:800,color:"#22C55E",background:"#F0FDF4",borderRadius:4,padding:"1px 5px"}}>-{disc}%</div>}
                         </div>
-                      ):(
-                        <div style={{aspectRatio:"1",background:"linear-gradient(135deg,#181818,#101010)",display:"flex",alignItems:"center",justifyContent:"center",position:"relative",flexShrink:0}}>
-                          <span style={{fontSize:30}}>{item.emoji||"🍽️"}</span>
-                          {disc&&<div style={{position:"absolute",top:3,left:3,background:"#22C55E",color:"#FFF",borderRadius:3,fontSize:7,fontWeight:800,padding:"1px 3px",fontFamily:"'DM Sans',sans-serif"}}>-{disc}%</div>}
-                          {item.tag&&<div style={{position:"absolute",top:3,right:3}}><Tag tag={item.tag}/></div>}
-                        </div>
-                      )}
-                      {/* Product info */}
-                      <div className="mpc-info" style={{padding:"8px 8px 8px",flex:1,display:"flex",flexDirection:"column",justifyContent:"space-between"}}>
-                        <div>
-                          <div className="mpc-name" style={{fontFamily:"'DM Sans',sans-serif",fontSize:17,fontWeight:700,color:"#EEE",lineHeight:1.25,marginBottom:4}}>{item.name}</div>
-                          {item.desc&&<div className="mpc-desc" style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"#999",lineHeight:1.35,display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",overflow:"hidden"}}>{item.desc}</div>}
-                        </div>
-                        <div style={{marginTop:4}}>
-                          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end"}}>
-                            <div>
-                              <div className="mpc-price" style={{fontFamily:"'Outfit',sans-serif",fontSize:20,fontWeight:800,color:ac,lineHeight:1}}>$ {fmt(item.price)}</div>
-                              {item.orig&&<div style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,color:"#3A3A3A",textDecoration:"line-through"}}>$ {fmt(item.orig)}</div>}
+                      </div>
+
+                      {/* Image + add/remove */}
+                      <div style={{position:"relative",flexShrink:0}}>
+                        {item.foto_url?(
+                          <img src={item.foto_url} alt={item.name} style={{width:80,height:80,borderRadius:12,objectFit:"cover",display:"block",border:"1px solid #F0F0F0"}}
+                            onError={e=>{const p=e.target.parentElement;p.innerHTML=`<div style="width:80px;height:80px;border-radius:12px;background:#F5F5F5;display:flex;align-items:center;justify-content:center;font-size:30px">${item.emoji||"🍽️"}</div>`;}}/>
+                        ):(
+                          <div style={{width:80,height:80,borderRadius:12,background:ac+"15",display:"flex",alignItems:"center",justifyContent:"center",fontSize:30,border:`1px solid ${ac}20`}}>{item.emoji||"🍽️"}</div>
+                        )}
+                        {!vitrina&&!item.sin_stock&&(
+                          inCart===0?(
+                            <button onClick={()=>add(item)} className="pr" style={{position:"absolute",bottom:-8,right:-8,width:30,height:30,borderRadius:15,background:ac,border:"2px solid #FFF",color:"#fff",fontSize:20,fontWeight:900,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 2px 8px rgba(0,0,0,.2)",touchAction:"manipulation",lineHeight:1}}>+</button>
+                          ):(
+                            <div style={{position:"absolute",bottom:-10,right:-10,display:"flex",alignItems:"center",gap:0,background:"#FFF",borderRadius:16,boxShadow:"0 2px 10px rgba(0,0,0,.15)",border:`1px solid ${ac}40`,overflow:"hidden"}}>
+                              <button onClick={()=>rem(item.id)} className="pr" style={{width:28,height:28,background:"none",border:"none",color:ac,fontSize:17,fontWeight:900,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",touchAction:"manipulation",lineHeight:1}}>−</button>
+                              <span style={{fontFamily:"'Outfit',sans-serif",fontWeight:800,fontSize:12,color:ac,minWidth:16,textAlign:"center"}}>{inCart}</span>
+                              <button onClick={()=>add(item)} className="pr" style={{width:28,height:28,background:ac,border:"none",color:"#fff",fontSize:17,fontWeight:900,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",touchAction:"manipulation",lineHeight:1}}>+</button>
                             </div>
-                            {!vitrina&&(item.sin_stock?(
-                              <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:6,fontWeight:700,color:"#444",background:"#1A1A1A",border:"1px solid #222",borderRadius:3,padding:"1px 3px"}}>Agotado</span>
-                            ):inCart===0?(
-                              <button onClick={()=>add(item)} className="pr mpc-add" style={{width:28,height:28,borderRadius:7,background:ac,border:"none",color:"#0A0806",fontSize:20,fontWeight:900,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,touchAction:"manipulation",lineHeight:1}}>+</button>
-                            ):(
-                              <div style={{display:"flex",alignItems:"center",gap:2,flexShrink:0}}>
-                                <button onClick={()=>rem(item.id)} className="pr" style={{width:24,height:24,borderRadius:6,background:"#1E1E1E",border:"1px solid #2A2A2A",color:"#AAA",fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",padding:0,touchAction:"manipulation",lineHeight:1}}>−</button>
-                                <span style={{fontFamily:"'DM Sans',sans-serif",fontWeight:800,fontSize:10,color:ac,minWidth:10,textAlign:"center"}}>{inCart}</span>
-                                <button onClick={()=>add(item)} className="pr" style={{width:24,height:24,borderRadius:6,background:ac,border:"none",color:"#0A0806",fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",padding:0,touchAction:"manipulation",lineHeight:1}}>+</button>
-                              </div>
-                            ))}
+                          )
+                        )}
+                        {!vitrina&&item.sin_stock&&(
+                          <div style={{position:"absolute",inset:0,borderRadius:12,background:"rgba(255,255,255,.7)",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                            <span style={{fontSize:9,fontWeight:800,color:"#999",background:"#EEE",borderRadius:4,padding:"2px 5px"}}>Agotado</span>
                           </div>
-                        </div>
+                        )}
                       </div>
                     </div>
                   );
@@ -2578,116 +2595,58 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
             </section>
           );
         })}
-        <div style={{textAlign:"center",padding:"16px 0 8px"}}>
-          <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:7,color:"#1A1A1A",letterSpacing:2}}>MENUQR</div>
+
+        {/* Footer */}
+        <div style={{textAlign:"center",padding:"20px 0 8px"}}>
+          <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,color:"#CCC",letterSpacing:2}}>MENUQR</div>
         </div>
       </div>
 
-      {/* ── SOLICITUDES MODAL ── */}
+      {/* ══ FLOATING CART BUTTON ══ */}
+      {!vitrina&&cartCount>0&&(
+        <div style={{position:"fixed",bottom:24,left:"50%",transform:"translateX(-50%)",zIndex:40,width:"calc(100% - 32px)",maxWidth:398}}>
+          <button onClick={()=>setView("cart")} className="pr" style={{width:"100%",background:local.color||"#C9A84C",border:"none",borderRadius:16,padding:"15px 20px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between",boxShadow:"0 8px 28px rgba(0,0,0,.25)",transition:"all .2s"}}>
+            <div style={{background:"rgba(0,0,0,.15)",borderRadius:10,width:30,height:30,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Outfit',sans-serif",fontSize:14,fontWeight:900,color:"#fff"}}>{cartCount}</div>
+            <div style={{fontFamily:"'Outfit',sans-serif",fontSize:15,fontWeight:800,color:"#fff",letterSpacing:.3}}>Ver mi pedido</div>
+            <div style={{fontFamily:"'Outfit',sans-serif",fontSize:15,fontWeight:800,color:"#fff"}}>$ {fmt(grandTotal)}</div>
+          </button>
+        </div>
+      )}
+
+      {/* ══ SOLICITUDES MODAL ══ */}
       {!vitrina&&showSolicitudes&&(
-        <div style={{position:"fixed",inset:0,zIndex:200,background:"rgba(0,0,0,.75)",display:"flex",alignItems:"flex-end"}} onClick={()=>setShowSolicitudes(false)}>
-          <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:430,margin:"0 auto",background:"linear-gradient(180deg,#111,#0A0A0A)",borderRadius:"22px 22px 0 0",padding:"20px 16px 32px",border:"1px solid rgba(255,255,255,.08)"}}>
-            <div style={{width:36,height:4,borderRadius:2,background:"rgba(255,255,255,.15)",margin:"0 auto 18px"}}/>
-            <h3 style={{fontFamily:"'Outfit',sans-serif",fontSize:18,fontWeight:700,color:"#FFF",marginBottom:4,textAlign:"center"}}>Solicitar al local</h3>
-            <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"rgba(255,255,255,.4)",textAlign:"center",marginBottom:20}}>Mesa {local.mesa} · tap para enviar</p>
+        <div style={{position:"fixed",inset:0,zIndex:200,background:"rgba(0,0,0,.5)",display:"flex",alignItems:"flex-end"}} onClick={()=>setShowSolicitudes(false)}>
+          <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:430,margin:"0 auto",background:"#FFF",borderRadius:"22px 22px 0 0",padding:"20px 16px 36px",boxShadow:"0 -8px 40px rgba(0,0,0,.15)"}}>
+            <div style={{width:36,height:4,borderRadius:2,background:"#DDD",margin:"0 auto 18px"}}/>
+            <h3 style={{fontFamily:"'Outfit',sans-serif",fontSize:18,fontWeight:800,color:"#111",marginBottom:4,textAlign:"center"}}>Solicitar al local</h3>
+            <p style={{fontSize:12,color:"#999",textAlign:"center",marginBottom:20}}>Mesa {local.mesa} · tap para enviar</p>
             {solicEnviada&&(
-              <div style={{background:"rgba(0,255,136,.1)",border:"1px solid rgba(0,255,136,.3)",borderRadius:10,padding:"8px 14px",marginBottom:14,textAlign:"center"}}>
-                <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"#00FF88"}}>✓ Solicitud enviada</span>
+              <div style={{background:"#F0FDF4",border:"1px solid #BBF7D0",borderRadius:10,padding:"8px 14px",marginBottom:14,textAlign:"center"}}>
+                <span style={{fontSize:13,color:"#16A34A",fontWeight:700}}>✓ Solicitud enviada</span>
               </div>
             )}
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:14}}>
               {[
-                {tipo:"mozo",     icon:"🙋", label:"Llamar al mozo"},
-                {tipo:"cuenta",   icon:"💳", label:"Pedir la cuenta"},
-                {tipo:"cubiertos",icon:"🍴", label:"Cubiertos"},
-                {tipo:"hielo",    icon:"🧊", label:"Hielo"},
-                {tipo:"pan",      icon:"🍞", label:"Pan"},
+                {tipo:"mozo",icon:"🙋",label:"Llamar al mozo"},
+                {tipo:"cuenta",icon:"💳",label:"Pedir la cuenta"},
+                {tipo:"cubiertos",icon:"🍴",label:"Cubiertos"},
+                {tipo:"hielo",icon:"🧊",label:"Hielo"},
+                {tipo:"pan",icon:"🍞",label:"Pan"},
                 {tipo:"servilletas",icon:"🧻",label:"Servilletas"},
               ].map(s=>(
                 <button key={s.tipo} onClick={()=>sendSolicitud(s.tipo)} className="pr" style={{
-                  background:solicEnviada===s.tipo?"rgba(0,255,136,.1)":"rgba(255,255,255,.05)",
-                  border:`1px solid ${solicEnviada===s.tipo?"rgba(0,255,136,.4)":"rgba(255,255,255,.1)"}`,
+                  background:solicEnviada===s.tipo?"#F0FDF4":"#FAFAFA",
+                  border:`1px solid ${solicEnviada===s.tipo?"#BBF7D0":"#EBEBEB"}`,
                   borderRadius:14,padding:"14px 10px",cursor:"pointer",textAlign:"center",transition:"all .2s"}}>
                   <span style={{fontSize:26,display:"block",marginBottom:6}}>{s.icon}</span>
-                  <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:600,color:solicEnviada===s.tipo?"#00FF88":"rgba(255,255,255,.8)"}}>{s.label}</span>
+                  <span style={{fontSize:12,fontWeight:700,color:solicEnviada===s.tipo?"#16A34A":"#333"}}>{s.label}</span>
                 </button>
               ))}
             </div>
-            <button onClick={()=>setShowSolicitudes(false)} style={{width:"100%",background:"none",border:"1px solid rgba(255,255,255,.1)",borderRadius:12,padding:"12px",fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"rgba(255,255,255,.4)",cursor:"pointer"}}>Cerrar</button>
+            <button onClick={()=>setShowSolicitudes(false)} style={{width:"100%",background:"none",border:"1px solid #EBEBEB",borderRadius:12,padding:"12px",fontSize:13,color:"#999",cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}>Cerrar</button>
           </div>
         </div>
       )}
-      {/* ── SIDEBAR ── */}
-      {!vitrina&&<div className="msr" style={{width:74,flexShrink:0,background:"#0C0C0C",borderLeft:"1px solid #1C1C1C",position:"sticky",top:0,height:"100vh",overflowY:"auto",display:"flex",flexDirection:"column",alignItems:"center",zIndex:20,scrollbarWidth:"none"}}>
-        {/* Logo + Name */}
-        <div style={{width:"100%",padding:"10px 4px 8px",borderBottom:"1px solid #1C1C1C",textAlign:"center"}}>
-          {local.logo_url?(
-            <img src={local.logo_url} alt="" style={{width:44,height:44,borderRadius:"50%",objectFit:"cover",border:"2px solid #C9A84C",marginBottom:4}}/>
-          ):(
-            <div style={{width:44,height:44,borderRadius:"50%",background:"linear-gradient(135deg,#1A0D00,#2A1A00)",border:"2px solid #C9A84C",margin:"0 auto 4px",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}>{local.emoji||"🍽️"}</div>
-          )}
-          <div className="msr-name" style={{fontFamily:"'Outfit',sans-serif",fontSize:7,color:"#C9A84C",fontWeight:800,textTransform:"uppercase",letterSpacing:.5,lineHeight:1.2,padding:"0 3px",overflow:"hidden",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical"}}>{(local.nombre||"").toUpperCase()}</div>
-        </div>
-        {/* Category Nav */}
-        <div style={{width:"100%",flex:1,padding:"4px 0"}}>
-          {activeCats.map(cat=>{
-            const isAct=activeCat===cat.id;
-            return(
-              <button key={cat.id} onClick={()=>{setAC(cat.id);document.getElementById(`cat-${cat.id}`)?.scrollIntoView({behavior:"smooth",block:"start"});}} className="msr-catbtn" style={{
-                width:"100%",padding:"8px 2px",background:isAct?"rgba(201,168,76,.1)":"none",
-                border:"none",borderLeft:`2px solid ${isAct?"#C9A84C":"transparent"}`,
-                cursor:"pointer",textAlign:"center",display:"flex",flexDirection:"column",alignItems:"center",gap:2,transition:"all .15s"}}>
-                <span className="msr-catemoji" style={{fontSize:18,lineHeight:1}}>{cat.icon}</span>
-                <span className="msr-catlabel" style={{fontFamily:"'DM Sans',sans-serif",fontSize:7.5,fontWeight:700,color:isAct?"#C9A84C":"#383838",lineHeight:1.2,maxWidth:68,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",textTransform:"uppercase",letterSpacing:.3}}>{cat.label}</span>
-              </button>
-            );
-          })}
-        </div>
-        {/* Mesa info or table-QR */}
-        {local.mesa?(
-          <div style={{width:"100%",padding:"8px 6px",borderTop:"1px solid #1C1C1C",textAlign:"center"}}>
-            <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:7,color:"#3A3A3A",letterSpacing:1,textTransform:"uppercase",marginBottom:3}}>Mesa</div>
-            <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,color:"#FFF",fontWeight:900,lineHeight:1,marginBottom:4}}>{local.mesa}</div>
-            {!vitrina && local.feat_solicitudes!==false && (
-              <button onClick={()=>setShowSolicitudes(true)} style={{width:"100%",background:"rgba(201,168,76,.07)",border:"1px solid #1E1E1E",borderRadius:8,padding:"5px 0",cursor:"pointer",fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"}}>🛎️</button>
-            )}
-          </div>
-        ):(
-          local.baseUrl&&(
-            <div style={{width:"100%",padding:"8px 4px",borderTop:"1px solid #1C1C1C",textAlign:"center"}}>
-              <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:6,color:"#2E2E2E",letterSpacing:.8,textTransform:"uppercase",lineHeight:1.4,marginBottom:5}}>Pedí desde<br/>tu mesa</div>
-              <div style={{background:"#FFF",borderRadius:6,padding:3,display:"inline-block",marginBottom:4}}>
-                <QRImage data={`https://${(local.baseUrl||"").replace(/^https?:\/\//,"")}/mesa/1`} size={52} light="#FFFFFF" dark="#0A0806"/>
-              </div>
-              <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:6,color:"#2A2A2A",lineHeight:1.3,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",padding:"0 4px"}}>{(local.baseUrl||"").replace(/^https?:\/\//,"")}</div>
-            </div>
-          )
-        )}
-        {/* Cart summary in sidebar */}
-        {!vitrina&&cartCount>0&&(
-          <button onClick={()=>setView("cart")} style={{width:"100%",padding:"8px 6px",borderTop:"1px solid #1C1C1C",background:"rgba(201,168,76,.05)",border:"none",cursor:"pointer",textAlign:"center"}}>
-            <div style={{marginBottom:4}}>
-              {items.slice(0,2).map(i=>(
-                <div key={i.id} style={{fontFamily:"'DM Sans',sans-serif",fontSize:7,color:"#444",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{i.qty}× {i.name}</div>
-              ))}
-              {items.length>2&&<div style={{fontSize:7,color:"#333"}}>+{items.length-2} más</div>}
-            </div>
-            <div style={{fontFamily:"'Outfit',sans-serif",fontSize:12,fontWeight:800,color:"#C9A84C",marginBottom:5}}>$ {fmt(grandTotal)}</div>
-            <div style={{background:"#C9A84C",borderRadius:7,padding:"5px 4px",fontFamily:"'DM Sans',sans-serif",fontSize:8,fontWeight:800,color:"#0A0806",letterSpacing:.5}}>VER PEDIDO</div>
-          </button>
-        )}
-        {/* Lang switcher */}
-        <div style={{width:"100%",padding:"6px 4px",borderTop:"1px solid #1C1C1C",display:"flex",flexWrap:"wrap",gap:2,justifyContent:"center"}}>
-          {LANGS.map(l=>(
-            <button key={l.code} onClick={()=>changeLang(l.code)} style={{
-              background:lang===l.code?"rgba(201,168,76,.12)":"none",
-              border:`1px solid ${lang===l.code?"rgba(201,168,76,.4)":"transparent"}`,
-              borderRadius:5,padding:"3px 2px",cursor:"pointer",fontSize:12,lineHeight:1}}>
-              {l.flag}
-            </button>
-          ))}
-        </div>
-      </div>}
 
     </div>
   );
