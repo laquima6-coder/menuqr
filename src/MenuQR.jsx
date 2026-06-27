@@ -7891,7 +7891,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
               <button onClick={()=>setTicketPreview(null)} style={{flex:"1 1 auto",padding:"10px",borderRadius:8,background:"#f0f0f0",border:"1px solid #ddd",fontFamily:"'Outfit',sans-serif",fontSize:13,fontWeight:700,cursor:"pointer",color:"#333"}}>
                 Cerrar
               </button>
-              (()=>{
+              {(()=>{
                 const lines=[
                   `🧾 *Ticket — ${local.nombre||"Restaurante"}*`,
                   `📍 ${ticketPreview.table===0||ticketPreview.table==="0"?"Mostrador":"Mesa "+ticketPreview.table}  |  Pedido #${String(ticketPreview.id).slice(-4)}`,
@@ -7913,7 +7913,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
                     📱 WhatsApp
                   </button>
                 </>);
-              })()
+              })()}
               <button onClick={()=>{doPrint(ticketPreview);}} style={{flex:"1 1 auto",padding:"10px",borderRadius:8,background:"#000",border:"none",fontFamily:"'Outfit',sans-serif",fontSize:13,fontWeight:700,cursor:"pointer",color:"#fff"}}>
                 🖨️ Imprimir
               </button>
