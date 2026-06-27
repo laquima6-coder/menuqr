@@ -14,15 +14,15 @@ const GS = () => (
       --cb:  #0D0D0D; --cs: #171717; --cc: #1F1F1F; --cbr: #2D2D2D;
       --cm:  #6B6B6B; --cd: #8A8A8A; --ct: #AAAAAA; --cbri:#FFFFFF;
       --cg:  #F97316; --cg2:#FB923C; --cgr:#22C55E; --crd:#EF4444;
-      /* Admin — Dark Green + Gold */
-      --ab:  #022E28; --as: #C9A84C; --ac: #054840; --abr:#0A6B5E;
-      --am:  #7AC4B8; --ad: #A8D4CF; --at: #E8F5F3; --abri:#FFFFFF;
-      --ag:  #C9A84C; --aam:#E8C76A; --ar: #E57373; --abl:#64B5F6;
-      /* Gestión — Dark Green + Gold */
-      --gb:  #022E28; --gs: #C9A84C; --gc: #054840; --gbr:#0A6B5E;
-      --gm:  #7AC4B8; --gd: #A8D4CF; --gt: #E8F5F3; --gbri:#FFFFFF;
-      --gi:  #C9A84C; --gi2:#E8C76A; --gg: #4CAF7D; --gr: #E57373; --gam:#E8C76A;
-      --gg2: #C9A84C;
+      /* Admin — Dark Green | letras blancas | acento dorado */
+      --ab:  #011A16; --as: #022E28; --ac: #033D35; --abr:#0A5C50;
+      --am:  #7AC4B8; --ad: #A8D4CF; --at: #FFFFFF;  --abri:#FFFFFF;
+      --ag:  #0D6B5E; --aam:#C9A84C; --ar: #E57373; --abl:#64B5F6;
+      /* Gestión — Dark Green | letras blancas | acento dorado */
+      --gb:  #011A16; --gs: #022E28; --gc: #033D35; --gbr:#0A5C50;
+      --gm:  #7AC4B8; --gd: #A8D4CF; --gt: #FFFFFF;  --gbri:#FFFFFF;
+      --gi:  #0D6B5E; --gi2:#C9A84C; --gg: #4CAF7D; --gr: #E57373; --gam:#C9A84C;
+      --gg2: #0D6B5E;
     }
 
     * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent }
@@ -118,6 +118,7 @@ const GS = () => (
         min-width: 0;
         order: 1;
         height: 100%;
+        background: var(--ab);
       }
       .admin-topbar {
         position: sticky !important;
@@ -5599,7 +5600,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
               border:"3px solid #C9A84C",display:"inline-block"}}>
               <QRImage data={data} size={160}/>
             </div>
-            <div style={{background:"#C9A84C",borderRadius:30,padding:"6px 24px",
+            <div style={{background:"#0D6B5E",borderRadius:30,padding:"6px 24px",
               display:"inline-block",marginTop:12}}>
               <p style={{fontFamily:"'Playfair Display',serif",fontSize:18,
                 fontWeight:700,color:"#1A1408"}}>Mesa {tableNum}</p>
@@ -5636,7 +5637,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
             const w=window.open("","_blank","width=520,height=640,toolbar=0,menubar=0");
             if(w){w.document.write(html);w.document.close();}
           }} className="pr" style={{width:"100%",
-            background:"var(--ag)",color:"#000",border:"none",borderRadius:14,
+            background:"var(--ag)",color:"#FFFFFF",border:"none",borderRadius:14,
             padding:14,fontFamily:"'IBM Plex Mono',monospace",fontSize:13,
             fontWeight:700,cursor:"pointer",letterSpacing:1,marginBottom:10}}>
             🖨️ IMPRIMIR ESTE QR
@@ -5654,16 +5655,16 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
      TABS DE NAVEGACIÓN
   ══════════════════════════════════════════ */
   const TABS = [
-    {id:"home",      icon:"◈", label:"Inicio",    color:"#C9A84C"},
-    {id:"orders",    icon:"⊞", label:"Pedidos",   color:"#C9A84C", badge:newCount+solicitudes.length},
-    {id:"carta",     icon:"≡", label:"Carta",     color:"#C9A84C"},
-    {id:"qr",        icon:"⬛", label:"QRs",       color:"#C9A84C"},
-    {id:"caja",      icon:"◉", label:"Caja",      color:"#C9A84C"},
-    {id:"mostrador", icon:"🏪", label:"Mostrador", color:"#C9A84C"},
-    {id:"cocina",    icon:"👨‍🍳", label:"Cocina",   color:"#C9A84C"},
-    {id:"reportes",  icon:"📊", label:"Reportes",  color:"#C9A84C"},
-    {id:"gestion",   icon:"✏", label:"Gestión",   color:"#C9A84C"},
-    {id:"config",    icon:"⚙", label:"Config",    color:"#C9A84C"},
+    {id:"home",      icon:"◈", label:"Inicio",    color:"#FFFFFF"},
+    {id:"orders",    icon:"⊞", label:"Pedidos",   color:"#FFFFFF", badge:newCount+solicitudes.length},
+    {id:"carta",     icon:"≡", label:"Carta",     color:"#FFFFFF"},
+    {id:"qr",        icon:"⬛", label:"QRs",       color:"#FFFFFF"},
+    {id:"caja",      icon:"◉", label:"Caja",      color:"#FFFFFF"},
+    {id:"mostrador", icon:"🏪", label:"Mostrador", color:"#FFFFFF"},
+    {id:"cocina",    icon:"👨‍🍳", label:"Cocina",   color:"#FFFFFF"},
+    {id:"reportes",  icon:"📊", label:"Reportes",  color:"#FFFFFF"},
+    {id:"gestion",   icon:"✏", label:"Gestión",   color:"#FFFFFF"},
+    {id:"config",    icon:"⚙", label:"Config",    color:"#FFFFFF"},
     {id:"whatsapp",  icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347zM11.996 0C5.374 0 0 5.373 0 11.996c0 2.133.56 4.133 1.54 5.867L.047 23.53a.5.5 0 00.612.632l5.828-1.528A11.935 11.935 0 0011.996 24C18.619 24 24 18.619 24 11.996 24 5.373 18.619 0 11.996 0zm0 21.818a9.794 9.794 0 01-4.992-1.367l-.358-.212-3.718.975 1.002-3.618-.234-.372a9.794 9.794 0 01-1.518-5.228c0-5.419 4.409-9.818 9.818-9.818s9.818 4.399 9.818 9.818-4.399 9.822-9.818 9.822z"/></svg>, label:"WhatsApp"},
   ];
 
@@ -5705,7 +5706,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
           </h1>
         </div>
         <button onClick={()=>setShowVentaRapida(true)} className="pr" style={{
-          background:"var(--ag)",color:"#060810",border:"none",borderRadius:12,
+          background:"var(--ag)",color:"#FFFFFF",border:"none",borderRadius:12,
           padding:"9px 14px",fontFamily:"'IBM Plex Mono',monospace",fontSize:11,
           fontWeight:800,cursor:"pointer",letterSpacing:.5,flexShrink:0,
           boxShadow:"0 0 18px rgba(0,255,136,.28)",display:"flex",alignItems:"center",gap:6}}>
@@ -6855,7 +6856,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
             </div>
           )}
           <button onClick={()=>setShowVentaRapida(true)} className="pr" style={{
-            background:"var(--ag)",color:"#060810",border:"none",borderRadius:8,
+            background:"var(--ag)",color:"#FFFFFF",border:"none",borderRadius:8,
             padding:"7px 12px",fontFamily:"'IBM Plex Mono',monospace",fontSize:10,
             fontWeight:800,cursor:"pointer",flexShrink:0,
             display:"flex",alignItems:"center",gap:5}}>
@@ -6879,7 +6880,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
                   borderRadius:9,padding:"12px 14px",color:"var(--abri)",
                   fontFamily:"'Outfit',sans-serif",fontSize:14,marginBottom:14}}/>
               <button onClick={()=>{setArqV(emptyArq());setArqAp(true);}} className="pr"
-                style={{width:"100%",background:"var(--ag)",color:"#000",border:"none",
+                style={{width:"100%",background:"var(--ag)",color:"#FFFFFF",border:"none",
                   borderRadius:12,padding:15,fontFamily:"'IBM Plex Mono',monospace",
                   fontSize:13,fontWeight:700,cursor:"pointer",letterSpacing:1}}>
                 ▶ ABRIR TURNO
@@ -8080,7 +8081,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
                 <h2 style={{fontFamily:"'Outfit',sans-serif",fontSize:20,fontWeight:800,color:"var(--abri)"}}>Ventas en mostrador</h2>
               </div>
               <button onClick={()=>{setVrMesa("mostrador");setShowVentaRapida(true);}} className="pr" style={{
-                background:"var(--ag)",color:"#060810",border:"none",borderRadius:12,
+                background:"var(--ag)",color:"#FFFFFF",border:"none",borderRadius:12,
                 padding:"10px 14px",fontFamily:"'IBM Plex Mono',monospace",fontSize:11,
                 fontWeight:800,cursor:"pointer",letterSpacing:.5,
                 boxShadow:"0 0 14px rgba(0,255,136,.25)"}}>
@@ -8534,7 +8535,7 @@ export default function MenuQR({
 /* ── Landing con Auth ─────────────────────────────────────── */
 function LandingAuth({ setMode, goAdmin, authUser, onLogout }) {
   return (
-    <div style={{maxWidth:430,margin:"0 auto",minHeight:"100vh",background:"#C9A84C",
+    <div style={{maxWidth:430,margin:"0 auto",minHeight:"100vh",background:"#011A16",
       display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
       padding:28,position:"relative",overflow:"hidden"}}>
       {/* Decorative blobs */}
