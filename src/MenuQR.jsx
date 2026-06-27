@@ -619,11 +619,11 @@ function LoginModal({ onSuccess, onClose }) {
 
   const S = {
     overlay: { position:"fixed",inset:0,background:"rgba(0,0,0,.8)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:999,padding:20 },
-    card:    { background:"#1C1008",border:"1px solid #2A1C0E",borderRadius:18,padding:"32px 28px",width:"100%",maxWidth:400,animation:"scaleIn .2s ease" },
-    tabs:    { display:"flex",gap:4,background:"#0D0804",borderRadius:10,padding:4,marginBottom:24 },
+    card:    { background:"#FFFFFF",border:"1px solid #E0E0E0",borderRadius:18,padding:"32px 28px",width:"100%",maxWidth:400,animation:"scaleIn .2s ease" },
+    tabs:    { display:"flex",gap:4,background:"#F0FDFA",borderRadius:10,padding:4,marginBottom:24 },
     tab:     (a) => ({ flex:1,padding:"9px 0",borderRadius:8,border:"none",cursor:"pointer",fontSize:".85rem",fontWeight:600,fontFamily:"'DM Sans',sans-serif",transition:".2s",background:a?"#2A1C0E":"transparent",color:a?"#F5F0E8":"#7A6050" }),
     label:   { display:"block",fontSize:".75rem",color:"#7A6050",marginBottom:5,textTransform:"uppercase",letterSpacing:".04em",fontFamily:"'DM Sans',sans-serif" },
-    input:   { width:"100%",padding:"11px 14px",background:"#0D0804",border:"1px solid #2A1C0E",borderRadius:8,color:"#D4C4A8",fontSize:".95rem",outline:"none",marginBottom:14,fontFamily:"'DM Sans',sans-serif" },
+    input:   { width:"100%",padding:"11px 14px",background:"#F5F5F5",border:"1px solid #E0E0E0",borderRadius:8,color:"#1A1A1A",fontSize:".95rem",outline:"none",marginBottom:14,fontFamily:"'DM Sans',sans-serif" },
     btn:     { width:"100%",padding:13,background:"#0D9488",border:"none",borderRadius:8,color:"#0D0804",fontSize:"1rem",fontWeight:800,cursor:"pointer",fontFamily:"'DM Sans',sans-serif" },
     err:     { background:"#1a0808",border:"1px solid #7f1d1d",color:"#f87171",padding:"9px 12px",borderRadius:7,fontSize:".82rem",marginBottom:12,fontFamily:"'DM Sans',sans-serif" },
     close:   { position:"absolute",top:14,right:16,background:"none",border:"none",color:"#7A6050",cursor:"pointer",fontSize:20 },
@@ -2777,7 +2777,7 @@ function QRTabComp({ mesaNum, setMesaNum, qrType, setQrType, promoUrl, setPromoU
       </div>
 
       {/* Config por tipo */}
-      <div style={{background:"#111",border:"1px solid #1C1C1C",borderRadius:14,padding:"14px 14px",marginBottom:16}}>
+      <div style={{background:"#FFFFFF",border:"1px solid #E8E8E8",borderRadius:14,padding:"14px 14px",marginBottom:16}}>
         {qrType==="mesa"&&(
           <div>
             <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:current.color,letterSpacing:1.5,textTransform:"uppercase",marginBottom:10}}>Número de mesa</div>
@@ -2857,7 +2857,7 @@ function QRTabComp({ mesaNum, setMesaNum, qrType, setQrType, promoUrl, setPromoU
         {qrType==="promo"&&(
           <div>
             <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:current.color,letterSpacing:1.5,textTransform:"uppercase",marginBottom:8}}>URL de la promo</div>
-            <div style={{display:"flex",alignItems:"center",background:"#1A1A1A",border:"1px solid #2A2A2A",borderRadius:10,overflow:"hidden",marginBottom:8}}>
+            <div style={{display:"flex",alignItems:"center",background:"#F5F5F5",border:"1px solid #E0E0E0",borderRadius:10,overflow:"hidden",marginBottom:8}}>
               <span style={{padding:"0 10px",fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:"#333",borderRight:"1px solid #2A2A2A",height:40,display:"flex",alignItems:"center",flexShrink:0}}>URL</span>
               <input value={promoUrl} onChange={e=>setPromoUrl(e.target.value)}
                 placeholder="https://instagram.com/tu_promo"
@@ -2869,7 +2869,7 @@ function QRTabComp({ mesaNum, setMesaNum, qrType, setQrType, promoUrl, setPromoU
       </div>
 
       {/* QR Preview */}
-      <div style={{background:"#0F0F0F",borderRadius:20,padding:"24px 16px",marginBottom:16,textAlign:"center",border:`1px solid ${current.color}44`,boxShadow:`0 4px 32px ${current.color}11`}}>
+      <div style={{background:"#FFFFFF",borderRadius:20,padding:"24px 16px",marginBottom:16,textAlign:"center",border:`1px solid ${current.color}44`,boxShadow:`0 4px 32px ${current.color}11`}}>
         <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,color:current.color,letterSpacing:2.5,textTransform:"uppercase",marginBottom:10}}>{local.nombre}</div>
         <div style={{background:"#FFF",borderRadius:14,padding:10,border:`3px solid ${current.color}`,display:"inline-block",marginBottom:14}}>
           <QRImage data={qrData} size={200} light="#FFFFFF" dark="#1A1A1A"/>
@@ -2939,7 +2939,7 @@ function QRTabComp({ mesaNum, setMesaNum, qrType, setQrType, promoUrl, setPromoU
               a.click();
               URL.revokeObjectURL(a.href);
             }} className="pr" style={{
-              width:"100%",background:"#241408",color:current.color,border:`1px solid ${current.color}55`,
+              width:"100%",background:"#0D9488",color:"#fff",border:"none",
               borderRadius:12,padding:13,fontFamily:"'IBM Plex Mono',monospace",
               fontSize:13,fontWeight:700,cursor:"pointer",letterSpacing:1}}>
               📥 DESCARGAR (PDF / imprenta)
@@ -3017,7 +3017,7 @@ function QRTabComp({ mesaNum, setMesaNum, qrType, setQrType, promoUrl, setPromoU
                 }
               },"image/png");
             }} className="pr" style={{
-              width:"100%",background:"#241408",color:"#D4C4A8",border:"1px solid #2A1C0E",
+              width:"100%",background:"#0D9488",color:"#fff",border:"none",
               borderRadius:12,padding:13,fontFamily:"'IBM Plex Mono',monospace",
               fontSize:13,fontWeight:700,cursor:"pointer",letterSpacing:1}}>
               🖼️ DESCARGAR IMAGEN (.png)
@@ -7941,7 +7941,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
                   </button>
                 </>);
               })()}
-              <button onClick={()=>{doPrint(ticketPreview);}} style={{flex:"1 1 auto",padding:"10px",borderRadius:8,background:"#000",border:"none",fontFamily:"'Outfit',sans-serif",fontSize:13,fontWeight:700,cursor:"pointer",color:"#fff"}}>
+              <button onClick={()=>{doPrint(ticketPreview);}} style={{flex:"1 1 auto",padding:"10px",borderRadius:8,background:"#0D9488",border:"none",fontFamily:"'Outfit',sans-serif",fontSize:13,fontWeight:700,cursor:"pointer",color:"#fff"}>
                 🖨️ Imprimir
               </button>
             </div>
@@ -8527,7 +8527,7 @@ export default function MenuQR({
 /* ── Landing con Auth ─────────────────────────────────────── */
 function LandingAuth({ setMode, goAdmin, authUser, onLogout }) {
   return (
-    <div style={{maxWidth:430,margin:"0 auto",minHeight:"100vh",background:"#0D0D0D",
+    <div style={{maxWidth:430,margin:"0 auto",minHeight:"100vh",background:"#0D9488",
       display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
       padding:28,position:"relative",overflow:"hidden"}}>
       {/* Decorative blobs */}
