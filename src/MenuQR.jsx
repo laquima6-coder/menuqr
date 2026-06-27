@@ -401,10 +401,10 @@ const PLAN_LABELS = { free:"FREE", basico:"BÁSICO", pro:"PRO ✦", empresa:"EMP
 const PLAN_COLORS_MAP = { free:"#4A6080", basico:"#3D8EFF", pro:"#6366F1", empresa:"#10B981" };
 
 const PAYS = [
-  {id:"mp",    label:"Mercado Pago", icon:"💳", sub:"QR o link de pago"},
-  {id:"trans", label:"Transferencia",icon:"🏦", sub:"CVU / Alias"},
-  {id:"cash",  label:"Efectivo",     icon:"💵", sub:"Le cobrás el mozo"},
-  {id:"card",  label:"Déb / Créd",   icon:"💰", sub:"Visa, Master, Amex"},
+  {id:"mp",    label:"Mercado Pago", icon:"💳", sub:"QR o link de pago",  color:"#009EE3", bg:"#EBF7FF"},
+  {id:"trans", label:"Transferencia",icon:"🏦", sub:"CVU / Alias",         color:"#7C3AED", bg:"#F5F3FF"},
+  {id:"cash",  label:"Efectivo",     icon:"💵", sub:"Le cobrás el mozo",  color:"#16A34A", bg:"#F0FDF4"},
+  {id:"card",  label:"Déb / Créd",   icon:"💰", sub:"Visa, Master, Amex", color:"#F97316", bg:"#FFF7ED"},
 ];
 
 const EMOJIS = ["🍕","🥩","🍝","🧀","🥗","🍺","🍷","🍹","🥟","🍔","🍖","🫕","🪵","🍮","🍨","🍰","☕","🥐","🌮","🐟","🦐","🍄","☀️","🔥","🥘","🫙","🧆","🥙"];
@@ -1994,23 +1994,31 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
         {/* Items */}
         <div style={{background:"#FFF",borderRadius:16,overflow:"hidden",marginBottom:12,border:"1px solid #EBEBEB"}}>
           {items.map((item,i)=>(
-            <div key={item.id} style={{display:"flex",alignItems:"center",gap:12,padding:"13px 16px",borderBottom:i<items.length-1?"1px solid #F5F5F5":"none"}}>
-              <span style={{fontSize:22,flexShrink:0}}>{item.emoji||"🍽️"}</span>
+            <div key={item.id} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",borderBottom:i<items.length-1?"1px solid #F5F5F5":"none"}}>
+              {/* Foto o emoji */}
+              {item.foto_url?(
+                <img src={item.foto_url} alt={item.name} style={{width:54,height:54,borderRadius:10,objectFit:"cover",flexShrink:0,border:"1px solid #F0F0F0"}}
+                  onError={e=>{e.target.style.display="none";e.target.nextSibling&&(e.target.nextSibling.style.display="flex");}}/>
+              ):(
+                <div style={{width:54,height:54,borderRadius:10,background:(local.color||"#C9A84C")+"15",display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,flexShrink:0}}>{item.emoji||"🍽️"}</div>
+              )}
               <div style={{flex:1,minWidth:0}}>
-                <div style={{fontSize:14,fontWeight:600,color:"#111",lineHeight:1.2}}>{item.name}</div>
-                <div style={{fontSize:12,color:"#999",marginTop:1}}>$ {fmt(item.price)} c/u</div>
+                <div style={{fontSize:14,fontWeight:700,color:"#111",lineHeight:1.25,marginBottom:2}}>{item.name}</div>
+                <div style={{fontSize:12,color:"#999"}}>$ {fmt(item.price)} c/u</div>
               </div>
-              <div style={{display:"flex",alignItems:"center",gap:6,flexShrink:0}}>
-                <button onClick={()=>rem(item.id)} className="pr" style={{width:28,height:28,borderRadius:8,background:"#F5F5F5",border:"1px solid #E8E8E8",color:"#555",fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>−</button>
-                <span style={{fontFamily:"'Outfit',sans-serif",fontWeight:800,fontSize:14,color:"#111",minWidth:18,textAlign:"center"}}>{item.qty}</span>
-                <button onClick={()=>add(item)} className="pr" style={{width:28,height:28,borderRadius:8,background:local.color||"#C9A84C",border:"none",color:"#fff",fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>+</button>
+              <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:6,flexShrink:0}}>
+                <div style={{fontFamily:"'Outfit',sans-serif",fontSize:14,fontWeight:800,color:local.color||"#C9A84C"}}>$ {fmt(item.price*item.qty)}</div>
+                <div style={{display:"flex",alignItems:"center",gap:5}}>
+                  <button onClick={()=>rem(item.id)} className="pr" style={{width:26,height:26,borderRadius:7,background:"#F5F5F5",border:"1px solid #E8E8E8",color:"#555",fontSize:15,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>−</button>
+                  <span style={{fontFamily:"'Outfit',sans-serif",fontWeight:800,fontSize:13,color:"#111",minWidth:16,textAlign:"center"}}>{item.qty}</span>
+                  <button onClick={()=>add(item)} className="pr" style={{width:26,height:26,borderRadius:7,background:local.color||"#C9A84C",border:"none",color:"#fff",fontSize:15,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>+</button>
+                </div>
               </div>
-              <div style={{fontFamily:"'Outfit',sans-serif",fontSize:14,fontWeight:700,color:local.color||"#C9A84C",flexShrink:0,minWidth:56,textAlign:"right"}}>$ {fmt(item.price*item.qty)}</div>
             </div>
           ))}
           {/* Total row */}
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 16px",background:"#FAFAFA",borderTop:"1px solid #EBEBEB"}}>
-            <span style={{fontSize:12,color:"#999",fontWeight:600,textTransform:"uppercase",letterSpacing:.5}}>Total</span>
+            <span style={{fontSize:12,color:"#999",fontWeight:700,textTransform:"uppercase",letterSpacing:.5}}>Total</span>
             <span style={{fontFamily:"'Outfit',sans-serif",fontSize:18,fontWeight:800,color:local.color||"#C9A84C"}}>$ {fmt(subTotal)}</span>
           </div>
         </div>
@@ -2055,20 +2063,24 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
             {PAYS.map(p=>(
               <button key={p.id} onClick={()=>{setPay(p.id);setPay2(null);setSplitAmt("");setSplitAmt2("");}} className="pr" style={{
-                background:pay===p.id?(local.color||"#C9A84C")+"15":"#F8F8F8",
-                border:`2px solid ${pay===p.id?(local.color||"#C9A84C"):"#EBEBEB"}`,
-                borderRadius:12,padding:"12px 10px",cursor:"pointer",textAlign:"left",transition:"all .15s"}}>
-                <span style={{fontSize:22,display:"block",marginBottom:4}}>{p.icon}</span>
-                <div style={{fontSize:13,fontWeight:700,color:pay===p.id?(local.color||"#C9A84C"):"#222"}}>{p.label}</div>
+                background:pay===p.id?p.bg:"#FAFAFA",
+                border:`2px solid ${pay===p.id?p.color:"#EBEBEB"}`,
+                borderRadius:14,padding:"14px 12px",cursor:"pointer",textAlign:"left",transition:"all .15s",
+                boxShadow:pay===p.id?`0 2px 12px ${p.color}30`:"none"}}>
+                <span style={{fontSize:26,display:"block",marginBottom:6}}>{p.icon}</span>
+                <div style={{fontSize:13,fontWeight:800,color:pay===p.id?p.color:"#444",marginBottom:1}}>{p.label}</div>
+                <div style={{fontSize:10,color:pay===p.id?p.color+"99":"#BBB"}}>{p.sub}</div>
               </button>
             ))}
             {/* Pago mixto */}
             <button onClick={()=>{setPay("mixto");setPay2(null);setSplitAmt("");setSplitAmt2("");}} className="pr" style={{
-              background:pay==="mixto"?(local.color||"#C9A84C")+"15":"#F8F8F8",
-              border:`2px solid ${pay==="mixto"?(local.color||"#C9A84C"):"#EBEBEB"}`,
-              borderRadius:12,padding:"12px 10px",cursor:"pointer",textAlign:"left",transition:"all .15s"}}>
-              <span style={{fontSize:22,display:"block",marginBottom:4}}>÷</span>
-              <div style={{fontSize:13,fontWeight:700,color:pay==="mixto"?(local.color||"#C9A84C"):"#222"}}>Pago mixto</div>
+              background:pay==="mixto"?"#FFF8F0":"#FAFAFA",
+              border:`2px solid ${pay==="mixto"?"#F59E0B":"#EBEBEB"}`,
+              borderRadius:14,padding:"14px 12px",cursor:"pointer",textAlign:"left",transition:"all .15s",
+              boxShadow:pay==="mixto"?"0 2px 12px #F59E0B30":"none"}}>
+              <span style={{fontSize:26,display:"block",marginBottom:6}}>÷</span>
+              <div style={{fontSize:13,fontWeight:800,color:pay==="mixto"?"#F59E0B":"#444",marginBottom:1}}>Pago mixto</div>
+              <div style={{fontSize:10,color:pay==="mixto"?"#F59E0B99":"#BBB"}}>2 métodos</div>
             </button>
           </div>
 
