@@ -5,7 +5,7 @@ import { supabase, loginAdmin, logoutAdmin, getSession, getRestaurante, getCateg
 /* ══════════════════════════════════════════════════════════════
    GLOBAL STYLES — dos paletas: cliente (cálida) + admin (técnica)
 ══════════════════════════════════════════════════════════════ */
-const GS = () => (
+export const GS = () => (
   <style>{`
     @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,400&family=Outfit:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600&display=swap');
 
@@ -1532,7 +1532,7 @@ return (
 );
 }
 
-function ClientApp({onBack, local, cats, prods, vitrina=false, sinPedidos=false}) {
+export function ClientApp({onBack, local, cats, prods, vitrina=false, sinPedidos=false}) {
   const [view,setView]   = useState("menu"); // menu | cart | done
   const [cart,setCart]   = useState({});
   const [activeCat,setAC]= useState("TODO");

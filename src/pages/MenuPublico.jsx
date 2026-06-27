@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { supabase, getRestaurante, getCategorias, getProductos } from '../lib/supabase.js'
-import { INIT_LOCAL, INIT_CATS, INIT_PRODS } from '../MenuQR.jsx'
-import MenuQR from '../MenuQR.jsx'
+import { INIT_LOCAL, INIT_CATS, INIT_PRODS, GS, ClientApp } from '../MenuQR.jsx'
 
 export default function MenuPublico({ vitrina = false }) {
   const { slug, mesa } = useParams()
@@ -12,12 +11,8 @@ export default function MenuPublico({ vitrina = false }) {
   const [loading, setLoading] = useState(true)
   const [error,   setError]   = useState(null)
 
-  useEffect(() => {
-    load(true)
-  }, [slug, mesa])
+  useEffect(() => { load(true) }, [slug, mesa])
 
-  // Silent background refresh when tab regains focus — does NOT show the spinner
-  // so the user's selected category and cart state are preserved
   useEffect(() => {
     const onVisible = () => { if (document.visibilityState === 'visible') load(false) }
     document.addEventListener('visibilitychange', onVisible)
@@ -25,10 +20,7 @@ export default function MenuPublico({ vitrina = false }) {
   }, [slug, mesa])
 
   async function load(showSpinner = true) {
-    if (showSpinner) {
-      setLoading(true)
-      setError(null)
-    }
+    if (showSpinner) { setLoading(true); setError(null) }
 
     if (!supabase) {
       setLocal({ ...INIT_LOCAL, slug })
@@ -45,7 +37,7 @@ export default function MenuPublico({ vitrina = false }) {
         return
       }
       if (!restaurante.activo) {
-        if (showSpinner) { setError('Este menu no esta disponible en este momento'); setLoading(false) }
+        if (showSpinner) { setError('Este menú no está disponible en este momento'); setLoading(false) }
         return
       }
 
@@ -55,14 +47,14 @@ export default function MenuPublico({ vitrina = false }) {
       ])
 
       setLocal({
-        nombre:      restaurante.nombre,
-        descripcion: restaurante.descripcion || '',
-        direccion:   restaurante.direccion   || '',
-        telefono:    restaurante.telefono    || '',
-        email:       restaurante.email       || '',
-        color:       restaurante.color       || '#C9A84C',
-        mesas:       restaurante.mesas       || 10,
-        logo_url:    restaurante.logo_url    || '',
+        nombre:        restaurante.nombre,
+        descripcion:   restaurante.descripcion   || '',
+        direccion:     restaurante.direccion     || '',
+        telefono:      restaurante.telefono      || '',
+        email:         restaurante.email         || '',
+        color:         restaurante.color         || '#C9A84C',
+        mesas:         restaurante.mesas         || 10,
+        logo_url:      restaurante.logo_url      || '',
         restauranteId: restaurante.id,
         slug,
         mesa: mesa ? parseInt(mesa) : null,
@@ -72,38 +64,49 @@ export default function MenuPublico({ vitrina = false }) {
       setProds(productos.map(p => ({
         id: p.id, cat: p.categoria_id, name: p.name,
         desc: p.desc, price: p.price, orig: p.orig,
-        emoji: p.emoji, tag: p.tag, active: p.active, foto_url: p.foto_url, sin_stock: p.sin_stock,
+        emoji: p.emoji, tag: p.tag, active: p.active,
+        foto_url: p.foto_url, sin_stock: p.sin_stock,
       })))
     } catch (e) {
-      if (showSpinner) setError('Error al cargar el menu')
+      if (showSpinner) setError('Error al cargar el menú')
     } finally {
       if (showSpinner) setLoading(false)
     }
   }
 
   if (loading) return (
-    <div style={{background:'#0A0806',minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:16}}>
-      <div style={{width:48,height:48,border:'4px solid #2C2010',borderTopColor:'#C9A84C',borderRadius:'50%',animation:'spin .8s linear infinite'}}></div>
-      <div style={{color:'#7A6A50',fontFamily:'Outfit,sans-serif'}}>Cargando menu...</div>
+    <div style={{background:'#011A16',minHeight:'100vh',display:'flex',alignItems:'center',
+      justifyContent:'center',flexDirection:'column',gap:16}}>
+      <GS/>
+      <div style={{width:48,height:48,border:'4px solid #0A5C50',
+        borderTopColor:'#C9A84C',borderRadius:'50%',animation:'spin .8s linear infinite'}}/>
+      <div style={{color:'#7AC4B8',fontFamily:'Outfit,sans-serif'}}>Cargando menú...</div>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   )
 
   if (error) return (
-    <div style={{background:'#0A0806',minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:16,padding:24}}>
+    <div style={{background:'#011A16',minHeight:'100vh',display:'flex',alignItems:'center',
+      justifyContent:'center',flexDirection:'column',gap:16,padding:24}}>
+      <GS/>
       <div style={{fontSize:'3rem'}}>🍽️</div>
-      <div style={{color:'#C8B898',fontFamily:'Outfit,sans-serif',fontSize:'1.1rem',textAlign:'center'}}>{error}</div>
-      <div style={{color:'#5A4A30',fontFamily:'Outfit,sans-serif',fontSize:'.85rem'}}>/{slug}</div>
+      <div style={{color:'#A8D4CF',fontFamily:'Outfit,sans-serif',fontSize:'1.1rem',
+        textAlign:'center'}}>{error}</div>
+      <div style={{color:'#0A5C50',fontFamily:'Outfit,sans-serif',fontSize:'.85rem'}}>/{slug}</div>
     </div>
   )
 
+  // Render ClientApp directly — no auth check needed for public menu
   return (
-    <MenuQR
-      local={local}   setLocal={setLocal}
-      cats={cats}     setCats={setCats}
-      prods={prods}   setProds={setProds}
-      forceMode={vitrina ? "vitrina" : "client"}
-      mesaInicial={mesa ? parseInt(mesa) : null}
-    />
+    <>
+      <GS/>
+      <ClientApp
+        local={local}
+        cats={cats}
+        prods={prods}
+        vitrina={vitrina}
+        sinPedidos={!!local?.feat_sin_pedidos}
+      />
+    </>
   )
 }
