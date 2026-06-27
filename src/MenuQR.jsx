@@ -19,8 +19,8 @@ const GS = () => (
       --am:  #888888; --ad: #666666; --at: #333333; --abri:#1A1A1A;
       --ag:  #0D9488; --aam:#2DD4BF; --ar: #E53935; --abl:#3D8EFF;
       /* Gestión — Opción C: Bistró Clásico */
-      --gb:  #0D0804; --gs: #1C1008; --gc: #241408; --gbr:#2A1C0E;
-      --gm:  #3A2418; --gd: #7A6050; --gt: #D4C4A8; --gbri:#F5F0E8;
+      --gb:  #F8F8F8; --gs: #FFFFFF; --gc: #F2F2F2; --gbr:#E3E3E3;
+      --gm:  #888888; --gd: #666666; --gt: #333333; --gbri:#1A1A1A;
       --gi:  #0D9488; --gi2:#2DD4BF; --gg: #4A9A5A; --gr: #C85040; --gam:#E8A030;
       --gg2: #0D9488;
     }
