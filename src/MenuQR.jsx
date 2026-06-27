@@ -1513,7 +1513,9 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
   const [activeCat,setAC]= useState("TODO");
 
   const [pay,setPay]     = useState(null);
-  const [pay2,setPay2]   = useState(null);
+  const [pay2,setPay2]   = useState(null);   // unused legacy
+  const [mixto1,setMixto1] = useState(null); // método 1 en pago mixto
+  const [mixto2,setMixto2] = useState(null); // método 2 en pago mixto
   const [splitAmt,setSplitAmt]   = useState("");
   const [splitAmt2,setSplitAmt2] = useState("");
   const [note,setNote]   = useState("");
@@ -2119,7 +2121,7 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
               </button>
             ))}
             {/* Pago mixto */}
-            <button onClick={()=>{setPay("mixto");setPay2(null);setSplitAmt("");setSplitAmt2("");}} className="pr" style={{
+            <button onClick={()=>{setPay("mixto");setMixto1(null);setMixto2(null);setSplitAmt("");setSplitAmt2("");}} className="pr" style={{
               background:"#FFFBEB",
               border:`2px solid ${pay==="mixto"?"#F59E0B":"#F59E0B44"}`,
               borderRadius:14,padding:"14px 12px",cursor:"pointer",textAlign:"left",transition:"all .15s",
@@ -2135,27 +2137,56 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
           {/* Pago mixto expandido */}
           {pay==="mixto"&&(
             <div style={{background:"#F8F8F8",borderRadius:12,padding:"14px",marginTop:4,border:"1px solid #EBEBEB"}}>
-              <div style={{fontSize:11,fontWeight:700,color:"#999",letterSpacing:1,marginBottom:10}}>MÉTODO 1</div>
+              {/* Total a dividir */}
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12,padding:"8px 10px",background:"#FFF",borderRadius:8,border:"1px solid #E8E8E8"}}>
+                <span style={{fontSize:11,fontWeight:700,color:"#999"}}>TOTAL A DIVIDIR</span>
+                <span style={{fontFamily:"'Outfit',sans-serif",fontSize:15,fontWeight:800,color:local.color||"#C9A84C"}}>$ {fmt(grandTotal)}</span>
+              </div>
+              {/* Método 1 */}
+              <div style={{fontSize:11,fontWeight:700,color:"#999",letterSpacing:1,marginBottom:8}}>MÉTODO 1</div>
               <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:10}}>
                 {PAYS.map(p=>(
-                  <button key={p.id} onClick={()=>{setPay2(null);setSplitAmt("");setSplitAmt2(""); setPay("mixto_"+p.id);}} className="pr" style={{flexShrink:0,padding:"7px 12px",borderRadius:20,background:pay==="mixto_"+p.id?(local.color||"#C9A84C"):"#FFF",border:`1px solid ${pay==="mixto_"+p.id?(local.color||"#C9A84C"):"#DDD"}`,fontSize:12,fontWeight:700,color:pay==="mixto_"+p.id?"#fff":"#444",cursor:"pointer"}}>{p.icon} {tPay(p.id,lang)}</button>
+                  <button key={p.id} onClick={()=>{setMixto1(p.id);if(mixto2===p.id)setMixto2(null);}} className="pr"
+                    style={{flexShrink:0,padding:"7px 12px",borderRadius:20,
+                      background:mixto1===p.id?p.color:"#FFF",
+                      border:`2px solid ${mixto1===p.id?p.color:p.color+"44"}`,
+                      fontSize:12,fontWeight:700,color:mixto1===p.id?"#fff":p.color,cursor:"pointer",transition:"all .15s"}}>
+                    {p.icon} {tPay(p.id,lang)}
+                  </button>
                 ))}
               </div>
-              {pay&&pay.startsWith("mixto_")&&(<>
-                <input type="number" inputMode="numeric" placeholder={`Monto método 1`} value={splitAmt}
-                  onChange={e=>{setSplitAmt(e.target.value);const r=grandTotal-Number(e.target.value||0);if(r>=0)setSplitAmt2(String(r));}}
-                  style={{width:"100%",background:"#FFF",border:"1px solid #DDD",borderRadius:10,padding:"10px 14px",fontSize:14,color:"#111",outline:"none",marginBottom:10,boxSizing:"border-box"}}/>
-                <div style={{fontSize:11,fontWeight:700,color:"#999",letterSpacing:1,marginBottom:8}}>MÉTODO 2</div>
-                <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:10}}>
-                  {PAYS.filter(p=>pay!=="mixto_"+p.id).map(p=>(
-                    <button key={p.id} onClick={()=>setPay2(p.id)} className="pr" style={{flexShrink:0,padding:"7px 12px",borderRadius:20,background:pay2===p.id?(local.color||"#C9A84C"):"#FFF",border:`1px solid ${pay2===p.id?(local.color||"#C9A84C"):"#DDD"}`,fontSize:12,fontWeight:700,color:pay2===p.id?"#fff":"#444",cursor:"pointer"}}>{p.icon} {tPay(p.id,lang)}</button>
-                  ))}
-                </div>
-                {pay2&&<input type="number" inputMode="numeric" placeholder={`Monto método 2`} value={splitAmt2}
+              {mixto1&&(
+                <input type="number" inputMode="numeric" placeholder="Monto método 1"
+                  value={splitAmt}
+                  onChange={e=>{setSplitAmt(e.target.value);const r=grandTotal-Number(e.target.value||0);if(r>=0)setSplitAmt2(String(Math.round(r)));}}
+                  style={{width:"100%",background:"#FFF",border:"1px solid #DDD",borderRadius:10,padding:"10px 14px",fontSize:14,color:"#111",outline:"none",marginBottom:12,boxSizing:"border-box"}}/>
+              )}
+              {/* Método 2 */}
+              <div style={{fontSize:11,fontWeight:700,color:"#999",letterSpacing:1,marginBottom:8}}>MÉTODO 2</div>
+              <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:10}}>
+                {PAYS.filter(p=>p.id!==mixto1).map(p=>(
+                  <button key={p.id} onClick={()=>setMixto2(p.id)} className="pr"
+                    style={{flexShrink:0,padding:"7px 12px",borderRadius:20,
+                      background:mixto2===p.id?p.color:"#FFF",
+                      border:`2px solid ${mixto2===p.id?p.color:p.color+"44"}`,
+                      fontSize:12,fontWeight:700,color:mixto2===p.id?"#fff":p.color,cursor:"pointer",transition:"all .15s"}}>
+                    {p.icon} {tPay(p.id,lang)}
+                  </button>
+                ))}
+              </div>
+              {mixto2&&(
+                <input type="number" inputMode="numeric" placeholder="Monto método 2 (auto)"
+                  value={splitAmt2}
                   onChange={e=>setSplitAmt2(e.target.value)}
-                  style={{width:"100%",background:"#FFF",border:"1px solid #DDD",borderRadius:10,padding:"10px 14px",fontSize:14,color:"#111",outline:"none",boxSizing:"border-box"}}/>}
-                <button onClick={()=>{const h=Math.ceil(grandTotal/2);setSplitAmt(String(h));setSplitAmt2(String(grandTotal-h));}} style={{marginTop:8,background:"none",border:`1px solid ${local.color||"#C9A84C"}`,borderRadius:8,padding:"5px 12px",color:local.color||"#C9A84C",fontSize:11,fontWeight:700,cursor:"pointer"}}>50/50</button>
-              </>)}
+                  style={{width:"100%",background:"#FFF",border:"1px solid #DDD",borderRadius:10,padding:"10px 14px",fontSize:14,color:"#111",outline:"none",marginBottom:8,boxSizing:"border-box"}}/>
+              )}
+              {/* 50/50 */}
+              {mixto1&&mixto2&&(
+                <button onClick={()=>{const h=Math.ceil(grandTotal/2);setSplitAmt(String(h));setSplitAmt2(String(grandTotal-h));}}
+                  style={{background:"none",border:`1.5px solid ${local.color||"#C9A84C"}`,borderRadius:8,padding:"6px 14px",color:local.color||"#C9A84C",fontSize:12,fontWeight:800,cursor:"pointer"}}>
+                  ÷ 50/50
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -2214,7 +2245,7 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
 
       {/* CTA fijo */}
       <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:430,padding:"12px 16px 28px",background:"linear-gradient(transparent,#F6F6F6 28%)"}}>
-        {(pay&&pay!=="mixto")&&(
+        {(pay&&(pay!=="mixto"||(mixto1&&mixto2)))&&(
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 16px",background:"#FFF",border:"1px solid #EBEBEB",borderRadius:14,marginBottom:10,boxShadow:"0 2px 8px rgba(0,0,0,.06)"}}>
             <div>
               <div style={{fontSize:11,color:"#999"}}>{tipAmt>0?"Subtotal + propina":"Total"}</div>
@@ -2224,17 +2255,19 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
           </div>
         )}
         <button onClick={async()=>{
-          const isMixto = pay&&pay.startsWith("mixto_");
-          if(!pay||pay==="mixto") return;
-          if(isMixto&&!pay2) return;
+          const isMixto = pay==="mixto";
+          if(!pay) return;
+          if(isMixto&&(!mixto1||!mixto2)) return;
           const cartItems=Object.values(cart).filter(i=>i.qty>0);
           const subtotal=cartItems.reduce((s,i)=>s+i.price*i.qty,0);
           const tipAmount=tipPct!=null?(tipPct===0?0:Math.round(subtotal*tipPct/100)):0;
           const descuentoAplicado=promoActiva&&subtotal>0?Math.round(subtotal*0.10):0;
           const totalFinal=subtotal-descuentoAplicado+tipAmount;
           const mesa=local.mesa||1;
+          const m1amt=Number(splitAmt)||Math.ceil(totalFinal/2);
+          const m2amt=Number(splitAmt2)||totalFinal-m1amt;
           const pagoFinal = isMixto
-            ? `${pay.replace("mixto_","")}($${fmt(Number(splitAmt)||Math.ceil(totalFinal/2))})+${pay2}($${fmt(Number(splitAmt2)||totalFinal-Number(splitAmt||Math.ceil(totalFinal/2)))})`
+            ? `${mixto1}($${fmt(m1amt)})+${mixto2}($${fmt(m2amt)})`
             : pay;
           let pedidoId; let errorMsg=null;
           if(!supabase) errorMsg="Supabase no configurado";
@@ -2256,14 +2289,14 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
           setView("done");
         }} className="pr" style={{
           width:"100%",
-          background:(pay&&pay!=="mixto"&&!(pay==="mixto"&&!pay2))?(local.color||"#C9A84C"):"#E0E0E0",
-          color:(pay&&pay!=="mixto"&&!(pay==="mixto"&&!pay2))?"#fff":"#999",
+          background:(pay&&(pay!=="mixto"||(mixto1&&mixto2)))?(local.color||"#C9A84C"):"#E0E0E0",
+          color:(pay&&(pay!=="mixto"||(mixto1&&mixto2)))?"#fff":"#999",
           border:"none",borderRadius:16,padding:"16px",
           fontFamily:"'Outfit',sans-serif",fontSize:15,fontWeight:800,
-          cursor:(pay&&pay!=="mixto")?"pointer":"not-allowed",
-          boxShadow:(pay&&pay!=="mixto")?"0 8px 28px rgba(0,0,0,.15)":"none",
+          cursor:(pay&&(pay!=="mixto"||(mixto1&&mixto2)))?"pointer":"not-allowed",
+          boxShadow:(pay&&(pay!=="mixto"||(mixto1&&mixto2)))?"0 8px 28px rgba(0,0,0,.15)":"none",
           transition:"all .25s"}}>
-          {(pay&&pay!=="mixto")?T('confirm'):(pay==="mixto"&&pay2?T('confirm'):T('choosePay'))}
+          {(pay&&(pay!=="mixto"||(mixto1&&mixto2)))?T('confirm'):T('choosePay')}
         </button>
       </div>
     </div>
