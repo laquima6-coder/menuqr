@@ -5977,7 +5977,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
                         </div>
                         <div style={{display:"flex",alignItems:"center",gap:8}}>
                           <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:13,color:"var(--am)"}}>$</span>
-                          <input type="number" value={vrSplitAmt} onChange={e=>setVrSplitAmt(e.target.value)}
+                          <input type="number" value={vrSplitAmt} onChange={e=>{setVrSplitAmt(e.target.value);const r=vrTotal-Number(e.target.value||0);if(r>=0)setVrSplitAmt2(String(r));}}
                             placeholder={String(Math.ceil(vrTotal/2))}
                             style={{flex:1,background:"var(--as)",border:"1px solid var(--abr)",borderRadius:8,padding:"8px 10px",color:"var(--abri)",fontFamily:"'IBM Plex Mono',monospace",fontSize:15,fontWeight:700,outline:"none"}}/>
                         </div>
@@ -7086,7 +7086,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
                               </div>
                               <div style={{display:"flex",alignItems:"center",gap:8}}>
                                 <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:12,color:"var(--am)"}}>$</span>
-                                <input type="number" value={cajaSplitAmt} onChange={e=>setCajaSplitAmt(e.target.value)}
+                                <input type="number" value={cajaSplitAmt} onChange={e=>{setCajaSplitAmt(e.target.value);const r=cajaTotal-Number(e.target.value||0);if(r>=0)setCajaSplitAmt2(String(r));}}
                                   placeholder={String(Math.ceil(cajaTotal/2))}
                                   style={{flex:1,background:"var(--as)",border:"1px solid var(--abr)",borderRadius:8,padding:"7px 10px",color:"var(--abri)",fontFamily:"'IBM Plex Mono',monospace",fontSize:14,fontWeight:700,outline:"none"}}/>
                               </div>
