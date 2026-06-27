@@ -2735,7 +2735,8 @@ function ClientApp({onBack, local, cats, prods, vitrina=false, sinPedidos=false}
    QR TAB — componente a nivel de módulo para evitar remounts
 ══════════════════════════════════════════════════════════════ */
 function QRTabComp({ mesaNum, setMesaNum, qrType, setQrType, promoUrl, setPromoUrl, local }) {
-  const baseUrl = (local.baseUrl||"").replace(/^https?:\/\//,"");
+  const rawBase = local.baseUrl || (local.slug ? window.location.host+"/"+local.slug : window.location.host);
+  const baseUrl = rawBase.replace(/^https?:\/\//,"");
   const getQRData = () => {
     const base = `https://${baseUrl}`;
     switch(qrType){
