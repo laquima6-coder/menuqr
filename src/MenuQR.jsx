@@ -2192,9 +2192,13 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
         </div>
 
         {/* Alias MP/Transfer */}
-        {(pay==="mp"||pay==="trans"||(pay&&pay.startsWith("mixto_mp"))||(pay&&pay.startsWith("mixto_trans"))) && local.mp_mostrar_alias && local.mp_alias && (
+        {(() => {
+          const needsAlias = pay==="mp"||pay==="trans"||(pay==="mixto"&&(mixto1==="mp"||mixto1==="trans"||mixto2==="mp"||mixto2==="trans"));
+          if(!needsAlias||!local.mp_mostrar_alias||!local.mp_alias) return null;
+          const isMp = pay==="mp"||(pay==="mixto"&&(mixto1==="mp"||mixto2==="mp"));
+          return (
           <div style={{background:"#FFFBEB",border:"1px solid #FDE68A",borderRadius:14,padding:"14px 16px",marginBottom:12}}>
-            <div style={{fontSize:10,fontWeight:700,letterSpacing:1.5,color:"#D97706",marginBottom:8,textTransform:"uppercase"}}>{pay==="mp"||pay==="mixto_mp"?"💳 Mercado Pago":"🏦 Transferencia"}</div>
+            <div style={{fontSize:10,fontWeight:700,letterSpacing:1.5,color:"#D97706",marginBottom:8,textTransform:"uppercase"}}>{isMp?"💳 Mercado Pago":"🏦 Transferencia"}</div>
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,marginBottom:local.whatsapp?10:0}}>
               <div>
                 <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:16,fontWeight:700,color:"#111"}}>{local.mp_alias}</div>
@@ -2217,7 +2221,8 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
               </a>
             )}
           </div>
-        )}
+          );
+        })()}
 
         {/* Dividir la cuenta */}
         {subTotal>0&&(
