@@ -1431,34 +1431,32 @@ return (
     })()}
 
     {/* WhatsApp pedidos */}
+    {/* WhatsApp — solo informativo en vitrina, sin flujo de pedido */}
     {(!!local.feat_whatsapp_vitrina && local.whatsapp_vitrina_numero && (local.whatsapp_delivery||local.whatsapp_retiro)) ? (
       <div style={{background:"rgba(37,211,102,.06)",border:"1px solid rgba(37,211,102,.25)",borderRadius:14,padding:"14px 16px"}}>
-        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347zM11.996 0C5.374 0 0 5.373 0 11.996c0 2.133.56 4.133 1.54 5.867L.047 23.53a.5.5 0 00.612.632l5.828-1.528A11.935 11.935 0 0011.996 24C18.619 24 24 18.619 24 11.996 24 5.373 18.619 0 11.996 0zm0 21.818a9.794 9.794 0 01-4.992-1.367l-.358-.212-3.718.975 1.002-3.618-.234-.372a9.794 9.794 0 01-1.518-5.228c0-5.419 4.409-9.818 9.818-9.818s9.818 4.399 9.818 9.818-4.399 9.822-9.818 9.822z"/></svg>
-          <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,color:"#25D366",letterSpacing:2}}>PEDIDOS POR WHATSAPP</span>
-        </div>
-        <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"rgba(255,255,255,.4)",marginBottom:12,lineHeight:1.5}}>
-          Elegí los productos, dejá tus datos y te armamos el mensaje listo para enviar
-        </p>
+        <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,color:"#25D366",letterSpacing:2,marginBottom:12}}>📦 DELIVERY / RETIRO</div>
         <div style={{display:"flex",flexDirection:"column",gap:8}}>
           {!!local.whatsapp_delivery && (
-            <button onClick={()=>setWaFlow("delivery")}
-              style={{display:"flex",alignItems:"center",justifyContent:"center",gap:10,
-                background:"#25D366",border:"none",borderRadius:12,padding:"14px",
-                fontFamily:"'Outfit',sans-serif",fontSize:15,fontWeight:800,
-                color:"#fff",cursor:"pointer",width:"100%"}}>
-              🛵 Pedir con delivery
-            </button>
+            <a href={`https://wa.me/${local.whatsapp_vitrina_numero.replace(/\D/g,"")}?text=${encodeURIComponent("Hola! Quiero hacer un pedido para delivery 🛵")}`}
+              target="_blank" rel="noreferrer"
+              style={{display:"flex",alignItems:"center",gap:12,background:"#25D366",borderRadius:12,padding:"13px 16px",textDecoration:"none"}}>
+              <span style={{fontSize:20}}>🛵</span>
+              <div style={{flex:1}}>
+                <div style={{fontFamily:"'Outfit',sans-serif",fontSize:14,fontWeight:800,color:"#fff"}}>Pedir con delivery</div>
+                <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,color:"rgba(255,255,255,.8)",marginTop:1}}>Escribinos por WhatsApp</div>
+              </div>
+            </a>
           )}
           {!!local.whatsapp_retiro && (
-            <button onClick={()=>setWaFlow("retiro")}
-              style={{display:"flex",alignItems:"center",justifyContent:"center",gap:10,
-                background:"rgba(37,211,102,.12)",border:"1px solid rgba(37,211,102,.4)",
-                borderRadius:12,padding:"14px",
-                fontFamily:"'Outfit',sans-serif",fontSize:15,fontWeight:800,
-                color:"#25D366",cursor:"pointer",width:"100%"}}>
-              🏪 Retirar en el local
-            </button>
+            <a href={`https://wa.me/${local.whatsapp_vitrina_numero.replace(/\D/g,"")}?text=${encodeURIComponent("Hola! Quiero hacer un pedido para retirar en el local 🏪")}`}
+              target="_blank" rel="noreferrer"
+              style={{display:"flex",alignItems:"center",gap:12,background:"rgba(37,211,102,.12)",border:"1px solid rgba(37,211,102,.4)",borderRadius:12,padding:"13px 16px",textDecoration:"none"}}>
+              <span style={{fontSize:20}}>🏪</span>
+              <div style={{flex:1}}>
+                <div style={{fontFamily:"'Outfit',sans-serif",fontSize:14,fontWeight:800,color:"#25D366"}}>Retirar en el local</div>
+                <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,color:"rgba(37,211,102,.6)",marginTop:1}}>Escribinos por WhatsApp</div>
+              </div>
+            </a>
           )}
         </div>
       </div>
@@ -1478,7 +1476,6 @@ return (
         </div>
       </a>
     ) : null}
-    {waFlow && <WAOrderFlow local={local} prods={prods} cats={cats} tipo={waFlow} onClose={()=>setWaFlow(null)}/>}
 
     {/* Formas de pago */}
     <div style={{background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.08)",
