@@ -401,11 +401,19 @@ const PLAN_LABELS = { free:"FREE", basico:"BÁSICO", pro:"PRO ✦", empresa:"EMP
 const PLAN_COLORS_MAP = { free:"#4A6080", basico:"#3D8EFF", pro:"#6366F1", empresa:"#10B981" };
 
 const PAYS = [
-  {id:"mp",    label:"Mercado Pago", icon:"💳", sub:"QR o link de pago",  color:"#009EE3", bg:"#EBF7FF"},
-  {id:"trans", label:"Transferencia",icon:"🏦", sub:"CVU / Alias",         color:"#7C3AED", bg:"#F5F3FF"},
-  {id:"cash",  label:"Efectivo",     icon:"💵", sub:"Le cobrás el mozo",  color:"#16A34A", bg:"#F0FDF4"},
-  {id:"card",  label:"Déb / Créd",   icon:"💰", sub:"Visa, Master, Amex", color:"#F97316", bg:"#FFF7ED"},
+  {id:"mp",    icon:"💳", color:"#009EE3", bg:"#EBF7FF"},
+  {id:"trans", icon:"🏦", color:"#7C3AED", bg:"#F5F3FF"},
+  {id:"cash",  icon:"💵", color:"#16A34A", bg:"#F0FDF4"},
+  {id:"card",  icon:"💰", color:"#F97316", bg:"#FFF7ED"},
 ];
+const PAY_LABELS = {
+  mp:   {es:"Mercado Pago",  en:"Mercado Pago",   sub:{es:"QR o link de pago",   en:"QR or payment link", pt:"QR ou link de pagamento", it:"QR o link",       fr:"QR ou lien",      de:"QR oder Link",    zh:"扫码付款",       ja:"QRまたはリンク",   ko:"QR 또는 링크"}},
+  trans:{es:"Transferencia", en:"Bank Transfer",  sub:{es:"CVU / Alias",          en:"Account / Alias",    pt:"CVU / Alias",              it:"IBAN / Alias",    fr:"Virement",        de:"Überweisung",     zh:"银行转账",       ja:"振込",            ko:"계좌이체"}},
+  cash: {es:"Efectivo",      en:"Cash",           sub:{es:"Le cobrás el mozo",    en:"Pay the waiter",     pt:"Pague ao garçom",          it:"Al cameriere",    fr:"Au serveur",      de:"Beim Kellner",    zh:"付现金",         ja:"スタッフに現金",   ko:"직원에게 현금"}},
+  card: {es:"Débito / Créd", en:"Debit / Credit", sub:{es:"Visa, Master, Amex",   en:"Visa, Master, Amex", pt:"Visa, Master, Amex",       it:"Visa, Master",    fr:"Visa, Mastercard",de:"Visa, Mastercard",zh:"信用/借记卡",    ja:"クレジットカード",  ko:"신용/체크카드"}},
+};
+const tPay = (id,lang) => { const p=PAY_LABELS[id]; if(!p) return id; return p[lang]||p.es; };
+const tPaySub = (id,lang) => { const p=PAY_LABELS[id]; if(!p||!p.sub) return ""; return p.sub[lang]||p.sub.es; };
 
 const EMOJIS = ["🍕","🥩","🍝","🧀","🥗","🍺","🍷","🍹","🥟","🍔","🍖","🫕","🪵","🍮","🍨","🍰","☕","🥐","🌮","🐟","🦐","🍄","☀️","🔥","🥘","🫙","🧆","🥙"];
 
@@ -2069,8 +2077,8 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
                 boxShadow:pay===p.id?`0 4px 16px ${p.color}35`:"0 1px 4px rgba(0,0,0,.06)",
                 transform:pay===p.id?"scale(1.02)":"scale(1)"}}>
                 <span style={{fontSize:28,display:"block",marginBottom:7}}>{p.icon}</span>
-                <div style={{fontSize:13,fontWeight:800,color:p.color,marginBottom:2}}>{p.label}</div>
-                <div style={{fontSize:10,color:p.color+"99"}}>{p.sub}</div>
+                <div style={{fontSize:13,fontWeight:800,color:p.color,marginBottom:2}}>{tPay(p.id,lang)}</div>
+                <div style={{fontSize:10,color:p.color+"99"}}>{tPaySub(p.id,lang)}</div>
                 {pay===p.id&&<div style={{position:"absolute",top:8,right:8,width:18,height:18,borderRadius:"50%",background:p.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,color:"#fff",fontWeight:800}}>✓</div>}
               </button>
             ))}
@@ -2094,7 +2102,7 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
               <div style={{fontSize:11,fontWeight:700,color:"#999",letterSpacing:1,marginBottom:10}}>MÉTODO 1</div>
               <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:10}}>
                 {PAYS.map(p=>(
-                  <button key={p.id} onClick={()=>{setPay2(null);setSplitAmt("");setSplitAmt2(""); setPay("mixto_"+p.id);}} className="pr" style={{flexShrink:0,padding:"7px 12px",borderRadius:20,background:pay==="mixto_"+p.id?(local.color||"#C9A84C"):"#FFF",border:`1px solid ${pay==="mixto_"+p.id?(local.color||"#C9A84C"):"#DDD"}`,fontSize:12,fontWeight:700,color:pay==="mixto_"+p.id?"#fff":"#444",cursor:"pointer"}}>{p.icon} {p.label}</button>
+                  <button key={p.id} onClick={()=>{setPay2(null);setSplitAmt("");setSplitAmt2(""); setPay("mixto_"+p.id);}} className="pr" style={{flexShrink:0,padding:"7px 12px",borderRadius:20,background:pay==="mixto_"+p.id?(local.color||"#C9A84C"):"#FFF",border:`1px solid ${pay==="mixto_"+p.id?(local.color||"#C9A84C"):"#DDD"}`,fontSize:12,fontWeight:700,color:pay==="mixto_"+p.id?"#fff":"#444",cursor:"pointer"}}>{p.icon} {tPay(p.id,lang)}</button>
                 ))}
               </div>
               {pay&&pay.startsWith("mixto_")&&(<>
@@ -2104,7 +2112,7 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
                 <div style={{fontSize:11,fontWeight:700,color:"#999",letterSpacing:1,marginBottom:8}}>MÉTODO 2</div>
                 <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:10}}>
                   {PAYS.filter(p=>pay!=="mixto_"+p.id).map(p=>(
-                    <button key={p.id} onClick={()=>setPay2(p.id)} className="pr" style={{flexShrink:0,padding:"7px 12px",borderRadius:20,background:pay2===p.id?(local.color||"#C9A84C"):"#FFF",border:`1px solid ${pay2===p.id?(local.color||"#C9A84C"):"#DDD"}`,fontSize:12,fontWeight:700,color:pay2===p.id?"#fff":"#444",cursor:"pointer"}}>{p.icon} {p.label}</button>
+                    <button key={p.id} onClick={()=>setPay2(p.id)} className="pr" style={{flexShrink:0,padding:"7px 12px",borderRadius:20,background:pay2===p.id?(local.color||"#C9A84C"):"#FFF",border:`1px solid ${pay2===p.id?(local.color||"#C9A84C"):"#DDD"}`,fontSize:12,fontWeight:700,color:pay2===p.id?"#fff":"#444",cursor:"pointer"}}>{p.icon} {tPay(p.id,lang)}</button>
                   ))}
                 </div>
                 {pay2&&<input type="number" inputMode="numeric" placeholder={`Monto método 2`} value={splitAmt2}
@@ -2303,7 +2311,7 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
           <div style={{padding:"18px 32px 14px",borderBottom:`2px solid ${warmBorder}`,display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
             <span style={{fontSize:13,letterSpacing:4,textTransform:"uppercase",color:warmText,fontFamily:"'DM Sans',sans-serif",fontWeight:700}}>La Carta</span>
             <div style={{display:"flex",gap:0,overflowX:"auto",scrollbarWidth:"none"}}>
-              {[{id:"TODO",icon:"",label:"Todo"},...activeCats].map(cat=>(
+              {[{id:"TODO",icon:"",label:lang==="en"?"All":lang==="pt"?"Tudo":lang==="fr"?"Tout":lang==="de"?"Alle":lang==="it"?"Tutto":lang==="zh"?"全部":lang==="ja"?"全て":lang==="ko"?"전체":lang==="gn"?"Mba'etéva":"Todo"},...activeCats].map(cat=>(
                 <button key={cat.id} onClick={()=>setAC(cat.id)} className="pr" style={{
                   padding:"6px 18px",fontSize:11,cursor:"pointer",
                   color:activeCat===cat.id?warmText:warmMuted,
@@ -2444,7 +2452,7 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
 
         {/* Category chips */}
         <div style={{display:"flex",gap:8,padding:"0 14px 12px",overflowX:"auto",scrollbarWidth:"none",WebkitOverflowScrolling:"touch"}}>
-          {[{id:"TODO",icon:"",label:"Todo"},...activeCats].map(cat=>(
+          {[{id:"TODO",icon:"",label:lang==="en"?"All":lang==="pt"?"Tudo":lang==="fr"?"Tout":lang==="de"?"Alle":lang==="it"?"Tutto":lang==="zh"?"全部":lang==="ja"?"全て":lang==="ko"?"전체":lang==="gn"?"Mba'etéva":"Todo"},...activeCats].map(cat=>(
             <button key={cat.id} onClick={()=>setAC(cat.id)} className="pr" style={{
               flexShrink:0,borderRadius:20,padding:"7px 16px",
               background:activeCat===cat.id?(local.color||"#C9A84C"):"#F0F0F0",
@@ -2452,7 +2460,7 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
               border:"none",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,
               cursor:"pointer",transition:"all .15s",whiteSpace:"nowrap",
               boxShadow:activeCat===cat.id?"0 2px 8px rgba(0,0,0,.18)":"none"}}>
-              {cat.icon?cat.icon+" ":""}{cat.label}
+              {cat.icon?cat.icon+" ":""}{tCat(cat.label,lang)}
             </button>
           ))}
         </div>
@@ -2472,7 +2480,7 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
             <section key={cat.id} id={`cat-${cat.id}`} style={{marginBottom:8}}>
               {/* Category header */}
               <div style={{padding:"18px 16px 10px",background:"#F6F6F6"}}>
-                <div style={{fontFamily:"'Outfit',sans-serif",fontSize:18,fontWeight:800,color:"#111",letterSpacing:-.2}}>{cat.icon?cat.icon+" ":""}{cat.label}</div>
+                <div style={{fontFamily:"'Outfit',sans-serif",fontSize:18,fontWeight:800,color:"#111",letterSpacing:-.2}}>{cat.icon?cat.icon+" ":""}{tCat(cat.label,lang)}</div>
               </div>
 
               {/* Product list */}
