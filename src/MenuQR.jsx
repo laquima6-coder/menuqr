@@ -4918,9 +4918,9 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
   const [movMonto, setMovMonto]         = useState("");
   const [movDesc, setMovDesc]           = useState("");
 
-  const vrTotal    = Object.values(vrCart).reduce((s,i)=>s+i.price*i.qty,0);
-  const cajaRawTotal = Object.values(cajaCart).reduce((s,i)=>s+i.price*i.qty,0);
-  const cajaTotal  = cajaDescPct>0 ? Math.round(cajaRawTotal*(1-cajaDescPct/100)) : cajaRawTotal;
+  const vrTotal    = useMemo(()=>Object.values(vrCart).reduce((s,i)=>s+i.price*i.qty,0),[vrCart]);
+  const cajaRawTotal = useMemo(()=>Object.values(cajaCart).reduce((s,i)=>s+i.price*i.qty,0),[cajaCart]);
+  const cajaTotal  = useMemo(()=>cajaDescPct>0?Math.round(cajaRawTotal*(1-cajaDescPct/100)):cajaRawTotal,[cajaRawTotal,cajaDescPct]);
 
   const vrAdd  = (prod) => setVrCart(c=>({...c,[prod.id]:{...prod,qty:(c[prod.id]?.qty||0)+1}}));
   const vrSub  = (prod) => setVrCart(c=>{const qty=(c[prod.id]?.qty||0)-1;if(qty<=0){const n={...c};delete n[prod.id];return n;}return{...c,[prod.id]:{...prod,qty}};});
@@ -5980,6 +5980,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
                           <input type="number" value={vrSplitAmt} onChange={e=>{setVrSplitAmt(e.target.value);const r=vrTotal-Number(e.target.value||0);if(r>=0)setVrSplitAmt2(String(r));}}
                             placeholder={String(Math.ceil(vrTotal/2))}
                             style={{flex:1,background:"var(--as)",border:"1px solid var(--abr)",borderRadius:8,padding:"8px 10px",color:"var(--abri)",fontFamily:"'IBM Plex Mono',monospace",fontSize:15,fontWeight:700,outline:"none"}}/>
+                          <button onClick={()=>{const h=Math.ceil(vrTotal/2);setVrSplitAmt(String(h));setVrSplitAmt2(String(vrTotal-h));}} style={{background:"var(--abl)",border:"none",borderRadius:8,padding:"6px 10px",color:"#fff",fontFamily:"'IBM Plex Mono',monospace",fontSize:10,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>50/50</button>
                         </div>
                       </div>
                       <div style={{background:"var(--ac)",borderRadius:12,padding:"12px 14px"}}>
@@ -7089,6 +7090,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
                                 <input type="number" value={cajaSplitAmt} onChange={e=>{setCajaSplitAmt(e.target.value);const r=cajaTotal-Number(e.target.value||0);if(r>=0)setCajaSplitAmt2(String(r));}}
                                   placeholder={String(Math.ceil(cajaTotal/2))}
                                   style={{flex:1,background:"var(--as)",border:"1px solid var(--abr)",borderRadius:8,padding:"7px 10px",color:"var(--abri)",fontFamily:"'IBM Plex Mono',monospace",fontSize:14,fontWeight:700,outline:"none"}}/>
+                                <button onClick={()=>{const h=Math.ceil(cajaTotal/2);setCajaSplitAmt(String(h));setCajaSplitAmt2(String(cajaTotal-h));}} style={{background:"var(--abl)",border:"none",borderRadius:8,padding:"6px 10px",color:"#fff",fontFamily:"'IBM Plex Mono',monospace",fontSize:10,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>50/50</button>
                               </div>
                             </div>
                             <div style={{background:"var(--ac)",borderRadius:10,padding:"10px 12px"}}>
