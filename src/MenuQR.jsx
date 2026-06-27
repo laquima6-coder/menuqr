@@ -1668,7 +1668,7 @@ function ClientApp({onBack, local, cats, prods, vitrina=false, sinPedidos=false}
     const warmBorder="#D4C4A8";
     const warmMuted="#7A6050";
     const warmText="#2C1810";
-    const darkPanel="#1C1008";
+    const darkPanel="#0D9488";
     const STEPS2=[
       {key:"nuevo",     icon:"📋", label:"Recibido",    sub:"En espera de la cocina"},
       {key:"preparando",icon:"🍳", label:"Preparando",  sub:"Tu pedido está siendo preparado"},
@@ -1914,13 +1914,18 @@ function ClientApp({onBack, local, cats, prods, vitrina=false, sinPedidos=false}
       const tipAmount=tipPct!=null?(tipPct===0?0:Math.round(subtotal*tipPct/100)):0;
       const descuentoAplicado=promoActiva&&subtotal>0?Math.round(subtotal*0.10):0;
       const mesa=local.mesa||1;
+      const isMixtoPC=pay==="mixto";
+      const m1amtPC=parseFloat(splitAmt)||0;
+      const grandTotalPC=subtotal-descuentoAplicado+tipAmount;
+      const m2amtPC=isMixtoPC?Math.max(0,grandTotalPC-m1amtPC):0;
+      const pagoFinalPC=isMixtoPC&&mixto1&&mixto2?`${mixto1}(\$${fmt(m1amtPC)})+${mixto2}(\$${fmt(m2amtPC)})`:pay;
       let errorMsg=null; let pedidoId=null;
       if(!supabase) errorMsg="Supabase no configurado";
       else if(!local.restauranteId) errorMsg="Sin restauranteId";
       else {
         try {
           pedidoId=crypto.randomUUID();
-          const {error}=await supabase.from("pedidos").insert({id:pedidoId,restaurante_id:local.restauranteId,mesa_numero:mesa,status:"nuevo",metodo_pago:pay,propina:tipAmount,total:subtotal-descuentoAplicado+tipAmount,nota:[note,descuentoAplicado>0?`DESCUENTO_PRIMERA_VEZ_10%_$${descuentoAplicado}`:null].filter(Boolean).join(" | ")||null,idioma:lang||"es"});
+          const {error}=await supabase.from("pedidos").insert({id:pedidoId,restaurante_id:local.restauranteId,mesa_numero:mesa,status:"nuevo",metodo_pago:pagoFinalPC,propina:tipAmount,total:subtotal-descuentoAplicado+tipAmount,nota:[note,descuentoAplicado>0?`DESCUENTO_PRIMERA_VEZ_10%_$${descuentoAplicado}`:null].filter(Boolean).join(" | ")||null,idioma:lang||"es"});
           if(error){errorMsg=error.message;}
           else{
             if(descuentoAplicado>0){localStorage.removeItem("menuqr_promo10_"+(local.restauranteId||"x"));setPromoActiva(false);}
@@ -2014,7 +2019,7 @@ function ClientApp({onBack, local, cats, prods, vitrina=false, sinPedidos=false}
               </div>
             </div>
             {/* MP/Transfer alias card — PC */}
-            {(pay==="mp"||pay==="trans") && local.mp_mostrar_alias && local.mp_alias && (
+            {(pay==="mp"||pay==="trans"||(pay==="mixto"&&(mixto1==="mp"||mixto1==="trans"||mixto2==="mp"||mixto2==="trans"))) && local.mp_mostrar_alias && local.mp_alias && (
               <div style={{marginBottom:20,background:"#FFF8EC",border:"1px solid #0D948866",borderRadius:14,padding:"16px 18px"}}>
                 <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:700,letterSpacing:2,textTransform:"uppercase",color:"#8A6A30",marginBottom:10}}>
                   {pay==="mp"?"💳 Datos para pagar por Mercado Pago":"🏦 Datos para transferencia bancaria"}
