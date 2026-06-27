@@ -1505,6 +1505,9 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
   const [activeCat,setAC]= useState("TODO");
 
   const [pay,setPay]     = useState(null);
+  const [pay2,setPay2]   = useState(null);
+  const [splitAmt,setSplitAmt]   = useState("");
+  const [splitAmt2,setSplitAmt2] = useState("");
   const [note,setNote]   = useState("");
   const [tipPct,setTipPct] = useState(null); // null | 0 | 10 | 15 | 20
   const [tipCustom,setTC]  = useState("");
@@ -1974,320 +1977,236 @@ function ClientApp({onBack, local, cats, prods, vitrina=false}) {
   }
 
     if(view==="cart") return (
-    <div className="cv" style={{maxWidth:430,margin:"0 auto",minHeight:"100vh",
-      background:"var(--cb)",paddingBottom:220}}>
+    <div style={{maxWidth:430,margin:"0 auto",minHeight:"100vh",background:"#F6F6F6",paddingBottom:120,fontFamily:"'DM Sans',sans-serif"}}>
       <GS/>
       {/* Header */}
-      <div style={{padding:"24px 20px 16px",borderBottom:"1px solid var(--cbr)",
-        display:"flex",alignItems:"center",gap:14,
-        background:"linear-gradient(180deg,var(--cs),var(--cb))"}}>
-        <button onClick={()=>setView("menu")} className="pr" style={{width:38,height:38,
-          borderRadius:10,background:"var(--cc)",border:"1px solid var(--cbr)",
-          color:"var(--cbri)",fontSize:18,cursor:"pointer",
-          display:"flex",alignItems:"center",justifyContent:"center"}}>←</button>
-        <div>
-          <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:22,
-            color:"var(--cbri)",fontWeight:700}}>{T('myOrder')}</h2>
-          <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"var(--cm)"}}>
-            {local.mesa?`Mesa ${local.mesa} · `:"Pedido · "}{items.length} producto{items.length!==1?"s":""}
-          </p>
+      <div style={{background:"#FFF",padding:"16px 16px 14px",borderBottom:"1px solid #EBEBEB",display:"flex",alignItems:"center",gap:14,position:"sticky",top:0,zIndex:20,boxShadow:"0 1px 8px rgba(0,0,0,.06)"}}>
+        <button onClick={()=>setView("menu")} className="pr" style={{width:38,height:38,borderRadius:10,background:"#F5F5F5",border:"1px solid #E8E8E8",color:"#333",fontSize:18,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>←</button>
+        <div style={{flex:1}}>
+          <div style={{fontFamily:"'Outfit',sans-serif",fontSize:18,fontWeight:800,color:"#111"}}>{T('myOrder')}</div>
+          <div style={{fontSize:12,color:"#999",marginTop:1}}>{local.mesa?`Mesa ${local.mesa} · `:"Pedido · "}{items.length} producto{items.length!==1?"s":""}</div>
         </div>
+        <div style={{fontFamily:"'Outfit',sans-serif",fontSize:16,fontWeight:800,color:local.color||"#C9A84C"}}>$ {fmt(grandTotal)}</div>
       </div>
 
-      <div style={{padding:"18px 16px"}}>
-        {/* Items en el carrito */}
-        <div style={{background:"var(--cc)",border:"1px solid var(--cbr)",
-          borderRadius:18,overflow:"hidden",marginBottom:14}}>
+      <div style={{padding:"12px 14px"}}>
+        {/* Items */}
+        <div style={{background:"#FFF",borderRadius:16,overflow:"hidden",marginBottom:12,border:"1px solid #EBEBEB"}}>
           {items.map((item,i)=>(
-            <div key={item.id} style={{display:"flex",alignItems:"center",gap:12,
-              padding:"13px 16px",
-              borderBottom:i<items.length-1?"1px solid var(--cbr)":"none"}}>
-              <span style={{fontSize:24}}>{item.emoji}</span>
-              <div style={{flex:1}}>
-                <p style={{fontFamily:"'Playfair Display',serif",fontSize:14,
-                  color:"var(--cbri)",marginBottom:2}}>{item.name}</p>
-                <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,
-                  color:"var(--cg)"}}>$ {fmt(item.price)} c/u</p>
+            <div key={item.id} style={{display:"flex",alignItems:"center",gap:12,padding:"13px 16px",borderBottom:i<items.length-1?"1px solid #F5F5F5":"none"}}>
+              <span style={{fontSize:22,flexShrink:0}}>{item.emoji||"🍽️"}</span>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontSize:14,fontWeight:600,color:"#111",lineHeight:1.2}}>{item.name}</div>
+                <div style={{fontSize:12,color:"#999",marginTop:1}}>$ {fmt(item.price)} c/u</div>
               </div>
-              <div style={{display:"flex",alignItems:"center",gap:8}}>
-                <button onClick={()=>rem(item.id)} style={{width:28,height:28,
-                  borderRadius:8,background:"var(--cs)",border:"1px solid var(--cbr)",
-                  color:"var(--cbri)",cursor:"pointer",fontSize:16,
-                  display:"flex",alignItems:"center",justifyContent:"center"}}>−</button>
-                <span style={{fontFamily:"'IBM Plex Mono',monospace",fontWeight:700,
-                  fontSize:15,minWidth:18,textAlign:"center",color:"var(--cbri)"}}>{item.qty}</span>
-                <button onClick={()=>add(item)} style={{width:28,height:28,
-                  borderRadius:8,background:"var(--cg)",border:"none",
-                  color:"#0A0806",cursor:"pointer",fontSize:16,
-                  display:"flex",alignItems:"center",justifyContent:"center"}}>+</button>
+              <div style={{display:"flex",alignItems:"center",gap:6,flexShrink:0}}>
+                <button onClick={()=>rem(item.id)} className="pr" style={{width:28,height:28,borderRadius:8,background:"#F5F5F5",border:"1px solid #E8E8E8",color:"#555",fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>−</button>
+                <span style={{fontFamily:"'Outfit',sans-serif",fontWeight:800,fontSize:14,color:"#111",minWidth:18,textAlign:"center"}}>{item.qty}</span>
+                <button onClick={()=>add(item)} className="pr" style={{width:28,height:28,borderRadius:8,background:local.color||"#C9A84C",border:"none",color:"#fff",fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>+</button>
               </div>
+              <div style={{fontFamily:"'Outfit',sans-serif",fontSize:14,fontWeight:700,color:local.color||"#C9A84C",flexShrink:0,minWidth:56,textAlign:"right"}}>$ {fmt(item.price*item.qty)}</div>
             </div>
           ))}
-          <div style={{display:"flex",justifyContent:"space-between",
-            padding:"12px 16px",borderTop:"1px solid var(--cbr)"}}>
-            <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"var(--cm)"}}>{T('subtotal')}</span>
-            <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:16,
-              fontWeight:700,color:"var(--cg)"}}>$ {fmt(subTotal)}</span>
+          {/* Total row */}
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 16px",background:"#FAFAFA",borderTop:"1px solid #EBEBEB"}}>
+            <span style={{fontSize:12,color:"#999",fontWeight:600,textTransform:"uppercase",letterSpacing:.5}}>Total</span>
+            <span style={{fontFamily:"'Outfit',sans-serif",fontSize:18,fontWeight:800,color:local.color||"#C9A84C"}}>$ {fmt(subTotal)}</span>
           </div>
         </div>
 
-        {/* Propina — solo si el dueño la activó */}
-        {local.propina && (
-          <div style={{background:"var(--cc)",border:"1px solid var(--cbr)",
-            borderRadius:18,padding:16,marginBottom:14}}>
-            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:14}}>
-              <span style={{fontSize:20}}>💝</span>
-              <div>
-                <p style={{fontFamily:"'Playfair Display',serif",fontSize:16,
-                  color:"var(--cbri)",fontWeight:700}}>{T('tipQ')}</p>
-                <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,color:"var(--cm)"}}>
-                  100% para el equipo del restaurante
-                </p>
-              </div>
+        {/* Descuento promo */}
+        {promoActiva && descuento10>0 && local.feat_promo10 && (
+          <div style={{background:"#F0FDF4",border:"1px solid #BBF7D0",borderRadius:12,padding:"12px 16px",marginBottom:12,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <div>
+              <div style={{fontSize:13,fontWeight:700,color:"#16A34A"}}>🎁 Descuento primera visita</div>
+              <div style={{fontSize:11,color:"#4ADE80",marginTop:1}}>10% aplicado</div>
             </div>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8,marginBottom:12}}>
-              {[{label:"No, gracias",val:0},{label:"10%",val:10},{label:"15%",val:15},{label:"20%",val:20}].map(t=>(
-                <button key={t.val} onClick={()=>{setTipPct(t.val);setTC("");}} className="pr" style={{
-                  background:tipPct===t.val?"rgba(201,168,76,.15)":"var(--cs)",
-                  border:`1px solid ${tipPct===t.val?"var(--cg)":"var(--cbr)"}`,
-                  borderRadius:12,padding:"10px 4px",cursor:"pointer",
-                  textAlign:"center",transition:"all .2s"}}>
-                  <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:11,fontWeight:700,
-                    color:tipPct===t.val?"var(--cg)":"var(--cd)"}}>{t.label}</p>
-                  {t.val>0 && (
-                    <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,
-                      color:"var(--cm)",marginTop:2}}>
-                      $ {fmt(Math.round(subTotal*(t.val/100)))}
-                    </p>
-                  )}
+            <div style={{fontFamily:"'Outfit',sans-serif",fontSize:16,fontWeight:800,color:"#16A34A"}}>− $ {fmt(descuento10)}</div>
+          </div>
+        )}
+
+        {/* Propina */}
+        {local.propina && (
+          <div style={{background:"#FFF",borderRadius:14,padding:"14px 16px",marginBottom:12,border:"1px solid #EBEBEB"}}>
+            <div style={{fontSize:11,fontWeight:700,color:"#999",letterSpacing:1,textTransform:"uppercase",marginBottom:10}}>¿Dejás propina? 💝</div>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}}>
+              {[{label:"No",val:0},{label:"10%",val:10},{label:"15%",val:15},{label:"20%",val:20}].map(t=>(
+                <button key={t.val} onClick={()=>{setTipPct(t.val);setTC("");}} className="pr" style={{background:tipPct===t.val?(local.color||"#C9A84C"):"#F5F5F5",border:"none",borderRadius:10,padding:"10px 4px",cursor:"pointer",textAlign:"center",transition:".15s"}}>
+                  <div style={{fontSize:12,fontWeight:700,color:tipPct===t.val?"#fff":"#333"}}>{t.label}</div>
+                  {t.val>0&&<div style={{fontSize:10,color:tipPct===t.val?"rgba(255,255,255,.8)":"#999",marginTop:1}}>$ {fmt(Math.round(subTotal*t.val/100))}</div>}
                 </button>
               ))}
             </div>
-            <div style={{display:"flex",alignItems:"center",gap:10}}>
-              <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,
-                color:"var(--cm)",flexShrink:0}}>Otra cantidad:</span>
-              <div style={{position:"relative",flex:1}}>
-                <span style={{position:"absolute",left:12,top:"50%",
-                  transform:"translateY(-50%)",fontFamily:"'IBM Plex Mono',monospace",
-                  fontSize:13,color:"var(--cm)"}}>$</span>
-                <input type="number" value={tipCustom}
-                  onChange={e=>{setTC(e.target.value);setTipPct(null);}}
-                  placeholder="0"
-                  style={{width:"100%",background:"var(--cs)",
-                    border:`1px solid ${tipCustom?"var(--cg)":"var(--cbr)"}`,
-                    borderRadius:10,padding:"10px 12px 10px 28px",
-                    color:"var(--cbri)",fontFamily:"'IBM Plex Mono',monospace",
-                    fontSize:14,fontWeight:600}}/>
-              </div>
-            </div>
-            {tipAmt>0 && (
-              <div style={{marginTop:12,padding:"10px 14px",
-                background:"rgba(74,154,90,.08)",border:"1px solid rgba(74,154,90,.25)",
-                borderRadius:10,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"var(--cgr)"}}>
-                  Propina seleccionada
-                </span>
-                <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:15,
-                  fontWeight:700,color:"var(--cgr)"}}>$ {fmt(tipAmt)}</span>
-              </div>
-            )}
           </div>
         )}
 
         {/* Nota */}
-        <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:"var(--cm)",
-          letterSpacing:2,textTransform:"uppercase",marginBottom:8}}>{T('notes')}</p>
-        <textarea value={note} onChange={e=>setNote(e.target.value)}
-          placeholder="Sin sal, alergia a mariscos, sin gluten..."
-          style={{width:"100%",background:"var(--cc)",border:"1px solid var(--cbr)",
-            borderRadius:14,padding:"12px 16px",color:"var(--cbri)",
-            fontFamily:"'DM Sans',sans-serif",fontSize:13,
-            resize:"none",height:66,marginBottom:16}}/>
-
-        {/* Método de pago */}
-        <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:"var(--cm)",
-          letterSpacing:2,textTransform:"uppercase",marginBottom:10}}>{T('payMethod')}</p>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:20}}>
-          {PAYS.map(p=>(
-            <button key={p.id} onClick={()=>setPay(p.id)} className="pr" style={{
-              background:pay===p.id?"rgba(201,168,76,.15)":"rgba(255,255,255,.05)",
-              border:`2px solid ${pay===p.id?"var(--cg)":"rgba(255,255,255,.2)"}`,
-              borderRadius:14,padding:"16px 12px",
-              cursor:"pointer",textAlign:"left",transition:"all .2s",
-              boxShadow:pay===p.id?"0 0 0 3px rgba(201,168,76,.1)":"none"}}>
-              <span style={{fontSize:26,display:"block",marginBottom:6}}>{p.icon}</span>
-              <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:700,
-                color:pay===p.id?"var(--cg)":"var(--cbri)",marginBottom:2}}>{p.label}</p>
-              <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,color:"var(--cm)"}}>{p.sub}</p>
-            </button>
-          ))}
+        <div style={{background:"#FFF",borderRadius:14,padding:"14px 16px",marginBottom:12,border:"1px solid #EBEBEB"}}>
+          <div style={{fontSize:11,fontWeight:700,color:"#999",letterSpacing:1,textTransform:"uppercase",marginBottom:8}}>{T('notes')}</div>
+          <textarea value={note} onChange={e=>setNote(e.target.value)}
+            placeholder="Sin sal, alergia a mariscos, sin gluten..."
+            style={{width:"100%",background:"#F8F8F8",border:"1px solid #EBEBEB",borderRadius:10,padding:"11px 14px",color:"#111",fontSize:13,resize:"none",height:64,outline:"none",boxSizing:"border-box"}}/>
         </div>
 
-        {/* MP/Transfer alias card — Mobile */}
-        {(pay==="mp"||pay==="trans") && local.mp_mostrar_alias && local.mp_alias && (
-          <div style={{margin:"0 0 16px",background:"rgba(201,168,76,.08)",border:"1px solid rgba(201,168,76,.35)",borderRadius:16,padding:"16px"}}>
-            <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,fontWeight:700,letterSpacing:2,textTransform:"uppercase",color:"var(--cg)",marginBottom:10}}>
-              {pay==="mp"?"💳 Pagar con Mercado Pago":"🏦 Transferencia bancaria"}
+        {/* Método de pago */}
+        <div style={{background:"#FFF",borderRadius:14,padding:"14px 16px",marginBottom:12,border:"1px solid #EBEBEB"}}>
+          <div style={{fontSize:11,fontWeight:700,color:"#999",letterSpacing:1,textTransform:"uppercase",marginBottom:10}}>{T('payMethod')}</div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
+            {PAYS.map(p=>(
+              <button key={p.id} onClick={()=>{setPay(p.id);setPay2(null);setSplitAmt("");setSplitAmt2("");}} className="pr" style={{
+                background:pay===p.id?(local.color||"#C9A84C")+"15":"#F8F8F8",
+                border:`2px solid ${pay===p.id?(local.color||"#C9A84C"):"#EBEBEB"}`,
+                borderRadius:12,padding:"12px 10px",cursor:"pointer",textAlign:"left",transition:"all .15s"}}>
+                <span style={{fontSize:22,display:"block",marginBottom:4}}>{p.icon}</span>
+                <div style={{fontSize:13,fontWeight:700,color:pay===p.id?(local.color||"#C9A84C"):"#222"}}>{p.label}</div>
+              </button>
+            ))}
+            {/* Pago mixto */}
+            <button onClick={()=>{setPay("mixto");setPay2(null);setSplitAmt("");setSplitAmt2("");}} className="pr" style={{
+              background:pay==="mixto"?(local.color||"#C9A84C")+"15":"#F8F8F8",
+              border:`2px solid ${pay==="mixto"?(local.color||"#C9A84C"):"#EBEBEB"}`,
+              borderRadius:12,padding:"12px 10px",cursor:"pointer",textAlign:"left",transition:"all .15s"}}>
+              <span style={{fontSize:22,display:"block",marginBottom:4}}>÷</span>
+              <div style={{fontSize:13,fontWeight:700,color:pay==="mixto"?(local.color||"#C9A84C"):"#222"}}>Pago mixto</div>
+            </button>
+          </div>
+
+          {/* Pago mixto expandido */}
+          {pay==="mixto"&&(
+            <div style={{background:"#F8F8F8",borderRadius:12,padding:"14px",marginTop:4,border:"1px solid #EBEBEB"}}>
+              <div style={{fontSize:11,fontWeight:700,color:"#999",letterSpacing:1,marginBottom:10}}>MÉTODO 1</div>
+              <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:10}}>
+                {PAYS.map(p=>(
+                  <button key={p.id} onClick={()=>{setPay2(null);setSplitAmt("");setSplitAmt2(""); setPay("mixto_"+p.id);}} className="pr" style={{flexShrink:0,padding:"7px 12px",borderRadius:20,background:pay==="mixto_"+p.id?(local.color||"#C9A84C"):"#FFF",border:`1px solid ${pay==="mixto_"+p.id?(local.color||"#C9A84C"):"#DDD"}`,fontSize:12,fontWeight:700,color:pay==="mixto_"+p.id?"#fff":"#444",cursor:"pointer"}}>{p.icon} {p.label}</button>
+                ))}
+              </div>
+              {pay&&pay.startsWith("mixto_")&&(<>
+                <input type="number" inputMode="numeric" placeholder={`Monto método 1`} value={splitAmt}
+                  onChange={e=>{setSplitAmt(e.target.value);const r=grandTotal-Number(e.target.value||0);if(r>=0)setSplitAmt2(String(r));}}
+                  style={{width:"100%",background:"#FFF",border:"1px solid #DDD",borderRadius:10,padding:"10px 14px",fontSize:14,color:"#111",outline:"none",marginBottom:10,boxSizing:"border-box"}}/>
+                <div style={{fontSize:11,fontWeight:700,color:"#999",letterSpacing:1,marginBottom:8}}>MÉTODO 2</div>
+                <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:10}}>
+                  {PAYS.filter(p=>pay!=="mixto_"+p.id).map(p=>(
+                    <button key={p.id} onClick={()=>setPay2(p.id)} className="pr" style={{flexShrink:0,padding:"7px 12px",borderRadius:20,background:pay2===p.id?(local.color||"#C9A84C"):"#FFF",border:`1px solid ${pay2===p.id?(local.color||"#C9A84C"):"#DDD"}`,fontSize:12,fontWeight:700,color:pay2===p.id?"#fff":"#444",cursor:"pointer"}}>{p.icon} {p.label}</button>
+                  ))}
+                </div>
+                {pay2&&<input type="number" inputMode="numeric" placeholder={`Monto método 2`} value={splitAmt2}
+                  onChange={e=>setSplitAmt2(e.target.value)}
+                  style={{width:"100%",background:"#FFF",border:"1px solid #DDD",borderRadius:10,padding:"10px 14px",fontSize:14,color:"#111",outline:"none",boxSizing:"border-box"}}/>}
+                <button onClick={()=>{const h=Math.ceil(grandTotal/2);setSplitAmt(String(h));setSplitAmt2(String(grandTotal-h));}} style={{marginTop:8,background:"none",border:`1px solid ${local.color||"#C9A84C"}`,borderRadius:8,padding:"5px 12px",color:local.color||"#C9A84C",fontSize:11,fontWeight:700,cursor:"pointer"}}>50/50</button>
+              </>)}
             </div>
-            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,marginBottom:10}}>
+          )}
+        </div>
+
+        {/* Alias MP/Transfer */}
+        {(pay==="mp"||pay==="trans"||(pay&&pay.startsWith("mixto_mp"))||(pay&&pay.startsWith("mixto_trans"))) && local.mp_mostrar_alias && local.mp_alias && (
+          <div style={{background:"#FFFBEB",border:"1px solid #FDE68A",borderRadius:14,padding:"14px 16px",marginBottom:12}}>
+            <div style={{fontSize:10,fontWeight:700,letterSpacing:1.5,color:"#D97706",marginBottom:8,textTransform:"uppercase"}}>{pay==="mp"||pay==="mixto_mp"?"💳 Mercado Pago":"🏦 Transferencia"}</div>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,marginBottom:local.whatsapp?10:0}}>
               <div>
-                <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:17,fontWeight:700,color:"var(--cbri)",letterSpacing:.5}}>{local.mp_alias}</div>
-                {local.mp_titular&&<div style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"var(--cm)",marginTop:2}}>Titular: {local.mp_titular}</div>}
+                <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:16,fontWeight:700,color:"#111"}}>{local.mp_alias}</div>
+                {local.mp_titular&&<div style={{fontSize:11,color:"#888",marginTop:2}}>Titular: {local.mp_titular}</div>}
               </div>
               <button onClick={()=>navigator.clipboard.writeText(local.mp_alias)} className="pr"
-                style={{background:"var(--cg)",border:"none",borderRadius:9,padding:"9px 14px",fontFamily:"'IBM Plex Mono',monospace",fontSize:11,fontWeight:700,color:"var(--cb)",cursor:"pointer",whiteSpace:"nowrap"}}>
+                style={{background:local.color||"#C9A84C",border:"none",borderRadius:9,padding:"8px 14px",fontFamily:"'IBM Plex Mono',monospace",fontSize:11,fontWeight:700,color:"#fff",cursor:"pointer",whiteSpace:"nowrap"}}>
                 📋 Copiar
               </button>
             </div>
             {local.whatsapp&&(
-              <a href={`https://wa.me/${local.whatsapp.replace(/\D/g,"")}?text=${encodeURIComponent("Hola! Te envío el comprobante de pago de mi pedido en "+local.name+".")}`}
+              <a href={`https://wa.me/${local.whatsapp.replace(/\D/g,"")}?text=${encodeURIComponent("Hola! Te envío el comprobante de pago de mi pedido en "+local.nombre+".")}`}
                 target="_blank" rel="noreferrer"
-                style={{display:"flex",alignItems:"center",gap:10,background:"#25D366",borderRadius:12,padding:"11px 14px",textDecoration:"none"}}>
-                <span style={{fontSize:20}}>📱</span>
-                <div>
-                  <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,color:"#fff"}}>Enviar comprobante por WhatsApp</div>
-                  <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,color:"rgba(255,255,255,.85)"}}>Una vez abonado, compartí el comprobante al local</div>
+                style={{display:"flex",alignItems:"center",gap:10,background:"#25D366",borderRadius:10,padding:"10px 14px",textDecoration:"none"}}>
+                <span style={{fontSize:18}}>📱</span>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:13,fontWeight:700,color:"#fff"}}>Enviar comprobante por WhatsApp</div>
+                  <div style={{fontSize:10,color:"rgba(255,255,255,.85)"}}>Compartí el comprobante al local</div>
                 </div>
               </a>
             )}
           </div>
         )}
-      </div>
 
-      {/* Dividir cuenta */}
-      {subTotal>0 && (
-        <div style={{margin:"0 16px 10px",background:"var(--cc)",
-          border:"1px solid var(--cbr)",borderRadius:16,overflow:"hidden"}}>
-          <button onClick={()=>setShowDividir(s=>!s)} style={{
-            width:"100%",background:"none",border:"none",padding:"13px 16px",
-            display:"flex",justifyContent:"space-between",alignItems:"center",
-            cursor:"pointer",color:"var(--cbri)"}}>
-            <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:600,
-              display:"flex",alignItems:"center",gap:8}}>
-              <span style={{fontSize:16}}>÷</span> Dividir la cuenta
-            </span>
-            <span style={{color:"var(--cm)",fontSize:12}}>{showDividir?"▲":"▼"}</span>
-          </button>
-          {showDividir && (
-            <div style={{padding:"0 16px 14px",borderTop:"1px solid var(--cbr)"}}>
-              <div style={{display:"flex",alignItems:"center",gap:12,margin:"10px 0"}}>
-                <button onClick={()=>setDividirN(n=>Math.max(2,n-1))} style={{
-                  width:34,height:34,borderRadius:10,background:"var(--cs)",
-                  border:"1px solid var(--cbr)",color:"var(--cbri)",
-                  fontSize:20,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>−</button>
-                <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:22,
-                  fontWeight:700,color:"var(--cg)",flex:1,textAlign:"center"}}>
-                  {dividirN} personas
-                </span>
-                <button onClick={()=>setDividirN(n=>n+1)} style={{
-                  width:34,height:34,borderRadius:10,background:"var(--cs)",
-                  border:"1px solid var(--cbr)",color:"var(--cbri)",
-                  fontSize:20,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>+</button>
+        {/* Dividir la cuenta */}
+        {subTotal>0&&(
+          <div style={{background:"#FFF",border:"1px solid #EBEBEB",borderRadius:14,overflow:"hidden",marginBottom:12}}>
+            <button onClick={()=>setShowDividir(s=>!s)} style={{width:"100%",background:"none",border:"none",padding:"13px 16px",display:"flex",justifyContent:"space-between",alignItems:"center",cursor:"pointer"}}>
+              <span style={{fontSize:13,fontWeight:600,color:"#333",display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:16}}>÷</span> Dividir la cuenta</span>
+              <span style={{color:"#999",fontSize:12}}>{showDividir?"▲":"▼"}</span>
+            </button>
+            {showDividir&&(
+              <div style={{padding:"0 16px 14px",borderTop:"1px solid #F0F0F0"}}>
+                <div style={{display:"flex",alignItems:"center",gap:12,margin:"10px 0"}}>
+                  <button onClick={()=>setDividirN(n=>Math.max(2,n-1))} style={{width:34,height:34,borderRadius:10,background:"#F5F5F5",border:"1px solid #E8E8E8",color:"#333",fontSize:20,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>−</button>
+                  <span style={{fontFamily:"'Outfit',sans-serif",fontSize:20,fontWeight:800,color:local.color||"#C9A84C",flex:1,textAlign:"center"}}>{dividirN} personas</span>
+                  <button onClick={()=>setDividirN(n=>n+1)} style={{width:34,height:34,borderRadius:10,background:"#F5F5F5",border:"1px solid #E8E8E8",color:"#333",fontSize:20,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>+</button>
+                </div>
+                <div style={{background:"#F8F8F8",borderRadius:10,padding:"10px 14px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                  <span style={{fontSize:12,color:"#999"}}>Cada uno paga:</span>
+                  <span style={{fontFamily:"'Outfit',sans-serif",fontSize:18,fontWeight:800,color:local.color||"#C9A84C"}}>$ {fmt(Math.ceil(grandTotal/dividirN))}</span>
+                </div>
               </div>
-              <div style={{background:"var(--cs)",borderRadius:10,padding:"10px 14px",
-                display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"var(--cm)"}}>
-                  Cada uno paga:
-                </span>
-                <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:18,
-                  fontWeight:700,color:"var(--cg)"}}>
-                  ${fmt(Math.ceil(grandTotal/dividirN))}
-                </span>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* CTA fijo */}
-      <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",
-        width:"100%",maxWidth:430,padding:"12px 16px 28px",
-        background:`linear-gradient(transparent,var(--cb) 28%)`}}>
-        {pay && (
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",
-            padding:"10px 16px",background:"var(--cc)",
-            border:"1px solid var(--cbr)",borderRadius:14,marginBottom:10}}>
-            <div>
-              <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,color:"var(--cm)"}}>
-                {tipAmt>0?"Subtotal + propina":"Total"}
-              </p>
-              <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:18,
-                fontWeight:700,color:"var(--cg)"}}>$ {fmt(grandTotal)}</p>
-            </div>
-            {tipAmt>0 && (
-              <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"var(--cgr)"}}>
-                💝 +$ {fmt(tipAmt)}
-              </p>
             )}
           </div>
         )}
+      </div>
+
+      {/* CTA fijo */}
+      <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:430,padding:"12px 16px 28px",background:"linear-gradient(transparent,#F6F6F6 28%)"}}>
+        {(pay&&pay!=="mixto")&&(
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 16px",background:"#FFF",border:"1px solid #EBEBEB",borderRadius:14,marginBottom:10,boxShadow:"0 2px 8px rgba(0,0,0,.06)"}}>
+            <div>
+              <div style={{fontSize:11,color:"#999"}}>{tipAmt>0?"Subtotal + propina":"Total"}</div>
+              <div style={{fontFamily:"'Outfit',sans-serif",fontSize:18,fontWeight:800,color:local.color||"#C9A84C"}}>$ {fmt(grandTotal)}</div>
+            </div>
+            {tipAmt>0&&<div style={{fontSize:12,color:"#16A34A"}}>💝 +$ {fmt(tipAmt)}</div>}
+          </div>
+        )}
         <button onClick={async()=>{
-          if(!pay) return;
-          // Calcular total con propina
-          const cartItems = Object.values(cart).filter(i=>i.qty>0);
-          const subtotal  = cartItems.reduce((s,i)=>s+i.price*i.qty,0);
-          const tipAmount = tipPct!=null?(tipPct===0?0:Math.round(subtotal*tipPct/100)):0;
-          const descuentoAplicado = promoActiva && subtotal>0 ? Math.round(subtotal*0.10) : 0;
-          const totalFinal= subtotal - descuentoAplicado + tipAmount;
-          const mesa = local.mesa || 1;
-          // Guardar en Supabase si está disponible
-          let pedidoGuardado = false;
-          let errorMsg = null;
-          if(!supabase) errorMsg = "Supabase no configurado";
-          else if(!local.restauranteId) errorMsg = "Sin restauranteId";
+          const isMixto = pay&&pay.startsWith("mixto_");
+          if(!pay||pay==="mixto") return;
+          if(isMixto&&!pay2) return;
+          const cartItems=Object.values(cart).filter(i=>i.qty>0);
+          const subtotal=cartItems.reduce((s,i)=>s+i.price*i.qty,0);
+          const tipAmount=tipPct!=null?(tipPct===0?0:Math.round(subtotal*tipPct/100)):0;
+          const descuentoAplicado=promoActiva&&subtotal>0?Math.round(subtotal*0.10):0;
+          const totalFinal=subtotal-descuentoAplicado+tipAmount;
+          const mesa=local.mesa||1;
+          const pagoFinal = isMixto
+            ? `${pay.replace("mixto_","")}($${fmt(Number(splitAmt)||Math.ceil(totalFinal/2))})+${pay2}($${fmt(Number(splitAmt2)||totalFinal-Number(splitAmt||Math.ceil(totalFinal/2)))})`
+            : pay;
+          let pedidoId; let errorMsg=null;
+          if(!supabase) errorMsg="Supabase no configurado";
+          else if(!local.restauranteId) errorMsg="Sin restauranteId";
           else {
             try {
-              // Generar UUID en el cliente para no necesitar SELECT después del INSERT
-              const pedidoId = crypto.randomUUID();
-              const {error} = await supabase.from("pedidos").insert({
-                id:             pedidoId,
-                restaurante_id: local.restauranteId,
-                mesa_numero:    mesa,
-                status:         "nuevo",
-                metodo_pago:    pay,
-                propina:        tipAmount,
-                total:          totalFinal,
-                nota:           [note, descuentoAplicado>0?`DESCUENTO_PRIMERA_VEZ_10%_$${descuentoAplicado}`:null].filter(Boolean).join(" | ")||null,
-                idioma:         lang||"es",
-              });
-              if(error){ errorMsg = error.message; }
-              else {
-                pedidoGuardado = true;
-                if(descuentoAplicado>0){
-                  localStorage.removeItem("menuqr_promo10_"+(local.restauranteId||"x"));
-                  setPromoActiva(false);
-                }
-                const items = cartItems.map(i=>({
-                  pedido_id:   pedidoId,
-                  producto_id: i.id,
-                  nombre:      i.name,
-                  precio:      i.price,
-                  cantidad:    i.qty,
-                }));
-                const {error:itemsErr} = await supabase.from("pedido_items").insert(items);
-                if(itemsErr) console.warn("items error:", itemsErr.message);
+              pedidoId=crypto.randomUUID();
+              const {error}=await supabase.from("pedidos").insert({id:pedidoId,restaurante_id:local.restauranteId,mesa_numero:mesa,status:"nuevo",metodo_pago:pagoFinal,propina:tipAmount,total:totalFinal,nota:[note,descuentoAplicado>0?`DESCUENTO_PRIMERA_VEZ_10%_$${descuentoAplicado}`:null].filter(Boolean).join(" | ")||null,idioma:lang||"es"});
+              if(error){errorMsg=error.message;}
+              else{
+                if(descuentoAplicado>0){localStorage.removeItem("menuqr_promo10_"+(local.restauranteId||"x"));setPromoActiva(false);}
+                const its=cartItems.map(i=>({pedido_id:pedidoId,producto_id:i.id,nombre:i.name,precio:i.price,cantidad:i.qty}));
+                await supabase.from("pedido_items").insert(its);
               }
-            } catch(e){ errorMsg = e.message; }
+            } catch(e){errorMsg=e.message;}
           }
-          // Guardar resultado para mostrarlo en la pantalla "done"
-          if(errorMsg) localStorage.setItem("menuqr_last_order_error", errorMsg);
-          else { localStorage.removeItem("menuqr_last_order_error"); setLastPedidoId(pedidoId); setOrderStatus("nuevo"); }
+          if(errorMsg) localStorage.setItem("menuqr_last_order_error",errorMsg);
+          else{localStorage.removeItem("menuqr_last_order_error");setLastPedidoId(pedidoId);setOrderStatus("nuevo");}
           setView("done");
         }} className="pr" style={{
           width:"100%",
-          background:pay?"#F97316":"#1F1F1F",
-          color:pay?"#FFF":"#555",
-          border:"none",borderRadius:16,padding:17,
-          fontFamily:"'DM Sans',sans-serif",fontSize:15,fontWeight:700,
-          cursor:pay?"pointer":"not-allowed",
-          boxShadow:pay?"0 8px 28px rgba(249,115,22,.3)":"none",
+          background:(pay&&pay!=="mixto"&&!(pay==="mixto"&&!pay2))?(local.color||"#C9A84C"):"#E0E0E0",
+          color:(pay&&pay!=="mixto"&&!(pay==="mixto"&&!pay2))?"#fff":"#999",
+          border:"none",borderRadius:16,padding:"16px",
+          fontFamily:"'Outfit',sans-serif",fontSize:15,fontWeight:800,
+          cursor:(pay&&pay!=="mixto")?"pointer":"not-allowed",
+          boxShadow:(pay&&pay!=="mixto")?"0 8px 28px rgba(0,0,0,.15)":"none",
           transition:"all .25s"}}>
-          {pay?T('confirm'):T('choosePay')}
+          {(pay&&pay!=="mixto")?T('confirm'):(pay==="mixto"&&pay2?T('confirm'):T('choosePay'))}
         </button>
       </div>
     </div>
   );
-
 
   /* ── PC MENU VIEW — OPCION C: BISTRO CLASICO */
   if(view==="menu"&&pcMode){
