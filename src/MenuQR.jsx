@@ -2760,10 +2760,10 @@ function QRTabComp({ mesaNum, setMesaNum, qrType, setQrType, promoUrl, setPromoU
   const qrData  = getQRData();
 
   return (
-    <div style={{background:"#F8F8F8",minHeight:"100%",padding:"18px 14px 32px"}}>
+    <div style={{background:"var(--ab)",minHeight:"100%",padding:"18px 14px 32px"}}>
       {/* Header */}
       <div style={{marginBottom:18}}>
-        <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:"#3A2A10",letterSpacing:2,textTransform:"uppercase",marginBottom:4}}>Panel del dueño</div>
+        <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:"var(--am)",letterSpacing:2,textTransform:"uppercase",marginBottom:4}}>Panel del dueño</div>
         <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:900,color:"#FFF",lineHeight:1}}>Generador de QRs</h2>
       </div>
 
@@ -2771,19 +2771,19 @@ function QRTabComp({ mesaNum, setMesaNum, qrType, setQrType, promoUrl, setPromoU
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:18}}>
         {QR_TYPES.map(t=>(
           <button key={t.id} type="button" onClick={()=>setQrType(t.id)} className="pr" style={{
-            background:qrType===t.id?`${t.color}18`:"#111",
+            background:qrType===t.id?`${t.color}18`:"var(--ac)",
             border:`1px solid ${qrType===t.id?t.color+"88":"#1E1E1E"}`,
             borderRadius:12,padding:"12px 10px",cursor:"pointer",textAlign:"left",
             transition:"all .2s",boxShadow:qrType===t.id?`0 0 12px ${t.color}22`:"none"}}>
             <span style={{fontSize:22,display:"block",marginBottom:5}}>{t.icon}</span>
             <div style={{fontFamily:"'Outfit',sans-serif",fontSize:13,fontWeight:700,color:qrType===t.id?t.color:"#CCC",marginBottom:2,lineHeight:1}}>{t.label}</div>
-            <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,color:"#3A3A3A",lineHeight:1.3}}>{t.desc}</div>
+            <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,color:"var(--ad)",lineHeight:1.3}}>{t.desc}</div>
           </button>
         ))}
       </div>
 
       {/* Config por tipo */}
-      <div style={{background:"#FFFFFF",border:"1px solid #E8E8E8",borderRadius:14,padding:"14px 14px",marginBottom:16}}>
+      <div style={{background:"var(--as)",border:"1px solid var(--abr)",borderRadius:14,padding:"14px 14px",marginBottom:16}}>
         {qrType==="mesa"&&(
           <div>
             <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:current.color,letterSpacing:1.5,textTransform:"uppercase",marginBottom:10}}>Número de mesa</div>
@@ -2799,12 +2799,12 @@ function QRTabComp({ mesaNum, setMesaNum, qrType, setQrType, promoUrl, setPromoU
                   background:mesaNum===n?`${current.color}18`:"#1A1A1A",
                   border:`1px solid ${mesaNum===n?current.color+"88":"#2A2A2A"}`,
                   borderRadius:8,padding:"7px 4px",fontFamily:"'IBM Plex Mono',monospace",
-                  fontWeight:700,fontSize:13,color:mesaNum===n?current.color:"#555",cursor:"pointer"}}>
+                  fontWeight:700,fontSize:13,color:mesaNum===n?current.color:"var(--ad)",cursor:"pointer"}}>
                   {n}
                 </button>
               ))}
               {(local.mesas||10)>15&&(
-                <div style={{gridColumn:"1/-1",textAlign:"center",fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:"#333",padding:"4px 0"}}>+{(local.mesas||10)-15} más</div>
+                <div style={{gridColumn:"1/-1",textAlign:"center",fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:"var(--ad)",padding:"4px 0"}}>+{(local.mesas||10)-15} más</div>
               )}
             </div>
           </div>
@@ -2812,29 +2812,29 @@ function QRTabComp({ mesaNum, setMesaNum, qrType, setQrType, promoUrl, setPromoU
         {qrType==="vitrina"&&(
           <div>
             <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:current.color,letterSpacing:1.5,textTransform:"uppercase",marginBottom:8}}>Vitrina — carta de entrada</div>
-            <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"#666",lineHeight:1.5,marginBottom:10}}>Pegá este QR en la puerta o vidrio. El cliente ve toda la carta sin poder hacer pedidos.</p>
+            <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"var(--ad)",lineHeight:1.5,marginBottom:10}}>Pegá este QR en la puerta o vidrio. El cliente ve toda la carta sin poder hacer pedidos.</p>
             <div style={{background:"rgba(139,92,246,.06)",border:"1px solid rgba(139,92,246,.2)",borderRadius:10,padding:"10px 12px"}}>
               <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:"#8B5CF6",letterSpacing:.5,marginBottom:4}}>URL</div>
-              <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:"#888",wordBreak:"break-all"}}>{qrData}</div>
+              <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:"var(--am)",wordBreak:"break-all"}}>{qrData}</div>
             </div>
           </div>
         )}
         {qrType==="cocina"&&(
           <div>
             <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:current.color,letterSpacing:1.5,textTransform:"uppercase",marginBottom:8}}>Pantalla de cocina</div>
-            <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"#666",lineHeight:1.5,marginBottom:10}}>Abre la pantalla de cocina para que el equipo vea y gestione los pedidos en tiempo real.</p>
+            <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"var(--ad)",lineHeight:1.5,marginBottom:10}}>Abre la pantalla de cocina para que el equipo vea y gestione los pedidos en tiempo real.</p>
             <div style={{background:"rgba(249,115,22,.06)",border:"1px solid rgba(249,115,22,.2)",borderRadius:10,padding:"10px 12px"}}>
               <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:"#F97316",letterSpacing:.5,marginBottom:4}}>URL</div>
-              <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:"#888",wordBreak:"break-all"}}>{qrData}</div>
+              <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:"var(--am)",wordBreak:"break-all"}}>{qrData}</div>
             </div>
           </div>
         )}
         {qrType==="wifi"&&(
           <div>
             <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:current.color,letterSpacing:1.5,textTransform:"uppercase",marginBottom:8}}>Datos del WiFi</div>
-            <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"#777",marginBottom:4}}>Red: <b style={{color:"#CCC"}}>{local.wifi_nombre||"Sin configurar"}</b></div>
-            <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"#777",marginBottom:8}}>Contraseña: <b style={{color:"#CCC"}}>{local.wifi_pass||"Sin configurar"}</b></div>
-            <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:"#2E2E2E"}}>Editá estos datos en Gestión →</div>
+            <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"var(--am)",marginBottom:4}}>Red: <b style={{color:"#CCC"}}>{local.wifi_nombre||"Sin configurar"}</b></div>
+            <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"var(--am)",marginBottom:8}}>Contraseña: <b style={{color:"#CCC"}}>{local.wifi_pass||"Sin configurar"}</b></div>
+            <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:"var(--am)"}}>Editá estos datos en Gestión →</div>
           </div>
         )}
         {qrType==="whatsapp"&&(
@@ -2842,20 +2842,20 @@ function QRTabComp({ mesaNum, setMesaNum, qrType, setQrType, promoUrl, setPromoU
             <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:current.color,letterSpacing:1.5,textTransform:"uppercase",marginBottom:8}}>QR de Pedidos WhatsApp</div>
             {local.feat_whatsapp_vitrina&&local.whatsapp_vitrina_numero ? (
               <>
-                <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"#777",marginBottom:4}}>
+                <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"var(--am)",marginBottom:4}}>
                   ✅ Flujo de pedidos activado · <b style={{color:"#25D366"}}>+{local.whatsapp_vitrina_numero}</b>
                 </div>
-                <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"#555",marginBottom:8,lineHeight:1.5}}>
+                <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"var(--ad)",marginBottom:8,lineHeight:1.5}}>
                   El cliente escanea → elige productos → llena sus datos → abre WhatsApp con el pedido listo
                 </div>
-                <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:"#2E2E2E"}}>Configurar en tab WhatsApp →</div>
+                <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:"var(--am)"}}>Configurar en tab WhatsApp →</div>
               </>
             ) : (
               <>
                 <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"#FF6B6B",marginBottom:6}}>
                   ⚠️ Activá el flujo de pedidos en el tab WhatsApp primero
                 </div>
-                <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:"#2E2E2E"}}>Sin flujo activo abre WA directo →</div>
+                <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:"var(--am)"}}>Sin flujo activo abre WA directo →</div>
               </>
             )}
           </div>
@@ -2863,13 +2863,13 @@ function QRTabComp({ mesaNum, setMesaNum, qrType, setQrType, promoUrl, setPromoU
         {qrType==="promo"&&(
           <div>
             <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:current.color,letterSpacing:1.5,textTransform:"uppercase",marginBottom:8}}>URL de la promo</div>
-            <div style={{display:"flex",alignItems:"center",background:"#F5F5F5",border:"1px solid #E0E0E0",borderRadius:10,overflow:"hidden",marginBottom:8}}>
-              <span style={{padding:"0 10px",fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:"#333",borderRight:"1px solid #2A2A2A",height:40,display:"flex",alignItems:"center",flexShrink:0}}>URL</span>
+            <div style={{display:"flex",alignItems:"center",background:"var(--ac)",border:"1px solid var(--abr)",borderRadius:10,overflow:"hidden",marginBottom:8}}>
+              <span style={{padding:"0 10px",fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:"var(--ad)",borderRight:"1px solid #2A2A2A",height:40,display:"flex",alignItems:"center",flexShrink:0}}>URL</span>
               <input value={promoUrl} onChange={e=>setPromoUrl(e.target.value)}
                 placeholder="https://instagram.com/tu_promo"
                 style={{flex:1,background:"none",border:"none",padding:"10px 12px",color:"#CCC",fontFamily:"'IBM Plex Mono',monospace",fontSize:11}}/>
             </div>
-            <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,color:"#333"}}>Puede ser cualquier URL — Instagram, promo especial, etc.</div>
+            <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,color:"var(--ad)"}}>Puede ser cualquier URL — Instagram, promo especial, etc.</div>
           </div>
         )}
       </div>
@@ -2945,7 +2945,7 @@ function QRTabComp({ mesaNum, setMesaNum, qrType, setQrType, promoUrl, setPromoU
               a.click();
               URL.revokeObjectURL(a.href);
             }} className="pr" style={{
-              width:"100%",background:"#C9A84C",color:"#fff",border:"none",
+              width:"100%",background:"var(--ag)",color:"#fff",border:"none",
               borderRadius:12,padding:13,fontFamily:"'IBM Plex Mono',monospace",
               fontSize:13,fontWeight:700,cursor:"pointer",letterSpacing:1}}>
               📥 DESCARGAR (PDF / imprenta)
@@ -3023,7 +3023,7 @@ function QRTabComp({ mesaNum, setMesaNum, qrType, setQrType, promoUrl, setPromoU
                 }
               },"image/png");
             }} className="pr" style={{
-              width:"100%",background:"#C9A84C",color:"#fff",border:"none",
+              width:"100%",background:"var(--ag)",color:"#fff",border:"none",
               borderRadius:12,padding:13,fontFamily:"'IBM Plex Mono',monospace",
               fontSize:13,fontWeight:700,cursor:"pointer",letterSpacing:1}}>
               🖼️ DESCARGAR IMAGEN (.png)
