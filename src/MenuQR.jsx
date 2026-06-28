@@ -6735,8 +6735,10 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
     /* ── Card de pedido — siempre 100% visible, sin toggle ── */
     const OCard = ({o}) => {
       const s = STATUS_CFG[o.status];
-      const mesaLabel = (o.table===0||o.table==="0"||o.table===null) ? "MOSTRADOR" : "MESA "+o.table;
-      const PAY_LABEL = {cash:"Efectivo",mp:"Mercado Pago",card:"Débito/Créd.",trans:"Transferencia"};
+      const isWADelivery = o.pay==="whatsapp" && o.nota && o.nota.includes("DELIVERY");
+      const isWARetiro   = o.pay==="whatsapp" && o.nota && o.nota.includes("RETIRO");
+      const mesaLabel = isWADelivery ? "🛵 DELIVERY WA" : isWARetiro ? "🏪 RETIRO WA" : (o.table===0||o.table==="0"||o.table===null) ? "MOSTRADOR" : "MESA "+o.table;
+      const PAY_LABEL = {cash:"Efectivo",mp:"Mercado Pago",card:"Débito/Créd.",trans:"Transferencia",whatsapp:"WhatsApp"};
       const isClosed  = o.status === "entregado";
       return (
         <div className="ar" style={{

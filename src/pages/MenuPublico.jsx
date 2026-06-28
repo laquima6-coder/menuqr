@@ -58,6 +58,7 @@ export default function MenuPublico({ vitrina = false }) {
         restauranteId: restaurante.id,
         slug,
         mesa: mesa ? parseInt(mesa) : null,
+        delivery_config: restaurante.delivery_config || null,
         ...(restaurante.config || {}),
       })
       setCats(categorias.map(c => ({ id: c.id, label: c.label, icon: c.icon, activa: c.activa })))
