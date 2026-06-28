@@ -5128,6 +5128,7 @@ function DeliveryTab({ local, setLocal, toast }) {
   });
   const [saving, setSaving]   = React.useState(false);
   const [geocoding, setGeocoding] = React.useState(false);
+  const [localAddr, setLocalAddr] = React.useState(local.direccion || "");
   const mapRef   = React.useRef(null);
   const mapObj   = React.useRef(null);
   const circles  = React.useRef([]);
@@ -5219,10 +5220,19 @@ function DeliveryTab({ local, setLocal, toast }) {
           style: "tomtom://vector/1/basic-night",
           center: cfg.lng && cfg.lat ? [cfg.lng, cfg.lat] : [-58.38, -34.60],
           zoom: cfg.lat ? 12 : 10,
+          cooperativeGestures: false,
         });
         mapObj.current = map;
         mapObj.current._ttLib = tt;
-        map.on("load", () => { if (cfg.lat) drawCircles(cfg); });
+        // Suppress TomTom copyright/legal popup
+        map.on("load", () => {
+          // Hide any popup that appeared during initialization
+          setTimeout(() => {
+            const popups = document.querySelectorAll(".tt-popup, .mapboxgl-popup, [class*='copyright'], [class*='legal']");
+            popups.forEach(el => { if(el.style) el.style.display = "none"; });
+          }, 500);
+          if (cfg.lat) drawCircles(cfg);
+        });
       } catch(e) { console.error("TomTom map error:", e); }
     })();
     return () => { if (mapObj.current) { mapObj.current.remove(); mapObj.current = null; } };
@@ -5303,34 +5313,32 @@ function DeliveryTab({ local, setLocal, toast }) {
         </p>
         <input
           type="text"
-          defaultValue={local.direccion || ""}
-          id="delivery-addr-input"
+          value={localAddr}
+          onChange={e=>setLocalAddr(e.target.value)}
           placeholder="Ej: Av. Corrientes 1234, CABA"
           style={{ ...S.input, marginBottom:10 }}
         />
-        <button onClick={async ()=>{
-          const val = document.getElementById("delivery-addr-input")?.value || local.direccion || "";
-          if(!val.trim()){ toast&&toast("Escribí la dirección del local"); return; }
-          await geocodeRestaurante(val);
-        }} disabled={geocoding || !TOMTOM_KEY} className="pr" style={{
+        <button onClick={()=>geocodeRestaurante(localAddr)} disabled={geocoding||!TOMTOM_KEY||!localAddr.trim()} className="pr" style={{
           background:"var(--ag)", color:"#000", border:"none", borderRadius:8,
           padding:"9px 16px", fontFamily:"'IBM Plex Mono',monospace", fontSize:11,
-          fontWeight:800, cursor:"pointer", opacity: (geocoding || !TOMTOM_KEY) ? 0.5 : 1,
+          fontWeight:800, cursor:"pointer", opacity: (geocoding||!TOMTOM_KEY||!localAddr.trim()) ? 0.5 : 1,
         }}>
-          {geocoding ? "Buscando..." : cfg.lat ? "✓ Ubicación encontrada — actualizar" : "📍 Geocodificar dirección"}
+          {geocoding ? "Buscando..." : cfg.lat ? "✓ Actualizar ubicación" : "📍 Geocodificar dirección"}
         </button>
-        {cfg.lat && <p style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:9, color:"var(--ag)", marginTop:6 }}>✓ Coordenadas: {cfg.lat.toFixed(4)}, {cfg.lng.toFixed(4)}</p>}
+        {cfg.lat && <p style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:9, color:"var(--ag)", marginTop:6 }}>✓ {cfg.lat.toFixed(4)}, {cfg.lng.toFixed(4)}</p>}
       </div>
 
-      {/* Map */}
-      {TOMTOM_KEY && (
-        <div style={{ ...S.card, padding:0, overflow:"hidden" }}>
-          <div ref={mapRef} style={{ width:"100%", height:240 }} />
-          {!cfg.lat && (
-            <div style={{ position:"absolute", inset:0, display:"flex", alignItems:"center", justifyContent:"center", background:"rgba(0,0,0,.5)", borderRadius:14 }}>
-              <p style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:10, color:"var(--am)", textAlign:"center" }}>Geocodificá la dirección del local para ver el mapa</p>
-            </div>
-          )}
+      {/* Map — solo se muestra después de geocodificar */}
+      {TOMTOM_KEY && cfg.lat && (
+        <div style={{ ...S.card, padding:0, overflow:"hidden", marginBottom:12 }}>
+          <div ref={mapRef} style={{ width:"100%", height:220, borderRadius:14 }} />
+        </div>
+      )}
+      {TOMTOM_KEY && !cfg.lat && (
+        <div style={{ background:"rgba(255,255,255,.03)", border:"1px solid var(--abr)", borderRadius:12, padding:"12px 16px", marginBottom:12 }}>
+          <p style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:10, color:"var(--am)", margin:0 }}>
+            🗺️ El mapa aparece después de geocodificar la dirección del local
+          </p>
         </div>
       )}
 
