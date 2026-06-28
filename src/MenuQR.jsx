@@ -1706,6 +1706,15 @@ return (
       </div>
     </div>
 
+  {/* WAOrderFlow fullscreen modal */}
+  {waFlow && (
+    <WAOrderFlow
+      local={local} prods={prods} cats={cats}
+      tipo={waFlow}
+      onClose={()=>setWaFlow(null)}
+    />
+  )}
+
   </div>
 );
 }
@@ -2902,15 +2911,6 @@ export function ClientApp({onBack, local, cats, prods, vitrina=false, sinPedidos
             <button onClick={()=>setShowSolicitudes(false)} style={{width:"100%",background:"none",border:"1px solid #EBEBEB",borderRadius:12,padding:"12px",fontSize:13,color:"#999",cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}>Cerrar</button>
           </div>
         </div>
-      )}
-
-      {/* WAOrderFlow fullscreen modal */}
-      {waFlow && (
-        <WAOrderFlow
-          local={local} prods={prods} cats={cats}
-          tipo={waFlow}
-          onClose={()=>setWaFlow(null)}
-        />
       )}
 
     </div>
