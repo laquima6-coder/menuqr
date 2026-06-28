@@ -3220,6 +3220,20 @@ function QRTabComp({ mesaNum, setMesaNum, qrType, setQrType, promoUrl, setPromoU
               fontSize:13,fontWeight:700,cursor:"pointer",letterSpacing:1}}>
               🖼️ DESCARGAR IMAGEN (.png)
             </button>
+            {qrType==="vitrina" && (
+              <a
+                href={`https://wa.me/?text=${encodeURIComponent("¡Mirá la carta de " + (local.nombre||"nuestro restaurante") + " y hacé tu pedido desde acá! 👉 " + qrData)}`}
+                target="_blank" rel="noreferrer"
+                style={{
+                  display:"flex",alignItems:"center",justifyContent:"center",gap:8,
+                  width:"100%",background:"#25D366",color:"#fff",
+                  borderRadius:12,padding:13,fontFamily:"'IBM Plex Mono',monospace",
+                  fontSize:13,fontWeight:700,cursor:"pointer",letterSpacing:1,
+                  textDecoration:"none",boxSizing:"border-box",marginTop:8
+                }}>
+                📲 COMPARTIR POR WHATSAPP
+              </a>
+            )}
           </div>
         );
       })()}
