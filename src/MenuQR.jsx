@@ -1643,28 +1643,26 @@ return (
         {/* Botones de acción */}
         <div style={{display:"flex",flexDirection:"column",gap:8}}>
           {!!local.whatsapp_delivery && (
-            <a href={`https://wa.me/${local.whatsapp_vitrina_numero.replace(/\D/g,"")}?text=${encodeURIComponent("Hola! Quiero hacer un pedido para delivery 🛵")}`}
-              target="_blank" rel="noreferrer"
-              style={{display:"flex",alignItems:"center",gap:12,background:"#25D366",borderRadius:12,padding:"13px 16px",textDecoration:"none"}}>
+            <button onClick={()=>setWaFlow("delivery")}
+              style={{display:"flex",alignItems:"center",gap:12,background:"#25D366",borderRadius:12,padding:"13px 16px",border:"none",cursor:"pointer",width:"100%",textAlign:"left"}}>
               <span style={{fontSize:22}}>🛵</span>
               <div style={{flex:1}}>
                 <div style={{fontFamily:"'Outfit',sans-serif",fontSize:14,fontWeight:800,color:"#fff"}}>Pedir con delivery</div>
-                <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,color:"rgba(255,255,255,.8)",marginTop:1}}>Abre WhatsApp con tu pedido</div>
+                <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,color:"rgba(255,255,255,.8)",marginTop:1}}>Seleccioná productos y dirección</div>
               </div>
               <span style={{color:"rgba(255,255,255,.7)",fontSize:18}}>→</span>
-            </a>
+            </button>
           )}
           {!!local.whatsapp_retiro && (
-            <a href={`https://wa.me/${local.whatsapp_vitrina_numero.replace(/\D/g,"")}?text=${encodeURIComponent("Hola! Quiero hacer un pedido para retirar en el local 🏪")}`}
-              target="_blank" rel="noreferrer"
-              style={{display:"flex",alignItems:"center",gap:12,background:"rgba(37,211,102,.12)",border:"1px solid rgba(37,211,102,.4)",borderRadius:12,padding:"13px 16px",textDecoration:"none"}}>
+            <button onClick={()=>setWaFlow("retiro")}
+              style={{display:"flex",alignItems:"center",gap:12,background:"rgba(37,211,102,.12)",border:"1px solid rgba(37,211,102,.4)",borderRadius:12,padding:"13px 16px",cursor:"pointer",width:"100%",textAlign:"left"}}>
               <span style={{fontSize:22}}>🏪</span>
               <div style={{flex:1}}>
                 <div style={{fontFamily:"'Outfit',sans-serif",fontSize:14,fontWeight:800,color:"#25D366"}}>Retirar en el local</div>
-                <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,color:"rgba(37,211,102,.7)",marginTop:1}}>Abre WhatsApp con tu pedido</div>
+                <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,color:"rgba(37,211,102,.7)",marginTop:1}}>Seleccioná productos y confirmá</div>
               </div>
               <span style={{color:"rgba(37,211,102,.6)",fontSize:18}}>→</span>
-            </a>
+            </button>
           )}
         </div>
       </div>
@@ -2904,6 +2902,15 @@ export function ClientApp({onBack, local, cats, prods, vitrina=false, sinPedidos
             <button onClick={()=>setShowSolicitudes(false)} style={{width:"100%",background:"none",border:"1px solid #EBEBEB",borderRadius:12,padding:"12px",fontSize:13,color:"#999",cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}>Cerrar</button>
           </div>
         </div>
+      )}
+
+      {/* WAOrderFlow fullscreen modal */}
+      {waFlow && (
+        <WAOrderFlow
+          local={local} prods={prods} cats={cats}
+          tipo={waFlow}
+          onClose={()=>setWaFlow(null)}
+        />
       )}
 
     </div>
@@ -5236,7 +5243,7 @@ function DeliveryTab({ local, setLocal, toast }) {
       } catch(e) { console.error("TomTom map error:", e); }
     })();
     return () => { if (mapObj.current) { mapObj.current.remove(); mapObj.current = null; } };
-  }, []);
+  }, [cfg.lat]);
 
   /* ── Redraw circles when zones change */
   React.useEffect(() => {
