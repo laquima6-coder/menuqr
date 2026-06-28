@@ -5241,7 +5241,7 @@ function DeliveryTab({ local, setLocal, toast }) {
   async function handleSave() {
     setSaving(true);
     try {
-      const { error } = await supabase.from("locales").update({ delivery_config: cfg }).eq("id", local.restauranteId);
+      const { error } = await supabase.from("restaurantes").update({ delivery_config: cfg }).eq("id", local.restauranteId);
       if (error) throw error;
       setLocal(l => ({ ...l, delivery_config: cfg }));
       toast && toast("✓ Configuración de delivery guardada");
