@@ -4929,7 +4929,7 @@ return (
 /* ══════════════════════════════════════════
    DELIVERY TAB — Zonas de entrega con TomTom
 ══════════════════════════════════════════ */
-const TOMTOM_KEY = (typeof import.meta !== "undefined" && import.meta.env?.VITE_TOMTOM_KEY) || "";
+const TOMTOM_KEY = (typeof import.meta !== "undefined" && import.meta.env?.VITE_TOMTOM_KEY) || "NP2gPszMkFrVccT95vTeaMrsWfZ0ORLU";
 
 function DeliveryTab({ local, setLocal, toast }) {
   const [cfg, setCfg] = React.useState(() => {
