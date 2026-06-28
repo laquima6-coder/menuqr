@@ -4,19 +4,21 @@
   "private": true,
   "description": "Carta digital con QR para restaurantes",
   "scripts": {
-    "dev":     "vite",
-    "build":   "vite build",
+    "dev": "vite",
+    "build": "vite build",
     "preview": "vite preview"
   },
   "dependencies": {
-    "react":             "^18.2.0",
-    "react-dom":         "^18.2.0",
-    "react-router-dom":  "^6.20.0",
     "@supabase/supabase-js": "^2.39.0",
-    "qrcode":            "^1.5.3"
+    "@tomtom-international/web-sdk-maps": "^6.25.0",
+    "@tomtom-international/web-sdk-services": "^6.25.0",
+    "qrcode": "^1.5.3",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.20.0"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.2.0",
-    "vite":                 "^5.0.0"
+    "vite": "^5.0.0"
   }
 }

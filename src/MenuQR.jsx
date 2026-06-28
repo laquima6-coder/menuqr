@@ -4925,6 +4925,319 @@ return (
 );
 }
 
+
+/* ══════════════════════════════════════════
+   DELIVERY TAB — Zonas de entrega con TomTom
+══════════════════════════════════════════ */
+const TOMTOM_KEY = (typeof import.meta !== "undefined" && import.meta.env?.VITE_TOMTOM_KEY) || "";
+
+function DeliveryTab({ local, setLocal, toast }) {
+  const [cfg, setCfg] = React.useState(() => {
+    const stored = local.delivery_config;
+    if (stored && typeof stored === "object") return stored;
+    return {
+      enabled: false,
+      lat: null,
+      lng: null,
+      zonas: [
+        { id: 1, nombre: "Zona 1", radio_km: 2,  precio: 500,  minutos: 20 },
+        { id: 2, nombre: "Zona 2", radio_km: 5,  precio: 800,  minutos: 35 },
+        { id: 3, nombre: "Zona 3", radio_km: 10, precio: 1200, minutos: 50 },
+      ],
+    };
+  });
+  const [saving, setSaving]   = React.useState(false);
+  const [geocoding, setGeocoding] = React.useState(false);
+  const mapRef   = React.useRef(null);
+  const mapObj   = React.useRef(null);
+  const circles  = React.useRef([]);
+
+  /* ── Geocode restaurant address → lat/lng */
+  async function geocodeRestaurante() {
+    if (!TOMTOM_KEY) { toast && toast("⚠️ Falta la TomTom API Key en .env"); return; }
+    const addr = local.direccion || "";
+    if (!addr.trim()) { toast && toast("Agregá la dirección del local en Gestión primero"); return; }
+    setGeocoding(true);
+    try {
+      const url = `https://api.tomtom.com/search/2/geocode/${encodeURIComponent(addr)}.json?key=${TOMTOM_KEY}&limit=1`;
+      const res = await fetch(url);
+      const data = await res.json();
+      const pos = data?.results?.[0]?.position;
+      if (!pos) { toast && toast("No se encontró la dirección"); return; }
+      const newCfg = { ...cfg, lat: pos.lat, lng: pos.lon };
+      setCfg(newCfg);
+      toast && toast("✓ Ubicación del local encontrada");
+      if (mapObj.current) {
+        mapObj.current.setCenter([pos.lon, pos.lat]);
+        mapObj.current.setZoom(12);
+        drawCircles(newCfg);
+      }
+    } catch(e) { toast && toast("Error al geocodificar: " + e.message); }
+    finally { setGeocoding(false); }
+  }
+
+  /* ── Draw circles on map */
+  function drawCircles(c) {
+    if (!mapObj.current) return;
+    const map = mapObj.current;
+    // Remove old layers/sources
+    circles.current.forEach(id => {
+      try { if (map.getLayer(id)) map.removeLayer(id); if (map.getSource(id)) map.removeSource(id); } catch(_){}
+    });
+    circles.current = [];
+    if (!c.lat || !c.lng) return;
+    const ZONE_COLORS = ["#00FF88","#F5A623","#FF4444"];
+    c.zonas.forEach((z, i) => {
+      const id = "zone-" + z.id;
+      const radiusMeters = z.radio_km * 1000;
+      // Generate circle polygon (64 points)
+      const points = 64;
+      const coords = [];
+      for (let j = 0; j <= points; j++) {
+        const angle = (j / points) * 2 * Math.PI;
+        const dx = (radiusMeters / 111320) * Math.cos(angle) / Math.cos(c.lat * Math.PI / 180);
+        const dy = (radiusMeters / 111320) * Math.sin(angle);
+        coords.push([c.lng + dx, c.lat + dy]);
+      }
+      map.addSource(id, {
+        type: "geojson",
+        data: { type: "Feature", geometry: { type: "Polygon", coordinates: [coords] } }
+      });
+      map.addLayer({ id: id + "-fill", type: "fill", source: id, paint: { "fill-color": ZONE_COLORS[i], "fill-opacity": 0.08 } });
+      map.addLayer({ id: id + "-line", type: "line", source: id, paint: { "line-color": ZONE_COLORS[i], "line-width": 2, "line-dasharray": [4, 2] } });
+      circles.current.push(id + "-fill", id + "-line", id);
+    });
+    // Marker for restaurant
+    // Marker via vanilla DOM (no tt import needed)
+    if (!mapObj.current._restauranteMarker) {
+      const el = document.createElement("div");
+      el.style.cssText = "width:18px;height:18px;background:#C9A84C;border:3px solid #fff;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,.5);border-radius:50%";
+      // Use maplibre-style marker if available, else skip
+      const ttLib = mapObj.current._ttLib;
+      if (ttLib) {
+        const marker = new ttLib.Marker({ element: el }).setLngLat([c.lng, c.lat]).addTo(map);
+        mapObj.current._restauranteMarker = marker;
+      }
+    } else {
+      mapObj.current._restauranteMarker.setLngLat([c.lng, c.lat]);
+    }
+  }
+
+  /* ── Init TomTom map */
+  React.useEffect(() => {
+    if (!mapRef.current || mapObj.current) return;
+    if (!TOMTOM_KEY) return;
+    (async () => {
+      try {
+        const [{ default: tt }, css] = await Promise.all([
+          import("@tomtom-international/web-sdk-maps"),
+          import("@tomtom-international/web-sdk-maps/dist/maps.css"),
+        ]);
+        const map = tt.map({
+          key: TOMTOM_KEY,
+          container: mapRef.current,
+          style: "tomtom://vector/1/basic-night",
+          center: cfg.lng && cfg.lat ? [cfg.lng, cfg.lat] : [-58.38, -34.60],
+          zoom: cfg.lat ? 12 : 10,
+        });
+        mapObj.current = map;
+        mapObj.current._ttLib = tt;
+        map.on("load", () => { if (cfg.lat) drawCircles(cfg); });
+      } catch(e) { console.error("TomTom map error:", e); }
+    })();
+    return () => { if (mapObj.current) { mapObj.current.remove(); mapObj.current = null; } };
+  }, []);
+
+  /* ── Redraw circles when zones change */
+  React.useEffect(() => {
+    if (mapObj.current && cfg.lat) {
+      const map = mapObj.current;
+      if (map.isStyleLoaded()) drawCircles(cfg);
+      else map.once("load", () => drawCircles(cfg));
+    }
+  }, [cfg.zonas, cfg.lat, cfg.lng]);
+
+  /* ── Save config to Supabase */
+  async function handleSave() {
+    setSaving(true);
+    try {
+      const { error } = await supabase.from("locales").update({ delivery_config: cfg }).eq("id", local.restauranteId);
+      if (error) throw error;
+      setLocal(l => ({ ...l, delivery_config: cfg }));
+      toast && toast("✓ Configuración de delivery guardada");
+    } catch(e) { toast && toast("Error al guardar: " + e.message); }
+    finally { setSaving(false); }
+  }
+
+  const ZONE_COLORS = ["#00FF88", "#F5A623", "#FF4444"];
+  const S = {
+    card: { background:"var(--as)", border:"1px solid var(--abr)", borderRadius:14, padding:"16px 18px", marginBottom:12 },
+    label: { fontFamily:"'IBM Plex Mono',monospace", fontSize:9, color:"var(--am)", letterSpacing:1.5, textTransform:"uppercase", marginBottom:6 },
+    input: { width:"100%", background:"var(--a)", border:"1px solid var(--abr)", borderRadius:8, padding:"9px 12px", color:"var(--abri)", fontFamily:"'DM Sans',sans-serif", fontSize:14, outline:"none", boxSizing:"border-box" },
+    row: { display:"flex", gap:8, alignItems:"center" },
+  };
+
+  return (
+    <div style={{ padding:"18px 16px 0" }}>
+      {/* Header */}
+      <div style={{ marginBottom:16 }}>
+        <p style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:9, color:"var(--am)", letterSpacing:2, marginBottom:4 }}>MÓDULO</p>
+        <h2 style={{ fontFamily:"'Outfit',sans-serif", fontSize:22, fontWeight:800, color:"var(--abri)", margin:0 }}>🛵 Delivery</h2>
+        <p style={{ fontFamily:"'DM Sans',sans-serif", fontSize:13, color:"var(--ad)", marginTop:4 }}>Configurá tus zonas de entrega, precios y tiempos estimados.</p>
+      </div>
+
+      {/* Toggle ON/OFF */}
+      <div style={{ ...S.card, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+        <div>
+          <p style={{ fontFamily:"'Outfit',sans-serif", fontSize:15, fontWeight:700, color:"var(--abri)", margin:0 }}>Delivery activo</p>
+          <p style={{ fontFamily:"'DM Sans',sans-serif", fontSize:12, color:"var(--am)", marginTop:2 }}>Los clientes verán la opción de delivery al pedir</p>
+        </div>
+        <button onClick={() => setCfg(c => ({ ...c, enabled: !c.enabled }))} style={{
+          width:52, height:28, borderRadius:14, border:"none", cursor:"pointer",
+          background: cfg.enabled ? "var(--ag)" : "var(--abr)",
+          position:"relative", transition:".2s",
+        }}>
+          <span style={{
+            position:"absolute", top:3, left: cfg.enabled ? 27 : 3,
+            width:22, height:22, borderRadius:"50%", background:"#fff",
+            transition:".2s", display:"block",
+          }}/>
+        </button>
+      </div>
+
+      {/* TomTom key warning */}
+      {!TOMTOM_KEY && (
+        <div style={{ background:"rgba(245,166,35,.08)", border:"1px solid rgba(245,166,35,.3)", borderRadius:12, padding:"12px 16px", marginBottom:12 }}>
+          <p style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:10, color:"#F5A623", margin:0 }}>
+            ⚠️ Para ver el mapa agregá <strong>VITE_TOMTOM_KEY</strong> en tu archivo .env y en Vercel.<br/>
+            Obtenés la key gratis en <strong>developer.tomtom.com</strong> → Create App
+          </p>
+        </div>
+      )}
+
+      {/* Geocode restaurant */}
+      <div style={S.card}>
+        <p style={S.label}>Ubicación del local</p>
+        <p style={{ fontFamily:"'DM Sans',sans-serif", fontSize:13, color:"var(--ad)", marginBottom:10 }}>
+          Dirección: <strong style={{ color:"var(--abri)" }}>{local.direccion || "—"}</strong>
+          {cfg.lat && <span style={{ color:"var(--ag)", fontSize:11, marginLeft:8 }}>✓ Geocodificada</span>}
+        </p>
+        <button onClick={geocodeRestaurante} disabled={geocoding || !TOMTOM_KEY} className="pr" style={{
+          background:"var(--ag)", color:"#000", border:"none", borderRadius:8,
+          padding:"9px 16px", fontFamily:"'IBM Plex Mono',monospace", fontSize:11,
+          fontWeight:800, cursor:"pointer", opacity: (geocoding || !TOMTOM_KEY) ? 0.5 : 1,
+        }}>
+          {geocoding ? "Buscando..." : "📍 Geocodificar dirección"}
+        </button>
+      </div>
+
+      {/* Map */}
+      {TOMTOM_KEY && (
+        <div style={{ ...S.card, padding:0, overflow:"hidden" }}>
+          <div ref={mapRef} style={{ width:"100%", height:240 }} />
+          {!cfg.lat && (
+            <div style={{ position:"absolute", inset:0, display:"flex", alignItems:"center", justifyContent:"center", background:"rgba(0,0,0,.5)", borderRadius:14 }}>
+              <p style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:10, color:"var(--am)", textAlign:"center" }}>Geocodificá la dirección del local para ver el mapa</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Zone config */}
+      <div style={S.card}>
+        <p style={S.label}>Zonas de entrega</p>
+        {cfg.zonas.map((z, i) => (
+          <div key={z.id} style={{ borderLeft:`3px solid ${ZONE_COLORS[i]}`, paddingLeft:12, marginBottom:14 }}>
+            <p style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:10, color:ZONE_COLORS[i], fontWeight:700, marginBottom:8, letterSpacing:1 }}>
+              {z.nombre}
+            </p>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8 }}>
+              <div>
+                <p style={S.label}>Radio (km)</p>
+                <input type="number" value={z.radio_km} min="0.5" step="0.5" style={S.input}
+                  onChange={e => setCfg(c => ({ ...c, zonas: c.zonas.map((zz,ii) => ii===i ? {...zz, radio_km: parseFloat(e.target.value)||1} : zz) }))}
+                />
+              </div>
+              <div>
+                <p style={S.label}>Precio ($)</p>
+                <input type="number" value={z.precio} min="0" step="50" style={S.input}
+                  onChange={e => setCfg(c => ({ ...c, zonas: c.zonas.map((zz,ii) => ii===i ? {...zz, precio: parseInt(e.target.value)||0} : zz) }))}
+                />
+              </div>
+              <div>
+                <p style={S.label}>Minutos est.</p>
+                <input type="number" value={z.minutos} min="5" step="5" style={S.input}
+                  onChange={e => setCfg(c => ({ ...c, zonas: c.zonas.map((zz,ii) => ii===i ? {...zz, minutos: parseInt(e.target.value)||10} : zz) }))}
+                />
+              </div>
+            </div>
+          </div>
+        ))}
+        <p style={{ fontFamily:"'DM Sans',sans-serif", fontSize:11, color:"var(--am)", marginTop:4 }}>
+          Las zonas son concéntricas — Zona 1 es la más cercana, Zona 3 la más lejana.
+        </p>
+      </div>
+
+      {/* Summary */}
+      <div style={S.card}>
+        <p style={S.label}>Resumen de zonas</p>
+        {cfg.zonas.map((z, i) => (
+          <div key={z.id} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"8px 0", borderBottom: i < cfg.zonas.length-1 ? "1px solid var(--abr)" : "none" }}>
+            <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+              <span style={{ width:10, height:10, borderRadius:"50%", background:ZONE_COLORS[i], display:"block" }}/>
+              <span style={{ fontFamily:"'DM Sans',sans-serif", fontSize:13, color:"var(--abri)" }}>{z.nombre}</span>
+              <span style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:10, color:"var(--am)" }}>hasta {z.radio_km} km</span>
+            </div>
+            <div style={{ textAlign:"right" }}>
+              <span style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:13, fontWeight:700, color:"var(--ag)" }}>${z.precio}</span>
+              <span style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:9, color:"var(--am)", marginLeft:6 }}>~{z.minutos} min</span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Save */}
+      <button onClick={handleSave} disabled={saving} className="pr" style={{
+        width:"100%", background:"var(--ag)", color:"#000", border:"none",
+        borderRadius:12, padding:"13px", fontFamily:"'IBM Plex Mono',monospace",
+        fontSize:12, fontWeight:800, cursor:"pointer", letterSpacing:.5,
+        boxShadow:"0 0 18px rgba(0,255,136,.28)", opacity: saving ? 0.6 : 1,
+        marginBottom:8,
+      }}>
+        {saving ? "Guardando..." : "💾 GUARDAR CONFIGURACIÓN"}
+      </button>
+
+      <div style={{ height:100 }} />
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════
+   HELPERS — Delivery check para el cliente
+   Usada en ClientApp al elegir delivery
+══════════════════════════════════════════ */
+export async function checkDeliveryZone(customerAddress, local) {
+  const cfg = local.delivery_config;
+  if (!cfg || !cfg.enabled || !cfg.lat || !cfg.lng) return null;
+  if (!TOMTOM_KEY) return null;
+  try {
+    const geocodeUrl = `https://api.tomtom.com/search/2/geocode/${encodeURIComponent(customerAddress)}.json?key=${TOMTOM_KEY}&limit=1`;
+    const res = await fetch(geocodeUrl);
+    const data = await res.json();
+    const pos = data?.results?.[0]?.position;
+    if (!pos) return null;
+    // Haversine distance in km
+    const R = 6371;
+    const dLat = (pos.lat - cfg.lat) * Math.PI / 180;
+    const dLon = (pos.lon - cfg.lng) * Math.PI / 180;
+    const a = Math.sin(dLat/2)**2 + Math.cos(cfg.lat*Math.PI/180)*Math.cos(pos.lat*Math.PI/180)*Math.sin(dLon/2)**2;
+    const distKm = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    const zona = cfg.zonas.slice().sort((a,b)=>a.radio_km-b.radio_km).find(z => distKm <= z.radio_km);
+    if (!zona) return { fuera: true, distKm };
+    return { zona, distKm: Math.round(distKm * 10) / 10 };
+  } catch(e) { return null; }
+}
+
 function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
 
   /* ── State del admin */
@@ -5663,6 +5976,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
     {id:"carta",     icon:"≡", label:"Carta",     color:"#FFFFFF"},
     {id:"qr",        icon:"⬛", label:"QRs",       color:"#FFFFFF"},
     {id:"caja",      icon:"◉", label:"Caja",      color:"#FFFFFF"},
+    {id:"delivery",  icon:"🛵", label:"Delivery",  color:"#FFFFFF"},
     {id:"mostrador", icon:"🏪", label:"Mostrador", color:"#FFFFFF"},
     {id:"cocina",    icon:"👨‍🍳", label:"Cocina",   color:"#FFFFFF"},
     {id:"reportes",  icon:"📊", label:"Reportes",  color:"#FFFFFF"},
@@ -8166,6 +8480,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
       })()}
       {tab==="cocina" && <CocinaTab local={local} QRCodeLib={QRCodeLib} toast={toast}/>}
       {tab==="reportes" && <ReportesTab local={local}/>}
+      {tab==="delivery" && <DeliveryTab local={local} setLocal={setLocal} toast={toast}/> }
       {tab==="gestion" && <GestionTab local={local} setLocal={setLocal} cats={cats} setCats={setCats} prods={prods} setProds={setProds} gSubTab={gSubTab} setGSubTab={setGSubTab} gActiveCat={gActiveCat} setGActiveCat={setGActiveCat} gModal={gModal} setGModal={setGModal} toast={toast} orders={orders} setOrders={setOrders} onEditOrder={o=>setEditOrderModal(o)}/>}
       {tab==="config"   && <ConfigTab local={local} setLocal={setLocal} toast={toast} adminPinUnlocked={adminPinUnlocked}/>}
       {tab==="whatsapp" && WhatsAppTab()}
