@@ -5133,10 +5133,10 @@ function DeliveryTab({ local, setLocal, toast }) {
   const circles  = React.useRef([]);
 
   /* ── Geocode restaurant address → lat/lng */
-  async function geocodeRestaurante() {
+  async function geocodeRestaurante(addrParam) {
     if (!TOMTOM_KEY) { toast && toast("⚠️ Falta la TomTom API Key en .env"); return; }
-    const addr = local.direccion || "";
-    if (!addr.trim()) { toast && toast("Agregá la dirección del local en Gestión primero"); return; }
+    const addr = addrParam || local.direccion || "";
+    if (!addr.trim()) { toast && toast("Escribí la dirección del local"); return; }
     setGeocoding(true);
     try {
       const url = `https://api.tomtom.com/search/2/geocode/${encodeURIComponent(addr)}.json?key=${TOMTOM_KEY}&limit=1`;
@@ -5297,18 +5297,29 @@ function DeliveryTab({ local, setLocal, toast }) {
 
       {/* Geocode restaurant */}
       <div style={S.card}>
-        <p style={S.label}>Ubicación del local</p>
-        <p style={{ fontFamily:"'DM Sans',sans-serif", fontSize:13, color:"var(--ad)", marginBottom:10 }}>
-          Dirección: <strong style={{ color:"var(--abri)" }}>{local.direccion || "—"}</strong>
-          {cfg.lat && <span style={{ color:"var(--ag)", fontSize:11, marginLeft:8 }}>✓ Geocodificada</span>}
+        <p style={S.label}>Dirección del local</p>
+        <p style={{ fontFamily:"'DM Sans',sans-serif", fontSize:12, color:"var(--ad)", marginBottom:8 }}>
+          Ingresá la dirección exacta para calcular las zonas en el mapa.
         </p>
-        <button onClick={geocodeRestaurante} disabled={geocoding || !TOMTOM_KEY} className="pr" style={{
+        <input
+          type="text"
+          defaultValue={local.direccion || ""}
+          id="delivery-addr-input"
+          placeholder="Ej: Av. Corrientes 1234, CABA"
+          style={{ ...S.input, marginBottom:10 }}
+        />
+        <button onClick={async ()=>{
+          const val = document.getElementById("delivery-addr-input")?.value || local.direccion || "";
+          if(!val.trim()){ toast&&toast("Escribí la dirección del local"); return; }
+          await geocodeRestaurante(val);
+        }} disabled={geocoding || !TOMTOM_KEY} className="pr" style={{
           background:"var(--ag)", color:"#000", border:"none", borderRadius:8,
           padding:"9px 16px", fontFamily:"'IBM Plex Mono',monospace", fontSize:11,
           fontWeight:800, cursor:"pointer", opacity: (geocoding || !TOMTOM_KEY) ? 0.5 : 1,
         }}>
-          {geocoding ? "Buscando..." : "📍 Geocodificar dirección"}
+          {geocoding ? "Buscando..." : cfg.lat ? "✓ Ubicación encontrada — actualizar" : "📍 Geocodificar dirección"}
         </button>
+        {cfg.lat && <p style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:9, color:"var(--ag)", marginTop:6 }}>✓ Coordenadas: {cfg.lat.toFixed(4)}, {cfg.lng.toFixed(4)}</p>}
       </div>
 
       {/* Map */}
@@ -8963,6 +8974,7 @@ export default function MenuQR({
         plan: rest.plan || "free",
         activo: rest.activo !== false,
         logo_url: rest.logo_url || "",
+        delivery_config: rest.delivery_config || null,
         ...(rest.config || {}),
       });
       const [categorias, productos] = await Promise.all([
