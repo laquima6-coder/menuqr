@@ -918,8 +918,115 @@ function WAOrderFlow({local, prods, cats, tipo, onClose}) {
   const [phone, setPhone]   = React.useState("");
   const [direc, setDirec]   = React.useState("");
   const [nota, setNota]     = React.useState("");
-  const [saving, setSaving] = React.useState(false);
-  const [done, setDone]     = React.useState(false);
+  const [saving, setSaving]       = React.useState(false);
+  const [done, setDone]           = React.useState(false);
+  const [entreCalles, setEC]      = React.useState("");
+  const [direcSugg, setDirecSugg] = React.useState([]);
+  const [suggLoading, setSuggLoad]= React.useState(false);
+  const [zoneInfo, setZoneInfo]   = React.useState(null); // {zona, distKm} | {fuera,distKm} | null
+  const [zoneLoading, setZoneLoad]= React.useState(false);
+  const [savedAddrs, setSavedAddrs]= React.useState([]);
+  const [mapContainerId]          = React.useState("wa-route-map-"+Math.random().toString(36).slice(2));
+  const routeMapRef               = React.useRef(null);
+
+  // Load saved addresses when phone changes
+  React.useEffect(()=>{
+    if(!phone.trim()) return setSavedAddrs([]);
+    try {
+      const stored = JSON.parse(localStorage.getItem("mq_addrs_"+phone.replace(/\D/g,""))||"[]");
+      setSavedAddrs(Array.isArray(stored)?stored:[]);
+    } catch { setSavedAddrs([]); }
+  },[phone]);
+
+  // TomTom address autocomplete
+  const direcTimer = React.useRef(null);
+  const handleDirecChange = (val) => {
+    setDirec(val);
+    setZoneInfo(null);
+    clearTimeout(direcTimer.current);
+    if(!val.trim()||val.length<4||!TOMTOM_KEY){ setDirecSugg([]); return; }
+    setSuggLoad(true);
+    direcTimer.current = setTimeout(async()=>{
+      try {
+        const country = "AR"; // Argentina — cambiar si el restaurante es de otro país
+        const url = `https://api.tomtom.com/search/2/search/${encodeURIComponent(val)}.json?key=${TOMTOM_KEY}&limit=5&countrySet=${country}&language=es-AR`;
+        const res = await fetch(url);
+        const data = await res.json();
+        const results = (data.results||[]).map(r=>r.address?.freeformAddress).filter(Boolean);
+        setDirecSugg([...new Set(results)].slice(0,5));
+      } catch { setDirecSugg([]); }
+      finally { setSuggLoad(false); }
+    }, 400);
+  };
+
+  // Check delivery zone when address is selected
+  const checkZone = async (address) => {
+    setDirec(address);
+    setDirecSugg([]);
+    if(!local.delivery_config?.enabled||!local.delivery_config?.lat) return;
+    setZoneLoad(true);
+    const result = await checkDeliveryZone(address, local);
+    setZoneInfo(result);
+    setZoneLoad(false);
+  };
+
+  // Draw route map (step 3)
+  React.useEffect(()=>{
+    if(!routeMapRef.current||!TOMTOM_KEY||!direc||!local.delivery_config?.lat) return;
+    let map;
+    (async()=>{
+      try {
+        const [{default:tt}, svc] = await Promise.all([
+          import("@tomtom-international/web-sdk-maps"),
+          import("@tomtom-international/web-sdk-services"),
+        ]);
+        const geocodeUrl = `https://api.tomtom.com/search/2/geocode/${encodeURIComponent(direc)}.json?key=${TOMTOM_KEY}&limit=1`;
+        const geocRes = await fetch(geocodeUrl);
+        const geocData = await geocRes.json();
+        const cPos = geocData?.results?.[0]?.position;
+        if(!cPos) return;
+        const rLat = local.delivery_config.lat;
+        const rLng = local.delivery_config.lng;
+        const midLat = (rLat + cPos.lat)/2;
+        const midLng = (rLng + cPos.lon)/2;
+        map = tt.map({
+          key: TOMTOM_KEY,
+          container: routeMapRef.current,
+          style: "tomtom://vector/1/basic-night",
+          center: [midLng, midLat],
+          zoom: 11,
+        });
+        map.on("load", async()=>{
+          // Restaurant marker
+          const rEl = document.createElement("div");
+          rEl.style.cssText="width:14px;height:14px;background:#C9A84C;border:2px solid #fff;border-radius:50%";
+          new tt.Marker({element:rEl}).setLngLat([rLng, rLat]).addTo(map);
+          // Customer marker
+          const cEl = document.createElement("div");
+          cEl.style.cssText="width:14px;height:14px;background:#25D366;border:2px solid #fff;border-radius:50%";
+          new tt.Marker({element:cEl}).setLngLat([cPos.lon, cPos.lat]).addTo(map);
+          // Route
+          try {
+            const routeUrl = `https://api.tomtom.com/routing/1/calculateRoute/${rLat},${rLng}:${cPos.lat},${cPos.lon}/json?key=${TOMTOM_KEY}&routeType=fastest&traffic=true`;
+            const routeRes = await fetch(routeUrl);
+            const routeData = await routeRes.json();
+            const coords = (routeData?.routes?.[0]?.legs?.[0]?.points||[]).map(p=>[p.longitude, p.latitude]);
+            if(coords.length>0){
+              map.addSource("route",{type:"geojson",data:{type:"Feature",geometry:{type:"LineString",coordinates:coords}}});
+              map.addLayer({id:"route-line",type:"line",source:"route",paint:{"line-color":"#25D366","line-width":4,"line-opacity":0.85}});
+              // Update ETA from actual route
+              const secs = routeData?.routes?.[0]?.summary?.travelTimeInSeconds;
+              if(secs && setZoneInfo) {
+                const mins = Math.round(secs/60);
+                setZoneInfo(zi=> zi? {...zi, etaMins: mins} : null);
+              }
+            }
+          } catch(e){ console.warn("route err",e); }
+        });
+      } catch(e){ console.warn("map err",e); }
+    })();
+    return ()=>{ if(map) try{map.remove();}catch(_){} };
+  },[step===3, direc]);
 
   const activeCats = cats.filter(c=>c.activa!==false);
   const catProds   = prods.filter(p=>p.cat===activeCat&&(p.active||p.active==null));
@@ -941,7 +1048,18 @@ function WAOrderFlow({local, prods, cats, tipo, onClose}) {
     </svg>
   );
 
+  const saveAddress = () => {
+    if(!phone.trim()||!direc.trim()) return;
+    try {
+      const key = "mq_addrs_"+phone.replace(/\D/g,"");
+      const existing = JSON.parse(localStorage.getItem(key)||"[]");
+      const updated = [direc, ...existing.filter(a=>a!==direc)].slice(0,3);
+      localStorage.setItem(key, JSON.stringify(updated));
+    } catch {}
+  };
+
   const sendWA = async () => {
+    if(tipo==="delivery") saveAddress();
     setSaving(true);
     if(supabase && local.restauranteId) {
       try {
@@ -962,7 +1080,8 @@ function WAOrderFlow({local, prods, cats, tipo, onClose}) {
     }
     const lineas = cartItems.map(i=>"• "+i.qty+"x "+i.name+" — $"+fmt(i.price*i.qty)).join("\n");
     const msg = "*Hola "+local.nombre+"! Quiero hacer un pedido* 🍽️\n\n"
-      +(tipo==="delivery"?"📍 *DELIVERY* a: "+direc:"🏪 *RETIRO en el local*")+"\n"
+      +(tipo==="delivery"?"📍 *DELIVERY* a: "+direc+(entreCalles?" (entre "+entreCalles+")":""):"🏪 *RETIRO en el local*")+"\n"
+      +(zoneInfo&&!zoneInfo.fuera?"🛵 "+zoneInfo.zona.nombre+" · $"+zoneInfo.zona.precio+(zoneInfo.etaMins?" · ~"+zoneInfo.etaMins+" min":"")+"\n":"")
       +"👤 "+name+(phone?" · 📱 "+phone:"")+"\n\n"
       +"*Mi pedido:*\n"+lineas+"\n\n"
       +"💰 *Total: $"+fmt(total)+"*"
@@ -1102,31 +1221,84 @@ function WAOrderFlow({local, prods, cats, tipo, onClose}) {
       {/* STEP 2 — Datos */}
       {step===2 && (
         <div style={{flex:1,overflowY:"auto",padding:"20px 16px"}}>
-          {[
-            {label:"Tu nombre *",value:name,set:setName,placeholder:"Juan García",type:"text"},
-            {label:"Teléfono",value:phone,set:setPhone,placeholder:"1123456789",type:"tel"},
-            ...(tipo==="delivery"?[{label:"Dirección de entrega *",value:direc,set:setDirec,placeholder:"Calle, número, piso...",type:"text"}]:[]),
-            {label:"Aclaraciones o alergias",value:nota,set:setNota,placeholder:"Sin cebolla, doble queso...",multiline:true},
-          ].map((f,i)=>(
-            <div key={i} style={{marginBottom:16}}>
-              <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,letterSpacing:2,
-                color:"rgba(255,255,255,.4)",marginBottom:7,textTransform:"uppercase"}}>{f.label}</p>
-              {f.multiline
-                ?<textarea value={f.value} onChange={e=>f.set(e.target.value)}
-                    placeholder={f.placeholder} rows={3}
-                    style={{width:"100%",background:"rgba(255,255,255,.06)",
-                      border:"1px solid rgba(255,255,255,.12)",borderRadius:10,
-                      padding:"12px 14px",color:"var(--cbri)",fontSize:14,resize:"none",
-                      boxSizing:"border-box",fontFamily:"'DM Sans',sans-serif"}}/>
-                :<input type={f.type} value={f.value} onChange={e=>f.set(e.target.value)}
-                    placeholder={f.placeholder}
-                    style={{width:"100%",background:"rgba(255,255,255,.06)",
-                      border:"1px solid rgba(255,255,255,.12)",borderRadius:10,
-                      padding:"12px 14px",color:"var(--cbri)",fontSize:14,
-                      boxSizing:"border-box",fontFamily:"'DM Sans',sans-serif"}}/>
-              }
+          {/* Nombre */}
+          <div style={{marginBottom:16}}>
+            <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,letterSpacing:2,color:"rgba(255,255,255,.4)",marginBottom:7,textTransform:"uppercase"}}>Tu nombre *</p>
+            <input type="text" value={name} onChange={e=>setName(e.target.value)} placeholder="Juan García"
+              style={{width:"100%",background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.12)",borderRadius:10,padding:"12px 14px",color:"var(--cbri)",fontSize:14,boxSizing:"border-box",fontFamily:"'DM Sans',sans-serif"}}/>
+          </div>
+          {/* Teléfono */}
+          <div style={{marginBottom:16}}>
+            <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,letterSpacing:2,color:"rgba(255,255,255,.4)",marginBottom:7,textTransform:"uppercase"}}>Teléfono</p>
+            <input type="tel" value={phone} onChange={e=>setPhone(e.target.value)} placeholder="1123456789"
+              style={{width:"100%",background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.12)",borderRadius:10,padding:"12px 14px",color:"var(--cbri)",fontSize:14,boxSizing:"border-box",fontFamily:"'DM Sans',sans-serif"}}/>
+          </div>
+          {tipo==="delivery" && (<>
+            {/* Saved addresses */}
+            {savedAddrs.length>0&&(
+              <div style={{marginBottom:12}}>
+                <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,letterSpacing:1.5,color:"rgba(37,211,102,.6)",marginBottom:6,textTransform:"uppercase"}}>📍 Direcciones anteriores</p>
+                {savedAddrs.map((a,i)=>(
+                  <button key={i} onClick={()=>checkZone(a)} style={{
+                    width:"100%",textAlign:"left",background:"rgba(37,211,102,.07)",
+                    border:"1px solid rgba(37,211,102,.2)",borderRadius:8,
+                    padding:"9px 12px",color:"var(--cbri)",fontSize:13,
+                    fontFamily:"'DM Sans',sans-serif",cursor:"pointer",marginBottom:5}}>
+                    📍 {a}
+                  </button>
+                ))}
+              </div>
+            )}
+            {/* Dirección con autocomplete */}
+            <div style={{marginBottom:8,position:"relative"}}>
+              <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,letterSpacing:2,color:"rgba(255,255,255,.4)",marginBottom:7,textTransform:"uppercase"}}>Dirección de entrega *</p>
+              <input type="text" value={direc} onChange={e=>handleDirecChange(e.target.value)}
+                placeholder="Calle, número, piso..."
+                style={{width:"100%",background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.12)",borderRadius:10,padding:"12px 14px",color:"var(--cbri)",fontSize:14,boxSizing:"border-box",fontFamily:"'DM Sans',sans-serif"}}/>
+              {suggLoading&&<span style={{position:"absolute",right:14,top:38,fontSize:11,color:"rgba(255,255,255,.3)"}}>...</span>}
+              {direcSugg.length>0&&(
+                <div style={{position:"absolute",top:"100%",left:0,right:0,background:"#1a1a1a",border:"1px solid rgba(255,255,255,.15)",borderRadius:10,zIndex:99,overflow:"hidden",marginTop:2}}>
+                  {direcSugg.map((s,i)=>(
+                    <button key={i} onClick={()=>checkZone(s)} style={{
+                      width:"100%",textAlign:"left",background:"transparent",border:"none",
+                      borderBottom:i<direcSugg.length-1?"1px solid rgba(255,255,255,.07)":"none",
+                      padding:"10px 14px",color:"var(--cbri)",fontSize:13,
+                      fontFamily:"'DM Sans',sans-serif",cursor:"pointer"}}>
+                      📍 {s}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
-          ))}
+            {/* Zone info */}
+            {zoneLoading&&<p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:"rgba(255,255,255,.35)",marginBottom:10}}>Verificando zona...</p>}
+            {zoneInfo&&!zoneInfo.fuera&&(
+              <div style={{background:"rgba(37,211,102,.08)",border:"1px solid rgba(37,211,102,.25)",borderRadius:10,padding:"10px 14px",marginBottom:10}}>
+                <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:"#00FF88",margin:0}}>
+                  ✓ {zoneInfo.zona.nombre} · {zoneInfo.distKm} km · ${zoneInfo.zona.precio} envío · ~{zoneInfo.zona.minutos} min
+                </p>
+              </div>
+            )}
+            {zoneInfo&&zoneInfo.fuera&&(
+              <div style={{background:"rgba(255,68,68,.08)",border:"1px solid rgba(255,68,68,.25)",borderRadius:10,padding:"10px 14px",marginBottom:10}}>
+                <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:"#FF4444",margin:0}}>
+                  ⚠️ Dirección fuera de la zona de delivery ({zoneInfo.distKm} km)
+                </p>
+              </div>
+            )}
+            {/* Entre calles */}
+            <div style={{marginBottom:16}}>
+              <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,letterSpacing:2,color:"rgba(255,255,255,.4)",marginBottom:7,textTransform:"uppercase"}}>Entre calles</p>
+              <input type="text" value={entreCalles} onChange={e=>setEC(e.target.value)} placeholder="Ej: Lavalle y Corrientes"
+                style={{width:"100%",background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.12)",borderRadius:10,padding:"12px 14px",color:"var(--cbri)",fontSize:14,boxSizing:"border-box",fontFamily:"'DM Sans',sans-serif"}}/>
+            </div>
+          </>)}
+          {/* Observaciones */}
+          <div style={{marginBottom:16}}>
+            <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,letterSpacing:2,color:"rgba(255,255,255,.4)",marginBottom:7,textTransform:"uppercase"}}>Observaciones / alergias</p>
+            <textarea value={nota} onChange={e=>setNota(e.target.value)} placeholder="Sin cebolla, doble queso, alérgico a..." rows={3}
+              style={{width:"100%",background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.12)",borderRadius:10,padding:"12px 14px",color:"var(--cbri)",fontSize:14,resize:"none",boxSizing:"border-box",fontFamily:"'DM Sans',sans-serif"}}/>
+          </div>
         </div>
       )}
 
@@ -1156,12 +1328,20 @@ function WAOrderFlow({local, prods, cats, tipo, onClose}) {
             <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,color:"rgba(255,255,255,.3)",
               letterSpacing:2,marginBottom:10}}>DATOS DE ENTREGA</p>
             <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"var(--cbri)",marginBottom:4}}>
-              {tipo==="delivery"?"📍 Delivery a: "+direc:"🏪 Retiro en el local"}
+              {tipo==="delivery"?"📍 Delivery a: "+direc+(entreCalles?" (entre "+entreCalles+")":""):"🏪 Retiro en el local"}
             </p>
+            {tipo==="delivery"&&zoneInfo&&!zoneInfo.fuera&&(
+              <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:"#00FF88",marginBottom:4}}>
+                🛵 {zoneInfo.zona.nombre} · ${zoneInfo.zona.precio} envío · ~{zoneInfo.etaMins||zoneInfo.zona.minutos} min
+              </p>
+            )}
             <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"rgba(255,255,255,.5)"}}>
               👤 {name}{phone?" · 📱 "+phone:""}
             </p>
             {nota&&<p style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"rgba(255,255,255,.35)",marginTop:4}}>📝 {nota}</p>}
+            {tipo==="delivery"&&TOMTOM_KEY&&direc&&local.delivery_config?.lat&&(
+              <div ref={routeMapRef} style={{width:"100%",height:160,borderRadius:10,overflow:"hidden",marginTop:10,border:"1px solid rgba(255,255,255,.1)"}}/>
+            )}
           </div>
           <div style={{background:"rgba(37,211,102,.06)",border:"1px solid rgba(37,211,102,.2)",
             borderRadius:12,padding:"12px 16px",marginBottom:16}}>
