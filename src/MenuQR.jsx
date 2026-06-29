@@ -920,6 +920,7 @@ function WAOrderFlow({local, prods, cats, tipo, onClose}) {
   const [nota, setNota]     = React.useState("");
   const [saving, setSaving]       = React.useState(false);
   const [done, setDone]           = React.useState(false);
+  const [waPay, setWaPay]         = React.useState("");
   const [entreCalles, setEC]      = React.useState("");
   const [direcSugg, setDirecSugg] = React.useState([]);
   const [suggLoading, setSuggLoad]= React.useState(false);
@@ -1106,7 +1107,8 @@ function WAOrderFlow({local, prods, cats, tipo, onClose}) {
       +"👤 "+name+(phone?" · 📱 "+phone:"")+"\n\n"
       +"*Mi pedido:*\n"+lineas+"\n\n"
       +(deliveryCost>0?"\n🛵 *Envío: $"+fmt(deliveryCost)+"*":"")+"\n💰 *Total con envío: $"+fmt(totalConEnvio)+"*"
-      +(nota?"\n📝 "+nota:"");
+      +(nota?"\n📝 "+nota:"")
+      +(waPay?"\n💳 Pago: "+{"efectivo":"Efectivo","debito":"Débito","mp":"Mercado Pago","trans":"Transferencia"}[waPay]:"");
     window.open("https://wa.me/"+local.whatsapp_vitrina_numero+"?text="+encodeURIComponent(msg),"_blank");
     setSaving(false);
     setDone(true);
@@ -1364,6 +1366,45 @@ function WAOrderFlow({local, prods, cats, tipo, onClose}) {
               <div ref={routeMapRef} style={{width:"100%",height:160,borderRadius:10,overflow:"hidden",marginTop:10,border:"1px solid rgba(255,255,255,.1)"}}/>
             )}
           </div>
+          {/* Forma de pago WA */}
+          <div style={{background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.08)",borderRadius:14,padding:"14px 16px",marginBottom:12}}>
+            <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,color:"rgba(255,255,255,.3)",letterSpacing:2,marginBottom:10}}>FORMA DE PAGO</p>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+              {[
+                {id:"efectivo",icon:"💵",label:"Efectivo"},
+                {id:"debito",icon:"💳",label:"Débito"},
+                {id:"mp",icon:"📲",label:"Mercado Pago"},
+                {id:"trans",icon:"🏦",label:"Transferencia"},
+              ].map(p=>(
+                <button key={p.id} onClick={()=>setWaPay(p.id)}
+                  style={{background:waPay===p.id?"rgba(37,211,102,.15)":"rgba(255,255,255,.04)",
+                    border:`2px solid ${waPay===p.id?"#25D366":"rgba(255,255,255,.12)"}`,
+                    borderRadius:12,padding:"12px 10px",cursor:"pointer",textAlign:"left",transition:"all .15s",position:"relative"}}>
+                  <span style={{fontSize:22,display:"block",marginBottom:5}}>{p.icon}</span>
+                  <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:700,color:waPay===p.id?"#25D366":"rgba(255,255,255,.55)"}}>{p.label}</div>
+                  {waPay===p.id&&<div style={{position:"absolute",top:7,right:7,width:16,height:16,borderRadius:"50%",background:"#25D366",display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,color:"#fff",fontWeight:800}}>✓</div>}
+                </button>
+              ))}
+            </div>
+          </div>
+          {/* Alias MP / Transferencia en WAOrderFlow */}
+          {(waPay==="mp"||waPay==="trans")&&local.mp_mostrar_alias&&local.mp_alias&&(
+            <div style={{background:"rgba(201,168,76,.08)",border:"1px solid rgba(201,168,76,.35)",borderRadius:14,padding:"14px 16px",marginBottom:12}}>
+              <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,letterSpacing:2,color:"rgba(201,168,76,.8)",marginBottom:10,textTransform:"uppercase"}}>
+                {waPay==="mp"?"💳 Pagar con Mercado Pago":"🏦 Datos de transferencia"}
+              </div>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,marginBottom:local.mp_titular?6:0}}>
+                <div>
+                  <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:17,fontWeight:700,color:"#fff",letterSpacing:.5}}>{local.mp_alias}</div>
+                  {local.mp_titular&&<div style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,color:"rgba(255,255,255,.45)",marginTop:3}}>Titular: {local.mp_titular}</div>}
+                </div>
+                <button onClick={()=>navigator.clipboard.writeText(local.mp_alias)}
+                  style={{background:"#C9A84C",border:"none",borderRadius:9,padding:"9px 16px",fontFamily:"'IBM Plex Mono',monospace",fontSize:12,fontWeight:700,color:"#1C1008",cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>
+                  📋 Copiar alias
+                </button>
+              </div>
+            </div>
+          )}
           <div style={{background:"rgba(37,211,102,.06)",border:"1px solid rgba(37,211,102,.2)",
             borderRadius:12,padding:"12px 16px",marginBottom:16}}>
             <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"rgba(255,255,255,.45)",lineHeight:1.6}}>
@@ -1434,260 +1475,203 @@ function WAOrderFlow({local, prods, cats, tipo, onClose}) {
 
 
 function VitrinaInfo({local, cats, prods}) {
-  const [mesasLibres, setMesasLibres] = React.useState(0);
-  const [hayMesas, setHayMesas] = React.useState(false);
-  const [catAbierta, setCatAbierta] = React.useState(null);
+const [mesasData, setMesasData] = React.useState({libres:0, ocupadas:0, total:0, hayMesas:false});
+const [waFlow, setWaFlow] = React.useState(null);
+const [activeCat, setActiveCat] = React.useState("TODO");
 
-  // Paleta de colores para las cards de categoría
-  const PALETA = [
-    { bg: "#1A2F1A", accent: "#66BB6A", btn: "#66BB6A" },
-    { bg: "#2A1A0A", accent: "#FFA726", btn: "#FFA726" },
-    { bg: "#1A1A2F", accent: "#7986CB", btn: "#7986CB" },
-    { bg: "#2F1A2A", accent: "#CE93D8", btn: "#CE93D8" },
-    { bg: "#1A2A2F", accent: "#4DD0E1", btn: "#4DD0E1" },
-    { bg: "#2F2A1A", accent: "#FFD54F", btn: "#FFD54F" },
-  ];
-
-  // Emojis de respaldo por nombre de categoría
-  const getEmoji = (nombre) => {
-    const n = (nombre || "").toLowerCase();
-    if (n.includes("café") || n.includes("cafe") || n.includes("bebida") || n.includes("drink")) return "☕";
-    if (n.includes("pizza")) return "🍕";
-    if (n.includes("burger") || n.includes("hambur")) return "🍔";
-    if (n.includes("sushi") || n.includes("roll")) return "🍣";
-    if (n.includes("pasta") || n.includes("fideos")) return "🍝";
-    if (n.includes("ensalada") || n.includes("salad")) return "🥗";
-    if (n.includes("postre") || n.includes("dulce") || n.includes("torta") || n.includes("cake")) return "🍰";
-    if (n.includes("carne") || n.includes("asado") || n.includes("parrilla")) return "🥩";
-    if (n.includes("pollo") || n.includes("chicken")) return "🍗";
-    if (n.includes("pescado") || n.includes("fish") || n.includes("mariscos")) return "🐟";
-    if (n.includes("vegano") || n.includes("vegeta")) return "🥦";
-    if (n.includes("sandwich") || n.includes("pancho") || n.includes("sándwich")) return "🥪";
-    if (n.includes("cerveza") || n.includes("beer") || n.includes("alcohol") || n.includes("vino")) return "🍺";
-    if (n.includes("desayuno") || n.includes("breakfast")) return "🍳";
-    if (n.includes("almuerzo") || n.includes("comida") || n.includes("lunch")) return "🍽️";
-    if (n.includes("entrada") || n.includes("aperitivo")) return "🥨";
-    return "🍽️";
+React.useEffect(()=>{
+  if(!supabase||!local.restauranteId) return;
+  const load = async () => {
+    const {data} = await supabase.from("mesas")
+      .select("id,status")
+      .eq("restaurante_id", local.restauranteId);
+    if(data && data.length > 0) {
+      const libres = data.filter(m=>m.status==="libre").length;
+      const ocupadas = data.filter(m=>m.status==="ocupado").length;
+      setMesasData({libres, ocupadas, total:data.length, hayMesas:true});
+    }
   };
+  load();
+  const ch = supabase.channel("vitrina-mesas-"+local.restauranteId)
+    .on("postgres_changes",{event:"*",schema:"public",table:"mesas",
+      filter:`restaurante_id=eq.${local.restauranteId}`}, load)
+    .subscribe();
+  return ()=>supabase.removeChannel(ch);
+},[]);
 
-  React.useEffect(() => {
-    if (!supabase || !local.restauranteId) return;
-    const load = async () => {
-      const { data } = await supabase
-        .from("mesas")
-        .select("id,status")
-        .eq("restaurante_id", local.restauranteId);
-      if (data && data.length > 0) {
-        setMesasLibres(data.filter(m => m.status === "libre").length);
-        setHayMesas(true);
-      }
-    };
-    load();
-    const ch = supabase
-      .channel("vitrina-mesas-" + local.restauranteId)
-      .on("postgres_changes", { event: "*", schema: "public", table: "mesas",
-        filter: `restaurante_id=eq.${local.restauranteId}` }, load)
-      .subscribe();
-    return () => supabase.removeChannel(ch);
-  }, []);
+const pct = mesasData.total > 0 ? Math.round((mesasData.ocupadas/mesasData.total)*100) : 0;
+const catsFiltradas = [{id:"TODO", label:"Todo", icon:""}].concat(cats.filter(c=>c.activa!==false));
+const prodsVisibles = prods.filter(p=>p.active!==false);
+const prodsFiltrados = activeCat==="TODO" ? prodsVisibles : prodsVisibles.filter(p=>p.cat===activeCat);
 
-  const catsActivas = cats.filter(c => c.activa !== false);
-  const prodsActivos = prods.filter(p => p.active !== false);
+return (
+  <div style={{background:"#020F0B",minHeight:"100vh",fontFamily:"system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif"}}>
 
-  const toggleCat = (catId) => {
-    setCatAbierta(prev => prev === catId ? null : catId);
-  };
-
-  return (
-    <div style={{ background: "#FAFAFA", minHeight: "100vh", fontFamily: "system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" }}>
-
-      {/* HEADER */}
-      <div style={{ background: "#FFFFFF", borderBottom: "1px solid rgba(0,0,0,0.08)", padding: "24px 20px 20px", textAlign: "center" }}>
-        {local.logo_url ? (
-          <img src={local.logo_url} alt="logo" style={{ width: 72, height: 72, borderRadius: 18, objectFit: "cover", marginBottom: 14, display: "block", margin: "0 auto 14px", boxShadow: "0 4px 16px rgba(0,0,0,.12)" }} />
-        ) : (
-          <div style={{ width: 72, height: 72, borderRadius: 18, background: "#1a1a1a", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32, margin: "0 auto 14px", background: "#F0F0F0" }}>🍽️</div>
-        )}
-        <h1 style={{ margin: "0 0 6px", fontSize: 28, fontWeight: 900, color: "#1A1A1A", letterSpacing: "-0.5px", lineHeight: 1.1 }}>
-          {local.nombre}
-        </h1>
-        {local.descripcion && (
-          <p style={{ margin: "0 0 12px", fontSize: 14, color: "rgba(0,0,0,0.5)", lineHeight: 1.5, maxWidth: 300, marginLeft: "auto", marginRight: "auto" }}>
-            {local.descripcion}
-          </p>
-        )}
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, justifyContent: "center", marginTop: 10 }}>
-          {hayMesas && mesasLibres > 0 && (
-            <span style={{ background: "#1A2F1A", border: "1px solid rgba(102,187,106,0.4)", borderRadius: 20, padding: "4px 12px", fontSize: 12, fontWeight: 700, color: "#66BB6A" }}>
-              ● {mesasLibres} mesa{mesasLibres !== 1 ? "s" : ""} disponible{mesasLibres !== 1 ? "s" : ""} ahora
-            </span>
-          )}
-          {local.direccion && (
-            <span style={{ background: "#F0F0F0", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 20, padding: "4px 12px", fontSize: 12, color: "rgba(0,0,0,0.5)" }}>
-              📍 {local.direccion}
-            </span>
-          )}
-        </div>
-      </div>
-
-      {/* BANNER PRIMERA VISITA */}
-      {!!local.feat_primera_visita && (
-        <div style={{ margin: "16px 16px 0", background: "linear-gradient(135deg,#2A2000,#1A1500)", border: "1px solid rgba(255,215,0,0.4)", borderRadius: 16, padding: "16px", display: "flex", alignItems: "center", gap: 14 }}>
-          <div style={{ fontSize: 32, lineHeight: 1 }}>🎁</div>
-          <div>
-            <div style={{ fontSize: 15, fontWeight: 800, color: "#FFD700" }}>10% OFF en tu primera visita</div>
-            <div style={{ fontSize: 12, color: "rgba(255,215,0,0.7)", marginTop: 2 }}>Descuento aplicado automáticamente en tu primer pedido</div>
-          </div>
-        </div>
+    {/* HERO */}
+    <div style={{background:"linear-gradient(180deg,#0A2A20 0%,#020F0B 100%)",padding:"36px 20px 28px",textAlign:"center"}}>
+      {local.logo_url ? (
+        <img src={local.logo_url} alt="logo" style={{width:80,height:80,borderRadius:20,objectFit:"cover",marginBottom:16,border:"2px solid rgba(201,168,76,.3)",display:"block",margin:"0 auto 16px"}}/>
+      ) : (
+        <div style={{width:80,height:80,borderRadius:20,background:"linear-gradient(135deg,#C9A84C,#8A6820)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:36,margin:"0 auto 16px"}}>🍽️</div>
       )}
-
-      {/* CARDS DE CATEGORÍAS */}
-      <div style={{ padding: "16px 16px 120px", display: "flex", flexDirection: "column", gap: 14, background: "#FAFAFA" }}>
-        {catsActivas.length === 0 && prodsActivos.length === 0 && (
-          <div style={{ textAlign: "center", padding: "60px 20px", color: "rgba(0,0,0,0.35)" }}>
-            <div style={{ fontSize: 48, marginBottom: 12 }}>🍽️</div>
-            <div style={{ fontSize: 16, fontWeight: 600, color: "rgba(0,0,0,0.35)" }}>La carta estará disponible pronto</div>
-          </div>
+      <h1 style={{margin:"0 0 8px",fontSize:28,fontWeight:800,color:"#fff",letterSpacing:"-.5px",lineHeight:1.1}}>{local.nombre}</h1>
+      {local.descripcion && (
+        <p style={{margin:"0 0 16px",fontSize:14,color:"rgba(255,255,255,.55)",lineHeight:1.5,maxWidth:320,marginLeft:"auto",marginRight:"auto"}}>{local.descripcion}</p>
+      )}
+      <div style={{display:"flex",flexWrap:"wrap",gap:8,justifyContent:"center"}}>
+        {local.horarios && Object.values(local.horarios||{}).some(d=>d.abierto) && (
+          <div style={{display:"flex",alignItems:"center",gap:5,background:"rgba(255,255,255,.07)",border:"1px solid rgba(255,255,255,.1)",borderRadius:20,padding:"5px 12px",fontSize:12,color:"rgba(255,255,255,.65)"}}>🕐 Horarios cargados</div>
         )}
-
-        {catsActivas.map((cat, idx) => {
-          const palette = PALETA[idx % PALETA.length];
-          const prodsDeCat = prodsActivos.filter(p => p.cat === cat.id);
-          const isOpen = catAbierta === cat.id;
-          const emoji = getEmoji(cat.nombre);
-
-          return (
-            <div key={cat.id} style={{ borderRadius: 20, overflow: "hidden", boxShadow: "0 4px 20px rgba(0,0,0,.5)", border: "1px solid rgba(0,0,0,0.1)", background: "transparent" }}>
-              {/* Card header — clickable */}
-              <div
-                onClick={() => toggleCat(cat.id)}
-                style={{ background: palette.bg, padding: "22px 20px", cursor: "pointer", display: "flex", alignItems: "center", gap: 16, position: "relative" }}
-              >
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 13, fontWeight: 800, color: palette.accent, letterSpacing: 3, textTransform: "uppercase", marginBottom: 6, opacity: 0.85 }}>
-                    CATEGORÍA
-                  </div>
-                  <div style={{ fontSize: 36, fontWeight: 900, color: "#FFFFFF", lineHeight: 1.1, letterSpacing: "-0.5px" }}>
-                    {cat.nombre}
-                  </div>
-                  {prodsDeCat.length > 0 && (
-                    <div style={{ marginTop: 10, display: "inline-flex", alignItems: "center", gap: 6, background: palette.accent, color: "#fff", borderRadius: 20, padding: "10px 20px", fontSize: 15, fontWeight: 700 }}>
-                      {isOpen ? "Cerrar ✕" : `Ver ${prodsDeCat.length} producto${prodsDeCat.length !== 1 ? "s" : ""} →`}
-                    </div>
-                  )}
-                </div>
-                <div style={{ fontSize: 64, lineHeight: 1, flexShrink: 0, opacity: 0.85 }}>
-                  {cat.imagen
-                    ? <img src={cat.imagen} alt={cat.nombre} style={{ width: 80, height: 80, borderRadius: 16, objectFit: "cover" }} />
-                    : emoji}
-                </div>
-              </div>
-
-              {/* Productos expandidos */}
-              {isOpen && (
-                <div style={{ background: "#F5F5F5", borderTop: `3px solid ${palette.bg}` }}>
-                  {prodsDeCat.length === 0 ? (
-                    <div style={{ padding: "20px", textAlign: "center", color: "rgba(0,0,0,0.35)", fontSize: 14 }}>
-                      No hay productos en esta categoría todavía
-                    </div>
-                  ) : (
-                    prodsDeCat.map((prod, pidx) => (
-                      <div
-                        key={prod.id}
-                        style={{
-                          display: "flex", alignItems: "center", gap: 12, padding: "14px 16px",
-                          borderBottom: pidx < prodsDeCat.length - 1 ? "1px solid rgba(0,0,0,0.06)" : "none"
-                        }}
-                      >
-                        {/* Imagen o emoji del producto */}
-                        <div style={{ width: 60, height: 60, borderRadius: "50%", background: palette.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, flexShrink: 0, overflow: "hidden" }}>
-                          {prod.foto_url
-                            ? <img src={prod.foto_url} alt={prod.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                            : (prod.emoji || "🍽️")}
-                        </div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 18, fontWeight: 700, color: "#1A1A1A", lineHeight: 1.2 }}>{prod.name}</div>
-                          {prod.desc && (
-                            <div style={{ fontSize: 12, color: "rgba(0,0,0,0.5)", marginTop: 3, lineHeight: 1.4, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>
-                              {prod.desc}
-                            </div>
-                          )}
-                        </div>
-                        <div style={{ fontSize: 20, fontWeight: 800, color: "#FFD700", flexShrink: 0, textAlign: "right" }}>
-                          ${typeof prod.price === "number" ? prod.price.toLocaleString("es-AR") : prod.price}
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              )}
-            </div>
-          );
-        })}
-
-        {/* Productos sin categoría */}
-        {(() => {
-          const sinCat = prodsActivos.filter(p => !p.cat || !catsActivas.find(c => c.id === p.cat));
-          if (sinCat.length === 0) return null;
-          const palette = PALETA[catsActivas.length % PALETA.length];
-          const isOpen = catAbierta === "__sin_cat__";
-          return (
-            <div style={{ borderRadius: 20, overflow: "hidden", boxShadow: "0 4px 20px rgba(0,0,0,.5)", border: "1px solid rgba(0,0,0,0.1)", background: "transparent" }}>
-              <div
-                onClick={() => toggleCat("__sin_cat__")}
-                style={{ background: palette.bg, padding: "22px 20px", cursor: "pointer", display: "flex", alignItems: "center", gap: 16 }}
-              >
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 13, fontWeight: 800, color: palette.accent, letterSpacing: 3, textTransform: "uppercase", marginBottom: 6, opacity: 0.85 }}>CATEGORÍA</div>
-                  <div style={{ fontSize: 36, fontWeight: 900, color: "#FFFFFF", lineHeight: 1.1, letterSpacing: "-0.5px" }}>Otros productos</div>
-                  <div style={{ marginTop: 10, display: "inline-flex", alignItems: "center", gap: 6, background: palette.accent, color: "#fff", borderRadius: 20, padding: "10px 20px", fontSize: 15, fontWeight: 700 }}>
-                    {isOpen ? "Cerrar ✕" : `Ver ${sinCat.length} producto${sinCat.length !== 1 ? "s" : ""} →`}
-                  </div>
-                </div>
-                <div style={{ fontSize: 64, lineHeight: 1, flexShrink: 0, opacity: 0.85 }}>🍽️</div>
-              </div>
-              {isOpen && (
-                <div style={{ background: "#F5F5F5", borderTop: `3px solid ${palette.bg}` }}>
-                  {sinCat.map((prod, pidx) => (
-                    <div key={prod.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", borderBottom: pidx < sinCat.length - 1 ? "1px solid rgba(0,0,0,0.06)" : "none" }}>
-                      <div style={{ width: 60, height: 60, borderRadius: "50%", background: palette.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, flexShrink: 0, overflow: "hidden" }}>
-                        {prod.foto_url ? <img src={prod.foto_url} alt={prod.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : (prod.emoji || "🍽️")}
-                      </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 18, fontWeight: 700, color: "#1A1A1A", lineHeight: 1.2 }}>{prod.name}</div>
-                        {prod.desc && <div style={{ fontSize: 12, color: "rgba(0,0,0,0.5)", marginTop: 3, lineHeight: 1.4 }}>{prod.desc}</div>}
-                      </div>
-                      <div style={{ fontSize: 20, fontWeight: 800, color: "#FFD700", flexShrink: 0 }}>
-                        ${typeof prod.price === "number" ? prod.price.toLocaleString("es-AR") : prod.price}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          );
-        })()}
+        {local.direccion && (
+          <div style={{display:"flex",alignItems:"center",gap:5,background:"rgba(255,255,255,.07)",border:"1px solid rgba(255,255,255,.1)",borderRadius:20,padding:"5px 12px",fontSize:12,color:"rgba(255,255,255,.65)"}}>📍 {local.direccion}</div>
+        )}
+        {local.telefono && (
+          <div style={{display:"flex",alignItems:"center",gap:5,background:"rgba(255,255,255,.07)",border:"1px solid rgba(255,255,255,.1)",borderRadius:20,padding:"5px 12px",fontSize:12,color:"rgba(255,255,255,.65)"}}>📞 {local.telefono}</div>
+        )}
       </div>
+    </div>
 
-      {/* PIE FIJO */}
-      <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: "linear-gradient(0deg,#FAFAFA 65%,transparent 100%)", padding: "16px 16px 24px", zIndex: 100 }}>
-        <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 16, padding: "12px 16px", textAlign: "center", marginBottom: local.whatsapp ? 10 : 0, boxShadow: "0 2px 12px rgba(0,0,0,.3)" }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: "rgba(0,0,0,0.7)" }}>📱 Para hacer un pedido, escaneá el QR de tu mesa</div>
+    <div style={{padding:"0 16px 120px",display:"flex",flexDirection:"column",gap:12}}>
+
+    {/* EN VIVO — mesas */}
+    {mesasData.hayMesas && (
+      <div style={{background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.06)",borderRadius:16,padding:"14px 16px"}}>
+        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:14}}>
+          <div style={{width:8,height:8,borderRadius:"50%",background:"#00FF88",boxShadow:"0 0 0 3px rgba(0,255,136,.2)",animation:"vitrinaPulse 1.5s ease-in-out infinite"}}/>
+          <span style={{fontSize:11,fontWeight:700,color:"#00FF88",letterSpacing:2}}>EN VIVO</span>
+          <span style={{fontSize:11,color:"rgba(255,255,255,.3)",marginLeft:4}}>· Mesas disponibles</span>
         </div>
-        {local.whatsapp && (
-          <a
-            href={"https://wa.me/" + local.whatsapp.replace(/\D/g, "")}
-            target="_blank"
-            rel="noreferrer"
-            style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: "#25D366", borderRadius: 14, padding: "13px", fontSize: 14, fontWeight: 700, color: "#fff", textDecoration: "none", boxShadow: "0 4px 16px rgba(37,211,102,.35)" }}
-          >
-            💬 Consultar al local
+        <div style={{display:"flex",gap:8,marginBottom:10}}>
+          <div style={{flex:1,background:"rgba(0,255,136,.06)",border:"1px solid rgba(0,255,136,.15)",borderRadius:12,padding:"10px",textAlign:"center"}}>
+            <div style={{fontSize:28,fontWeight:800,color:"#00FF88",lineHeight:1}}>{mesasData.libres}</div>
+            <div style={{fontSize:10,color:"rgba(0,255,136,.55)",marginTop:4,fontWeight:700,letterSpacing:1}}>LIBRES</div>
+          </div>
+          <div style={{flex:1,background:"rgba(255,176,32,.06)",border:"1px solid rgba(255,176,32,.15)",borderRadius:12,padding:"10px",textAlign:"center"}}>
+            <div style={{fontSize:28,fontWeight:800,color:"#FFB020",lineHeight:1}}>{mesasData.ocupadas}</div>
+            <div style={{fontSize:10,color:"rgba(255,176,32,.55)",marginTop:4,fontWeight:700,letterSpacing:1}}>OCUPADAS</div>
+          </div>
+          <div style={{flex:1,background:"rgba(201,168,76,.06)",border:"1px solid rgba(201,168,76,.15)",borderRadius:12,padding:"10px",textAlign:"center"}}>
+            <div style={{fontSize:28,fontWeight:800,color:"#C9A84C",lineHeight:1}}>{pct}%</div>
+            <div style={{fontSize:10,color:"rgba(201,168,76,.55)",marginTop:4,fontWeight:700,letterSpacing:1}}>OCUPACIÓN</div>
+          </div>
+        </div>
+        <div style={{height:4,background:"rgba(255,255,255,.05)",borderRadius:2,overflow:"hidden"}}>
+          <div style={{height:"100%",width:`${pct}%`,background:"linear-gradient(90deg,#00FF88,#FFB020)",borderRadius:2,transition:"width .6s ease"}}/>
+        </div>
+      </div>
+    )}
+
+    {/* DESCUENTO 10% PRIMERA VISITA */}
+    {!!local.feat_primera_visita && (
+      <div style={{background:"linear-gradient(135deg,rgba(201,168,76,.12),rgba(201,168,76,.04))",border:"1px solid rgba(201,168,76,.3)",borderRadius:16,padding:"16px"}}>
+        <div style={{display:"flex",alignItems:"center",gap:14}}>
+          <div style={{width:52,height:52,borderRadius:14,background:"linear-gradient(135deg,#C9A84C,#8A6820)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,flexShrink:0}}>🎁</div>
+          <div style={{flex:1}}>
+            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
+              <span style={{fontSize:28,fontWeight:900,color:"#C9A84C",lineHeight:1}}>10%</span>
+              <div style={{background:"rgba(201,168,76,.2)",border:"1px solid rgba(201,168,76,.4)",borderRadius:6,padding:"2px 8px",fontSize:9,fontWeight:700,color:"#C9A84C",letterSpacing:1}}>DESCUENTO</div>
+            </div>
+            <div style={{fontSize:14,fontWeight:700,color:"#fff",lineHeight:1.2}}>Primera visita</div>
+            <div style={{fontSize:12,color:"rgba(255,255,255,.4)",marginTop:2}}>Solo en tu primer pedido del día</div>
+          </div>
+        </div>
+      </div>
+    )}
+
+    {/* CÓMO FUNCIONA */}
+    <div style={{background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.06)",borderRadius:16,padding:"14px 16px"}}>
+      <div style={{fontSize:11,fontWeight:700,color:"rgba(255,255,255,.28)",letterSpacing:2,marginBottom:14}}>CÓMO FUNCIONA</div>
+      {[
+        {ico:"📱",t:"Elegí tus productos",d:"Directamente desde esta carta digital"},
+        {ico:"💬",t:"Confirmá por WhatsApp",d:"Enviá tu pedido con un solo toque"},
+        {ico:"🔄",t:"Seguí tu pedido en vivo",d:"Monitoreá el estado en tiempo real desde acá"},
+      ].map((s,i)=>(
+        <div key={i} style={{display:"flex",alignItems:"flex-start",gap:12,marginBottom:i<2?12:0}}>
+          <div style={{width:36,height:36,borderRadius:10,background:"rgba(201,168,76,.1)",border:"1px solid rgba(201,168,76,.18)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>{s.ico}</div>
+          <div style={{paddingTop:3}}>
+            <div style={{fontSize:14,fontWeight:700,color:"rgba(255,255,255,.9)",lineHeight:1.2}}>{s.t}</div>
+            <div style={{fontSize:12,color:"rgba(255,255,255,.38)",marginTop:3}}>{s.d}</div>
+          </div>
+        </div>
+      ))}
+    </div>
+
+    {/* LA CARTA */}
+    {prodsVisibles.length > 0 && (
+      <div>
+        <div style={{fontSize:11,fontWeight:700,color:"rgba(255,255,255,.28)",letterSpacing:2,marginBottom:12,paddingLeft:2}}>LA CARTA</div>
+        <div style={{display:"flex",gap:8,overflowX:"auto",paddingBottom:12,scrollbarWidth:"none",msOverflowStyle:"none",WebkitOverflowScrolling:"touch"}}>
+          {catsFiltradas.map(c=>(
+            <button key={c.id} onClick={()=>setActiveCat(c.id)}
+              style={{flexShrink:0,padding:"7px 14px",borderRadius:20,
+                border:`1px solid ${activeCat===c.id?"rgba(201,168,76,.5)":"rgba(255,255,255,.08)"}`,
+                background:activeCat===c.id?"rgba(201,168,76,.15)":"rgba(255,255,255,.03)",
+                color:activeCat===c.id?"#C9A84C":"rgba(255,255,255,.45)",
+                fontSize:12,fontWeight:600,cursor:"pointer",whiteSpace:"nowrap",outline:"none"}}>
+              {c.icon && c.icon+" "}{c.label}
+            </button>
+          ))}
+        </div>
+        <div style={{display:"flex",flexDirection:"column",gap:8}}>
+          {prodsFiltrados.map(prod=>(
+            <div key={prod.id} style={{background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.06)",borderRadius:14,padding:"12px 14px",display:"flex",gap:12,alignItems:"center"}}>
+              <div style={{width:52,height:52,borderRadius:12,background:"rgba(255,255,255,.05)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:26,flexShrink:0,overflow:"hidden"}}>
+                {prod.foto_url
+                  ? <img src={prod.foto_url} alt={prod.name} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                  : (prod.emoji||"🍽️")}
+              </div>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontSize:14,fontWeight:700,color:"#fff",lineHeight:1.2,marginBottom:prod.desc?3:0}}>{prod.name}</div>
+                {prod.desc && (
+                  <div style={{fontSize:12,color:"rgba(255,255,255,.38)",lineHeight:1.4,overflow:"hidden",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical"}}>{prod.desc}</div>
+                )}
+              </div>
+              <div style={{fontSize:15,fontWeight:800,color:"#C9A84C",flexShrink:0,textAlign:"right",whiteSpace:"nowrap"}}>
+                ${typeof prod.price==="number" ? prod.price.toLocaleString("es-AR") : prod.price}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    )}
+
+    </div>
+
+    {/* CTAs FIJOS AL PIE */}
+    {(local.whatsapp_delivery||local.whatsapp_retiro||local.whatsapp) && (
+      <div style={{position:"fixed",bottom:0,left:0,right:0,background:"linear-gradient(0deg,#020F0B 65%,transparent 100%)",padding:"20px 16px 28px",display:"flex",gap:10,zIndex:100}}>
+        {!!local.whatsapp_delivery && (
+          <button onClick={()=>setWaFlow("delivery")}
+            style={{flex:1,background:"#25D366",border:"none",borderRadius:14,padding:"15px",fontSize:14,fontWeight:800,color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+            🛵 Pedir con delivery
+          </button>
+        )}
+        {!!local.whatsapp_retiro && (
+          <button onClick={()=>setWaFlow("retiro")}
+            style={{flex:1,background:"rgba(255,255,255,.1)",border:"1px solid rgba(255,255,255,.15)",borderRadius:14,padding:"15px",fontSize:14,fontWeight:800,color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+            🏪 Retirar en local
+          </button>
+        )}
+        {!local.whatsapp_delivery && !local.whatsapp_retiro && local.whatsapp && (
+          <a href={"https://wa.me/"+local.whatsapp.replace(/\D/g,"")} target="_blank" rel="noreferrer"
+            style={{flex:1,background:"#25D366",border:"none",borderRadius:14,padding:"15px",fontSize:14,fontWeight:800,color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,textDecoration:"none"}}>
+            💬 Consultanos por WhatsApp
           </a>
         )}
       </div>
+    )}
 
-    </div>
-  );
+    <style>{`@keyframes vitrinaPulse{0%,100%{opacity:1;box-shadow:0 0 0 3px rgba(0,255,136,.2)}50%{opacity:.5;box-shadow:0 0 0 6px rgba(0,255,136,.05)}}`}</style>
+
+    {waFlow && (
+      <WAOrderFlow
+        local={local} prods={prods} cats={cats}
+        tipo={waFlow}
+        onClose={()=>setWaFlow(null)}
+      />
+    )}
+  </div>
+);
 }
 
 
