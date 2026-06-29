@@ -1435,7 +1435,6 @@ function WAOrderFlow({local, prods, cats, tipo, onClose}) {
 
 function VitrinaInfo({local, cats, prods}) {
 const [mesasData, setMesasData] = React.useState({libres:0, ocupadas:0, total:0, hayMesas:false});
-const [waFlow, setWaFlow] = React.useState(null);
 const [activeCat, setActiveCat] = React.useState("TODO");
 
 React.useEffect(()=>{
@@ -1596,39 +1595,22 @@ return (
 
     </div>
 
-    {/* CTAs FIJOS AL PIE */}
-    {(local.whatsapp_delivery||local.whatsapp_retiro||local.whatsapp) && (
-      <div style={{position:"fixed",bottom:0,left:0,right:0,background:"linear-gradient(0deg,#020F0B 65%,transparent 100%)",padding:"20px 16px 28px",display:"flex",gap:10,zIndex:100}}>
-        {!!local.whatsapp_delivery && (
-          <button onClick={()=>setWaFlow("delivery")}
-            style={{flex:1,background:"#25D366",border:"none",borderRadius:14,padding:"15px",fontSize:14,fontWeight:800,color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-            🛵 Pedir con delivery
-          </button>
-        )}
-        {!!local.whatsapp_retiro && (
-          <button onClick={()=>setWaFlow("retiro")}
-            style={{flex:1,background:"rgba(255,255,255,.1)",border:"1px solid rgba(255,255,255,.15)",borderRadius:14,padding:"15px",fontSize:14,fontWeight:800,color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-            🏪 Retirar en local
-          </button>
-        )}
-        {!local.whatsapp_delivery && !local.whatsapp_retiro && local.whatsapp && (
-          <a href={"https://wa.me/"+local.whatsapp.replace(/\D/g,"")} target="_blank" rel="noreferrer"
-            style={{flex:1,background:"#25D366",border:"none",borderRadius:14,padding:"15px",fontSize:14,fontWeight:800,color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,textDecoration:"none"}}>
-            💬 Consultanos por WhatsApp
-          </a>
-        )}
+    {/* INFO — cómo pedir */}
+    <div style={{position:"fixed",bottom:0,left:0,right:0,background:"linear-gradient(0deg,#020F0B 65%,transparent 100%)",padding:"20px 16px 28px",zIndex:100}}>
+      <div style={{background:"rgba(255,255,255,.05)",border:"1px solid rgba(255,255,255,.08)",borderRadius:16,padding:"14px 16px",textAlign:"center",marginBottom:local.whatsapp?12:0}}>
+        <div style={{fontSize:22,marginBottom:6}}>📱</div>
+        <div style={{fontSize:14,fontWeight:700,color:"rgba(255,255,255,.85)"}}>Para pedir, escaneá el QR de tu mesa</div>
+        <div style={{fontSize:12,color:"rgba(255,255,255,.38)",marginTop:4}}>Cada mesa tiene su propio código QR</div>
       </div>
-    )}
+      {local.whatsapp && (
+        <a href={"https://wa.me/"+local.whatsapp.replace(/\D/g,"")} target="_blank" rel="noreferrer"
+          style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,background:"rgba(37,211,102,.12)",border:"1px solid rgba(37,211,102,.25)",borderRadius:14,padding:"13px",fontSize:14,fontWeight:700,color:"#25D366",textDecoration:"none"}}>
+          💬 Contactar al local
+        </a>
+      )}
+    </div>
 
     <style>{`@keyframes vitrinaPulse{0%,100%{opacity:1;box-shadow:0 0 0 3px rgba(0,255,136,.2)}50%{opacity:.5;box-shadow:0 0 0 6px rgba(0,255,136,.05)}}`}</style>
-
-    {waFlow && (
-      <WAOrderFlow
-        local={local} prods={prods} cats={cats}
-        tipo={waFlow}
-        onClose={()=>setWaFlow(null)}
-      />
-    )}
   </div>
 );
 }
