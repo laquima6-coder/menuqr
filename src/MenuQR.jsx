@@ -949,7 +949,7 @@ function WAOrderFlow({local, prods, cats, tipo, onClose}) {
     direcTimer.current = setTimeout(async()=>{
       try {
         const country = "AR"; // Argentina — cambiar si el restaurante es de otro país
-        const url = `https://api.tomtom.com/search/2/search/${encodeURIComponent(val)}.json?key=${TOMTOM_KEY}&limit=5&countrySet=${country}&language=es-AR`;
+        const url = `https://api.tomtom.com/search/2/search/${encodeURIComponent(val)}.json?key=${TOMTOM_KEY}&limit=5&countrySet=${country}`;
         const res = await fetch(url);
         const data = await res.json();
         const results = (data.results||[]).map(r=>r.address?.freeformAddress).filter(Boolean);
