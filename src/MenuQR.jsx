@@ -992,6 +992,7 @@ function WAOrderFlow({local, prods, cats, tipo, onClose}) {
         const [{default:tt}, svc] = await Promise.all([
           import("@tomtom-international/web-sdk-maps"),
           import("@tomtom-international/web-sdk-services"),
+          import("@tomtom-international/web-sdk-maps/dist/maps.css"),
         ]);
         let cPos = null;
         if(direcPos?.lat) {
