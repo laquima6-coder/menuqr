@@ -2095,7 +2095,7 @@ export function ClientApp({onBack, local, cats, prods, vitrina=false, sinPedidos
             border:"1px solid var(--cbr)",borderRadius:14,padding:13,
             fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:600,
             color:"var(--ct)",cursor:"pointer"}}>{T('orderMore')}</button>
-          <button onClick={onBack} className="pr" style={{flex:1,background:"var(--cg)",
+          <button onClick={()=>{ reset(); if(onBack) onBack(); }} className="pr" style={{flex:1,background:"var(--cg)",
             border:"none",borderRadius:14,padding:13,
             fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,
             color:"#0A0806",cursor:"pointer"}}>Inicio</button>
