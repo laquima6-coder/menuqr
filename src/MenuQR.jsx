@@ -1499,31 +1499,31 @@ function VitrinaInfo({local, cats, prods}) {
   };
 
   return (
-    <div style={{ background: "#0D0D0D", minHeight: "100vh", fontFamily: "system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" }}>
+    <div style={{ background: "#FAFAFA", minHeight: "100vh", fontFamily: "system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" }}>
 
       {/* HEADER */}
-      <div style={{ background: "#1A1A1A", borderBottom: "1px solid rgba(255,255,255,0.08)", padding: "24px 20px 20px", textAlign: "center" }}>
+      <div style={{ background: "#FFFFFF", borderBottom: "1px solid rgba(0,0,0,0.08)", padding: "24px 20px 20px", textAlign: "center" }}>
         {local.logo_url ? (
           <img src={local.logo_url} alt="logo" style={{ width: 72, height: 72, borderRadius: 18, objectFit: "cover", marginBottom: 14, display: "block", margin: "0 auto 14px", boxShadow: "0 4px 16px rgba(0,0,0,.12)" }} />
         ) : (
-          <div style={{ width: 72, height: 72, borderRadius: 18, background: "#1a1a1a", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32, margin: "0 auto 14px" }}>🍽️</div>
+          <div style={{ width: 72, height: 72, borderRadius: 18, background: "#1a1a1a", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32, margin: "0 auto 14px", background: "#F0F0F0" }}>🍽️</div>
         )}
-        <h1 style={{ margin: "0 0 6px", fontSize: 28, fontWeight: 900, color: "#FFFFFF", letterSpacing: "-0.5px", lineHeight: 1.1 }}>
+        <h1 style={{ margin: "0 0 6px", fontSize: 28, fontWeight: 900, color: "#1A1A1A", letterSpacing: "-0.5px", lineHeight: 1.1 }}>
           {local.nombre}
         </h1>
         {local.descripcion && (
-          <p style={{ margin: "0 0 12px", fontSize: 14, color: "rgba(255,255,255,0.65)", lineHeight: 1.5, maxWidth: 300, marginLeft: "auto", marginRight: "auto" }}>
+          <p style={{ margin: "0 0 12px", fontSize: 14, color: "rgba(0,0,0,0.5)", lineHeight: 1.5, maxWidth: 300, marginLeft: "auto", marginRight: "auto" }}>
             {local.descripcion}
           </p>
         )}
         <div style={{ display: "flex", flexWrap: "wrap", gap: 6, justifyContent: "center", marginTop: 10 }}>
           {hayMesas && mesasLibres > 0 && (
-            <span style={{ background: "#1A2F1A", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 20, padding: "4px 12px", fontSize: 12, fontWeight: 700, color: "#66BB6A" }}>
+            <span style={{ background: "#1A2F1A", border: "1px solid rgba(102,187,106,0.4)", borderRadius: 20, padding: "4px 12px", fontSize: 12, fontWeight: 700, color: "#66BB6A" }}>
               ● {mesasLibres} mesa{mesasLibres !== 1 ? "s" : ""} disponible{mesasLibres !== 1 ? "s" : ""} ahora
             </span>
           )}
           {local.direccion && (
-            <span style={{ background: "#2A2A2A", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 20, padding: "4px 12px", fontSize: 12, color: "rgba(255,255,255,0.65)" }}>
+            <span style={{ background: "#F0F0F0", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 20, padding: "4px 12px", fontSize: 12, color: "rgba(0,0,0,0.5)" }}>
               📍 {local.direccion}
             </span>
           )}
@@ -1542,11 +1542,11 @@ function VitrinaInfo({local, cats, prods}) {
       )}
 
       {/* CARDS DE CATEGORÍAS */}
-      <div style={{ padding: "16px 16px 120px", display: "flex", flexDirection: "column", gap: 14, background: "#0D0D0D" }}>
+      <div style={{ padding: "16px 16px 120px", display: "flex", flexDirection: "column", gap: 14, background: "#FAFAFA" }}>
         {catsActivas.length === 0 && prodsActivos.length === 0 && (
-          <div style={{ textAlign: "center", padding: "60px 20px", color: "rgba(255,255,255,0.4)" }}>
+          <div style={{ textAlign: "center", padding: "60px 20px", color: "rgba(0,0,0,0.35)" }}>
             <div style={{ fontSize: 48, marginBottom: 12 }}>🍽️</div>
-            <div style={{ fontSize: 16, fontWeight: 600, color: "rgba(255,255,255,0.4)" }}>La carta estará disponible pronto</div>
+            <div style={{ fontSize: 16, fontWeight: 600, color: "rgba(0,0,0,0.35)" }}>La carta estará disponible pronto</div>
           </div>
         )}
 
@@ -1557,7 +1557,7 @@ function VitrinaInfo({local, cats, prods}) {
           const emoji = getEmoji(cat.nombre);
 
           return (
-            <div key={cat.id} style={{ borderRadius: 20, overflow: "hidden", boxShadow: "0 4px 20px rgba(0,0,0,.5)", border: "1px solid rgba(255,255,255,0.1)", background: "transparent" }}>
+            <div key={cat.id} style={{ borderRadius: 20, overflow: "hidden", boxShadow: "0 4px 20px rgba(0,0,0,.5)", border: "1px solid rgba(0,0,0,0.1)", background: "transparent" }}>
               {/* Card header — clickable */}
               <div
                 onClick={() => toggleCat(cat.id)}
@@ -1585,9 +1585,9 @@ function VitrinaInfo({local, cats, prods}) {
 
               {/* Productos expandidos */}
               {isOpen && (
-                <div style={{ background: "#111111", borderTop: `3px solid ${palette.bg}` }}>
+                <div style={{ background: "#F5F5F5", borderTop: `3px solid ${palette.bg}` }}>
                   {prodsDeCat.length === 0 ? (
-                    <div style={{ padding: "20px", textAlign: "center", color: "rgba(255,255,255,0.4)", fontSize: 14 }}>
+                    <div style={{ padding: "20px", textAlign: "center", color: "rgba(0,0,0,0.35)", fontSize: 14 }}>
                       No hay productos en esta categoría todavía
                     </div>
                   ) : (
@@ -1596,7 +1596,7 @@ function VitrinaInfo({local, cats, prods}) {
                         key={prod.id}
                         style={{
                           display: "flex", alignItems: "center", gap: 12, padding: "14px 16px",
-                          borderBottom: pidx < prodsDeCat.length - 1 ? "1px solid rgba(255,255,255,0.06)" : "none"
+                          borderBottom: pidx < prodsDeCat.length - 1 ? "1px solid rgba(0,0,0,0.06)" : "none"
                         }}
                       >
                         {/* Imagen o emoji del producto */}
@@ -1606,9 +1606,9 @@ function VitrinaInfo({local, cats, prods}) {
                             : (prod.emoji || "🍽️")}
                         </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 18, fontWeight: 700, color: "#FFFFFF", lineHeight: 1.2 }}>{prod.name}</div>
+                          <div style={{ fontSize: 18, fontWeight: 700, color: "#1A1A1A", lineHeight: 1.2 }}>{prod.name}</div>
                           {prod.desc && (
-                            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.65)", marginTop: 3, lineHeight: 1.4, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>
+                            <div style={{ fontSize: 12, color: "rgba(0,0,0,0.5)", marginTop: 3, lineHeight: 1.4, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>
                               {prod.desc}
                             </div>
                           )}
@@ -1632,7 +1632,7 @@ function VitrinaInfo({local, cats, prods}) {
           const palette = PALETA[catsActivas.length % PALETA.length];
           const isOpen = catAbierta === "__sin_cat__";
           return (
-            <div style={{ borderRadius: 20, overflow: "hidden", boxShadow: "0 4px 20px rgba(0,0,0,.5)", border: "1px solid rgba(255,255,255,0.1)", background: "transparent" }}>
+            <div style={{ borderRadius: 20, overflow: "hidden", boxShadow: "0 4px 20px rgba(0,0,0,.5)", border: "1px solid rgba(0,0,0,0.1)", background: "transparent" }}>
               <div
                 onClick={() => toggleCat("__sin_cat__")}
                 style={{ background: palette.bg, padding: "22px 20px", cursor: "pointer", display: "flex", alignItems: "center", gap: 16 }}
@@ -1647,15 +1647,15 @@ function VitrinaInfo({local, cats, prods}) {
                 <div style={{ fontSize: 64, lineHeight: 1, flexShrink: 0, opacity: 0.85 }}>🍽️</div>
               </div>
               {isOpen && (
-                <div style={{ background: "#111111", borderTop: `3px solid ${palette.bg}` }}>
+                <div style={{ background: "#F5F5F5", borderTop: `3px solid ${palette.bg}` }}>
                   {sinCat.map((prod, pidx) => (
-                    <div key={prod.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", borderBottom: pidx < sinCat.length - 1 ? "1px solid rgba(255,255,255,0.06)" : "none" }}>
+                    <div key={prod.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", borderBottom: pidx < sinCat.length - 1 ? "1px solid rgba(0,0,0,0.06)" : "none" }}>
                       <div style={{ width: 60, height: 60, borderRadius: "50%", background: palette.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, flexShrink: 0, overflow: "hidden" }}>
                         {prod.foto_url ? <img src={prod.foto_url} alt={prod.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : (prod.emoji || "🍽️")}
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 18, fontWeight: 700, color: "#FFFFFF", lineHeight: 1.2 }}>{prod.name}</div>
-                        {prod.desc && <div style={{ fontSize: 12, color: "rgba(255,255,255,0.65)", marginTop: 3, lineHeight: 1.4 }}>{prod.desc}</div>}
+                        <div style={{ fontSize: 18, fontWeight: 700, color: "#1A1A1A", lineHeight: 1.2 }}>{prod.name}</div>
+                        {prod.desc && <div style={{ fontSize: 12, color: "rgba(0,0,0,0.5)", marginTop: 3, lineHeight: 1.4 }}>{prod.desc}</div>}
                       </div>
                       <div style={{ fontSize: 20, fontWeight: 800, color: "#FFD700", flexShrink: 0 }}>
                         ${typeof prod.price === "number" ? prod.price.toLocaleString("es-AR") : prod.price}
@@ -1670,9 +1670,9 @@ function VitrinaInfo({local, cats, prods}) {
       </div>
 
       {/* PIE FIJO */}
-      <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: "linear-gradient(0deg,#0D0D0D 65%,transparent 100%)", padding: "16px 16px 24px", zIndex: 100 }}>
-        <div style={{ background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 16, padding: "12px 16px", textAlign: "center", marginBottom: local.whatsapp ? 10 : 0, boxShadow: "0 2px 12px rgba(0,0,0,.3)" }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.8)" }}>📱 Para hacer un pedido, escaneá el QR de tu mesa</div>
+      <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: "linear-gradient(0deg,#FAFAFA 65%,transparent 100%)", padding: "16px 16px 24px", zIndex: 100 }}>
+        <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 16, padding: "12px 16px", textAlign: "center", marginBottom: local.whatsapp ? 10 : 0, boxShadow: "0 2px 12px rgba(0,0,0,.3)" }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: "rgba(0,0,0,0.7)" }}>📱 Para hacer un pedido, escaneá el QR de tu mesa</div>
         </div>
         {local.whatsapp && (
           <a
