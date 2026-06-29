@@ -1090,20 +1090,22 @@ function WAOrderFlow({local, prods, cats, tipo, onClose}) {
         await supabase.from("pedidos").insert({
           id:pedidoId, restaurante_id:local.restauranteId,
           mesa_numero:0, status:"nuevo", metodo_pago:"whatsapp",
-          propina:0, total, nota:notaStr, idioma:"es",
+          propina:0, total:totalConEnvio, nota:notaStr, idioma:"es",
         });
         await supabase.from("pedido_items").insert(
           cartItems.map(i=>({pedido_id:pedidoId,producto_id:i.id,nombre:i.name,precio:i.price,cantidad:i.qty}))
         );
       } catch(e){ console.warn("wa order err",e); }
     }
+    const deliveryCost = (tipo==="delivery"&&zoneInfo&&!zoneInfo.fuera) ? (zoneInfo.zona.precio||0) : 0;
+    const totalConEnvio = total + deliveryCost;
     const lineas = cartItems.map(i=>"• "+i.qty+"x "+i.name+" — $"+fmt(i.price*i.qty)).join("\n");
     const msg = "*Hola "+local.nombre+"! Quiero hacer un pedido* 🍽️\n\n"
       +(tipo==="delivery"?"📍 *DELIVERY* a: "+direc+(entreCalles?" (entre "+entreCalles+")":""):"🏪 *RETIRO en el local*")+"\n"
-      +(zoneInfo&&!zoneInfo.fuera?"🛵 "+zoneInfo.zona.nombre+" · $"+zoneInfo.zona.precio+(zoneInfo.etaMins?" · ~"+zoneInfo.etaMins+" min":"")+"\n":"")
+      +(zoneInfo&&!zoneInfo.fuera?"🛵 "+zoneInfo.zona.nombre+" · $"+zoneInfo.zona.precio+" envío · ~"+(zoneInfo.etaMins||zoneInfo.zona.minutos)+" min\n":"")
       +"👤 "+name+(phone?" · 📱 "+phone:"")+"\n\n"
       +"*Mi pedido:*\n"+lineas+"\n\n"
-      +"💰 *Total: $"+fmt(total)+"*"
+      +(deliveryCost>0?"\n🛵 *Envío: $"+fmt(deliveryCost)+"*":"")+"\n💰 *Total con envío: $"+fmt(totalConEnvio)+"*"
       +(nota?"\n📝 "+nota:"");
     window.open("https://wa.me/"+local.whatsapp_vitrina_numero+"?text="+encodeURIComponent(msg),"_blank");
     setSaving(false);
