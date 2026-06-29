@@ -5880,7 +5880,6 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
         nota:  o.nota||null,
       });
     }
-    }
   };
 
   const newCount  = orders.filter(o=>o.status==="nuevo").length;
