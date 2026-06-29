@@ -1045,7 +1045,7 @@ function WAOrderFlow({local, prods, cats, tipo, onClose}) {
       } catch(e){ console.warn("map err",e); }
     })();
     return ()=>{ if(map) try{map.remove();}catch(_){} };
-  },[step===3, direc, direcPos]);
+  },[step===3, direc, direcPos, !!zoneInfo]);
 
   const activeCats = cats.filter(c=>c.activa!==false);
   const catProds   = prods.filter(p=>p.cat===activeCat&&(p.active||p.active==null));
@@ -1400,7 +1400,7 @@ function WAOrderFlow({local, prods, cats, tipo, onClose}) {
               padding:14,fontFamily:"'Outfit',sans-serif",fontSize:14,fontWeight:600,cursor:"pointer"}}>
               ← Atrás
             </button>
-            <button onClick={()=>setStep(3)} disabled={!canGoStep3}
+            <button onClick={()=>{ setStep(3); if(tipo==="delivery"&&direc.trim()&&!zoneInfo&&local.delivery_config?.enabled&&local.delivery_config?.lat) checkZone(direc); }} disabled={!canGoStep3}
               style={{flex:2,background:canGoStep3?"#25D366":"rgba(255,255,255,.08)",
                 color:canGoStep3?"#fff":"rgba(255,255,255,.25)",border:"none",
                 borderRadius:12,padding:14,fontFamily:"'Outfit',sans-serif",
