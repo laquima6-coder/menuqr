@@ -998,7 +998,7 @@ function WAOrderFlow({local, prods, cats, tipo, onClose}) {
         if(direcPos?.lat) {
           cPos = {lat: direcPos.lat, lon: direcPos.lon};
         } else {
-          const geocodeUrl = `https://api.tomtom.com/search/2/geocode/${encodeURIComponent(direc)}.json?key=${TOMTOM_KEY}&limit=1&countrySet=AR`;
+          const geocodeUrl = `https://api.tomtom.com/search/2/geocode/${encodeURIComponent(direc)}.json?key=${TOMTOM_KEY}&limit=1&countrySet=AR&lat=${local.delivery_config.lat}&lon=${local.delivery_config.lng}`;
           const geocRes = await fetch(geocodeUrl);
           const geocData = await geocRes.json();
           cPos = geocData?.results?.[0]?.position;
@@ -5462,7 +5462,7 @@ export async function checkDeliveryZone(customerAddress, local, knownPos=null) {
   try {
     let pos = knownPos ? {lat: knownPos.lat, lon: knownPos.lon} : null;
     if (!pos) {
-      const geocodeUrl = `https://api.tomtom.com/search/2/geocode/${encodeURIComponent(customerAddress)}.json?key=${TOMTOM_KEY}&limit=1&countrySet=AR`;
+      const geocodeUrl = `https://api.tomtom.com/search/2/geocode/${encodeURIComponent(customerAddress)}.json?key=${TOMTOM_KEY}&limit=1&countrySet=AR&lat=${cfg.lat}&lon=${cfg.lng}`;
       const res = await fetch(geocodeUrl);
       const data = await res.json();
       pos = data?.results?.[0]?.position;
