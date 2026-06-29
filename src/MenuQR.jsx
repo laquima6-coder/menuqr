@@ -5880,12 +5880,6 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
         nota:  o.nota||null,
       });
     }
-    // WhatsApp al restaurante cuando el pedido está listo para entregar
-    if(next==="listo" && local.whatsapp) {
-      const mesa = o.table || "Mostrador";
-      const items = (o.items||[]).map(i=>`• ${i.qty}x ${i.name}`).join("\n");
-      const msg = `✅ *Pedido listo para entregar*\n📍 Mesa ${mesa}\n${items}\n💰 Total: $${fmt(o.total)}`;
-      window.open(`https://wa.me/${local.whatsapp}?text=${encodeURIComponent(msg)}`,"_blank");
     }
   };
 
