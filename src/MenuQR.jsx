@@ -952,20 +952,30 @@ function WAOrderFlow({local, prods, cats, tipo, onClose}) {
         const url = `https://api.tomtom.com/search/2/search/${encodeURIComponent(val)}.json?key=${TOMTOM_KEY}&limit=5&countrySet=${country}`;
         const res = await fetch(url);
         const data = await res.json();
-        const results = (data.results||[]).map(r=>r.address?.freeformAddress).filter(Boolean);
-        setDirecSugg([...new Set(results)].slice(0,5));
+        const suggestions = (data.results||[]).filter(r=>r.address?.freeformAddress).map(r=>({
+          label: r.address.freeformAddress,
+          lat: r.position?.lat, lon: r.position?.lon,
+        }));
+        const seen = new Set();
+        const unique = suggestions.filter(s=>{ if(seen.has(s.label)) return false; seen.add(s.label); return true; }).slice(0,5);
+        setDirecSugg(unique);
       } catch { setDirecSugg([]); }
       finally { setSuggLoad(false); }
     }, 400);
   };
 
   // Check delivery zone when address is selected
-  const checkZone = async (address) => {
-    setDirec(address);
+  const [direcPos, setDirecPos] = React.useState(null); // {lat, lon} from autocomplete
+  const checkZone = async (sugg) => {
+    // sugg can be {label, lat, lon} object or plain string (saved address)
+    const label = typeof sugg === "string" ? sugg : sugg.label;
+    const pos   = typeof sugg === "object" && sugg.lat ? {lat: sugg.lat, lon: sugg.lon} : null;
+    setDirec(label);
+    setDirecPos(pos);
     setDirecSugg([]);
     if(!local.delivery_config?.enabled||!local.delivery_config?.lat) return;
     setZoneLoad(true);
-    const result = await checkDeliveryZone(address, local);
+    const result = await checkDeliveryZone(label, local, pos);
     setZoneInfo(result);
     setZoneLoad(false);
   };
@@ -980,10 +990,15 @@ function WAOrderFlow({local, prods, cats, tipo, onClose}) {
           import("@tomtom-international/web-sdk-maps"),
           import("@tomtom-international/web-sdk-services"),
         ]);
-        const geocodeUrl = `https://api.tomtom.com/search/2/geocode/${encodeURIComponent(direc)}.json?key=${TOMTOM_KEY}&limit=1`;
-        const geocRes = await fetch(geocodeUrl);
-        const geocData = await geocRes.json();
-        const cPos = geocData?.results?.[0]?.position;
+        let cPos = null;
+        if(direcPos?.lat) {
+          cPos = {lat: direcPos.lat, lon: direcPos.lon};
+        } else {
+          const geocodeUrl = `https://api.tomtom.com/search/2/geocode/${encodeURIComponent(direc)}.json?key=${TOMTOM_KEY}&limit=1&countrySet=AR`;
+          const geocRes = await fetch(geocodeUrl);
+          const geocData = await geocRes.json();
+          cPos = geocData?.results?.[0]?.position;
+        }
         if(!cPos) return;
         const rLat = local.delivery_config.lat;
         const rLng = local.delivery_config.lng;
@@ -1026,7 +1041,7 @@ function WAOrderFlow({local, prods, cats, tipo, onClose}) {
       } catch(e){ console.warn("map err",e); }
     })();
     return ()=>{ if(map) try{map.remove();}catch(_){} };
-  },[step===3, direc]);
+  },[step===3, direc, direcPos]);
 
   const activeCats = cats.filter(c=>c.activa!==false);
   const catProds   = prods.filter(p=>p.cat===activeCat&&(p.active||p.active==null));
@@ -1264,7 +1279,7 @@ function WAOrderFlow({local, prods, cats, tipo, onClose}) {
                       borderBottom:i<direcSugg.length-1?"1px solid rgba(255,255,255,.07)":"none",
                       padding:"10px 14px",color:"var(--cbri)",fontSize:13,
                       fontFamily:"'DM Sans',sans-serif",cursor:"pointer"}}>
-                      📍 {s}
+                      📍 {typeof s==="string"?s:s.label}
                     </button>
                   ))}
                 </div>
@@ -5436,15 +5451,18 @@ function DeliveryTab({ local, setLocal, toast }) {
    HELPERS — Delivery check para el cliente
    Usada en ClientApp al elegir delivery
 ══════════════════════════════════════════ */
-export async function checkDeliveryZone(customerAddress, local) {
+export async function checkDeliveryZone(customerAddress, local, knownPos=null) {
   const cfg = local.delivery_config;
   if (!cfg || !cfg.enabled || !cfg.lat || !cfg.lng) return null;
   if (!TOMTOM_KEY) return null;
   try {
-    const geocodeUrl = `https://api.tomtom.com/search/2/geocode/${encodeURIComponent(customerAddress)}.json?key=${TOMTOM_KEY}&limit=1`;
-    const res = await fetch(geocodeUrl);
-    const data = await res.json();
-    const pos = data?.results?.[0]?.position;
+    let pos = knownPos ? {lat: knownPos.lat, lon: knownPos.lon} : null;
+    if (!pos) {
+      const geocodeUrl = `https://api.tomtom.com/search/2/geocode/${encodeURIComponent(customerAddress)}.json?key=${TOMTOM_KEY}&limit=1&countrySet=AR`;
+      const res = await fetch(geocodeUrl);
+      const data = await res.json();
+      pos = data?.results?.[0]?.position;
+    }
     if (!pos) return null;
     // Haversine distance in km
     const R = 6371;
