@@ -1081,11 +1081,14 @@ function WAOrderFlow({local, prods, cats, tipo, onClose}) {
   const sendWA = async () => {
     if(tipo==="delivery") saveAddress();
     setSaving(true);
+    const deliveryCost = (tipo==="delivery"&&zoneInfo&&!zoneInfo.fuera) ? (zoneInfo.zona.precio||0) : 0;
+    const totalConEnvio = total + deliveryCost;
     if(supabase && local.restauranteId) {
       try {
         const pedidoId = crypto.randomUUID();
         const notaStr = ["PEDIDO WA",tipo==="delivery"?"DELIVERY":"RETIRO",
           tipo==="delivery"&&direc?"Dir:"+direc:null,
+          tipo==="delivery"&&zoneInfo&&!zoneInfo.fuera?`Zona:${zoneInfo.zona.nombre}|Envío:$${zoneInfo.zona.precio}|~${zoneInfo.zona.minutos}min|Dist:${zoneInfo.distKm}km`:null,
           "Cliente:"+name, phone?"Tel:"+phone:null, nota?"Nota:"+nota:null
         ].filter(Boolean).join(" | ");
         await supabase.from("pedidos").insert({
@@ -1098,8 +1101,6 @@ function WAOrderFlow({local, prods, cats, tipo, onClose}) {
         );
       } catch(e){ console.warn("wa order err",e); }
     }
-    const deliveryCost = (tipo==="delivery"&&zoneInfo&&!zoneInfo.fuera) ? (zoneInfo.zona.precio||0) : 0;
-    const totalConEnvio = total + deliveryCost;
     const lineas = cartItems.map(i=>"• "+i.qty+"x "+i.name+" — $"+fmt(i.price*i.qty)).join("\n");
     const msg = "*Hola "+local.nombre+"! Quiero hacer un pedido* 🍽️\n\n"
       +(tipo==="delivery"?"📍 *DELIVERY* a: "+direc+(entreCalles?" (entre "+entreCalles+")":""):"🏪 *RETIRO en el local*")+"\n"
@@ -1305,7 +1306,7 @@ function WAOrderFlow({local, prods, cats, tipo, onClose}) {
             {zoneInfo&&zoneInfo.fuera&&(
               <div style={{background:"rgba(255,68,68,.08)",border:"1px solid rgba(255,68,68,.25)",borderRadius:10,padding:"10px 14px",marginBottom:10}}>
                 <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:"#FF4444",margin:0}}>
-                  ⚠️ Dirección fuera de la zona de delivery ({zoneInfo.distKm} km)
+                  ⚠️ Esta dirección está fuera de nuestra zona de delivery
                 </p>
               </div>
             )}
@@ -5406,14 +5407,16 @@ export async function checkDeliveryZone(customerAddress, local, knownPos=null) {
       pos = data?.results?.[0]?.position;
     }
     if (!pos) return null;
-    // Haversine distance in km
-    const R = 6371;
-    const dLat = (pos.lat - cfg.lat) * Math.PI / 180;
-    const dLon = (pos.lon - cfg.lng) * Math.PI / 180;
-    const a = Math.sin(dLat/2)**2 + Math.cos(cfg.lat*Math.PI/180)*Math.cos(pos.lat*Math.PI/180)*Math.sin(dLon/2)**2;
-    const distKm = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    const zona = cfg.zonas.slice().sort((a,b)=>a.radio_km-b.radio_km).find(z => distKm <= z.radio_km);
-    if (!zona) return { fuera: true, distKm };
+    // Use TomTom routing API for actual road distance (not straight line)
+    const routeUrl = `https://api.tomtom.com/routing/1/calculateRoute/${cfg.lat},${cfg.lng}:${pos.lat},${pos.lon}/json?key=${TOMTOM_KEY}&routeType=fastest&traffic=false`;
+    const routeRes = await fetch(routeUrl);
+    const routeData = await routeRes.json();
+    const lengthInMeters = routeData?.routes?.[0]?.summary?.lengthInMeters;
+    if (lengthInMeters == null) return null;
+    const distKm = lengthInMeters / 1000;
+    const zonasOrdenadas = cfg.zonas.slice().sort((a, b) => a.radio_km - b.radio_km);
+    const zona = zonasOrdenadas.find(z => distKm <= z.radio_km);
+    if (!zona) return { fuera: true, distKm: Math.round(distKm * 10) / 10 };
     return { zona, distKm: Math.round(distKm * 10) / 10 };
   } catch(e) { return null; }
 }
