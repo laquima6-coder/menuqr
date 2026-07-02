@@ -1477,8 +1477,8 @@ function WAOrderFlow({local, prods, cats, tipo, onClose}) {
 
 function VitrinaInfo({local, cats, prods}) {
 const [mesasData, setMesasData] = React.useState({libres:0, ocupadas:0, total:0, hayMesas:false});
-const [waFlow, setWaFlow] = React.useState(null);
-const [activeCat, setActiveCat] = React.useState("TODO");
+const [copied, setCopied] = React.useState(false);
+const [showDescuento, setShowDescuento] = React.useState(false);
 
 React.useEffect(()=>{
   if(!supabase||!local.restauranteId) return;
@@ -1500,180 +1500,197 @@ React.useEffect(()=>{
   return ()=>supabase.removeChannel(ch);
 },[]);
 
-const pct = mesasData.total > 0 ? Math.round((mesasData.ocupadas/mesasData.total)*100) : 0;
-const catsFiltradas = [{id:"TODO", label:"Todo", icon:""}].concat(cats.filter(c=>c.activa!==false));
-const prodsVisibles = prods.filter(p=>p.active!==false);
-const prodsFiltrados = activeCat==="TODO" ? prodsVisibles : prodsVisibles.filter(p=>p.cat===activeCat);
+const waNum = local.phone || local.wpp || local.whatsapp || local.telefono || "";
+const waNumClean = waNum.replace(/\D/g,"");
+
+const handleCopyWA = () => {
+  if(!waNum) return;
+  navigator.clipboard.writeText(waNum).then(()=>{
+    setCopied(true);
+    setTimeout(()=>setCopied(false), 2500);
+  }).catch(()=>{
+    // fallback for older browsers
+    const el = document.createElement("textarea");
+    el.value = waNum;
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand("copy");
+    document.body.removeChild(el);
+    setCopied(true);
+    setTimeout(()=>setCopied(false), 2500);
+  });
+};
+
+const pasos = [
+  {ico:"📱", n:"1", t:"Escaneás el QR de tu mesa", d:"Cada mesa tiene su propio código QR único"},
+  {ico:"🍽️", n:"2", t:"Elegís desde la carta digital", d:"Navegá el menú completo con fotos y precios"},
+  {ico:"👨‍🍳", n:"3", t:"El pedido entra directo a cocina", d:"Sin intermediarios — el mozo lo ve al instante"},
+  {ico:"🔄", n:"4", t:"Seguís el estado en tiempo real", d:"\"En preparación\" → \"Listo para entregar\""},
+  {ico:"🤝", n:"5", t:"El mozo te lo trae a la mesa", d:"Sentate y disfrutá — nosotros nos encargamos"},
+];
 
 return (
-  <div style={{background:"#020F0B",minHeight:"100vh",fontFamily:"system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif"}}>
+  <div style={{background:"#FAFAFA",minHeight:"100vh",fontFamily:"system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif"}}>
 
     {/* HERO */}
-    <div style={{background:"linear-gradient(180deg,#0A2A20 0%,#020F0B 100%)",padding:"36px 20px 28px",textAlign:"center"}}>
+    <div style={{background:"#111",padding:"36px 20px 32px",textAlign:"center"}}>
       {local.logo_url ? (
-        <img src={local.logo_url} alt="logo" style={{width:80,height:80,borderRadius:20,objectFit:"cover",marginBottom:16,border:"2px solid rgba(201,168,76,.3)",display:"block",margin:"0 auto 16px"}}/>
+        <img src={local.logo_url} alt="logo" style={{width:88,height:88,borderRadius:22,objectFit:"cover",border:"3px solid rgba(201,168,76,.35)",display:"block",margin:"0 auto 16px"}}/>
       ) : (
-        <div style={{width:80,height:80,borderRadius:20,background:"linear-gradient(135deg,#C9A84C,#8A6820)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:36,margin:"0 auto 16px"}}>🍽️</div>
+        <div style={{width:88,height:88,borderRadius:22,background:"linear-gradient(135deg,#C9A84C,#8A6820)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:40,margin:"0 auto 16px"}}>🍽️</div>
       )}
-      <h1 style={{margin:"0 0 8px",fontSize:28,fontWeight:800,color:"#fff",letterSpacing:"-.5px",lineHeight:1.1}}>{local.nombre}</h1>
+      <h1 style={{margin:"0 0 8px",fontSize:30,fontWeight:900,color:"#fff",letterSpacing:"-.5px",lineHeight:1.1}}>{local.nombre}</h1>
       {local.descripcion && (
         <p style={{margin:"0 0 16px",fontSize:14,color:"rgba(255,255,255,.55)",lineHeight:1.5,maxWidth:320,marginLeft:"auto",marginRight:"auto"}}>{local.descripcion}</p>
       )}
-      <div style={{display:"flex",flexWrap:"wrap",gap:8,justifyContent:"center"}}>
-        {local.horarios && Object.values(local.horarios||{}).some(d=>d.abierto) && (
-          <div style={{display:"flex",alignItems:"center",gap:5,background:"rgba(255,255,255,.07)",border:"1px solid rgba(255,255,255,.1)",borderRadius:20,padding:"5px 12px",fontSize:12,color:"rgba(255,255,255,.65)"}}>🕐 Horarios cargados</div>
-        )}
-        {local.direccion && (
-          <div style={{display:"flex",alignItems:"center",gap:5,background:"rgba(255,255,255,.07)",border:"1px solid rgba(255,255,255,.1)",borderRadius:20,padding:"5px 12px",fontSize:12,color:"rgba(255,255,255,.65)"}}>📍 {local.direccion}</div>
-        )}
-        {local.telefono && (
-          <div style={{display:"flex",alignItems:"center",gap:5,background:"rgba(255,255,255,.07)",border:"1px solid rgba(255,255,255,.1)",borderRadius:20,padding:"5px 12px",fontSize:12,color:"rgba(255,255,255,.65)"}}>📞 {local.telefono}</div>
-        )}
+      <div style={{display:"inline-flex",alignItems:"center",gap:6,background:"rgba(201,168,76,.15)",border:"1px solid rgba(201,168,76,.3)",borderRadius:20,padding:"6px 14px"}}>
+        <span style={{fontSize:16}}>👋</span>
+        <span style={{fontSize:13,fontWeight:600,color:"#C9A84C"}}>Bienvenido al local</span>
       </div>
     </div>
 
-    <div style={{padding:"0 16px 120px",display:"flex",flexDirection:"column",gap:12}}>
+    <div style={{padding:"20px 16px 48px",display:"flex",flexDirection:"column",gap:16}}>
 
-    {/* EN VIVO — mesas */}
-    {mesasData.hayMesas && (
-      <div style={{background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.06)",borderRadius:16,padding:"14px 16px"}}>
-        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:14}}>
-          <div style={{width:8,height:8,borderRadius:"50%",background:"#00FF88",boxShadow:"0 0 0 3px rgba(0,255,136,.2)",animation:"vitrinaPulse 1.5s ease-in-out infinite"}}/>
-          <span style={{fontSize:11,fontWeight:700,color:"#00FF88",letterSpacing:2}}>EN VIVO</span>
-          <span style={{fontSize:11,color:"rgba(255,255,255,.3)",marginLeft:4}}>· Mesas disponibles</span>
-        </div>
-        <div style={{display:"flex",gap:8,marginBottom:10}}>
-          <div style={{flex:1,background:"rgba(0,255,136,.06)",border:"1px solid rgba(0,255,136,.15)",borderRadius:12,padding:"10px",textAlign:"center"}}>
-            <div style={{fontSize:28,fontWeight:800,color:"#00FF88",lineHeight:1}}>{mesasData.libres}</div>
-            <div style={{fontSize:10,color:"rgba(0,255,136,.55)",marginTop:4,fontWeight:700,letterSpacing:1}}>LIBRES</div>
-          </div>
-          <div style={{flex:1,background:"rgba(255,176,32,.06)",border:"1px solid rgba(255,176,32,.15)",borderRadius:12,padding:"10px",textAlign:"center"}}>
-            <div style={{fontSize:28,fontWeight:800,color:"#FFB020",lineHeight:1}}>{mesasData.ocupadas}</div>
-            <div style={{fontSize:10,color:"rgba(255,176,32,.55)",marginTop:4,fontWeight:700,letterSpacing:1}}>OCUPADAS</div>
-          </div>
-          <div style={{flex:1,background:"rgba(201,168,76,.06)",border:"1px solid rgba(201,168,76,.15)",borderRadius:12,padding:"10px",textAlign:"center"}}>
-            <div style={{fontSize:28,fontWeight:800,color:"#C9A84C",lineHeight:1}}>{pct}%</div>
-            <div style={{fontSize:10,color:"rgba(201,168,76,.55)",marginTop:4,fontWeight:700,letterSpacing:1}}>OCUPACIÓN</div>
-          </div>
-        </div>
-        <div style={{height:4,background:"rgba(255,255,255,.05)",borderRadius:2,overflow:"hidden"}}>
-          <div style={{height:"100%",width:`${pct}%`,background:"linear-gradient(90deg,#00FF88,#FFB020)",borderRadius:2,transition:"width .6s ease"}}/>
-        </div>
+    {/* MESAS DISPONIBLES */}
+    <div style={{background:"#1A1A1A",borderRadius:18,padding:"18px 18px 16px"}}>
+      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16}}>
+        <div style={{width:8,height:8,borderRadius:"50%",background:"#00FF88",boxShadow:"0 0 0 3px rgba(0,255,136,.2)",animation:"vitrinaPulse 1.5s ease-in-out infinite",flexShrink:0}}/>
+        <span style={{fontSize:11,fontWeight:800,color:"#00FF88",letterSpacing:2}}>EN VIVO</span>
+        <span style={{fontSize:11,color:"rgba(255,255,255,.35)",marginLeft:2}}>· Mesas del local</span>
       </div>
-    )}
-
-    {/* DESCUENTO 10% PRIMERA VISITA */}
-    {!!local.feat_primera_visita && (
-      <div style={{background:"linear-gradient(135deg,rgba(201,168,76,.12),rgba(201,168,76,.04))",border:"1px solid rgba(201,168,76,.3)",borderRadius:16,padding:"16px"}}>
-        <div style={{display:"flex",alignItems:"center",gap:14}}>
-          <div style={{width:52,height:52,borderRadius:14,background:"linear-gradient(135deg,#C9A84C,#8A6820)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,flexShrink:0}}>🎁</div>
-          <div style={{flex:1}}>
-            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
-              <span style={{fontSize:28,fontWeight:900,color:"#C9A84C",lineHeight:1}}>10%</span>
-              <div style={{background:"rgba(201,168,76,.2)",border:"1px solid rgba(201,168,76,.4)",borderRadius:6,padding:"2px 8px",fontSize:9,fontWeight:700,color:"#C9A84C",letterSpacing:1}}>DESCUENTO</div>
+      {mesasData.hayMesas ? (
+        <>
+          <div style={{display:"flex",gap:8,marginBottom:12}}>
+            <div style={{flex:1,background:"rgba(0,255,136,.07)",border:"1px solid rgba(0,255,136,.18)",borderRadius:12,padding:"12px 10px",textAlign:"center"}}>
+              <div style={{fontSize:32,fontWeight:900,color:"#00FF88",lineHeight:1}}>{mesasData.libres}</div>
+              <div style={{fontSize:10,color:"rgba(0,255,136,.6)",marginTop:4,fontWeight:700,letterSpacing:1}}>LIBRES</div>
             </div>
-            <div style={{fontSize:14,fontWeight:700,color:"#fff",lineHeight:1.2}}>Primera visita</div>
-            <div style={{fontSize:12,color:"rgba(255,255,255,.4)",marginTop:2}}>Solo en tu primer pedido del día</div>
+            <div style={{flex:1,background:"rgba(255,176,32,.07)",border:"1px solid rgba(255,176,32,.18)",borderRadius:12,padding:"12px 10px",textAlign:"center"}}>
+              <div style={{fontSize:32,fontWeight:900,color:"#FFB020",lineHeight:1}}>{mesasData.ocupadas}</div>
+              <div style={{fontSize:10,color:"rgba(255,176,32,.6)",marginTop:4,fontWeight:700,letterSpacing:1}}>OCUPADAS</div>
+            </div>
+            <div style={{flex:1,background:"rgba(201,168,76,.07)",border:"1px solid rgba(201,168,76,.18)",borderRadius:12,padding:"12px 10px",textAlign:"center"}}>
+              <div style={{fontSize:32,fontWeight:900,color:"#C9A84C",lineHeight:1}}>{mesasData.total}</div>
+              <div style={{fontSize:10,color:"rgba(201,168,76,.6)",marginTop:4,fontWeight:700,letterSpacing:1}}>TOTAL</div>
+            </div>
           </div>
+          <div style={{height:5,background:"rgba(255,255,255,.06)",borderRadius:3,overflow:"hidden"}}>
+            <div style={{height:"100%",width:`${mesasData.total>0?Math.round((mesasData.ocupadas/mesasData.total)*100):0}%`,background:"linear-gradient(90deg,#00FF88,#FFB020)",borderRadius:3,transition:"width .6s ease"}}/>
+          </div>
+          <div style={{fontSize:11,color:"rgba(255,255,255,.3)",textAlign:"center",marginTop:8}}>{mesasData.total>0?Math.round((mesasData.libres/mesasData.total)*100):0}% de las mesas están libres ahora</div>
+        </>
+      ) : (
+        <div style={{textAlign:"center",padding:"8px 0 4px"}}>
+          <div style={{fontSize:28,marginBottom:8}}>🪑</div>
+          <div style={{fontSize:15,fontWeight:700,color:"rgba(255,255,255,.75)"}}>Mesas disponibles</div>
+          <div style={{fontSize:13,color:"rgba(255,255,255,.38)",marginTop:4}}>Consultá al mozo para saber qué mesa está libre</div>
         </div>
-      </div>
-    )}
+      )}
+    </div>
 
     {/* CÓMO FUNCIONA */}
-    <div style={{background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.06)",borderRadius:16,padding:"14px 16px"}}>
-      <div style={{fontSize:11,fontWeight:700,color:"rgba(255,255,255,.28)",letterSpacing:2,marginBottom:14}}>CÓMO FUNCIONA</div>
-      {[
-        {ico:"📱",t:"Elegí tus productos",d:"Directamente desde esta carta digital"},
-        {ico:"💬",t:"Confirmá por WhatsApp",d:"Enviá tu pedido con un solo toque"},
-        {ico:"🔄",t:"Seguí tu pedido en vivo",d:"Monitoreá el estado en tiempo real desde acá"},
-      ].map((s,i)=>(
-        <div key={i} style={{display:"flex",alignItems:"flex-start",gap:12,marginBottom:i<2?12:0}}>
-          <div style={{width:36,height:36,borderRadius:10,background:"rgba(201,168,76,.1)",border:"1px solid rgba(201,168,76,.18)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>{s.ico}</div>
-          <div style={{paddingTop:3}}>
-            <div style={{fontSize:14,fontWeight:700,color:"rgba(255,255,255,.9)",lineHeight:1.2}}>{s.t}</div>
-            <div style={{fontSize:12,color:"rgba(255,255,255,.38)",marginTop:3}}>{s.d}</div>
+    <div style={{background:"#1A1A1A",borderRadius:18,padding:"18px 18px 16px"}}>
+      <div style={{fontSize:11,fontWeight:800,color:"rgba(255,255,255,.28)",letterSpacing:2,marginBottom:18}}>CÓMO FUNCIONA</div>
+      <div style={{display:"flex",flexDirection:"column",gap:0}}>
+        {pasos.map((s,i)=>(
+          <div key={i} style={{display:"flex",alignItems:"flex-start",gap:14,paddingBottom:i<pasos.length-1?16:0,borderBottom:i<pasos.length-1?"1px solid rgba(255,255,255,.05)":"none",marginBottom:i<pasos.length-1?16:0}}>
+            <div style={{width:38,height:38,borderRadius:11,background:"rgba(201,168,76,.12)",border:"1px solid rgba(201,168,76,.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:19,flexShrink:0}}>{s.ico}</div>
+            <div style={{flex:1,paddingTop:2}}>
+              <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:3}}>
+                <span style={{fontSize:9,fontWeight:800,color:"#C9A84C",background:"rgba(201,168,76,.15)",border:"1px solid rgba(201,168,76,.25)",borderRadius:5,padding:"1px 6px",letterSpacing:.5}}>PASO {s.n}</span>
+              </div>
+              <div style={{fontSize:14,fontWeight:700,color:"rgba(255,255,255,.9)",lineHeight:1.25}}>{s.t}</div>
+              <div style={{fontSize:12,color:"rgba(255,255,255,.38)",marginTop:3,lineHeight:1.4}}>{s.d}</div>
+            </div>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
 
-    {/* LA CARTA */}
-    {prodsVisibles.length > 0 && (
-      <div>
-        <div style={{fontSize:11,fontWeight:700,color:"rgba(255,255,255,.28)",letterSpacing:2,marginBottom:12,paddingLeft:2}}>LA CARTA</div>
-        <div style={{display:"flex",gap:8,overflowX:"auto",paddingBottom:12,scrollbarWidth:"none",msOverflowStyle:"none",WebkitOverflowScrolling:"touch"}}>
-          {catsFiltradas.map(c=>(
-            <button key={c.id} onClick={()=>setActiveCat(c.id)}
-              style={{flexShrink:0,padding:"7px 14px",borderRadius:20,
-                border:`1px solid ${activeCat===c.id?"rgba(201,168,76,.5)":"rgba(255,255,255,.08)"}`,
-                background:activeCat===c.id?"rgba(201,168,76,.15)":"rgba(255,255,255,.03)",
-                color:activeCat===c.id?"#C9A84C":"rgba(255,255,255,.45)",
-                fontSize:12,fontWeight:600,cursor:"pointer",whiteSpace:"nowrap",outline:"none"}}>
-              {c.icon && c.icon+" "}{c.label}
-            </button>
-          ))}
-        </div>
-        <div style={{display:"flex",flexDirection:"column",gap:8}}>
-          {prodsFiltrados.map(prod=>(
-            <div key={prod.id} style={{background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.06)",borderRadius:14,padding:"12px 14px",display:"flex",gap:12,alignItems:"center"}}>
-              <div style={{width:52,height:52,borderRadius:12,background:"rgba(255,255,255,.05)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:26,flexShrink:0,overflow:"hidden"}}>
-                {prod.foto_url
-                  ? <img src={prod.foto_url} alt={prod.name} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
-                  : (prod.emoji||"🍽️")}
-              </div>
-              <div style={{flex:1,minWidth:0}}>
-                <div style={{fontSize:14,fontWeight:700,color:"#fff",lineHeight:1.2,marginBottom:prod.desc?3:0}}>{prod.name}</div>
-                {prod.desc && (
-                  <div style={{fontSize:12,color:"rgba(255,255,255,.38)",lineHeight:1.4,overflow:"hidden",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical"}}>{prod.desc}</div>
-                )}
-              </div>
-              <div style={{fontSize:15,fontWeight:800,color:"#C9A84C",flexShrink:0,textAlign:"right",whiteSpace:"nowrap"}}>
-                ${typeof prod.price==="number" ? prod.price.toLocaleString("es-AR") : prod.price}
-              </div>
+    {/* DESCUENTO 10% PRIMERA VISITA */}
+    {local.feat_primera_visita !== false && (
+      <div style={{background:"linear-gradient(135deg,#1A1500,#1A1A1A)",border:"2px solid rgba(201,168,76,.35)",borderRadius:18,padding:"20px 18px",position:"relative",overflow:"hidden"}}>
+        <div style={{position:"absolute",top:-20,right:-20,fontSize:80,opacity:.06,pointerEvents:"none",userSelect:"none"}}>🎁</div>
+        <div style={{display:"flex",alignItems:"flex-start",gap:14,marginBottom:16}}>
+          <div style={{width:52,height:52,borderRadius:15,background:"linear-gradient(135deg,#C9A84C,#8A6820)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,flexShrink:0}}>🎁</div>
+          <div style={{flex:1}}>
+            <div style={{display:"flex",alignItems:"baseline",gap:6,marginBottom:4}}>
+              <span style={{fontSize:34,fontWeight:900,color:"#C9A84C",lineHeight:1}}>10%</span>
+              <div style={{background:"rgba(201,168,76,.2)",border:"1px solid rgba(201,168,76,.4)",borderRadius:6,padding:"2px 8px",fontSize:9,fontWeight:800,color:"#C9A84C",letterSpacing:1}}>OFF</div>
             </div>
-          ))}
+            <div style={{fontSize:16,fontWeight:800,color:"#fff",lineHeight:1.2}}>Primera visita</div>
+            <div style={{fontSize:12,color:"rgba(255,255,255,.4)",marginTop:3}}>Descuento exclusivo para clientes nuevos</div>
+          </div>
         </div>
+        <button onClick={()=>setShowDescuento(true)}
+          style={{width:"100%",background:"linear-gradient(135deg,#C9A84C,#8A6820)",border:"none",borderRadius:12,padding:"13px",fontSize:14,fontWeight:800,color:"#fff",cursor:"pointer",letterSpacing:.2}}>
+          🎉 Quiero mi descuento
+        </button>
+      </div>
+    )}
+
+    {/* WHATSAPP CONTACTO */}
+    {!!waNum && (
+      <div style={{background:"#1A1A1A",borderRadius:18,padding:"18px 18px 16px"}}>
+        <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:12}}>
+          <div style={{width:40,height:40,borderRadius:12,background:"rgba(37,211,102,.1)",border:"1px solid rgba(37,211,102,.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>💬</div>
+          <div>
+            <div style={{fontSize:14,fontWeight:700,color:"rgba(255,255,255,.9)",lineHeight:1.2}}>Contacto por WhatsApp</div>
+            <div style={{fontSize:12,color:"rgba(255,255,255,.38)",marginTop:2}}>Para delivery o retiro</div>
+          </div>
+        </div>
+        <p style={{margin:"0 0 14px",fontSize:13,color:"rgba(255,255,255,.5)",lineHeight:1.5}}>
+          Para delivery o retiro, copiá nuestro número y escribinos por WhatsApp.
+        </p>
+        <div style={{background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.08)",borderRadius:12,padding:"12px 14px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,marginBottom:12}}>
+          <span style={{fontSize:17,fontWeight:700,color:"#fff",letterSpacing:.5}}>{waNum}</span>
+          <span style={{fontSize:11,color:"rgba(255,255,255,.3)"}}>WhatsApp</span>
+        </div>
+        <button onClick={handleCopyWA}
+          style={{width:"100%",background:copied?"rgba(37,211,102,.15)":"rgba(37,211,102,.1)",border:`1px solid ${copied?"rgba(37,211,102,.5)":"rgba(37,211,102,.2)"}`,borderRadius:12,padding:"13px",fontSize:14,fontWeight:700,color:copied?"#25D366":"rgba(255,255,255,.75)",cursor:"pointer",transition:"all .2s",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+          {copied ? "✅ ¡Número copiado!" : "📋 Copiar número"}
+        </button>
       </div>
     )}
 
     </div>
 
-    {/* CTAs FIJOS AL PIE */}
-    {(local.whatsapp_delivery||local.whatsapp_retiro||local.whatsapp) && (
-      <div style={{position:"fixed",bottom:0,left:0,right:0,background:"linear-gradient(0deg,#020F0B 65%,transparent 100%)",padding:"20px 16px 28px",display:"flex",gap:10,zIndex:100}}>
-        {!!local.whatsapp_delivery && (
-          <button onClick={()=>setWaFlow("delivery")}
-            style={{flex:1,background:"#25D366",border:"none",borderRadius:14,padding:"15px",fontSize:14,fontWeight:800,color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-            🛵 Pedir con delivery
+    {/* MODAL DESCUENTO */}
+    {showDescuento && (
+      <div onClick={()=>setShowDescuento(false)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,.65)",zIndex:200,display:"flex",alignItems:"flex-end",justifyContent:"center"}}>
+        <div onClick={e=>e.stopPropagation()} style={{background:"#1A1A1A",borderRadius:"20px 20px 0 0",padding:"28px 24px 40px",width:"100%",maxWidth:480}}>
+          <div style={{textAlign:"center",marginBottom:24}}>
+            <div style={{fontSize:52,marginBottom:12}}>🎁</div>
+            <h2 style={{margin:"0 0 8px",fontSize:26,fontWeight:900,color:"#C9A84C"}}>¡Tu 10% OFF!</h2>
+            <p style={{margin:0,fontSize:14,color:"rgba(255,255,255,.5)",lineHeight:1.5}}>Descuento exclusivo para tu primera visita</p>
+          </div>
+          <div style={{background:"rgba(201,168,76,.07)",border:"1px solid rgba(201,168,76,.2)",borderRadius:14,padding:"18px",marginBottom:20}}>
+            <div style={{fontSize:12,fontWeight:700,color:"#C9A84C",letterSpacing:1,marginBottom:12}}>CÓMO RECLAMARLO</div>
+            {[
+              "Pedí tu comida normalmente desde la carta",
+              "Cuando llegue la cuenta, avisale al mozo que es tu primera visita",
+              "Mostrá esta pantalla como comprobante",
+              "¡El mozo aplicará el 10% de descuento en tu cuenta!"
+            ].map((paso,i)=>(
+              <div key={i} style={{display:"flex",alignItems:"flex-start",gap:10,marginBottom:i<3?10:0}}>
+                <div style={{width:22,height:22,borderRadius:6,background:"rgba(201,168,76,.2)",border:"1px solid rgba(201,168,76,.3)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:800,color:"#C9A84C",flexShrink:0,marginTop:1}}>{i+1}</div>
+                <span style={{fontSize:13,color:"rgba(255,255,255,.7)",lineHeight:1.45,paddingTop:2}}>{paso}</span>
+              </div>
+            ))}
+          </div>
+          <button onClick={()=>setShowDescuento(false)}
+            style={{width:"100%",background:"rgba(255,255,255,.08)",border:"1px solid rgba(255,255,255,.12)",borderRadius:12,padding:"14px",fontSize:14,fontWeight:700,color:"rgba(255,255,255,.7)",cursor:"pointer"}}>
+            Cerrar
           </button>
-        )}
-        {!!local.whatsapp_retiro && (
-          <button onClick={()=>setWaFlow("retiro")}
-            style={{flex:1,background:"rgba(255,255,255,.1)",border:"1px solid rgba(255,255,255,.15)",borderRadius:14,padding:"15px",fontSize:14,fontWeight:800,color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-            🏪 Retirar en local
-          </button>
-        )}
-        {!local.whatsapp_delivery && !local.whatsapp_retiro && local.whatsapp && (
-          <a href={"https://wa.me/"+local.whatsapp.replace(/\D/g,"")} target="_blank" rel="noreferrer"
-            style={{flex:1,background:"#25D366",border:"none",borderRadius:14,padding:"15px",fontSize:14,fontWeight:800,color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,textDecoration:"none"}}>
-            💬 Consultanos por WhatsApp
-          </a>
-        )}
+        </div>
       </div>
     )}
 
     <style>{`@keyframes vitrinaPulse{0%,100%{opacity:1;box-shadow:0 0 0 3px rgba(0,255,136,.2)}50%{opacity:.5;box-shadow:0 0 0 6px rgba(0,255,136,.05)}}`}</style>
-
-    {waFlow && (
-      <WAOrderFlow
-        local={local} prods={prods} cats={cats}
-        tipo={waFlow}
-        onClose={()=>setWaFlow(null)}
-      />
-    )}
   </div>
 );
 }
+
 
 
 export function ClientApp({onBack, local, cats, prods, vitrina=false, sinPedidos=false}) {
