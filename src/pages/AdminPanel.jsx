@@ -1561,66 +1561,162 @@ function ScreenQR({ local }) {
    SCREEN: CONFIGURACIÓN
 ══════════════════════════════════════════════════════════════ */
 function ScreenConfiguracion({ local, setLocal }) {
+  const PAGOS_OPTS = ["efectivo","tarjeta","mercadopago","transferencia"];
+  const PAGOS_LABELS = {efectivo:"Efectivo",tarjeta:"Tarjeta (déb/créd)",mercadopago:"Mercado Pago",transferencia:"Transferencia"};
+
   const [form, setForm] = React.useState({
-    nombre: local?.nombre || "",
-    slug: local?.slug || "",
-    telefono: local?.telefono || "",
-    direccion: local?.direccion || "",
-    mesas: local?.mesas || 0,
+    nombre:            local?.nombre || "",
+    slug:              local?.slug || "",
+    telefono:          local?.telefono || "",
+    direccion:         local?.direccion || "",
+    mesas:             local?.mesas || 0,
+    wifi_ssid:         local?.wifi_ssid || "",
+    wifi_pass:         local?.wifi_pass || "",
+    metodos_pago:      local?.metodos_pago || ["efectivo","tarjeta","mercadopago"],
+    retiro_habilitado: local?.retiro_habilitado !== false,
+    retiro_horario:    local?.retiro_horario || "Lunes a Domingo 12:00 - 23:00",
   });
   const [saved, setSaved] = React.useState(false);
+  const [saving, setSaving] = React.useState(false);
 
-  function handleSave() {
-    if (setLocal) setLocal((prev) => ({ ...prev, ...form }));
+  function togglePago(p) {
+    setForm(f => ({
+      ...f,
+      metodos_pago: f.metodos_pago.includes(p)
+        ? f.metodos_pago.filter(x => x !== p)
+        : [...f.metodos_pago, p],
+    }));
+  }
+
+  async function handleSave() {
+    setSaving(true);
+    if (setLocal) setLocal(prev => ({ ...prev, ...form }));
+    if (supabase && local?.restauranteId) {
+      await supabase.from("restaurantes").update({
+        nombre:            form.nombre,
+        slug:              form.slug,
+        telefono:          form.telefono,
+        direccion:         form.direccion,
+        mesas:             form.mesas,
+        wifi_ssid:         form.wifi_ssid,
+        wifi_pass:         form.wifi_pass,
+        metodos_pago:      form.metodos_pago,
+        retiro_habilitado: form.retiro_habilitado,
+        retiro_horario:    form.retiro_horario,
+      }).eq("id", local.restauranteId);
+    }
+    setSaving(false);
     setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    setTimeout(() => setSaved(false), 2500);
   }
 
   return (
     <div>
       <div className="ap-sec-hdr"><h2>Configuración del local</h2></div>
-      <div className="ap-grid-2">
+      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+
+        {/* ─ Datos básicos ─ */}
         <div className="ap-card">
-          <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 14, color: "var(--gold)" }}>Datos del restaurante</div>
-          <div className="ap-form-group">
-            <label>Nombre del local</label>
-            <input type="text" value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} placeholder="Mi Restaurante" />
-          </div>
-          <div className="ap-form-group">
-            <label>Slug (URL pública)</label>
-            <input type="text" value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} placeholder="mi-restaurante" />
-          </div>
-          <div className="ap-form-group">
-            <label>Teléfono</label>
-            <input type="text" value={form.telefono} onChange={(e) => setForm({ ...form, telefono: e.target.value })} placeholder="+54 9 11..." />
+          <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 14, color: "var(--gold)" }}>📋 Datos del restaurante</div>
+          <div className="ap-grid-2">
+            <div className="ap-form-group">
+              <label>Nombre del local</label>
+              <input type="text" value={form.nombre} onChange={e => setForm({ ...form, nombre: e.target.value })} placeholder="Mi Restaurante" />
+            </div>
+            <div className="ap-form-group">
+              <label>Slug (URL pública)</label>
+              <input type="text" value={form.slug} onChange={e => setForm({ ...form, slug: e.target.value })} placeholder="mi-restaurante" />
+            </div>
+            <div className="ap-form-group">
+              <label>Teléfono / WhatsApp</label>
+              <input type="text" value={form.telefono} onChange={e => setForm({ ...form, telefono: e.target.value })} placeholder="+54 9 11..." />
+            </div>
+            <div className="ap-form-group">
+              <label>Cantidad de mesas</label>
+              <input type="number" value={form.mesas} onChange={e => setForm({ ...form, mesas: Number(e.target.value) })} min={0} />
+            </div>
           </div>
           <div className="ap-form-group">
             <label>Dirección</label>
-            <input type="text" value={form.direccion} onChange={(e) => setForm({ ...form, direccion: e.target.value })} placeholder="Av. Corrientes 1234" />
+            <input type="text" value={form.direccion} onChange={e => setForm({ ...form, direccion: e.target.value })} placeholder="Av. Corrientes 1234" />
           </div>
-          <div className="ap-form-group">
-            <label>Cantidad de mesas</label>
-            <input type="number" value={form.mesas} onChange={(e) => setForm({ ...form, mesas: Number(e.target.value) })} min={0} />
-          </div>
-          <button className="ap-btn ap-btn-gold" onClick={handleSave} style={{ marginTop: 8 }}>
-            {saved ? "✅ Guardado" : "💾 Guardar cambios"}
-          </button>
         </div>
+
+        {/* ─ WiFi ─ */}
         <div className="ap-card">
-          <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 14, color: "var(--gold)" }}>Información del sistema</div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {[
-              ["Versión", "MenuQR 2.0"],
-              ["Plan", "Pro"],
-              ["Estado", "✅ Activo"],
-            ].map(([k, v]) => (
-              <div key={k} style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: "1px solid var(--border)" }}>
+          <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6, color: "var(--gold)" }}>📶 WiFi del local</div>
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,.35)", marginBottom: 14 }}>
+            Se muestra en el QR vitrina para que los clientes se conecten automáticamente.
+          </div>
+          <div className="ap-grid-2">
+            <div className="ap-form-group">
+              <label>Nombre de la red (SSID)</label>
+              <input type="text" value={form.wifi_ssid} onChange={e => setForm({ ...form, wifi_ssid: e.target.value })} placeholder="MiRed_WiFi" />
+            </div>
+            <div className="ap-form-group">
+              <label>Contraseña</label>
+              <input type="text" value={form.wifi_pass} onChange={e => setForm({ ...form, wifi_pass: e.target.value })} placeholder="contraseña123" />
+            </div>
+          </div>
+        </div>
+
+        {/* ─ Métodos de pago ─ */}
+        <div className="ap-card">
+          <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 14, color: "var(--gold)" }}>💳 Métodos de pago aceptados</div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+            {PAGOS_OPTS.map(p => (
+              <label key={p} style={{ display: "flex", alignItems: "center", gap: 10, background: form.metodos_pago.includes(p) ? "rgba(201,168,76,.1)" : "rgba(255,255,255,.03)", border: `1px solid ${form.metodos_pago.includes(p) ? "rgba(201,168,76,.35)" : "rgba(255,255,255,.07)"}`, borderRadius: 10, padding: "12px 14px", cursor: "pointer", transition: "all .2s" }}>
+                <input type="checkbox" checked={form.metodos_pago.includes(p)} onChange={() => togglePago(p)} style={{ accentColor: "#c9a84c", width: 16, height: 16 }} />
+                <span style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,.8)" }}>{PAGOS_LABELS[p]}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        {/* ─ Retiro en local ─ */}
+        <div className="ap-card">
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "var(--gold)" }}>🏪 Retiro en el local</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontSize: 11, color: form.retiro_habilitado ? "#00FF88" : "rgba(255,255,255,.35)" }}>
+                {form.retiro_habilitado ? "Habilitado" : "Deshabilitado"}
+              </span>
+              <div onClick={() => setForm(f => ({ ...f, retiro_habilitado: !f.retiro_habilitado }))}
+                style={{ width: 40, height: 22, borderRadius: 11, background: form.retiro_habilitado ? "rgba(0,255,136,.3)" : "rgba(255,255,255,.1)", border: `1px solid ${form.retiro_habilitado ? "rgba(0,255,136,.5)" : "rgba(255,255,255,.1)"}`, position: "relative", transition: "all .25s", cursor: "pointer" }}>
+                <div style={{ position: "absolute", top: 3, left: form.retiro_habilitado ? 20 : 3, width: 14, height: 14, borderRadius: "50%", background: form.retiro_habilitado ? "#00FF88" : "rgba(255,255,255,.4)", transition: "left .25s" }} />
+              </div>
+            </div>
+          </div>
+          {form.retiro_habilitado && (
+            <div className="ap-form-group">
+              <label>Horario de retiro</label>
+              <input type="text" value={form.retiro_horario} onChange={e => setForm({ ...form, retiro_horario: e.target.value })} placeholder="Lunes a Domingo 12:00 - 23:00" />
+            </div>
+          )}
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,.3)", marginTop: 8 }}>
+            Se muestra en el QR vitrina como opción de pedido sin costo de envío.
+          </div>
+        </div>
+
+        {/* ─ Guardar ─ */}
+        <button className="ap-btn ap-btn-gold" onClick={handleSave} disabled={saving}
+          style={{ padding: "14px", fontSize: 14, opacity: saving ? .7 : 1 }}>
+          {saving ? "Guardando..." : saved ? "✅ ¡Guardado!" : "💾 Guardar todos los cambios"}
+        </button>
+
+        {/* ─ Info sistema ─ */}
+        <div className="ap-card">
+          <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 14, color: "var(--gold)" }}>ℹ️ Información del sistema</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {[["Versión","MenuQR 2.0"],["Plan","Pro"],["Estado","✅ Activo"]].map(([k,v])=>(
+              <div key={k} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid var(--border)" }}>
                 <span style={{ color: "var(--text2)" }}>{k}</span>
                 <span style={{ fontWeight: 600 }}>{v}</span>
               </div>
             ))}
           </div>
         </div>
+
       </div>
     </div>
   );

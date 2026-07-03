@@ -1480,6 +1480,8 @@ function VitrinaInfo({local, cats, prods}) {
 const [mesasData, setMesasData] = React.useState({libres:0, ocupadas:0, total:0, hayMesas:false});
 const [copied, setCopied] = React.useState(false);
 const [showDescuento, setShowDescuento] = React.useState(false);
+const [showCarta, setShowCarta] = React.useState(false);
+const [cartaCat, setCartaCat] = React.useState(null);
 
 React.useEffect(()=>{
   if(!supabase||!local.restauranteId) return;
@@ -1557,6 +1559,8 @@ return (
       .vit-plate img { transition: transform .4s ease; width:100%; height:100%; object-fit:cover; display:block; }
       .vit-plate:hover img { transform: scale(1.1); }
       .vit-copy-btn:active { transform: scale(.97); }
+      .vit-s6 { animation: vitFadeUp .55s .50s ease both; }
+      .vit-s7 { animation: vitFadeUp .55s .55s ease both; }
     `}</style>
 
     {/* ===== HERO ===== */}
@@ -1608,24 +1612,66 @@ return (
         </div>
       </div>
 
-      {/* ===== GALERÍA DE PLATOS ===== */}
-      <div className="vit-s2">
-        <div style={{display:"flex", alignItems:"center", gap:10, marginBottom:14, paddingLeft:2}}>
-          <div style={{width:3, height:20, borderRadius:2, background:"linear-gradient(to bottom,#e8a020,#c9a84c)", flexShrink:0}}/>
-          <span style={{fontSize:12, fontWeight:800, color:"rgba(255,255,255,.85)", letterSpacing:1.8, textTransform:"uppercase"}}>Nuestros platos</span>
+      {/* ===== CARTA ===== */}
+      <div className="vit-s2" style={{background:"rgba(255,255,255,.03)", border:"1px solid rgba(201,168,76,.25)", borderRadius:24, padding:"20px 18px", display:"flex", alignItems:"center", gap:16}}>
+        <div style={{flex:1}}>
+          <div style={{width:50, height:50, borderRadius:"50%", border:"2px solid rgba(201,168,76,.4)", background:"rgba(201,168,76,.08)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:20, marginBottom:12}}>📖</div>
+          <div style={{fontFamily:"Georgia,serif", fontSize:30, fontWeight:900, color:"#fff", lineHeight:1, marginBottom:4}}>CARTA</div>
+          <div style={{fontSize:9, fontWeight:700, letterSpacing:2, color:"rgba(201,168,76,.8)", marginBottom:14}}>EXPLORÁ NUESTRO MENÚ</div>
+          <button onClick={()=>{setShowCarta(true); setCartaCat(cats&&cats.length>0?cats[0].id:null);}}
+            style={{display:"inline-flex", alignItems:"center", gap:8, background:"linear-gradient(135deg,#b8900a,#c9a020,#e0b830)", color:"#000", fontSize:12, fontWeight:800, letterSpacing:1, padding:"10px 18px", borderRadius:8, border:"none", cursor:"pointer"}}>
+            VER CARTA &nbsp;›
+          </button>
         </div>
-        <div style={{display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:8}}>
-          {platos.map((pl,i)=>(
-            <div key={i} className="vit-plate" style={{position:"relative", aspectRatio:"1", cursor:"default", borderRadius:18, overflow:"hidden"}}>
-              <img src={pl.src} alt={pl.nombre}/>
-              <div className="vit-overlay" style={{position:"absolute", inset:0, background:"linear-gradient(to top,rgba(0,0,0,.8) 0%,rgba(0,0,0,0) 55%)", opacity:.75, transition:"opacity .3s ease", display:"flex", alignItems:"flex-end", padding:"8px"}}>
-                <span style={{fontSize:10, fontWeight:700, color:"#fff", lineHeight:1.2}}>{pl.nombre}</span>
-              </div>
-              <div style={{position:"absolute", inset:0, border:"1px solid rgba(201,168,76,.14)", borderRadius:18, pointerEvents:"none"}}/>
-            </div>
-          ))}
-        </div>
+        {prods&&prods.length>0&&prods.find(p=>p.imagen) ? (
+          <img src={prods.find(p=>p.imagen).imagen} alt="plato" style={{width:105, height:105, borderRadius:12, objectFit:"cover", flexShrink:0, border:"1px solid rgba(201,168,76,.2)"}}/>
+        ) : (
+          <img src="https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=300&h=300&fit=crop" alt="plato" style={{width:105, height:105, borderRadius:12, objectFit:"cover", flexShrink:0, border:"1px solid rgba(201,168,76,.2)"}}/>
+        )}
       </div>
+
+      {/* ===== DELIVERY + RETIRO ===== */}
+      <div className="vit-s6" style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:10}}>
+        <div style={{background:"rgba(255,255,255,.03)", border:"1px solid rgba(255,255,255,.08)", borderRadius:18, padding:"16px 14px"}}>
+          <div style={{fontSize:22, marginBottom:8}}>🛵</div>
+          <div style={{fontSize:13, fontWeight:800, color:"#fff", marginBottom:4}}>DELIVERY</div>
+          <div style={{fontSize:10, color:"rgba(255,255,255,.4)", lineHeight:1.4, marginBottom:10}}>Pedís desde casa y te lo llevamos</div>
+          <div style={{fontSize:10, color:"rgba(201,168,76,.8)", fontWeight:700}}>30-45 min · hasta 5 km</div>
+        </div>
+        {local.retiro_habilitado !== false ? (
+          <div style={{background:"rgba(255,255,255,.03)", border:"1px solid rgba(255,255,255,.08)", borderRadius:18, padding:"16px 14px"}}>
+            <div style={{fontSize:22, marginBottom:8}}>🏪</div>
+            <div style={{fontSize:13, fontWeight:800, color:"#fff", marginBottom:4}}>RETIRO</div>
+            <div style={{fontSize:10, color:"rgba(255,255,255,.4)", lineHeight:1.4, marginBottom:10}}>Pasás a buscar al local sin costo</div>
+            <div style={{fontSize:10, color:"rgba(201,168,76,.8)", fontWeight:700}}>{local.retiro_horario||"Lun-Dom 12-23 hs"}</div>
+          </div>
+        ) : (
+          <div style={{background:"rgba(255,255,255,.02)", border:"1px solid rgba(255,255,255,.05)", borderRadius:18, padding:"16px 14px", opacity:.4}}>
+            <div style={{fontSize:22, marginBottom:8}}>🏪</div>
+            <div style={{fontSize:13, fontWeight:800, color:"#fff", marginBottom:4}}>RETIRO</div>
+            <div style={{fontSize:10, color:"rgba(255,255,255,.4)", lineHeight:1.4}}>No disponible</div>
+          </div>
+        )}
+      </div>
+
+      {/* ===== MÉTODOS DE PAGO ===== */}
+      {local.metodos_pago && local.metodos_pago.length > 0 && (
+        <div className="vit-s7" style={{background:"rgba(255,255,255,.03)", border:"1px solid rgba(255,255,255,.07)", borderRadius:24, padding:"18px"}}>
+          <div style={{fontSize:11, fontWeight:800, color:"rgba(255,255,255,.85)", letterSpacing:1.5, textTransform:"uppercase", marginBottom:14}}>💳 Métodos de pago</div>
+          <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:8}}>
+            {(local.metodos_pago||[]).map(m=>{
+              const icons={efectivo:"💵",tarjeta:"💳",mercadopago:"📲",transferencia:"🏦"};
+              const labels={efectivo:"Efectivo",tarjeta:"Tarjeta",mercadopago:"Mercado Pago",transferencia:"Transferencia"};
+              return (
+                <div key={m} style={{background:"rgba(255,255,255,.04)", border:"1px solid rgba(255,255,255,.06)", borderRadius:10, padding:"12px", textAlign:"center"}}>
+                  <div style={{fontSize:20, marginBottom:4}}>{icons[m]||"💰"}</div>
+                  <div style={{fontSize:11, fontWeight:700, color:"rgba(255,255,255,.8)"}}>{labels[m]||m}</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* ===== MESAS ===== */}
       <div className="vit-s3" style={{background:"rgba(255,255,255,.03)", backdropFilter:"blur(20px)", WebkitBackdropFilter:"blur(20px)", border:"1px solid rgba(255,255,255,.07)", borderRadius:24, padding:"22px 20px", position:"relative", overflow:"hidden"}}>
@@ -1707,6 +1753,31 @@ return (
         </div>
       )}
 
+      {/* ===== WIFI ===== */}
+      {!!local.wifi_ssid && (
+        <div style={{background:"rgba(255,255,255,.03)", border:"1px solid rgba(255,255,255,.07)", borderRadius:24, padding:"20px 18px", position:"relative", overflow:"hidden"}}>
+          <div style={{position:"absolute", top:0, left:0, right:0, height:1, background:"linear-gradient(90deg,transparent,rgba(255,255,255,.18),transparent)"}}/>
+          <div style={{display:"flex", alignItems:"center", gap:12, marginBottom:14}}>
+            <div style={{width:44, height:44, borderRadius:14, background:"rgba(255,255,255,.06)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:22, flexShrink:0}}>📶</div>
+            <div>
+              <div style={{fontSize:15, fontWeight:800, color:"rgba(255,255,255,.9)"}}>WiFi Gratis</div>
+              <div style={{fontSize:12, color:"rgba(255,255,255,.36)", marginTop:2}}>Conectate mientras estás acá</div>
+            </div>
+          </div>
+          <div style={{background:"rgba(255,255,255,.05)", border:"1px solid rgba(255,255,255,.08)", borderRadius:14, padding:"14px 16px"}}>
+            <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8}}>
+              <span style={{fontSize:11, color:"rgba(255,255,255,.4)"}}>Red</span>
+              <span style={{fontSize:13, fontWeight:700, color:"#fff"}}>{local.wifi_ssid}</span>
+            </div>
+            <div style={{height:1, background:"rgba(255,255,255,.06)", marginBottom:8}}/>
+            <div style={{display:"flex", justifyContent:"space-between", alignItems:"center"}}>
+              <span style={{fontSize:11, color:"rgba(255,255,255,.4)"}}>Contraseña</span>
+              <span style={{fontSize:13, fontWeight:700, color:"#c9a84c", letterSpacing:1}}>{local.wifi_pass}</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ===== WHATSAPP ===== */}
       {!!waNum && (
         <div className="vit-s5" style={{background:"rgba(255,255,255,.03)", backdropFilter:"blur(20px)", WebkitBackdropFilter:"blur(20px)", border:"1px solid rgba(37,211,102,.15)", borderRadius:24, padding:"22px 20px", position:"relative", overflow:"hidden"}}>
@@ -1733,6 +1804,49 @@ return (
       )}
 
     </div>
+
+    {/* ===== MODAL CARTA ===== */}
+    {showCarta && (
+      <div style={{position:"fixed", inset:0, zIndex:300, background:"#080808", display:"flex", flexDirection:"column"}}>
+        <div style={{padding:"14px 16px", display:"flex", alignItems:"center", gap:14, borderBottom:"1px solid rgba(255,255,255,.07)", background:"#0d0d0d", flexShrink:0}}>
+          <button onClick={()=>setShowCarta(false)} style={{width:36, height:36, borderRadius:10, background:"rgba(255,255,255,.07)", border:"1px solid rgba(255,255,255,.1)", color:"#fff", fontSize:20, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center"}}>‹</button>
+          <div style={{fontFamily:"Georgia,serif", fontSize:20, fontWeight:900}}>Nuestra <span style={{color:"#c9a020"}}>Carta</span></div>
+        </div>
+        <div style={{display:"flex", gap:8, padding:"12px 14px", overflowX:"auto", borderBottom:"1px solid rgba(255,255,255,.06)", background:"#0d0d0d", flexShrink:0, WebkitOverflowScrolling:"touch"}}>
+          {(cats||[]).map(c=>(
+            <button key={c.id} onClick={()=>setCartaCat(c.id)}
+              style={{padding:"7px 16px", borderRadius:30, fontSize:12, fontWeight:700, whiteSpace:"nowrap", cursor:"pointer", border:`1px solid ${cartaCat===c.id?"transparent":"rgba(255,255,255,.1)"}`, background:cartaCat===c.id?"linear-gradient(135deg,#b8900a,#c9a020)":"transparent", color:cartaCat===c.id?"#000":"rgba(255,255,255,.5)", transition:"all .2s"}}>
+              {c.nombre}
+            </button>
+          ))}
+        </div>
+        <div style={{flex:1, overflowY:"auto", padding:"14px"}}>
+          <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:12}}>
+            {(prods||[]).filter(p=>!cartaCat||p.categoria_id===cartaCat).map(p=>(
+              <div key={p.id} style={{background:"#111", border:"1px solid rgba(255,255,255,.07)", borderRadius:14, overflow:"hidden"}}>
+                <img
+                  src={p.imagen||"https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=300&h=200&fit=crop"}
+                  alt={p.nombre}
+                  style={{width:"100%", height:150, objectFit:"cover", display:"block"}}
+                  onError={e=>{e.target.src="https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=300&h=200&fit=crop";}}
+                />
+                <div style={{padding:"12px"}}>
+                  <div style={{fontSize:15, fontWeight:700, color:"#fff", marginBottom:4, lineHeight:1.3}}>{p.nombre}</div>
+                  {p.descripcion && <div style={{fontSize:11, color:"rgba(255,255,255,.4)", lineHeight:1.4, marginBottom:8}}>{p.descripcion}</div>}
+                  <div style={{fontSize:19, fontWeight:800, color:"#c9a020"}}>${p.precio}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+          {(prods||[]).filter(p=>!cartaCat||p.categoria_id===cartaCat).length===0&&(
+            <div style={{textAlign:"center", padding:"40px 0", color:"rgba(255,255,255,.3)"}}>
+              <div style={{fontSize:40, marginBottom:12}}>🍽️</div>
+              <div style={{fontSize:14}}>No hay productos en esta categoría</div>
+            </div>
+          )}
+        </div>
+      </div>
+    )}
 
     {/* ===== MODAL DESCUENTO ===== */}
     {showDescuento && (
