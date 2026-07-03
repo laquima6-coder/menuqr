@@ -1601,6 +1601,9 @@ function ScreenQR({ local }) {
 
   const ActionRow = ({ id, url, title }) => (
     <div style={{ display:"flex", flexWrap:"wrap", gap:6, justifyContent:"center", marginTop:10 }}>
+      {url.startsWith("http") && (
+        <button className="ap-btn ap-btn-sm" style={{background:"rgba(201,168,76,.2)",color:"#e8a020",border:"1px solid rgba(201,168,76,.35)",fontWeight:800}} onClick={() => window.open(url, "_blank")}>🔗 Abrir</button>
+      )}
       <button className="ap-btn ap-btn-ghost ap-btn-sm" onClick={() => downloadPNG(url, id)}>⬇ PNG</button>
       <button className="ap-btn ap-btn-ghost ap-btn-sm" onClick={() => downloadPDF(url, title)}>🖨️ PDF</button>
       <button className="ap-btn ap-btn-ghost ap-btn-sm" onClick={() => copyImage(url)}>🖼️ Copiar img</button>
