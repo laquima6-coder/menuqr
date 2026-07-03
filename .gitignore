@@ -1,14 +1,14 @@
-# Dependencias
+# Dependencies
 node_modules/
 
-# Build
+# Build output
 dist/
 dist-ssr/
 
-# Variables de entorno — NUNCA subir al repo
+# Environment variables
 .env
 .env.local
-.env.production
+.env.*.local
 
 # Logs
 *.log
@@ -17,15 +17,7 @@ npm-debug.log*
 # Editor
 .vscode/
 .idea/
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
 
 # OS
 .DS_Store
 Thumbs.db
-
-# Vite
-*.local

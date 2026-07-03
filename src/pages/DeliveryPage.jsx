@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js'
 
 const SUPABASE_URL = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_URL) || 'https://fwovflsaghnutysjyaus.supabase.co'
 const SUPABASE_KEY = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_ANON_KEY) || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ3b3ZmbHNhZ2hudXR5c2p5YXVzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2Njc0NzUsImV4cCI6MjA5NjI0MzQ3NX0.HtkD4AK35MSf4o9oNeGTlsooE0zSodjFVZH94ipCUAo'
-const TOMTOM_KEY  = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_TOMTOM_KEY)  || 'NP2gPszMkFrVccT95vTeaMrsWfZ0ORLU'
+const TOMTOM_KEY  = import.meta.env.VITE_TOMTOM_KEY
 
 const sb  = SUPABASE_URL && SUPABASE_KEY ? createClient(SUPABASE_URL, SUPABASE_KEY) : null
 const fmt = n => Number(n || 0).toLocaleString('es-AR')
