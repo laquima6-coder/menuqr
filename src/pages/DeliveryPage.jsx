@@ -61,7 +61,7 @@ function Spinner({ text = 'Cargando...' }) {
     <div style={{ ...S.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16 }}>
       <div style={{ width: 48, height: 48, border: `4px solid ${GA}0.2)`, borderTopColor: G, borderRadius: '50%', animation: 'spin .8s linear infinite' }} />
       <div style={{ ...S.outfit, fontSize: 14, color: 'rgba(255,255,255,0.5)' }}>{text}</div>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}} @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}`}</style>
     </div>
   )
 }
@@ -155,6 +155,65 @@ function DeliveryMap({ apiKey, restaurantLat, restaurantLon, deliveryPos }) {
   )
 }
 
+// ─── LiveTrackingMap ──────────────────────────────────────────────────────────
+function LiveTrackingMap({ apiKey, deliveryLat, deliveryLon, repartidorPos }) {
+  const containerRef  = useRef(null)
+  const mapRef        = useRef(null)
+  const repMarkerRef  = useRef(null)
+
+  useEffect(() => {
+    if (!apiKey || !containerRef.current) return
+    let cancelled = false
+    loadTomTomSDK(() => {
+      if (cancelled || mapRef.current || !containerRef.current) return
+      const map = window.tt.map({
+        key: apiKey, container: containerRef.current,
+        center: [deliveryLon, deliveryLat], zoom: 14,
+      })
+      mapRef.current = map
+      map.on('load', () => {
+        new window.tt.Marker({ color: '#ff4444' })
+          .setLngLat([deliveryLon, deliveryLat]).addTo(map)
+      })
+    })
+    return () => { cancelled = true; if (mapRef.current) { mapRef.current.remove(); mapRef.current = null } }
+  }, [])  // eslint-disable-line
+
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || !repartidorPos) return
+    const init = () => {
+      try {
+        if (repMarkerRef.current) { repMarkerRef.current.setLngLat([repartidorPos.lon, repartidorPos.lat]) }
+        else {
+          repMarkerRef.current = new window.tt.Marker({ color: '#e8a020' })
+            .setLngLat([repartidorPos.lon, repartidorPos.lat]).addTo(map)
+        }
+        map.setCenter([repartidorPos.lon, repartidorPos.lat])
+      } catch (e) { console.warn(e) }
+    }
+    if (map.loaded()) init(); else map.once('load', init)
+  }, [repartidorPos])
+
+  return (
+    <div style={{ borderRadius: 16, overflow: 'hidden', height: 250, background: '#111', border: '1px solid rgba(232,160,32,0.2)', position: 'relative', marginBottom: 20, width: '100%', maxWidth: 380 }}>
+      <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
+      <div style={{ position: 'absolute', top: 10, left: 10, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(6px)', borderRadius: 20, padding: '4px 12px', display: 'flex', alignItems: 'center', gap: 6 }}>
+        <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#4CAF50', boxShadow: '0 0 6px #4CAF50', animation: 'pulse 1.5s infinite' }} />
+        <span style={{ fontSize: 10, color: '#fff', fontFamily: "'IBM Plex Mono',monospace", letterSpacing: 1 }}>EN VIVO</span>
+      </div>
+      <div style={{ position: 'absolute', bottom: 10, left: 10, right: 10, display: 'flex', justifyContent: 'space-between' }}>
+        <span style={{ background: 'rgba(0,0,0,0.65)', borderRadius: 10, padding: '3px 10px', fontSize: 10, color: 'rgba(255,255,255,0.7)', fontFamily: "'DM Sans',sans-serif" }}>
+          🛵 Repartidor
+        </span>
+        <span style={{ background: 'rgba(0,0,0,0.65)', borderRadius: 10, padding: '3px 10px', fontSize: 10, color: 'rgba(255,68,68,0.9)', fontFamily: "'DM Sans',sans-serif" }}>
+          📍 Tu casa
+        </span>
+      </div>
+    </div>
+  )
+}
+
 export default function DeliveryPage() {
   const { slug } = useParams()
 
@@ -192,9 +251,28 @@ export default function DeliveryPage() {
 
   const direcTimer = useRef(null)
 
+  // Live tracking (repartidor)
+  const [repartidorPos,    setRepartidorPos]    = useState(null)
+  const [trackingActive,   setTrackingActive]   = useState(false)
+  const trackingChRef = useRef(null)
+
   // ── Load restaurant data ──────────────────────────────────────────────────
 
   useEffect(() => { loadData() }, [slug])
+
+  // Subscribe to repartidor realtime tracking
+  useEffect(() => {
+    if (!done || !slug || !sb) return
+    const ch = sb.channel(`tracking:${slug}`)
+      .on('broadcast', { event: 'location' }, ({ payload }) => {
+        setRepartidorPos({ lat: payload.lat, lon: payload.lon })
+        setTrackingActive(true)
+      })
+      .on('broadcast', { event: 'stopped' }, () => setTrackingActive(false))
+      .subscribe()
+    trackingChRef.current = ch
+    return () => { try { sb.removeChannel(ch) } catch {} }
+  }, [done, slug])
 
   async function loadData() {
     setLoading(true); setDataError(null)
@@ -411,8 +489,29 @@ export default function DeliveryPage() {
       <p style={{ ...S.dmsans, fontSize: 12, color: 'rgba(255,255,255,0.35)', marginBottom: 36 }}>
         🛵 Te van a contactar para coordinar la entrega.
       </p>
+      {/* Live tracking del repartidor */}
+      {TOMTOM_KEY && (
+        <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 8 }}>
+          {trackingActive ? (
+            <LiveTrackingMap
+              apiKey={TOMTOM_KEY}
+              deliveryLat={direcPos?.lat ?? -34.6037}
+              deliveryLon={direcPos?.lon ?? -58.3816}
+              repartidorPos={repartidorPos}
+            />
+          ) : (
+            <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, padding: '20px 24px', marginBottom: 20, textAlign: 'center', width: '100%', maxWidth: 380 }}>
+              <div style={{ fontSize: 28, marginBottom: 8 }}>🛵</div>
+              <p style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 13, color: 'rgba(255,255,255,0.45)', margin: 0 }}>
+                El mapa aparece cuando el repartidor inicie el tracking
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
       <button
-        onClick={() => { setStep(1); setDone(false); setCart({}); setPayMethod(''); setZoneInfo(null); setDirec(''); setDirecPos(null); setName(''); setPhone(''); setPiso(''); setNota('') }}
+        onClick={() => { setStep(1); setDone(false); setCart({}); setPayMethod(''); setZoneInfo(null); setDirec(''); setDirecPos(null); setName(''); setPhone(''); setPiso(''); setNota(''); setRepartidorPos(null); setTrackingActive(false) }}
         style={{ ...S.btn, width: 'auto', padding: '14px 40px' }}
       >
         Hacer otro pedido

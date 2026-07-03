@@ -8,6 +8,7 @@ import LandingPage from './pages/LandingPage.jsx'
 import CocinaScreen from './pages/CocinaScreen.jsx'
 import PedidoStatus from './pages/PedidoStatus.jsx'
 import DeliveryPage from './pages/DeliveryPage.jsx'
+import TrackingPage from './pages/TrackingPage.jsx'
 
 export default function App() {
   const [local, setLocal] = useState(() => {
@@ -32,6 +33,7 @@ export default function App() {
         <Route path="/menu/:slug/mesa/:mesa" element={<MenuPublico />} />
         <Route path="/menu/:slug/vitrina" element={<MenuPublico vitrina />} />
         <Route path="/menu/:slug/delivery" element={<DeliveryPage />} />
+        <Route path="/tracking/:slug" element={<TrackingPage />} />
 
         {/* Registro de nuevo restaurante */}
         <Route path="/registro" element={<Registro />} />
