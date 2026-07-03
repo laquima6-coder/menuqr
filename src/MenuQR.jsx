@@ -8467,15 +8467,14 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
   };
 
 
-  /* QR helper for WhatsApp tab */
+  /* QR helper for WhatsApp tab — canvas directo, sin flicker */
   function QRImg({data, size=160, dark="#000", light="#fff"}) {
-    const [src, setSrc] = React.useState(null);
+    const canvasRef = React.useRef(null);
     React.useEffect(()=>{
-      if(!data||!QRCodeLib) return;
-      QRCodeLib.toDataURL(data,{width:size,margin:1,color:{dark,light}}).then(setSrc).catch(()=>{});
+      if(!data||!QRCodeLib||!canvasRef.current) return;
+      QRCodeLib.toCanvas(canvasRef.current,data,{width:size,margin:1,color:{dark,light}}).catch(()=>{});
     },[data,size,dark,light]);
-    if(!src) return <div style={{width:size,height:size,background:light,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,color:"var(--am)"}}>...</div>;
-    return <img src={src} alt="QR" style={{width:size,height:size,borderRadius:8}}/>;
+    return <canvas ref={canvasRef} style={{width:size,height:size,borderRadius:8,background:light,display:'block'}}/>;
   }
 
   /* ── WhatsApp Tab ── */
