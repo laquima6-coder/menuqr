@@ -1551,6 +1551,39 @@ function QRImg({ data, size = 200, style = {} }) {
   return <canvas ref={canvasRef} style={{ display: 'block', background: '#fff', ...style }} />;
 }
 
+function ActionRow({ id, url, title, isCopied, onDownloadPNG, onDownloadPDF, onCopyImage, onCopyLink, onShareWA, onShareMail }) {
+  return (
+    <div style={{ display:"flex", flexWrap:"wrap", gap:6, justifyContent:"center", marginTop:10 }}>
+      {url.startsWith("http") && (
+        <button className="ap-btn ap-btn-sm" style={{background:"rgba(201,168,76,.2)",color:"#e8a020",border:"1px solid rgba(201,168,76,.35)",fontWeight:800}} onClick={() => window.open(url, "_blank")}>🔗 Abrir</button>
+      )}
+      <button className="ap-btn ap-btn-ghost ap-btn-sm" onClick={() => onDownloadPNG(url, id)}>⬇ PNG</button>
+      <button className="ap-btn ap-btn-ghost ap-btn-sm" onClick={() => onDownloadPDF(url, title)}>🖨️ PDF</button>
+      <button className="ap-btn ap-btn-ghost ap-btn-sm" onClick={() => onCopyImage(url)}>🖼️ Copiar img</button>
+      <button className="ap-btn ap-btn-gold ap-btn-sm" onClick={() => onCopyLink(id, url)}>
+        {isCopied ? "✓ Copiado" : "📋 Copiar link"}
+      </button>
+      <button className="ap-btn ap-btn-ghost ap-btn-sm" style={{background:"rgba(37,211,102,.15)",color:"#25D366",border:"1px solid rgba(37,211,102,.3)"}} onClick={() => onShareWA(url, title)}>📲 WA</button>
+      <button className="ap-btn ap-btn-ghost ap-btn-sm" onClick={() => onShareMail(url, title)}>✉️ Mail</button>
+    </div>
+  );
+}
+
+function QRCard({ id, icon, title, desc, url, isCopied, onExpand, onDownloadPNG, onDownloadPDF, onCopyImage, onCopyLink, onShareWA, onShareMail }) {
+  return (
+    <div className="ap-card" style={{ textAlign:"center" }}>
+      <div style={{ fontSize:32, marginBottom:6 }}>{icon}</div>
+      <div style={{ fontSize:14, fontWeight:800, marginBottom:4 }}>{title}</div>
+      <div style={{ fontSize:11, color:"rgba(255,255,255,.35)", marginBottom:12 }}>{desc}</div>
+      <div style={{ display:"flex", justifyContent:"center", marginBottom:10, cursor:"pointer" }} onClick={() => onExpand(title, url)}>
+        <QRImg data={url} size={200} style={{ width:150, height:150, borderRadius:8, background:"#fff", padding:4 }} />
+      </div>
+      <div style={{ fontSize:9, color:"rgba(255,255,255,.3)", fontFamily:"monospace", wordBreak:"break-all", marginBottom:8 }}>{url}</div>
+      <ActionRow id={id} url={url} title={title} isCopied={isCopied} onDownloadPNG={onDownloadPNG} onDownloadPDF={onDownloadPDF} onCopyImage={onCopyImage} onCopyLink={onCopyLink} onShareWA={onShareWA} onShareMail={onShareMail} />
+    </div>
+  );
+}
+
 function ScreenQR({ local }) {
   const slug = local?.slug || "mi-restaurante";
   // Si el panel se abre en localhost (dev), los QR deben apuntar al dominio de produccion
@@ -1616,34 +1649,6 @@ function ScreenQR({ local }) {
     window.open(`mailto:?subject=${encodeURIComponent("QR " + title)}&body=${encodeURIComponent("QR de acceso: " + url)}`, "_blank");
   }
 
-  const ActionRow = ({ id, url, title }) => (
-    <div style={{ display:"flex", flexWrap:"wrap", gap:6, justifyContent:"center", marginTop:10 }}>
-      {url.startsWith("http") && (
-        <button className="ap-btn ap-btn-sm" style={{background:"rgba(201,168,76,.2)",color:"#e8a020",border:"1px solid rgba(201,168,76,.35)",fontWeight:800}} onClick={() => window.open(url, "_blank")}>🔗 Abrir</button>
-      )}
-      <button className="ap-btn ap-btn-ghost ap-btn-sm" onClick={() => downloadPNG(url, id)}>⬇ PNG</button>
-      <button className="ap-btn ap-btn-ghost ap-btn-sm" onClick={() => downloadPDF(url, title)}>🖨️ PDF</button>
-      <button className="ap-btn ap-btn-ghost ap-btn-sm" onClick={() => copyImage(url)}>🖼️ Copiar img</button>
-      <button className="ap-btn ap-btn-gold ap-btn-sm" onClick={() => copyLink(id, url)}>
-        {copied[id] ? "✓ Copiado" : "📋 Copiar link"}
-      </button>
-      <button className="ap-btn ap-btn-ghost ap-btn-sm" style={{background:"rgba(37,211,102,.15)",color:"#25D366",border:"1px solid rgba(37,211,102,.3)"}} onClick={() => shareWA(url, title)}>📲 WA</button>
-      <button className="ap-btn ap-btn-ghost ap-btn-sm" onClick={() => shareMail(url, title)}>✉️ Mail</button>
-    </div>
-  );
-
-  const QRCard = ({ id, icon, title, desc, url }) => (
-    <div className="ap-card" style={{ textAlign:"center" }}>
-      <div style={{ fontSize:32, marginBottom:6 }}>{icon}</div>
-      <div style={{ fontSize:14, fontWeight:800, marginBottom:4 }}>{title}</div>
-      <div style={{ fontSize:11, color:"rgba(255,255,255,.35)", marginBottom:12 }}>{desc}</div>
-      <div style={{ display:"flex", justifyContent:"center", marginBottom:10, cursor:"pointer" }} onClick={() => setModal({ title, url })}>
-        <QRImg data={url} size={200} style={{ width:150, height:150, borderRadius:8, background:"#fff", padding:4 }} />
-      </div>
-      <div style={{ fontSize:9, color:"rgba(255,255,255,.3)", fontFamily:"monospace", wordBreak:"break-all", marginBottom:8 }}>{url}</div>
-      <ActionRow id={id} url={url} title={title} />
-    </div>
-  );
 
   const qrCards = [
     { id:"vitrina", icon:"📱", title:"Vitrina", desc:"Carta + opciones de pedido", url:`${base}/vitrina` },
@@ -1661,7 +1666,7 @@ function ScreenQR({ local }) {
             <div style={{ fontSize:18,fontWeight:800,marginBottom:16 }}>{modal.title}</div>
             <QRImg data={modal.url} size={280} style={{ width:250,height:250,background:"#fff",borderRadius:10,padding:8,marginBottom:16 }} />
             <div style={{ fontSize:10,color:"rgba(255,255,255,.35)",fontFamily:"monospace",wordBreak:"break-all",marginBottom:16 }}>{modal.url}</div>
-            <ActionRow id={"modal-"+modal.title} url={modal.url} title={modal.title} />
+            <ActionRow id={"modal-"+modal.title} url={modal.url} title={modal.title} isCopied={!!copied["modal-"+modal.title]} onDownloadPNG={downloadPNG} onDownloadPDF={downloadPDF} onCopyImage={copyImage} onCopyLink={copyLink} onShareWA={shareWA} onShareMail={shareMail} />
             <button className="ap-btn ap-btn-ghost ap-btn-sm" style={{ marginTop:12 }} onClick={() => setModal(null)}>✕ Cerrar</button>
           </div>
         </div>
@@ -1672,7 +1677,7 @@ function ScreenQR({ local }) {
       {/* Generales */}
       <div className="ap-card-title" style={{ marginBottom:10 }}>QR GENERALES</div>
       <div className="ap-grid-3" style={{ marginBottom:24 }}>
-        {qrCards.map(q => <QRCard key={q.id} {...q} />)}
+        {qrCards.map(q => <QRCard key={q.id} {...q} isCopied={!!copied[q.id]} onExpand={(t,u) => setModal({title:t,url:u})} onDownloadPNG={downloadPNG} onDownloadPDF={downloadPDF} onCopyImage={copyImage} onCopyLink={copyLink} onShareWA={shareWA} onShareMail={shareMail} />)}
       </div>
 
       {/* Por mesa */}
