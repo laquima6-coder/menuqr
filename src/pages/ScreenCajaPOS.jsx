@@ -26,6 +26,9 @@ export default function ScreenCajaPOS({ prods=[], cats=[], local={} }) {
   const [ticket, setTicket] = React.useState([]);
   const [selIdx, setSelIdx] = React.useState(null);
   const [metodoPago, setMetodoPago] = React.useState('efectivo');
+  const [metodoPago2, setMetodoPago2] = React.useState(null);  // null = sin pago mixto
+  const [splitAmt, setSplitAmt] = React.useState('');
+  const [splitAmt2, setSplitAmt2] = React.useState('');
   const [descGlobal, setDescGlobal] = React.useState(0);
   const [search, setSearch] = React.useState('');
   const [catF, setCatF] = React.useState(null);
@@ -130,7 +133,7 @@ export default function ScreenCajaPOS({ prods=[], cats=[], local={} }) {
     setSelIdx(null);
   };
 
-  const vaciarTicket = () => { setTicket([]); setSelIdx(null); setDescGlobal(0); setMetodoPago('efectivo'); };
+  const vaciarTicket = () => { setTicket([]); setSelIdx(null); setDescGlobal(0); setMetodoPago('efectivo'); setMetodoPago2(null); setSplitAmt(''); setSplitAmt2(''); };
 
   const cobrar = async () => {
     if (!supabase || !ridl || ticket.length === 0) return;
@@ -140,7 +143,7 @@ export default function ScreenCajaPOS({ prods=[], cats=[], local={} }) {
     const { error } = await supabase.from('caja_tickets').insert({
       restaurante_id: ridl, numero, items: ticket,
       subtotal, descuento: descGlobalAmt, desc_global_pct: descGlobal,
-      total, metodo_pago: metodoPago, estado: 'cerrado'
+      total, metodo_pago: metodoPago2 ? `${metodoPago}+${metodoPago2}` : metodoPago, estado: 'cerrado'
     });
     if (!error) {
       vaciarTicket();
@@ -396,10 +399,65 @@ export default function ScreenCajaPOS({ prods=[], cats=[], local={} }) {
                   ))}
                 </div>
                 {/* Payment method */}
-                <div style={{display:'flex', gap:5, flexWrap:'wrap', marginBottom:10}}>
-                  {METODOS.map(m=>(
-                    <button key={m} style={S.btnSm(metodoPago===m?'var(--gold)':'var(--bg4)', metodoPago===m?'#000':'var(--text2)')} onClick={()=>setMetodoPago(m)}>{m}</button>
-                  ))}
+                <div style={{marginBottom:10}}>
+                  <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:6}}>
+                    <span style={{fontSize:11, color:'var(--text2)'}}>Pago:</span>
+                    <button
+                      style={{background:'none', border:'none', color: metodoPago2 !== null ? 'var(--red)' : 'var(--gold)', fontSize:10, cursor:'pointer', fontWeight:700, padding:'2px 6px', borderRadius:6, border:`1px solid ${metodoPago2 !== null ? 'var(--red)' : 'var(--gold)'}` }}
+                      onClick={()=>{ if(metodoPago2!==null){setMetodoPago2(null);setSplitAmt('');setSplitAmt2('');}else{setMetodoPago2('tarjeta');} }}>
+                      {metodoPago2 !== null ? '✕ cancelar mixto' : '÷ Pago Mixto'}
+                    </button>
+                  </div>
+                  {metodoPago2 === null ? (
+                    <div style={{display:'flex', gap:5, flexWrap:'wrap'}}>
+                      {METODOS.map(m=>(
+                        <button key={m} style={S.btnSm(metodoPago===m?'var(--gold)':'var(--bg4)', metodoPago===m?'#000':'var(--text2)')} onClick={()=>setMetodoPago(m)}>{m}</button>
+                      ))}
+                    </div>
+                  ) : (
+                    <div style={{display:'flex', flexDirection:'column', gap:6}}>
+                      <div style={{background:'var(--bg3)', borderRadius:8, padding:'8px 10px'}}>
+                        <div style={{fontSize:9, color:'var(--text3)', letterSpacing:1, marginBottom:5, textTransform:'uppercase'}}>Método 1</div>
+                        <div style={{display:'flex', gap:4, flexWrap:'wrap', marginBottom:6}}>
+                          {METODOS.map(m=>(
+                            <button key={m} style={S.btnSm(metodoPago===m?'var(--gold)':'var(--bg4)', metodoPago===m?'#000':'var(--text2)')} onClick={()=>setMetodoPago(m)}>{m}</button>
+                          ))}
+                        </div>
+                        <div style={{display:'flex', gap:6, alignItems:'center'}}>
+                          <span style={{fontSize:12, color:'var(--text2)'}}>$</span>
+                          <input type="number" value={splitAmt}
+                            onChange={e=>{setSplitAmt(e.target.value);const r=total-Number(e.target.value||0);if(r>=0)setSplitAmt2(String(r));}}
+                            placeholder={String(Math.ceil(total/2))}
+                            style={{flex:1, background:'var(--bg4)', border:'1px solid var(--border)', borderRadius:6, padding:'5px 8px', color:'var(--text)', fontSize:13, fontWeight:700, outline:'none'}}/>
+                          <button
+                            onClick={()=>{const h=Math.ceil(total/2);setSplitAmt(String(h));setSplitAmt2(String(total-h));}}
+                            style={{background:'var(--gold)', border:'none', borderRadius:6, padding:'5px 10px', color:'#000', fontSize:10, fontWeight:700, cursor:'pointer', whiteSpace:'nowrap'}}>50/50</button>
+                        </div>
+                      </div>
+                      <div style={{background:'var(--bg3)', borderRadius:8, padding:'8px 10px'}}>
+                        <div style={{fontSize:9, color:'var(--text3)', letterSpacing:1, marginBottom:5, textTransform:'uppercase'}}>Método 2</div>
+                        <div style={{display:'flex', gap:4, flexWrap:'wrap', marginBottom:6}}>
+                          {METODOS.map(m=>(
+                            <button key={m} style={S.btnSm(metodoPago2===m?'var(--gold)':'var(--bg4)', metodoPago2===m?'#000':'var(--text2)')} onClick={()=>setMetodoPago2(m)}>{m}</button>
+                          ))}
+                        </div>
+                        <div style={{display:'flex', gap:6, alignItems:'center'}}>
+                          <span style={{fontSize:12, color:'var(--text2)'}}>$</span>
+                          <input type="number" value={splitAmt2}
+                            onChange={e=>setSplitAmt2(e.target.value)}
+                            placeholder={String(Math.max(0,total-Number(splitAmt||0)))}
+                            style={{flex:1, background:'var(--bg4)', border:'1px solid var(--border)', borderRadius:6, padding:'5px 8px', color:'var(--text)', fontSize:13, fontWeight:700, outline:'none'}}/>
+                        </div>
+                      </div>
+                      {(splitAmt||splitAmt2)&&(()=>{
+                        const a1=Number(splitAmt||0),a2=Number(splitAmt2||0),diff=total-(a1+a2);
+                        return(<div style={{background:diff===0?'rgba(62,207,110,.1)':'rgba(255,176,32,.1)',border:`1px solid ${diff===0?'var(--green)':'#FFB020'}`,borderRadius:6,padding:'5px 10px',display:'flex',justifyContent:'space-between'}}>
+                          <span style={{fontSize:10,color:diff===0?'var(--green)':'#FFB020'}}>{diff===0?'✓ Balanceado':diff>0?`Falta: ${ARS(diff)}`:`Excede: ${ARS(Math.abs(diff))}`}</span>
+                          <span style={{fontSize:11,fontWeight:700,color:diff===0?'var(--green)':'#FFB020'}}>Total: {ARS(total)}</span>
+                        </div>);
+                      })()}
+                    </div>
+                  )}
                 </div>
                 {/* Totals */}
                 <div style={{borderTop:'1px solid var(--border)', paddingTop:8}}>
