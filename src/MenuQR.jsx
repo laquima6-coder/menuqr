@@ -1126,16 +1126,16 @@ function WAOrderFlow({local, prods, cats, tipo, onClose}) {
           "Cliente:"+name,phone?"Tel:"+phone:null,nota?"Obs:"+nota:null
         ].filter(Boolean).join(" | ");
         if(supabase && local.restauranteId) {
-          await supabase.from("pedidos").insert({
+          const {error:_pedErr}=await supabase.from("pedidos").insert({
             id:pid, restaurante_id:local.restauranteId,
             mesa_numero:0, status:"pendiente_pago", metodo_pago:waPay||"transferencia",
-            propina:0, total:totalConEnvio, nota:notaStr, idioma:"es",
-            tipo_pedido:"delivery", direccion_cliente:direc,
-            entrecalles:entreCalles, observaciones_cliente:nota,
+            propina:0, total:totalConEnvio, nota:notaStr,
           });
-          await supabase.from("pedido_items").insert(
-            cartItems.map(i=>({pedido_id:pid,producto_id:i.id,nombre:i.name,precio:i.price,cantidad:i.qty}))
+          if(_pedErr) throw new Error("pedidos: "+_pedErr.message);
+          const {error:_itmErr}=await supabase.from("pedido_items").insert(
+            cartItems.map(i=>({pedido_id:pid,producto_id:i.id,nombre:i.name||"?",precio:Math.round(i.price||0),cantidad:i.qty}))
           );
+          if(_itmErr) throw new Error("items: "+_itmErr.message);
         }
         setPedidoId(pid);
         setTrackStatus("pendiente_pago");
@@ -1150,14 +1150,16 @@ function WAOrderFlow({local, prods, cats, tipo, onClose}) {
       try {
         const pid = crypto.randomUUID();
         const notaStr = ["RETIRO","Cliente:"+name,phone?"Tel:"+phone:null,nota?"Nota:"+nota:null].filter(Boolean).join(" | ");
-        await supabase.from("pedidos").insert({
+        const {error:_pedErr2}=await supabase.from("pedidos").insert({
           id:pid, restaurante_id:local.restauranteId,
           mesa_numero:0, status:"nuevo", metodo_pago:waPay||"whatsapp",
-          propina:0, total:totalConEnvio, nota:notaStr, idioma:"es", tipo_pedido:"retiro",
+          propina:0, total:totalConEnvio, nota:notaStr,
         });
-        await supabase.from("pedido_items").insert(
-          cartItems.map(i=>({pedido_id:pid,producto_id:i.id,nombre:i.name,precio:i.price,cantidad:i.qty}))
+        if(_pedErr2) throw new Error("pedidos: "+_pedErr2.message);
+        const {error:_itmErr2}=await supabase.from("pedido_items").insert(
+          cartItems.map(i=>({pedido_id:pid,producto_id:i.id,nombre:i.name||"?",precio:Math.round(i.price||0),cantidad:i.qty}))
         );
+        if(_itmErr2) throw new Error("items: "+_itmErr2.message);
       } catch(e){ console.warn("wa order err",e); }
     }
     const lineas = cartItems.map(i=>"• "+i.qty+"x "+i.name+" — $"+fmt(i.price*i.qty)).join("\n");
@@ -2415,8 +2417,8 @@ export function ClientApp({onBack, local, cats, prods, vitrina=false, sinPedidos
       else {
         try {
           pedidoId=crypto.randomUUID();
-          const {error}=await supabase.from("pedidos").insert({id:pedidoId,restaurante_id:local.restauranteId,mesa_numero:mesa,status:"nuevo",metodo_pago:pagoFinalPC,propina:tipAmount,total:subtotal-descuentoAplicado+tipAmount,nota:[note,descuentoAplicado>0?`DESCUENTO_PRIMERA_VEZ_10%_$${descuentoAplicado}`:null].filter(Boolean).join(" | ")||null,idioma:lang||"es"});
-          if(error){errorMsg=error.message;}
+          const {error}=await supabase.from("pedidos").insert({id:pedidoId,restaurante_id:local.restauranteId,mesa_numero:mesa,status:"nuevo",metodo_pago:pagoFinalPC,propina:tipAmount,total:subtotal-descuentoAplicado+tipAmount,nota:[note,descuentoAplicado>0?`DESCUENTO_PRIMERA_VEZ_10%_$${descuentoAplicado}`:null].filter(Boolean).join(" | ")||null});
+          if(error){errorMsg=error.message;alert("Error pedido: "+error.message);}
           else{
             if(descuentoAplicado>0){localStorage.removeItem("menuqr_promo10_"+(local.restauranteId||"x"));setPromoActiva(false);}
             const its=cartItems.map(i=>({pedido_id:pedidoId,producto_id:i.id,nombre:i.name,precio:i.price,cantidad:i.qty}));
@@ -2806,8 +2808,8 @@ export function ClientApp({onBack, local, cats, prods, vitrina=false, sinPedidos
           else {
             try {
               pedidoId=crypto.randomUUID();
-              const {error}=await supabase.from("pedidos").insert({id:pedidoId,restaurante_id:local.restauranteId,mesa_numero:mesa,status:"nuevo",metodo_pago:pagoFinal,propina:tipAmount,total:totalFinal,nota:[note,descuentoAplicado>0?`DESCUENTO_PRIMERA_VEZ_10%_$${descuentoAplicado}`:null].filter(Boolean).join(" | ")||null,idioma:lang||"es"});
-              if(error){errorMsg=error.message;}
+              const {error}=await supabase.from("pedidos").insert({id:pedidoId,restaurante_id:local.restauranteId,mesa_numero:mesa,status:"nuevo",metodo_pago:pagoFinal,propina:tipAmount,total:totalFinal,nota:[note,descuentoAplicado>0?`DESCUENTO_PRIMERA_VEZ_10%_$${descuentoAplicado}`:null].filter(Boolean).join(" | ")||null});
+              if(error){errorMsg=error.message;alert("Error pedido: "+error.message);}
               else{
                 if(descuentoAplicado>0){localStorage.removeItem("menuqr_promo10_"+(local.restauranteId||"x"));setPromoActiva(false);}
                 const its=cartItems.map(i=>({pedido_id:pedidoId,producto_id:i.id,nombre:i.name,precio:i.price,cantidad:i.qty}));

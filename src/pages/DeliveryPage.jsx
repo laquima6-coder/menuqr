@@ -429,16 +429,19 @@ export default function DeliveryPage() {
           nota  ? `Nota: ${nota}` : null,
         ].filter(Boolean).join(' | ')
 
-        await sb.from('pedidos').insert({
+        const { error: pedErr } = await sb.from('pedidos').insert({
           id: pedidoId, restaurante_id: local.restauranteId,
           mesa_numero: 0, status: 'nuevo', metodo_pago: payMethod,
-          propina: 0, total: totalConEnvio, nota: nota_str,
+          propina: 0, total: Math.round(totalConEnvio), nota: nota_str,
         })
-        await sb.from('pedido_items').insert(
-          cartItems.map(i => ({ pedido_id: pedidoId, producto_id: i.id, nombre: i.name, precio: i.price, cantidad: i.qty }))
+        if (pedErr) throw new Error('pedidos: ' + pedErr.message)
+
+        const { error: itmErr } = await sb.from('pedido_items').insert(
+          cartItems.map(i => ({ pedido_id: pedidoId, producto_id: i.id, nombre: i.name || '?', precio: Math.round(i.price || 0), cantidad: i.qty }))
         )
+        if (itmErr) throw new Error('items: ' + itmErr.message)
       }
-    } catch (e) { console.warn('DeliveryPage save error:', e) }
+    } catch (e) { console.error('DeliveryPage save error:', e); alert('Error al guardar pedido: ' + e.message) }
 
     // Build WhatsApp message
     const payLabels = { efectivo: 'Efectivo en la puerta 💵', mp: 'Mercado Pago 📲', trans: 'Transferencia bancaria 🏦' }
