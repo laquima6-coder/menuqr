@@ -9316,7 +9316,7 @@ export default function MenuQR({
         getProductos(rest.id),
       ]);
       if (categorias.length) setCats(categorias.map(c => ({ id:c.id, label:c.label, icon:c.icon, activa:c.activa })));
-      if (productos.length)  setProds(productos.map(p => ({ id:p.id, cat:p.categoria_id, name:p.name, desc:p.desc, price:p.price, orig:p.orig, emoji:p.emoji, tag:p.tag, active:p.active, pais:p.pais||null, sin_stock:p.sin_stock||false, foto_url:p.foto_url||null, imagen:p.imagen||null })));
+      if (productos.length)  setProds(productos.map(p => ({ id:p.id, cat:p.categoria_id, name:p.nombre||p.name||'', desc:p.descripcion||p.desc||'', price:p.precio??p.price??0, orig:p.precio_original??p.orig??null, emoji:p.emoji, tag:p.tag, active:p.activo??p.active??true, pais:p.pais||null, sin_stock:p.sin_stock||false, foto_url:p.foto_url||null, imagen:p.imagen||null })));
     } catch(e) { console.error("loadRestaurantData:", e); }
   }
 
