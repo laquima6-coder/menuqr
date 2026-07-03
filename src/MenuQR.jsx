@@ -3227,9 +3227,12 @@ function QRTabComp({ mesaNum, setMesaNum, qrType, setQrType, promoUrl, setPromoU
   // Asegurar que baseUrl incluye el slug del restaurante
   const configuredBase = (local.baseUrl||"").replace(/^https?:\/\//,"");
   const slug_ = local.slug || "";
+  const _prodHost = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    ? 'menuqr-ten.vercel.app'
+    : window.location.host;
   const baseUrl = configuredBase
     ? (configuredBase.includes("/") ? configuredBase : configuredBase + (slug_ ? "/"+slug_ : ""))
-    : (window.location.host + (slug_ ? "/"+slug_ : ""));
+    : (_prodHost + (slug_ ? "/"+slug_ : ""));
   const getQRData = () => {
     const base = `https://${baseUrl}`;
     switch(qrType){

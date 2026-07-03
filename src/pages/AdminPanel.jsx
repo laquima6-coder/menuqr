@@ -1539,7 +1539,11 @@ function ScreenReportes({ pedidos, prods }) {
 ══════════════════════════════════════════════════════════════ */
 function ScreenQR({ local }) {
   const slug = local?.slug || "mi-restaurante";
-  const base = `${window.location.origin}/menu/${slug}`;
+  // Si el panel se abre en localhost (dev), los QR deben apuntar al dominio de produccion
+  const prodOrigin = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    ? 'https://menuqr-ten.vercel.app'
+    : window.location.origin;
+  const base = `${prodOrigin}/menu/${slug}`;
   const totalMesas = local?.mesas || 3;
   const tel = (local?.telefono || "").replace(/\D/g, "");
   const [modal, setModal] = React.useState(null);
@@ -2029,7 +2033,10 @@ function ScreenGestion({ prods, setProds, cats, local, setLocal }) {
   const [pausaPedidos, setPausaPedidos] = React.useState(local?.pausa_pedidos || false);
   const [pausaDelivery, setPausaDelivery] = React.useState(!(local?.delivery_habilitado !== false));
 
-  const vitranaUrl = local?.slug ? `${window.location.origin}/menu/${local.slug}/vitrina` : null;
+  const _origin2 = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    ? 'https://menuqr-ten.vercel.app'
+    : window.location.origin;
+  const vitranaUrl = local?.slug ? `${_origin2}/menu/${local.slug}/vitrina` : null;
 
   const prodsFiltrados = prods.filter(p =>
     !search || p.nombre?.toLowerCase().includes(search.toLowerCase())
