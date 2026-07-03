@@ -8,6 +8,20 @@ const TIPOS_MOV = ['ingreso','egreso','gasto'];
 export default function ScreenCajaPOS({ prods=[], cats=[], local={} }) {
   const ridl = local?.restauranteId;
 
+  // Normalizar campos — el panel usa name/price/active, el POS espera nombre/precio/activo
+  const prodsNorm = React.useMemo(() => prods.map(p => ({
+    ...p,
+    nombre:       p.nombre      || p.name       || "",
+    precio:       p.precio      ?? p.price       ?? 0,
+    activo:       p.activo      ?? p.active      ?? true,
+    categoria_id: p.categoria_id || p.cat        || null,
+    foto_url:     p.foto_url    || p.imagen      || null,
+  })), [prods]);
+  const catsNorm = React.useMemo(() => cats.map(c => ({
+    ...c,
+    nombre: c.nombre || c.label || "",
+  })), [cats]);
+
   const [tab, setTab] = React.useState('mostrador');
   const [ticket, setTicket] = React.useState([]);
   const [selIdx, setSelIdx] = React.useState(null);
@@ -266,7 +280,7 @@ export default function ScreenCajaPOS({ prods=[], cats=[], local={} }) {
     alert('✓ Cierre Z registrado');
   };
 
-  const prodsFiltrados = prods.filter(p =>
+  const prodsFiltrados = prodsNorm.filter(p =>
     (!search || p.nombre?.toLowerCase().includes(search.toLowerCase())) &&
     (!catF || p.categoria_id === catF) &&
     p.activo !== false
@@ -307,7 +321,7 @@ export default function ScreenCajaPOS({ prods=[], cats=[], local={} }) {
               <input style={S.inp} placeholder="Buscar producto..." value={search} onChange={e=>setSearch(e.target.value)}/>
               <div style={{display:'flex', gap:6, flexWrap:'wrap'}}>
                 <button style={S.btnSm(catF===null?'var(--gold)':'var(--bg3)', catF===null?'#000':'var(--text)')} onClick={()=>setCatF(null)}>Todos</button>
-                {cats.map(c=>(
+                {catsNorm.map(c=>(
                   <button key={c.id} style={S.btnSm(catF===c.id?'var(--gold)':'var(--bg3)', catF===c.id?'#000':'var(--text)')} onClick={()=>setCatF(c.id)}>{c.nombre}</button>
                 ))}
               </div>
