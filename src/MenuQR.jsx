@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import AdminPanel from "./pages/AdminPanel.jsx";
 import QRCodeLib from "qrcode";
 import { supabase, loginAdmin, logoutAdmin, getSession, getRestaurante, getCategorias, getProductos, createTurno, closeTurno, getTurnos } from "./lib/supabase.js";
 
@@ -9032,7 +9033,7 @@ export default function MenuQR({
       )}
       {mode==="admin" && authUser && (
         <AdminErrorBoundary>
-          <AdminApp
+          <AdminPanel
             onBack={()=>setMode("landing")}
             local={local}    setLocal={setLocal}
             cats={cats}      setCats={setCats}
