@@ -453,8 +453,10 @@ export default function DeliveryPage() {
       + `👤 *Cliente:* ${name}${phone ? ` · 📱 ${phone}` : ''}\n\n`
       + `*Mi pedido:*\n${lineas}\n\n`
       + `💰 *Subtotal:* $${fmt(total)}\n`
-      + (deliveryCost > 0 ? `🛵 *Envío:* $${fmt(deliveryCost)}\n` : '')
-      + `💳 *TOTAL:* $${fmt(totalConEnvio)}\n\n`
+      + (deliveryCost > 0
+          ? `🛵 *Envío:* $${fmt(deliveryCost)}\n`
+          : `🛵 *Envío:* a coordinar con el local\n`)
+      + `💳 *TOTAL:* $${fmt(totalConEnvio)}${deliveryCost === 0 ? ' + envío' : ''}\n\n`
       + `💳 *Forma de pago:* ${payLabels[payMethod] || payMethod}`
       + (nota ? `\n📝 *Nota:* ${nota}` : '')
 
