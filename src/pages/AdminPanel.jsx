@@ -1,6 +1,12 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { supabase, getPedidos, updatePedidoStatus, subscribePedidos,
          toggleProducto, upsertCategoria } from "../lib/supabase.js";
+import { createClient } from "@supabase/supabase-js";
+
+/* Cliente con service key — solo para Supabase Storage (crear bucket + upload) */
+const _SB_URL = "https://fwovflsaghnutysjyaus.supabase.co";
+const _SB_SVC = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ3b3ZmbHNhZ2hudXR5c2p5YXVzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDY2NzQ3NSwiZXhwIjoyMDk2MjQzNDc1fQ.EEtIVeMFSPt3xgIBy0aPm0O1IRPFOb7zpKZRSET7Otw";
+const supabaseAdmin = createClient(_SB_URL, _SB_SVC);
 
 /* ══════════════════════════════════════════════════════════════
    STYLES — dark+gold, scoped under #ap2-root
@@ -280,6 +286,29 @@ function pedidoItems(p) {
 
 function minutesSince(dateStr) {
   return Math.floor((Date.now() - new Date(dateStr)) / 60000);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   PRODUCT IMAGE PLACEHOLDERS
+══════════════════════════════════════════════════════════════ */
+const CAT_PLACEHOLDERS = [
+  ["carne",      "https://images.unsplash.com/photo-1558030006-450675393462?w=400&h=300&fit=crop"],
+  ["pizza",      "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400&h=300&fit=crop"],
+  ["hamburgues", "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&h=300&fit=crop"],
+  ["pasta",      "https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=400&h=300&fit=crop"],
+  ["postre",     "https://images.unsplash.com/photo-1624353365286-3f8d62daad51?w=400&h=300&fit=crop"],
+  ["ensalada",   "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&h=300&fit=crop"],
+  ["vino",       "https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=400&h=300&fit=crop"],
+  ["cerveza",    "https://images.unsplash.com/photo-1535958636474-b021ee887b13?w=400&h=300&fit=crop"],
+];
+const DEFAULT_FOTO = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=300&fit=crop";
+
+function getPlaceholder(catLabel) {
+  const label = (catLabel || "").toLowerCase();
+  for (const [key, url] of CAT_PLACEHOLDERS) {
+    if (label.includes(key)) return url;
+  }
+  return DEFAULT_FOTO;
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -777,16 +806,170 @@ function ScreenCocina({ pedidos, setPedidos }) {
 }
 
 /* ══════════════════════════════════════════════════════════════
+   PRODUCT EDIT MODAL
+══════════════════════════════════════════════════════════════ */
+function ProductEditModal({ product, cats, onClose, onSave }) {
+  const [nombre,   setNombre]   = useState(product.name  || "");
+  const [precio,   setPrecio]   = useState(product.price || 0);
+  const [desc,     setDesc]     = useState(product.desc  || "");
+  const [activo,   setActivo]   = useState(product.active !== false);
+  const [imagen,   setImagen]   = useState(product.imagen || "");
+  const [uploading, setUploading] = useState(false);
+  const [saving,    setSaving]    = useState(false);
+  const [uploadErr, setUploadErr] = useState("");
+  const fileRef = useRef(null);
+
+  const catLabel  = cats.find((c) => c.id === product.cat)?.label || "";
+  const previewUrl = imagen || getPlaceholder(catLabel);
+
+  async function handleFile(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    setUploadErr("");
+    try {
+      /* Crear bucket si no existe */
+      await supabaseAdmin.storage.createBucket("product-images", { public: true });
+      /* Upload */
+      const ext      = file.name.split(".").pop().toLowerCase();
+      const filename = `${product.id}-${Date.now()}.${ext}`;
+      const { error: upErr } = await supabaseAdmin.storage
+        .from("product-images")
+        .upload(filename, file, { contentType: file.type, upsert: true });
+      if (upErr) throw upErr;
+      /* URL pública */
+      const { data: urlData } = supabaseAdmin.storage
+        .from("product-images")
+        .getPublicUrl(filename);
+      setImagen(urlData.publicUrl);
+    } catch (err) {
+      setUploadErr("Error al subir: " + (err.message || "intente de nuevo"));
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function handleSave() {
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from("productos")
+        .update({
+          nombre,
+          precio:      Number(precio),
+          descripcion: desc,
+          activo,
+          imagen:      imagen || null,
+        })
+        .eq("id", product.id);
+      if (error) throw error;
+      onSave({ ...product, name: nombre, price: Number(precio), desc, active: activo, imagen });
+    } catch (err) {
+      alert("Error al guardar: " + (err.message || "intente de nuevo"));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div
+      style={{
+        position: "fixed", inset: 0, background: "rgba(0,0,0,.72)",
+        backdropFilter: "blur(4px)", zIndex: 9999,
+        display: "flex", alignItems: "center", justifyContent: "center", padding: 20,
+      }}
+      onClick={onClose}
+    >
+      <div
+        style={{
+          background: "#1e1e1e", border: "1px solid rgba(255,255,255,.12)",
+          borderRadius: 16, width: "100%", maxWidth: 460,
+          maxHeight: "90vh", overflow: "auto", padding: 24,
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
+          <div style={{ fontSize: 16, fontWeight: 800 }}>✏️ Editar producto</div>
+          <div style={{ cursor: "pointer", color: "rgba(255,255,255,.4)", fontSize: 22, lineHeight: 1 }} onClick={onClose}>✕</div>
+        </div>
+
+        {/* Photo preview */}
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ height: 155, borderRadius: 10, overflow: "hidden", marginBottom: 10, background: "#262626", position: "relative" }}>
+            <img src={previewUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            {uploading && (
+              <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,.6)", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, color: "#e8a020", fontSize: 13, fontWeight: 700 }}>
+                <div style={{ width: 18, height: 18, border: "2px solid rgba(255,255,255,.2)", borderTopColor: "#e8a020", borderRadius: "50%", animation: "spin .8s linear infinite" }} />
+                Subiendo...
+              </div>
+            )}
+          </div>
+          <input ref={fileRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleFile} />
+          <button
+            className="ap-btn ap-btn-ghost"
+            style={{ width: "100%" }}
+            disabled={uploading}
+            onClick={() => fileRef.current?.click()}
+          >
+            📷 {imagen ? "Cambiar foto" : "Subir foto"}
+          </button>
+          {uploadErr && <div style={{ fontSize: 11, color: "#e84040", marginTop: 6 }}>{uploadErr}</div>}
+        </div>
+
+        {/* Fields */}
+        <div className="ap-form-group">
+          <label>Nombre</label>
+          <input type="text" value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Nombre del producto" />
+        </div>
+        <div className="ap-form-group">
+          <label>Precio</label>
+          <input type="number" value={precio} min={0} onChange={(e) => setPrecio(e.target.value)} />
+        </div>
+        <div className="ap-form-group">
+          <label>Descripción</label>
+          <textarea value={desc} rows={3} onChange={(e) => setDesc(e.target.value)} placeholder="Descripción del producto..." style={{ resize: "vertical" }} />
+        </div>
+
+        {/* Toggle activo */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 0", borderTop: "1px solid rgba(255,255,255,.08)", marginBottom: 18 }}>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 600 }}>Estado</div>
+            <div style={{ fontSize: 11, color: "rgba(255,255,255,.35)" }}>{activo ? "Visible en el menú" : "Oculto del menú"}</div>
+          </div>
+          <div className={`ap-switch ${activo ? "on" : "off"}`} onClick={() => setActivo((a) => !a)} />
+        </div>
+
+        {/* Actions */}
+        <div style={{ display: "flex", gap: 10 }}>
+          <button className="ap-btn ap-btn-ghost" style={{ flex: 1 }} onClick={onClose}>Cancelar</button>
+          <button
+            className="ap-btn ap-btn-gold"
+            style={{ flex: 2 }}
+            disabled={saving || uploading}
+            onClick={handleSave}
+          >
+            {saving ? "Guardando..." : "💾 Guardar cambios"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════
    SCREEN: CARTA / PRODUCTOS
 ══════════════════════════════════════════════════════════════ */
 function ScreenCarta({ prods, setProds, cats, local }) {
-  const [search, setSearch] = useState("");
+  const [search,      setSearch]      = useState("");
+  const [editProduct, setEditProduct] = useState(null);
 
   const filtered = prods.filter((p) =>
     p.name?.toLowerCase().includes(search.toLowerCase())
   );
 
-  async function toggleActive(p) {
+  async function toggleActive(e, p) {
+    e.stopPropagation();
     const newActive = !p.active;
     await toggleProducto(p.id, newActive);
     setProds((prev) => prev.map((pr) => pr.id === p.id ? { ...pr, active: newActive } : pr));
@@ -797,8 +980,26 @@ function ScreenCarta({ prods, setProds, cats, local }) {
     return c ? `${c.icon || ""} ${c.label}` : "Sin categoría";
   }
 
+  function getCatName(catId) {
+    return cats.find((c) => c.id === catId)?.label || "";
+  }
+
+  function handleSaveProduct(updated) {
+    setProds((prev) => prev.map((p) => p.id === updated.id ? updated : p));
+    setEditProduct(null);
+  }
+
   return (
     <div>
+      {editProduct && (
+        <ProductEditModal
+          product={editProduct}
+          cats={cats}
+          onClose={() => setEditProduct(null)}
+          onSave={handleSaveProduct}
+        />
+      )}
+
       <div className="ap-sec-hdr">
         <h2>Carta digital — Productos</h2>
         <div className="ap-sec-hdr-r">
@@ -812,17 +1013,21 @@ function ScreenCarta({ prods, setProds, cats, local }) {
           <button className="ap-btn ap-btn-gold">+ Nuevo producto</button>
         </div>
       </div>
+
       <div className="ap-prod-grid">
         {filtered.map((p) => (
-          <div key={p.id} className="ap-prod-card">
+          <div
+            key={p.id}
+            className="ap-prod-card"
+            style={{ cursor: "pointer" }}
+            onClick={() => setEditProduct(p)}
+          >
             <div className="ap-prod-thumb">
-              {p.foto_url ? (
-                <img src={p.foto_url} alt={p.name} loading="lazy" />
-              ) : (
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", fontSize: 40, opacity: 0.3 }}>
-                  {p.emoji || "🍽️"}
-                </div>
-              )}
+              <img
+                src={p.imagen || getPlaceholder(getCatName(p.cat))}
+                alt={p.name}
+                loading="lazy"
+              />
             </div>
             <div className="ap-prod-body">
               <div className="ap-prod-name">{p.name}</div>
@@ -831,7 +1036,7 @@ function ScreenCarta({ prods, setProds, cats, local }) {
                 <div className="ap-prod-price">{ARS(p.price)}</div>
                 <div
                   className={`ap-toggle ${p.active ? "on" : "off"}`}
-                  onClick={() => toggleActive(p)}
+                  onClick={(e) => toggleActive(e, p)}
                   title={p.active ? "Activo — click para desactivar" : "Inactivo — click para activar"}
                 />
               </div>
@@ -1357,227 +1562,4 @@ function ScreenQR({ local }) {
 
 /* ══════════════════════════════════════════════════════════════
    SCREEN: CONFIGURACIÓN
-══════════════════════════════════════════════════════════════ */
-function ScreenConfig({ local, setLocal }) {
-  const [form, setForm] = useState({
-    nombre: local?.nombre || "",
-    descripcion: local?.descripcion || "",
-    telefono: local?.telefono || "",
-    direccion: local?.direccion || "",
-    horarios: local?.horarios || "",
-    alias_mp: local?.alias_mp || "",
-    alias_trans: local?.alias_trans || "",
-    cbu: local?.cbu || "",
-  });
-
-  const [switches, setSwitches] = useState({
-    delivery: local?.feat_delivery !== false,
-    retiro: local?.feat_retiro !== false,
-    descuento_primera: local?.feat_descuento_primera !== false,
-    puntos: local?.feat_puntos || false,
-  });
-
-  function Toggle({ id }) {
-    return (
-      <div
-        className={`ap-switch ${switches[id] ? "on" : "off"}`}
-        onClick={() => setSwitches((s) => ({ ...s, [id]: !s[id] }))}
-      />
-    );
-  }
-
-  return (
-    <div>
-      <div className="ap-sec-hdr">
-        <h2>Configuración</h2>
-        <button
-          className="ap-btn ap-btn-gold"
-          onClick={() => setLocal && setLocal((l) => ({ ...l, ...form }))}
-        >
-          Guardar cambios
-        </button>
-      </div>
-      <div className="ap-grid-2">
-        <div>
-          <div className="ap-card" style={{ marginBottom: 16 }}>
-            <div className="ap-card-title">DATOS DEL RESTAURANTE</div>
-            {[
-              { key: "nombre", label: "Nombre del restaurante" },
-              { key: "descripcion", label: "Descripción" },
-              { key: "telefono", label: "Teléfono / WhatsApp" },
-              { key: "direccion", label: "Dirección" },
-              { key: "horarios", label: "Horarios" },
-            ].map(({ key, label }) => (
-              <div key={key} className="ap-form-group">
-                <label>{label}</label>
-                <input
-                  type="text"
-                  value={form[key]}
-                  onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
-                />
-              </div>
-            ))}
-          </div>
-          <div className="ap-card">
-            <div className="ap-card-title">PAGOS</div>
-            {[
-              { key: "alias_mp", label: "Alias Mercado Pago" },
-              { key: "alias_trans", label: "Alias Transferencia" },
-              { key: "cbu", label: "CBU" },
-            ].map(({ key, label }) => (
-              <div key={key} className="ap-form-group">
-                <label>{label}</label>
-                <input
-                  type="text"
-                  value={form[key]}
-                  onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
-                />
-              </div>
-            ))}
-          </div>
-        </div>
-        <div>
-          <div className="ap-card" style={{ marginBottom: 16 }}>
-            <div className="ap-card-title">FUNCIONES</div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-              {[
-                { id: "delivery", label: "Delivery habilitado", desc: "Permite pedidos a domicilio" },
-                { id: "retiro", label: "Retiro en el local", desc: "El cliente puede retirar su pedido" },
-                { id: "descuento_primera", label: "Descuento 10% primera visita", desc: "Se muestra en la vitrina" },
-                { id: "puntos", label: "Programa de puntos", desc: "Fidelización de clientes" },
-              ].map(({ id, label, desc }) => (
-                <div key={id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <div>
-                    <div style={{ fontSize: 13, fontWeight: 600 }}>{label}</div>
-                    <div style={{ fontSize: 11, color: "rgba(255,255,255,.35)" }}>{desc}</div>
-                  </div>
-                  <div
-                    className={`ap-switch ${switches[id] ? "on" : "off"}`}
-                    onClick={() => setSwitches((s) => ({ ...s, [id]: !s[id] }))}
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="ap-card">
-            <div className="ap-card-title">DELIVERY — ZONAS</div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {["Zona 1 (1km)", "Zona 2 (2km)", "Zona 3 (3km)"].map((z, i) => (
-                <div key={i} style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                  <span style={{ fontSize: 11, color: "rgba(255,255,255,.35)", width: 80 }}>{z}</span>
-                  <input type="number" defaultValue={(i + 1) * 2000} style={{ flex: 1 }} />
-                  <input type="number" defaultValue={(i + 1) * 15 + 5} style={{ width: 70 }} />
-                  <span style={{ fontSize: 11, color: "rgba(255,255,255,.35)" }}>min</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ══════════════════════════════════════════════════════════════
-   MAIN COMPONENT
-══════════════════════════════════════════════════════════════ */
-export default function AdminPanel({
-  onBack, local, setLocal, cats, setCats, prods, setProds, authUser, onLogout
-}) {
-  const [screen, setScreen]   = useState("dashboard");
-  const [clock, setClock]     = useState(new Date());
-  const [pedidos, setPedidos] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  const restauranteId = local?.restauranteId;
-
-  /* ── Clock */
-  useEffect(() => {
-    const t = setInterval(() => setClock(new Date()), 1000);
-    return () => clearInterval(t);
-  }, []);
-
-  /* ── Load pedidos */
-  useEffect(() => {
-    if (!restauranteId) { setLoading(false); return; }
-    setLoading(true);
-    getPedidos(restauranteId).then((data) => {
-      setPedidos(data || []);
-      setLoading(false);
-    });
-  }, [restauranteId]);
-
-  /* ── Realtime subscription */
-  useEffect(() => {
-    if (!restauranteId) return;
-    const unsub = subscribePedidos(
-      restauranteId,
-      (newPedido) => {
-        setPedidos((prev) => {
-          if (prev.find((p) => p.id === newPedido.id)) return prev;
-          return [newPedido, ...prev];
-        });
-      },
-      (updatedPedido) => {
-        setPedidos((prev) =>
-          prev.map((p) => p.id === updatedPedido.id ? { ...p, ...updatedPedido } : p)
-        );
-      }
-    );
-    return unsub;
-  }, [restauranteId]);
-
-  /* ── Derived counts for sidebar badges */
-  const pendingCount = pedidos.filter((p) => p.status === "nuevo").length;
-  const kitchenCount = pedidos.filter(
-    (p) => p.status === "nuevo" || p.status === "preparando"
-  ).length;
-
-  const screenProps = { pedidos, setPedidos, local, setLocal, cats, setCats, prods, setProds };
-
-  return (
-    <div id="ap2-root">
-      <style>{AP_STYLES}</style>
-
-      <Sidebar
-        screen={screen}
-        setScreen={setScreen}
-        pendingCount={pendingCount}
-        kitchenCount={kitchenCount}
-        local={local}
-        onLogout={onLogout}
-      />
-
-      <div className="ap-main">
-        <Topbar screen={screen} clock={clock} />
-        <div className="ap-content">
-          {loading && (
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 200, color: "rgba(255,255,255,.35)", gap: 12 }}>
-              <div style={{ width: 20, height: 20, border: "2px solid rgba(255,255,255,.1)", borderTopColor: "#e8a020", borderRadius: "50%", animation: "spin .8s linear infinite" }} />
-              Cargando datos...
-            </div>
-          )}
-          {!loading && (
-            <>
-              {screen === "dashboard"   && <ScreenDashboard  pedidos={pedidos} cats={cats} prods={prods} local={local} />}
-              {screen === "pedidos"     && <ScreenPedidos    pedidos={pedidos} setPedidos={setPedidos} local={local} />}
-              {screen === "cocina"      && <ScreenCocina     pedidos={pedidos} setPedidos={setPedidos} />}
-              {screen === "carta"       && <ScreenCarta      prods={prods} setProds={setProds} cats={cats} local={local} />}
-              {screen === "mesas"       && <ScreenMesas      local={local} pedidos={pedidos} />}
-              {screen === "delivery"    && <ScreenDelivery   pedidos={pedidos} setPedidos={setPedidos} local={local} />}
-              {screen === "categorias"  && <ScreenCategorias cats={cats} prods={prods} />}
-              {screen === "stock"       && <ScreenStock />}
-              {screen === "clientes"    && <ScreenClientes />}
-              {screen === "caja"        && <ScreenCaja       pedidos={pedidos} local={local} />}
-              {screen === "reportes"    && <ScreenReportes   pedidos={pedidos} prods={prods} />}
-              {screen === "qr"          && <ScreenQR         local={local} />}
-              {screen === "config"      && <ScreenConfig     local={local} setLocal={setLocal} />}
-            </>
-          )}
-        </div>
-      </div>
-
-      <style>{`@keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }`}</style>
-    </div>
-  );
-}
+════════════════════════════════════════════════════════════�

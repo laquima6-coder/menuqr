@@ -1502,7 +1502,6 @@ React.useEffect(()=>{
 },[]);
 
 const waNum = local.phone || local.wpp || local.whatsapp || local.telefono || "";
-const waNumClean = waNum.replace(/\D/g,"");
 
 const handleCopyWA = () => {
   if(!waNum) return;
@@ -1510,7 +1509,6 @@ const handleCopyWA = () => {
     setCopied(true);
     setTimeout(()=>setCopied(false), 2500);
   }).catch(()=>{
-    // fallback for older browsers
     const el = document.createElement("textarea");
     el.value = waNum;
     document.body.appendChild(el);
@@ -1522,176 +1520,249 @@ const handleCopyWA = () => {
   });
 };
 
-const pasos = [
-  {ico:"📱", n:"1", t:"Escaneás el QR de tu mesa", d:"Cada mesa tiene su propio código QR único"},
-  {ico:"🍽️", n:"2", t:"Elegís desde la carta digital", d:"Navegá el menú completo con fotos y precios"},
-  {ico:"👨‍🍳", n:"3", t:"El pedido entra directo a cocina", d:"Sin intermediarios — el mozo lo ve al instante"},
-  {ico:"🔄", n:"4", t:"Seguís el estado en tiempo real", d:"\"En preparación\" → \"Listo para entregar\""},
-  {ico:"🤝", n:"5", t:"El mozo te lo trae a la mesa", d:"Sentate y disfrutá — nosotros nos encargamos"},
+const platos = [
+  {src:"https://images.unsplash.com/photo-1558030006-450675393462?w=300&h=300&fit=crop", nombre:"Bife Premium"},
+  {src:"https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=300&h=300&fit=crop", nombre:"Pizza Artesanal"},
+  {src:"https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=300&h=300&fit=crop", nombre:"Hamburguesa Gourmet"},
+  {src:"https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=300&h=300&fit=crop", nombre:"Pasta Fresca"},
+  {src:"https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=300&h=300&fit=crop", nombre:"Bowl Verde"},
+  {src:"https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=300&h=300&fit=crop", nombre:"Vinos Selectos"},
 ];
 
+const pasos = [
+  {ico:"📱", t:"Escaneás el QR", d:"Cada mesa tiene su código único"},
+  {ico:"🍽️", t:"Elegís de la carta", d:"Menú completo con fotos y precios"},
+  {ico:"👨‍🍳", t:"Entra a cocina", d:"Sin intermediarios, al instante"},
+  {ico:"🔔", t:"Lo recibís en la mesa", d:"Sentate y disfrutá"},
+];
+
+const pct = mesasData.total > 0 ? Math.round((mesasData.ocupadas / mesasData.total) * 100) : 0;
+const circleR = 36;
+const circleC = 2 * Math.PI * circleR;
+
 return (
-  <div style={{background:"#FAFAFA",minHeight:"100vh",fontFamily:"system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif"}}>
+  <div style={{background:"#0a0a0a", minHeight:"100vh", fontFamily:"system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif", color:"#fff", overflowX:"hidden"}}>
 
-    {/* HERO */}
-    <div style={{background:"#111",padding:"36px 20px 32px",textAlign:"center"}}>
-      {local.logo_url ? (
-        <img src={local.logo_url} alt="logo" style={{width:88,height:88,borderRadius:22,objectFit:"cover",border:"3px solid rgba(201,168,76,.35)",display:"block",margin:"0 auto 16px"}}/>
-      ) : (
-        <div style={{width:88,height:88,borderRadius:22,background:"linear-gradient(135deg,#C9A84C,#8A6820)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:40,margin:"0 auto 16px"}}>🍽️</div>
-      )}
-      <h1 style={{margin:"0 0 8px",fontSize:30,fontWeight:900,color:"#fff",letterSpacing:"-.5px",lineHeight:1.1}}>{local.nombre}</h1>
-      {local.descripcion && (
-        <p style={{margin:"0 0 16px",fontSize:14,color:"rgba(255,255,255,.55)",lineHeight:1.5,maxWidth:320,marginLeft:"auto",marginRight:"auto"}}>{local.descripcion}</p>
-      )}
-      <div style={{display:"inline-flex",alignItems:"center",gap:6,background:"rgba(201,168,76,.15)",border:"1px solid rgba(201,168,76,.3)",borderRadius:20,padding:"6px 14px"}}>
-        <span style={{fontSize:16}}>👋</span>
-        <span style={{fontSize:13,fontWeight:600,color:"#C9A84C"}}>Bienvenido al local</span>
-      </div>
-    </div>
+    <style>{`
+      @keyframes vitFadeUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+      @keyframes vitPulse { 0%,100% { box-shadow:0 0 0 0 rgba(0,255,136,.5); } 70% { box-shadow:0 0 0 8px rgba(0,255,136,0); } }
+      .vit-s1 { animation: vitFadeUp .55s .05s ease both; }
+      .vit-s2 { animation: vitFadeUp .55s .15s ease both; }
+      .vit-s3 { animation: vitFadeUp .55s .25s ease both; }
+      .vit-s4 { animation: vitFadeUp .55s .35s ease both; }
+      .vit-s5 { animation: vitFadeUp .55s .45s ease both; }
+      .vit-plate { transition: transform .3s ease; overflow:hidden; border-radius:18px; }
+      .vit-plate:hover { transform: scale(1.03); }
+      .vit-plate:hover .vit-overlay { opacity:1 !important; }
+      .vit-plate img { transition: transform .4s ease; width:100%; height:100%; object-fit:cover; display:block; }
+      .vit-plate:hover img { transform: scale(1.1); }
+      .vit-copy-btn:active { transform: scale(.97); }
+    `}</style>
 
-    <div style={{padding:"20px 16px 48px",display:"flex",flexDirection:"column",gap:16}}>
-
-    {/* MESAS DISPONIBLES */}
-    <div style={{background:"#1A1A1A",borderRadius:18,padding:"18px 18px 16px"}}>
-      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16}}>
-        <div style={{width:8,height:8,borderRadius:"50%",background:"#00FF88",boxShadow:"0 0 0 3px rgba(0,255,136,.2)",animation:"vitrinaPulse 1.5s ease-in-out infinite",flexShrink:0}}/>
-        <span style={{fontSize:11,fontWeight:800,color:"#00FF88",letterSpacing:2}}>EN VIVO</span>
-        <span style={{fontSize:11,color:"rgba(255,255,255,.35)",marginLeft:2}}>· Mesas del local</span>
-      </div>
-      {mesasData.hayMesas ? (
-        <>
-          <div style={{display:"flex",gap:8,marginBottom:12}}>
-            <div style={{flex:1,background:"rgba(0,255,136,.07)",border:"1px solid rgba(0,255,136,.18)",borderRadius:12,padding:"12px 10px",textAlign:"center"}}>
-              <div style={{fontSize:32,fontWeight:900,color:"#00FF88",lineHeight:1}}>{mesasData.libres}</div>
-              <div style={{fontSize:10,color:"rgba(0,255,136,.6)",marginTop:4,fontWeight:700,letterSpacing:1}}>LIBRES</div>
-            </div>
-            <div style={{flex:1,background:"rgba(255,176,32,.07)",border:"1px solid rgba(255,176,32,.18)",borderRadius:12,padding:"12px 10px",textAlign:"center"}}>
-              <div style={{fontSize:32,fontWeight:900,color:"#FFB020",lineHeight:1}}>{mesasData.ocupadas}</div>
-              <div style={{fontSize:10,color:"rgba(255,176,32,.6)",marginTop:4,fontWeight:700,letterSpacing:1}}>OCUPADAS</div>
-            </div>
-            <div style={{flex:1,background:"rgba(201,168,76,.07)",border:"1px solid rgba(201,168,76,.18)",borderRadius:12,padding:"12px 10px",textAlign:"center"}}>
-              <div style={{fontSize:32,fontWeight:900,color:"#C9A84C",lineHeight:1}}>{mesasData.total}</div>
-              <div style={{fontSize:10,color:"rgba(201,168,76,.6)",marginTop:4,fontWeight:700,letterSpacing:1}}>TOTAL</div>
-            </div>
+    {/* ===== HERO ===== */}
+    <div style={{position:"relative", height:400, overflow:"hidden"}}>
+      <img
+        src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=1200&h=500&fit=crop"
+        alt="restaurante"
+        style={{width:"100%", height:"100%", objectFit:"cover", display:"block"}}
+      />
+      <div style={{position:"absolute", inset:0, background:"linear-gradient(to bottom, rgba(0,0,0,.25) 0%, rgba(0,0,0,.88) 100%)"}}/>
+      <div style={{position:"absolute", inset:0, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"flex-end", padding:"0 24px 44px", textAlign:"center"}}>
+        {local.logo_url && (
+          <img src={local.logo_url} alt="logo" style={{width:76, height:76, borderRadius:20, objectFit:"cover", border:"2px solid rgba(201,168,76,.65)", marginBottom:16, boxShadow:"0 8px 32px rgba(0,0,0,.6)"}}/>
+        )}
+        <h1 style={{margin:"0 0 10px", fontSize:40, fontWeight:900, color:"#fff", letterSpacing:"-1.5px", lineHeight:1, textShadow:"0 4px 24px rgba(0,0,0,.6)"}}>{local.nombre}</h1>
+        {local.descripcion && (
+          <p style={{margin:"0 0 20px", fontSize:14, color:"rgba(255,255,255,.6)", lineHeight:1.55, maxWidth:280}}>{local.descripcion}</p>
+        )}
+        <div style={{display:"flex", gap:8, flexWrap:"wrap", justifyContent:"center"}}>
+          <div style={{display:"inline-flex", alignItems:"center", gap:7, background:"rgba(255,255,255,.1)", backdropFilter:"blur(16px)", WebkitBackdropFilter:"blur(16px)", border:"1px solid rgba(255,255,255,.18)", borderRadius:100, padding:"7px 15px"}}>
+            <div style={{width:7, height:7, borderRadius:"50%", background:"#00FF88", animation:"vitPulse 2s ease-in-out infinite", flexShrink:0}}/>
+            <span style={{fontSize:12, fontWeight:700, color:"#fff"}}>Abierto ahora</span>
           </div>
-          <div style={{height:5,background:"rgba(255,255,255,.06)",borderRadius:3,overflow:"hidden"}}>
-            <div style={{height:"100%",width:`${mesasData.total>0?Math.round((mesasData.ocupadas/mesasData.total)*100):0}%`,background:"linear-gradient(90deg,#00FF88,#FFB020)",borderRadius:3,transition:"width .6s ease"}}/>
+          <div style={{display:"inline-flex", alignItems:"center", gap:7, background:"rgba(232,160,32,.18)", backdropFilter:"blur(16px)", WebkitBackdropFilter:"blur(16px)", border:"1px solid rgba(232,160,32,.4)", borderRadius:100, padding:"7px 15px"}}>
+            <span style={{fontSize:12, fontWeight:700, color:"#e8a020"}}>✦ Menú Digital</span>
           </div>
-          <div style={{fontSize:11,color:"rgba(255,255,255,.3)",textAlign:"center",marginTop:8}}>{mesasData.total>0?Math.round((mesasData.libres/mesasData.total)*100):0}% de las mesas están libres ahora</div>
-        </>
-      ) : (
-        <div style={{textAlign:"center",padding:"8px 0 4px"}}>
-          <div style={{fontSize:28,marginBottom:8}}>🪑</div>
-          <div style={{fontSize:15,fontWeight:700,color:"rgba(255,255,255,.75)"}}>Mesas disponibles</div>
-          <div style={{fontSize:13,color:"rgba(255,255,255,.38)",marginTop:4}}>Consultá al mozo para saber qué mesa está libre</div>
         </div>
-      )}
+      </div>
     </div>
 
-    {/* CÓMO FUNCIONA */}
-    <div style={{background:"#1A1A1A",borderRadius:18,padding:"18px 18px 16px"}}>
-      <div style={{fontSize:11,fontWeight:800,color:"rgba(255,255,255,.28)",letterSpacing:2,marginBottom:18}}>CÓMO FUNCIONA</div>
-      <div style={{display:"flex",flexDirection:"column",gap:0}}>
-        {pasos.map((s,i)=>(
-          <div key={i} style={{display:"flex",alignItems:"flex-start",gap:14,paddingBottom:i<pasos.length-1?16:0,borderBottom:i<pasos.length-1?"1px solid rgba(255,255,255,.05)":"none",marginBottom:i<pasos.length-1?16:0}}>
-            <div style={{width:38,height:38,borderRadius:11,background:"rgba(201,168,76,.12)",border:"1px solid rgba(201,168,76,.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:19,flexShrink:0}}>{s.ico}</div>
-            <div style={{flex:1,paddingTop:2}}>
-              <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:3}}>
-                <span style={{fontSize:9,fontWeight:800,color:"#C9A84C",background:"rgba(201,168,76,.15)",border:"1px solid rgba(201,168,76,.25)",borderRadius:5,padding:"1px 6px",letterSpacing:.5}}>PASO {s.n}</span>
+    <div style={{padding:"24px 14px 64px", display:"flex", flexDirection:"column", gap:20, maxWidth:520, margin:"0 auto"}}>
+
+      {/* ===== CÓMO FUNCIONA ===== */}
+      <div className="vit-s1" style={{background:"rgba(255,255,255,.03)", backdropFilter:"blur(20px)", WebkitBackdropFilter:"blur(20px)", border:"1px solid rgba(201,168,76,.2)", borderRadius:24, padding:"22px 18px", position:"relative", overflow:"hidden"}}>
+        <div style={{position:"absolute", top:0, left:0, right:0, height:1, background:"linear-gradient(90deg, transparent, rgba(201,168,76,.5), transparent)"}}/>
+        <div style={{display:"flex", alignItems:"center", gap:10, marginBottom:20}}>
+          <div style={{width:30, height:30, borderRadius:9, background:"linear-gradient(135deg,#e8a020,#c9a84c)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:14, flexShrink:0}}>✦</div>
+          <span style={{fontSize:12, fontWeight:800, color:"rgba(255,255,255,.85)", letterSpacing:1.8, textTransform:"uppercase"}}>Cómo funciona</span>
+        </div>
+        <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:10}}>
+          {pasos.map((p,i)=>(
+            <div key={i} style={{background:"rgba(255,255,255,.04)", border:"1px solid rgba(255,255,255,.07)", borderRadius:16, padding:"16px 13px", position:"relative", overflow:"hidden"}}>
+              <div style={{position:"absolute", top:9, right:11, fontSize:10, fontWeight:900, color:"rgba(201,168,76,.22)", letterSpacing:.5}}>0{i+1}</div>
+              <div style={{fontSize:28, marginBottom:10}}>{p.ico}</div>
+              <div style={{fontSize:13, fontWeight:700, color:"rgba(255,255,255,.88)", lineHeight:1.25, marginBottom:5}}>{p.t}</div>
+              <div style={{fontSize:11, color:"rgba(255,255,255,.36)", lineHeight:1.4}}>{p.d}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ===== GALERÍA DE PLATOS ===== */}
+      <div className="vit-s2">
+        <div style={{display:"flex", alignItems:"center", gap:10, marginBottom:14, paddingLeft:2}}>
+          <div style={{width:3, height:20, borderRadius:2, background:"linear-gradient(to bottom,#e8a020,#c9a84c)", flexShrink:0}}/>
+          <span style={{fontSize:12, fontWeight:800, color:"rgba(255,255,255,.85)", letterSpacing:1.8, textTransform:"uppercase"}}>Nuestros platos</span>
+        </div>
+        <div style={{display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:8}}>
+          {platos.map((pl,i)=>(
+            <div key={i} className="vit-plate" style={{position:"relative", aspectRatio:"1", cursor:"default", borderRadius:18, overflow:"hidden"}}>
+              <img src={pl.src} alt={pl.nombre}/>
+              <div className="vit-overlay" style={{position:"absolute", inset:0, background:"linear-gradient(to top,rgba(0,0,0,.8) 0%,rgba(0,0,0,0) 55%)", opacity:.75, transition:"opacity .3s ease", display:"flex", alignItems:"flex-end", padding:"8px"}}>
+                <span style={{fontSize:10, fontWeight:700, color:"#fff", lineHeight:1.2}}>{pl.nombre}</span>
               </div>
-              <div style={{fontSize:14,fontWeight:700,color:"rgba(255,255,255,.9)",lineHeight:1.25}}>{s.t}</div>
-              <div style={{fontSize:12,color:"rgba(255,255,255,.38)",marginTop:3,lineHeight:1.4}}>{s.d}</div>
+              <div style={{position:"absolute", inset:0, border:"1px solid rgba(201,168,76,.14)", borderRadius:18, pointerEvents:"none"}}/>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ===== MESAS ===== */}
+      <div className="vit-s3" style={{background:"rgba(255,255,255,.03)", backdropFilter:"blur(20px)", WebkitBackdropFilter:"blur(20px)", border:"1px solid rgba(255,255,255,.07)", borderRadius:24, padding:"22px 20px", position:"relative", overflow:"hidden"}}>
+        <div style={{position:"absolute", top:0, left:0, right:0, height:1, background:"linear-gradient(90deg,transparent,rgba(0,255,136,.35),transparent)"}}/>
+        <div style={{display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:20}}>
+          <div style={{display:"flex", alignItems:"center", gap:8}}>
+            <div style={{width:8, height:8, borderRadius:"50%", background:"#00FF88", animation:"vitPulse 2s ease-in-out infinite", flexShrink:0}}/>
+            <span style={{fontSize:11, fontWeight:800, color:"#00FF88", letterSpacing:2}}>EN VIVO</span>
+          </div>
+          <span style={{fontSize:11, color:"rgba(255,255,255,.32)", fontWeight:600, letterSpacing:.5}}>OCUPACIÓN ACTUAL</span>
+        </div>
+        {mesasData.hayMesas ? (
+          <div style={{display:"flex", alignItems:"center", gap:22}}>
+            <div style={{position:"relative", width:90, height:90, flexShrink:0}}>
+              <svg viewBox="0 0 90 90" style={{width:90, height:90, transform:"rotate(-90deg)"}}>
+                <circle cx="45" cy="45" r={circleR} fill="none" stroke="rgba(255,255,255,.06)" strokeWidth="9"/>
+                <circle cx="45" cy="45" r={circleR} fill="none"
+                  stroke={pct > 70 ? "#ff6b6b" : pct > 40 ? "#FFB020" : "#00FF88"}
+                  strokeWidth="9" strokeLinecap="round"
+                  strokeDasharray={String(circleC)}
+                  strokeDashoffset={String(circleC * (1 - pct / 100))}
+                  style={{transition:"stroke-dashoffset .8s ease, stroke .4s ease"}}
+                />
+              </svg>
+              <div style={{position:"absolute", inset:0, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center"}}>
+                <span style={{fontSize:18, fontWeight:900, color:"#fff", lineHeight:1}}>{pct}%</span>
+                <span style={{fontSize:9, color:"rgba(255,255,255,.38)", letterSpacing:.5, marginTop:2}}>ocup.</span>
+              </div>
+            </div>
+            <div style={{flex:1, display:"flex", flexDirection:"column", gap:10}}>
+              <div style={{display:"flex", justifyContent:"space-between", alignItems:"center"}}>
+                <span style={{fontSize:13, color:"rgba(255,255,255,.5)"}}>Libres</span>
+                <span style={{fontSize:22, fontWeight:900, color:"#00FF88", lineHeight:1}}>{mesasData.libres}</span>
+              </div>
+              <div style={{height:1, background:"rgba(255,255,255,.05)"}}/>
+              <div style={{display:"flex", justifyContent:"space-between", alignItems:"center"}}>
+                <span style={{fontSize:13, color:"rgba(255,255,255,.5)"}}>Ocupadas</span>
+                <span style={{fontSize:22, fontWeight:900, color:"#FFB020", lineHeight:1}}>{mesasData.ocupadas}</span>
+              </div>
+              <div style={{height:1, background:"rgba(255,255,255,.05)"}}/>
+              <div style={{display:"flex", justifyContent:"space-between", alignItems:"center"}}>
+                <span style={{fontSize:13, color:"rgba(255,255,255,.5)"}}>Total</span>
+                <span style={{fontSize:22, fontWeight:900, color:"rgba(255,255,255,.65)", lineHeight:1}}>{mesasData.total}</span>
+              </div>
             </div>
           </div>
-        ))}
+        ) : (
+          <div style={{textAlign:"center", padding:"10px 0"}}>
+            <div style={{fontSize:36, marginBottom:10}}>🪑</div>
+            <div style={{fontSize:15, fontWeight:700, color:"rgba(255,255,255,.7)"}}>Mesas disponibles</div>
+            <div style={{fontSize:12, color:"rgba(255,255,255,.33)", marginTop:5}}>Consultá al mozo sobre disponibilidad</div>
+          </div>
+        )}
       </div>
-    </div>
 
-    {/* DESCUENTO 10% PRIMERA VISITA */}
-    {local.feat_primera_visita !== false && (
-      <div style={{background:"linear-gradient(135deg,#1A1500,#1A1A1A)",border:"2px solid rgba(201,168,76,.35)",borderRadius:18,padding:"20px 18px",position:"relative",overflow:"hidden"}}>
-        <div style={{position:"absolute",top:-20,right:-20,fontSize:80,opacity:.06,pointerEvents:"none",userSelect:"none"}}>🎁</div>
-        <div style={{display:"flex",alignItems:"flex-start",gap:14,marginBottom:16}}>
-          <div style={{width:52,height:52,borderRadius:15,background:"linear-gradient(135deg,#C9A84C,#8A6820)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,flexShrink:0}}>🎁</div>
-          <div style={{flex:1}}>
-            <div style={{display:"flex",alignItems:"baseline",gap:6,marginBottom:4}}>
-              <span style={{fontSize:34,fontWeight:900,color:"#C9A84C",lineHeight:1}}>10%</span>
-              <div style={{background:"rgba(201,168,76,.2)",border:"1px solid rgba(201,168,76,.4)",borderRadius:6,padding:"2px 8px",fontSize:9,fontWeight:800,color:"#C9A84C",letterSpacing:1}}>OFF</div>
+      {/* ===== DESCUENTO 10% ===== */}
+      {local.feat_primera_visita !== false && (
+        <div className="vit-s4" style={{position:"relative", borderRadius:24, overflow:"hidden"}}>
+          <div style={{position:"absolute", inset:0, background:"linear-gradient(135deg,#e8a020 0%,#c9a84c 45%,#7a4f00 100%)"}}/>
+          <div style={{position:"absolute", top:-50, right:-50, width:180, height:180, borderRadius:"50%", background:"rgba(255,255,255,.08)"}}/>
+          <div style={{position:"absolute", bottom:-40, left:-40, width:140, height:140, borderRadius:"50%", background:"rgba(255,255,255,.06)"}}/>
+          <div style={{position:"relative", padding:"26px 22px"}}>
+            <div style={{display:"flex", alignItems:"flex-start", gap:16, marginBottom:20}}>
+              <div style={{fontSize:44, lineHeight:1, flexShrink:0}}>🎁</div>
+              <div>
+                <div style={{display:"flex", alignItems:"baseline", gap:8, marginBottom:5}}>
+                  <span style={{fontSize:48, fontWeight:900, color:"#fff", lineHeight:1}}>10%</span>
+                  <span style={{fontSize:18, fontWeight:800, color:"rgba(255,255,255,.8)"}}>OFF</span>
+                </div>
+                <div style={{fontSize:16, fontWeight:800, color:"#fff", lineHeight:1.15}}>Primera visita</div>
+                <div style={{fontSize:12, color:"rgba(255,255,255,.6)", marginTop:4}}>Descuento exclusivo para clientes nuevos</div>
+              </div>
             </div>
-            <div style={{fontSize:16,fontWeight:800,color:"#fff",lineHeight:1.2}}>Primera visita</div>
-            <div style={{fontSize:12,color:"rgba(255,255,255,.4)",marginTop:3}}>Descuento exclusivo para clientes nuevos</div>
+            <button onClick={()=>setShowDescuento(true)}
+              style={{width:"100%", background:"rgba(255,255,255,.22)", backdropFilter:"blur(8px)", WebkitBackdropFilter:"blur(8px)", border:"1px solid rgba(255,255,255,.38)", borderRadius:14, padding:"14px 16px", fontSize:14, fontWeight:800, color:"#fff", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:8, letterSpacing:.3}}>
+              🎉 Ver cómo reclamarlo
+            </button>
           </div>
         </div>
-        <button onClick={()=>setShowDescuento(true)}
-          style={{width:"100%",background:"linear-gradient(135deg,#C9A84C,#8A6820)",border:"none",borderRadius:12,padding:"13px",fontSize:14,fontWeight:800,color:"#fff",cursor:"pointer",letterSpacing:.2}}>
-          🎉 Quiero mi descuento
-        </button>
-      </div>
-    )}
+      )}
 
-    {/* WHATSAPP CONTACTO */}
-    {!!waNum && (
-      <div style={{background:"#1A1A1A",borderRadius:18,padding:"18px 18px 16px"}}>
-        <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:12}}>
-          <div style={{width:40,height:40,borderRadius:12,background:"rgba(37,211,102,.1)",border:"1px solid rgba(37,211,102,.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>💬</div>
-          <div>
-            <div style={{fontSize:14,fontWeight:700,color:"rgba(255,255,255,.9)",lineHeight:1.2}}>Contacto por WhatsApp</div>
-            <div style={{fontSize:12,color:"rgba(255,255,255,.38)",marginTop:2}}>Para delivery o retiro</div>
+      {/* ===== WHATSAPP ===== */}
+      {!!waNum && (
+        <div className="vit-s5" style={{background:"rgba(255,255,255,.03)", backdropFilter:"blur(20px)", WebkitBackdropFilter:"blur(20px)", border:"1px solid rgba(37,211,102,.15)", borderRadius:24, padding:"22px 20px", position:"relative", overflow:"hidden"}}>
+          <div style={{position:"absolute", top:0, left:0, right:0, height:1, background:"linear-gradient(90deg,transparent,rgba(37,211,102,.35),transparent)"}}/>
+          <div style={{display:"flex", alignItems:"center", gap:12, marginBottom:14}}>
+            <div style={{width:44, height:44, borderRadius:14, background:"rgba(37,211,102,.1)", border:"1px solid rgba(37,211,102,.22)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:22, flexShrink:0}}>💬</div>
+            <div>
+              <div style={{fontSize:15, fontWeight:800, color:"rgba(255,255,255,.9)"}}>Contacto</div>
+              <div style={{fontSize:12, color:"rgba(255,255,255,.36)", marginTop:2}}>Para pedidos a domicilio o retiro</div>
+            </div>
           </div>
+          <p style={{margin:"0 0 14px", fontSize:13, color:"rgba(255,255,255,.42)", lineHeight:1.6}}>
+            Copiá nuestro número y escribinos por WhatsApp para hacer tu pedido fuera del local.
+          </p>
+          <div style={{background:"rgba(255,255,255,.05)", border:"1px solid rgba(255,255,255,.08)", borderRadius:14, padding:"13px 16px", display:"flex", alignItems:"center", justifyContent:"space-between", gap:10, marginBottom:12}}>
+            <span style={{fontSize:18, fontWeight:700, color:"#fff", letterSpacing:.5}}>{waNum}</span>
+            <span style={{fontSize:10, fontWeight:800, color:"rgba(37,211,102,.55)", letterSpacing:1}}>WA</span>
+          </div>
+          <button className="vit-copy-btn" onClick={handleCopyWA}
+            style={{width:"100%", background:copied?"rgba(37,211,102,.15)":"rgba(37,211,102,.07)", border:`1px solid ${copied?"rgba(37,211,102,.5)":"rgba(37,211,102,.17)"}`, borderRadius:14, padding:"13px", fontSize:14, fontWeight:700, color:copied?"#25D366":"rgba(255,255,255,.68)", cursor:"pointer", transition:"all .25s", display:"flex", alignItems:"center", justifyContent:"center", gap:8}}>
+            {copied ? "✅ ¡Número copiado!" : "📋 Copiar número"}
+          </button>
         </div>
-        <p style={{margin:"0 0 14px",fontSize:13,color:"rgba(255,255,255,.5)",lineHeight:1.5}}>
-          Para delivery o retiro, copiá nuestro número y escribinos por WhatsApp.
-        </p>
-        <div style={{background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.08)",borderRadius:12,padding:"12px 14px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,marginBottom:12}}>
-          <span style={{fontSize:17,fontWeight:700,color:"#fff",letterSpacing:.5}}>{waNum}</span>
-          <span style={{fontSize:11,color:"rgba(255,255,255,.3)"}}>WhatsApp</span>
-        </div>
-        <button onClick={handleCopyWA}
-          style={{width:"100%",background:copied?"rgba(37,211,102,.15)":"rgba(37,211,102,.1)",border:`1px solid ${copied?"rgba(37,211,102,.5)":"rgba(37,211,102,.2)"}`,borderRadius:12,padding:"13px",fontSize:14,fontWeight:700,color:copied?"#25D366":"rgba(255,255,255,.75)",cursor:"pointer",transition:"all .2s",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-          {copied ? "✅ ¡Número copiado!" : "📋 Copiar número"}
-        </button>
-      </div>
-    )}
+      )}
 
     </div>
 
-    {/* MODAL DESCUENTO */}
+    {/* ===== MODAL DESCUENTO ===== */}
     {showDescuento && (
-      <div onClick={()=>setShowDescuento(false)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,.65)",zIndex:200,display:"flex",alignItems:"flex-end",justifyContent:"center"}}>
-        <div onClick={e=>e.stopPropagation()} style={{background:"#1A1A1A",borderRadius:"20px 20px 0 0",padding:"28px 24px 40px",width:"100%",maxWidth:480}}>
-          <div style={{textAlign:"center",marginBottom:24}}>
-            <div style={{fontSize:52,marginBottom:12}}>🎁</div>
-            <h2 style={{margin:"0 0 8px",fontSize:26,fontWeight:900,color:"#C9A84C"}}>¡Tu 10% OFF!</h2>
-            <p style={{margin:0,fontSize:14,color:"rgba(255,255,255,.5)",lineHeight:1.5}}>Descuento exclusivo para tu primera visita</p>
+      <div onClick={()=>setShowDescuento(false)} style={{position:"fixed", inset:0, background:"rgba(0,0,0,.72)", backdropFilter:"blur(10px)", WebkitBackdropFilter:"blur(10px)", zIndex:200, display:"flex", alignItems:"flex-end", justifyContent:"center"}}>
+        <div onClick={e=>e.stopPropagation()} style={{background:"#141414", border:"1px solid rgba(201,168,76,.22)", borderRadius:"24px 24px 0 0", padding:"32px 22px 52px", width:"100%", maxWidth:480, position:"relative", overflow:"hidden"}}>
+          <div style={{position:"absolute", top:0, left:0, right:0, height:2, background:"linear-gradient(90deg,transparent,#e8a020,transparent)"}}/>
+          <div style={{textAlign:"center", marginBottom:28}}>
+            <div style={{fontSize:60, marginBottom:14}}>🎁</div>
+            <h2 style={{margin:"0 0 8px", fontSize:28, fontWeight:900, background:"linear-gradient(135deg,#e8a020,#c9a84c)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent"}}>¡Tu 10% OFF!</h2>
+            <p style={{margin:0, fontSize:14, color:"rgba(255,255,255,.42)", lineHeight:1.5}}>Exclusivo para tu primera visita al local</p>
           </div>
-          <div style={{background:"rgba(201,168,76,.07)",border:"1px solid rgba(201,168,76,.2)",borderRadius:14,padding:"18px",marginBottom:20}}>
-            <div style={{fontSize:12,fontWeight:700,color:"#C9A84C",letterSpacing:1,marginBottom:12}}>CÓMO RECLAMARLO</div>
-            {[
-              "Pedí tu comida normalmente desde la carta",
-              "Cuando llegue la cuenta, avisale al mozo que es tu primera visita",
-              "Mostrá esta pantalla como comprobante",
-              "¡El mozo aplicará el 10% de descuento en tu cuenta!"
-            ].map((paso,i)=>(
-              <div key={i} style={{display:"flex",alignItems:"flex-start",gap:10,marginBottom:i<3?10:0}}>
-                <div style={{width:22,height:22,borderRadius:6,background:"rgba(201,168,76,.2)",border:"1px solid rgba(201,168,76,.3)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:800,color:"#C9A84C",flexShrink:0,marginTop:1}}>{i+1}</div>
-                <span style={{fontSize:13,color:"rgba(255,255,255,.7)",lineHeight:1.45,paddingTop:2}}>{paso}</span>
+          <div style={{background:"rgba(201,168,76,.06)", border:"1px solid rgba(201,168,76,.15)", borderRadius:16, padding:"20px 18px", marginBottom:20}}>
+            <div style={{fontSize:11, fontWeight:800, color:"#e8a020", letterSpacing:1.8, marginBottom:16}}>CÓMO RECLAMARLO</div>
+            {["Pedí tu comida normalmente desde la carta","Cuando llegue la cuenta, avisale al mozo que es tu primera visita","Mostrá esta pantalla como comprobante","¡El mozo aplicará el 10% de descuento!"].map((paso,i)=>(
+              <div key={i} style={{display:"flex", alignItems:"flex-start", gap:12, marginBottom:i<3?13:0}}>
+                <div style={{width:24, height:24, borderRadius:7, background:"linear-gradient(135deg,#e8a020,#c9a84c)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:12, fontWeight:900, color:"#fff", flexShrink:0, marginTop:1}}>{i+1}</div>
+                <span style={{fontSize:13, color:"rgba(255,255,255,.62)", lineHeight:1.5, paddingTop:3}}>{paso}</span>
               </div>
             ))}
           </div>
           <button onClick={()=>setShowDescuento(false)}
-            style={{width:"100%",background:"rgba(255,255,255,.08)",border:"1px solid rgba(255,255,255,.12)",borderRadius:12,padding:"14px",fontSize:14,fontWeight:700,color:"rgba(255,255,255,.7)",cursor:"pointer"}}>
+            style={{width:"100%", background:"rgba(255,255,255,.05)", border:"1px solid rgba(255,255,255,.09)", borderRadius:14, padding:"14px", fontSize:14, fontWeight:700, color:"rgba(255,255,255,.55)", cursor:"pointer"}}>
             Cerrar
           </button>
         </div>
       </div>
     )}
-
-    <style>{`@keyframes vitrinaPulse{0%,100%{opacity:1;box-shadow:0 0 0 3px rgba(0,255,136,.2)}50%{opacity:.5;box-shadow:0 0 0 6px rgba(0,255,136,.05)}}`}</style>
   </div>
 );
 }
-
 
 
 export function ClientApp({onBack, local, cats, prods, vitrina=false, sinPedidos=false}) {
@@ -8987,7 +9058,7 @@ export default function MenuQR({
         getProductos(rest.id),
       ]);
       if (categorias.length) setCats(categorias.map(c => ({ id:c.id, label:c.label, icon:c.icon, activa:c.activa })));
-      if (productos.length)  setProds(productos.map(p => ({ id:p.id, cat:p.categoria_id, name:p.name, desc:p.desc, price:p.price, orig:p.orig, emoji:p.emoji, tag:p.tag, active:p.active, pais:p.pais||null, sin_stock:p.sin_stock||false, foto_url:p.foto_url||null })));
+      if (productos.length)  setProds(productos.map(p => ({ id:p.id, cat:p.categoria_id, name:p.name, desc:p.desc, price:p.price, orig:p.orig, emoji:p.emoji, tag:p.tag, active:p.active, pais:p.pais||null, sin_stock:p.sin_stock||false, foto_url:p.foto_url||null, imagen:p.imagen||null })));
     } catch(e) { console.error("loadRestaurantData:", e); }
   }
 
