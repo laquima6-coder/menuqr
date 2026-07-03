@@ -127,6 +127,7 @@ const AP_STYLES = `
   #ap2-root .pill-prep { background:rgba(232,160,32,.15); color:var(--gold) }
   #ap2-root .pill-listo { background:rgba(62,207,110,.15); color:var(--green) }
   #ap2-root .pill-entregado { background:rgba(255,255,255,.07); color:var(--text3) }
+  #ap2-root .pill-pago { background:rgba(245,158,11,.15); color:#f59e0b; border:1px solid rgba(245,158,11,.3) }
   #ap2-root .pill-libre { background:rgba(62,207,110,.15); color:var(--green) }
   #ap2-root .pill-ocupado { background:rgba(232,160,32,.15); color:var(--gold) }
 
@@ -260,6 +261,7 @@ function timeAgo(dateStr) {
 }
 
 function statusClass(s) {
+  if (s === "pendiente_pago") return "pill-pago";
   if (s === "nuevo") return "pill-nuevo";
   if (s === "preparando") return "pill-prep";
   if (s === "listo") return "pill-listo";
@@ -267,6 +269,7 @@ function statusClass(s) {
 }
 
 function statusLabel(s) {
+  if (s === "pendiente_pago") return "💳 PAGO PEND.";
   if (s === "nuevo") return "NUEVO";
   if (s === "preparando") return "EN PREP.";
   if (s === "listo") return "✓ LISTO";
@@ -717,7 +720,13 @@ function ScreenPedidos({ pedidos, setPedidos, local }) {
                 <td>{new Date(p.created_at).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}</td>
                 <td><span className={`ap-pill ${statusClass(p.status)}`}>{statusLabel(p.status)}</span></td>
                 <td>
-                  {p.status !== "entregado" && (
+                  {p.status === "pendiente_pago" && (
+                    <button className="ap-btn ap-btn-gold ap-btn-sm" onClick={() => {
+                      if (supabase) supabase.from("pedidos").update({ status: "nuevo" }).eq("id", p.id);
+                      setPedidos(prev => prev.map(o => o.id === p.id ? { ...o, status: "nuevo" } : o));
+                    }}>✅ Pago recibido</button>
+                  )}
+                  {p.status !== "entregado" && p.status !== "pendiente_pago" && (
                     <button className="ap-btn ap-btn-ghost ap-btn-sm" onClick={() => advance(p)}>
                       {p.status === "nuevo" ? "▶ Preparar" : p.status === "preparando" ? "✓ Listo" : "📦 Entregar"}
                     </button>
@@ -1097,71 +1106,101 @@ function ScreenMesas({ local, pedidos }) {
 ══════════════════════════════════════════════════════════════ */
 function ScreenDelivery({ pedidos, setPedidos, local }) {
   const deliveryOrders = pedidos.filter(
-    (p) => !p.mesa_numero && p.status !== "entregado"
+    (p) => (p.tipo_pedido === "delivery" || (!p.mesa_numero && p.tipo_pedido !== "retiro")) && p.status !== "entregado"
   );
+  const [notaDelivery, setNotaDelivery] = React.useState({});
 
-  const delivCfg = local?.delivery_config || {};
-  const zonas = delivCfg.zones || [
-    { label: "Zona 1 (1km)", precio: 2000 },
-    { label: "Zona 2 (2km)", precio: 4000 },
-    { label: "Zona 3 (3km)", precio: 5000 },
-  ];
+  const confirmarPago = async (p) => {
+    if (!supabase) return;
+    await supabase.from("pedidos").update({ status: "nuevo" }).eq("id", p.id);
+    setPedidos(prev => prev.map(o => o.id === p.id ? { ...o, status: "nuevo" } : o));
+  };
+
+  const avanzarEstado = async (p) => {
+    const NEXT = { nuevo: "preparando", preparando: "listo", listo: "en_camino", en_camino: "entregado" };
+    const next = NEXT[p.status];
+    if (!next) return;
+    if (supabase) await supabase.from("pedidos").update({ status: next }).eq("id", p.id);
+    setPedidos(prev => prev.map(o => o.id === p.id ? { ...o, status: next } : o));
+  };
+
+  const guardarNotaDelivery = async (p) => {
+    const obs = notaDelivery[p.id] ?? (p.observaciones_delivery || "");
+    if (supabase) await supabase.from("pedidos").update({ observaciones_delivery: obs }).eq("id", p.id);
+    setPedidos(prev => prev.map(o => o.id === p.id ? { ...o, observaciones_delivery: obs } : o));
+  };
+
+  const BTN_LABELS = { nuevo:"▶ En preparación", preparando:"✓ Listo", listo:"🛵 En camino", en_camino:"✅ Entregado" };
 
   return (
     <div>
-      <div className="ap-grid-2">
-        <div>
-          <div className="ap-sec-hdr" style={{ marginBottom: 14 }}>
-            <h2>Pedidos delivery</h2>
-            <div className="ap-live"><div className="ap-live-dot" />{deliveryOrders.length} activos</div>
-          </div>
-          <div className="ap-order-feed">
-            {deliveryOrders.length === 0 && (
-              <div className="ap-card" style={{ textAlign: "center", padding: 32, color: "rgba(255,255,255,.35)" }}>
-                Sin pedidos delivery activos
+      <div className="ap-sec-hdr" style={{ marginBottom: 14 }}>
+        <h2>Delivery activo</h2>
+        <div className="ap-live"><div className="ap-live-dot" />{deliveryOrders.length} pedidos</div>
+      </div>
+      {deliveryOrders.length === 0 && (
+        <div className="ap-card" style={{ textAlign: "center", padding: 40, color: "rgba(255,255,255,.35)" }}>
+          Sin pedidos delivery activos
+        </div>
+      )}
+      <div className="ap-order-feed">
+        {deliveryOrders.map((p) => (
+          <div key={p.id} className="ap-order-card" style={{ flexDirection: "column", alignItems: "flex-start", gap: 10 }}>
+            {/* Header row */}
+            <div style={{ display: "flex", alignItems: "center", gap: 12, width: "100%" }}>
+              <div className="ap-order-num">#{p.id?.slice(-3)}</div>
+              <div className="ap-order-info" style={{ flex: 1 }}>
+                <div className="ap-order-title">🛵 Delivery</div>
+                <div className="ap-order-detail" style={{ fontSize: 11, color: "rgba(255,255,255,.4)" }}>
+                  {new Date(p.created_at).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}
+                  {" · "}{p.metodo_pago || "—"}
+                </div>
+              </div>
+              <span className={`ap-pill ${statusClass(p.status)}`}>{statusLabel(p.status)}</span>
+              <span style={{ color: "#e8a020", fontWeight: 800, fontSize: 15 }}>{ARS(p.total)}</span>
+            </div>
+            {/* Dirección */}
+            {(p.direccion_cliente || p.nota) && (
+              <div style={{ background: "rgba(255,255,255,.03)", border: "1px solid rgba(255,255,255,.07)", borderRadius: 8, padding: "10px 12px", width: "100%", boxSizing: "border-box" }}>
+                {p.direccion_cliente && <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", marginBottom: 2 }}>📍 {p.direccion_cliente}</div>}
+                {p.entrecalles && <div style={{ fontSize: 12, color: "var(--text2)" }}>Entre: {p.entrecalles}</div>}
+                {p.observaciones_cliente && <div style={{ fontSize: 12, color: "rgba(255,255,255,.45)", marginTop: 4 }}>💬 {p.observaciones_cliente}</div>}
               </div>
             )}
-            {deliveryOrders.map((p) => (
-              <div key={p.id} className="ap-order-card" style={{ flexDirection: "column", alignItems: "flex-start", gap: 8 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 12, width: "100%" }}>
-                  <div className="ap-order-num">#{p.id?.slice(-3)}</div>
-                  <div className="ap-order-info">
-                    <div className="ap-order-title">Delivery</div>
-                    <div className="ap-order-detail">{p.nota || "Sin dirección"}</div>
-                  </div>
-                  <span className={`ap-pill ${statusClass(p.status)}`}>{statusLabel(p.status)}</span>
-                </div>
-                <div style={{ fontSize: 12, color: "rgba(255,255,255,.35)", paddingLeft: 52 }}>
-                  {pedidoItems(p)}
-                </div>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", paddingLeft: 52 }}>
-                  <span style={{ color: "#e8a020", fontWeight: 800 }}>{ARS(p.total)}</span>
-                  <span style={{ fontSize: 11, color: "rgba(255,255,255,.35)" }}>
-                    {p.metodo_pago || "—"}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-        <div>
-          <div className="ap-map-box">
-            <div style={{ fontSize: 48 }}>🗺️</div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,.65)" }}>Mapa en tiempo real</div>
-            <div style={{ fontSize: 12, color: "rgba(255,255,255,.35)" }}>Conectá un proveedor de mapas para ver rutas</div>
-          </div>
-          <div className="ap-card ap-card-sm" style={{ marginTop: 14 }}>
-            <div className="ap-card-title">ZONAS DE DELIVERY</div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 4 }}>
-              {zonas.map((z, i) => (
-                <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 13 }}>
-                  <span style={{ color: "rgba(255,255,255,.65)" }}>{z.label}</span>
-                  <span style={{ color: "#e8a020", fontWeight: 700 }}>{ARS(z.precio)}</span>
-                </div>
-              ))}
+            {/* Productos */}
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,.4)", width: "100%" }}>{pedidoItems(p)}</div>
+            {/* Nota del delivery */}
+            <div style={{ width: "100%", display: "flex", gap: 8 }}>
+              <input
+                style={{ flex: 1, background: "var(--bg3)", border: "1px solid var(--border)", borderRadius: 8, padding: "6px 10px", color: "var(--text)", fontSize: 12, outline: "none" }}
+                placeholder="Nota para el delivery (piso, timbre, referencia...)"
+                value={notaDelivery[p.id] ?? (p.observaciones_delivery || "")}
+                onChange={e => setNotaDelivery(prev => ({ ...prev, [p.id]: e.target.value }))}
+              />
+              <button className="ap-btn ap-btn-gold" style={{ padding: "6px 12px", fontSize: 11 }} onClick={() => guardarNotaDelivery(p)}>Guardar</button>
+            </div>
+            {/* Acciones */}
+            <div style={{ display: "flex", gap: 8, width: "100%", flexWrap: "wrap" }}>
+              {p.status === "pendiente_pago" && (
+                <button className="ap-btn ap-btn-gold" style={{ flex: 1, minWidth: 160 }} onClick={() => confirmarPago(p)}>
+                  ✅ Confirmar pago recibido
+                </button>
+              )}
+              {p.status !== "pendiente_pago" && p.status !== "entregado" && (
+                <button className="ap-btn ap-btn-gold" style={{ flex: 1 }} onClick={() => avanzarEstado(p)}>
+                  {BTN_LABELS[p.status] || "Avanzar"}
+                </button>
+              )}
+              {local?.telefono && (
+                <a href={"https://wa.me/"+(local.telefono||"").replace(/\D/g,"")+"?text="+encodeURIComponent("Hola! Tu pedido #"+p.id?.slice(-3)+" está "+statusLabel(p.status))}
+                  target="_blank" rel="noreferrer"
+                  style={{ background: "#25D366", border: "none", borderRadius: 8, padding: "8px 12px", fontSize: 11, fontWeight: 700, color: "#fff", textDecoration: "none", display: "flex", alignItems: "center", gap: 4 }}>
+                  📲 WA
+                </a>
+              )}
             </div>
           </div>
-        </div>
+        ))}
       </div>
     </div>
   );
@@ -1585,6 +1624,8 @@ function ScreenConfiguracion({ local, setLocal }) {
     delivery_precio:     local?.delivery_precio || 0,
     delivery_horario:    local?.delivery_horario || "",
     delivery_radio:      local?.delivery_radio || "",
+    alias_pago:          local?.alias_pago || "",
+    alias_titular:       local?.alias_titular || "",
   });
   const [saved, setSaved] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
@@ -1620,6 +1661,8 @@ function ScreenConfiguracion({ local, setLocal }) {
         delivery_precio:     form.delivery_precio,
         delivery_horario:    form.delivery_horario,
         delivery_radio:      form.delivery_radio,
+        alias_pago:          form.alias_pago,
+        alias_titular:       form.alias_titular,
       }).eq("id", local.restauranteId);
     }
     setSaving(false);
@@ -1707,6 +1750,24 @@ function ScreenConfiguracion({ local, setLocal }) {
               </div>
             </div>
           )}
+        </div>
+
+        {/* ─ Alias de pago ─ */}
+        <div className="ap-card">
+          <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 14, color: "var(--gold)" }}>💳 Alias de pago (Transferencia / Mercado Pago)</div>
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,.35)", marginBottom: 14 }}>
+            Se muestra al cliente en el paso de pago del delivery para que pueda transferir.
+          </div>
+          <div className="ap-grid-2">
+            <div className="ap-form-group">
+              <label>Alias (CVU / Mercado Pago)</label>
+              <input type="text" value={form.alias_pago} onChange={e => setForm({ ...form, alias_pago: e.target.value })} placeholder="Ej: dinero.en.mi.cuenta" />
+            </div>
+            <div className="ap-form-group">
+              <label>Titular de la cuenta</label>
+              <input type="text" value={form.alias_titular} onChange={e => setForm({ ...form, alias_titular: e.target.value })} placeholder="Juan García" />
+            </div>
+          </div>
         </div>
 
         {/* ─ WiFi ─ */}

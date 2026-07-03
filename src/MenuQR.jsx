@@ -911,6 +911,39 @@ function HappyHourBanner({happyHasta, happyHour, lang}) {
 /* ═══════════════════════════════════════════════════
    WA ORDER FLOW — Pedido completo desde la vitrina
 ═══════════════════════════════════════════════════ */
+
+function TrackPedido({ pedidoId, initialStatus }) {
+  const LABELS = {
+    pendiente_pago:  {icon:"⏳", label:"Esperando confirmación de pago", color:"#f59e0b"},
+    nuevo:           {icon:"✅", label:"Pago confirmado — en preparación", color:"#22c55e"},
+    preparando:      {icon:"👨‍🍳", label:"En cocina", color:"#22c55e"},
+    listo:           {icon:"📦", label:"Listo para enviar", color:"#3b82f6"},
+    en_camino:       {icon:"🛵", label:"En camino a tu domicilio", color:"#C9A84C"},
+    entregado:       {icon:"🎉", label:"Entregado", color:"#22c55e"},
+  };
+  const [status, setStatus] = React.useState(initialStatus || "pendiente_pago");
+
+  React.useEffect(() => {
+    if (!pedidoId || !supabase) return;
+    const channel = supabase.channel("track-"+pedidoId)
+      .on("postgres_changes", {event:"UPDATE", schema:"public", table:"pedidos", filter:`id=eq.${pedidoId}`},
+        (payload) => { if(payload.new?.status) setStatus(payload.new.status); }
+      ).subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [pedidoId]);
+
+  const info = LABELS[status] || {icon:"📋", label:status, color:"rgba(255,255,255,.5)"};
+  return (
+    <div style={{display:"flex",alignItems:"center",gap:12}}>
+      <div style={{fontSize:28}}>{info.icon}</div>
+      <div>
+        <div style={{fontFamily:"'Outfit',sans-serif",fontSize:15,fontWeight:700,color:info.color}}>{info.label}</div>
+        <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,color:"rgba(255,255,255,.35)",marginTop:2}}>Actualizamos el estado en tiempo real</div>
+      </div>
+    </div>
+  );
+}
+
 function WAOrderFlow({local, prods, cats, tipo, onClose}) {
   const [step, setStep]     = React.useState(1);
   const [cart, setCart]     = React.useState({});
@@ -928,6 +961,8 @@ function WAOrderFlow({local, prods, cats, tipo, onClose}) {
   const [zoneInfo, setZoneInfo]   = React.useState(null); // {zona, distKm} | {fuera,distKm} | null
   const [zoneLoading, setZoneLoad]= React.useState(false);
   const [savedAddrs, setSavedAddrs]= React.useState([]);
+  const [pedidoId, setPedidoId]       = React.useState(null);
+  const [trackStatus, setTrackStatus]  = React.useState(null);
   const [mapContainerId]          = React.useState("wa-route-map-"+Math.random().toString(36).slice(2));
   const routeMapRef               = React.useRef(null);
 
@@ -1080,41 +1115,113 @@ function WAOrderFlow({local, prods, cats, tipo, onClose}) {
   };
 
   const sendWA = async () => {
-    if(tipo==="delivery") saveAddress();
     setSaving(true);
-    const deliveryCost = (tipo==="delivery"&&zoneInfo&&!zoneInfo.fuera) ? (zoneInfo.zona.precio||0) : 0;
-    const totalConEnvio = total + deliveryCost;
+    if(tipo==="delivery") {
+      saveAddress();
+      const deliveryCost = (zoneInfo&&!zoneInfo.fuera)?(zoneInfo.zona.precio||0):(local.delivery_precio||0);
+      const totalConEnvio = total + deliveryCost;
+      try {
+        const pid = crypto.randomUUID();
+        const notaStr = ["DELIVERY","Dir:"+direc,entreCalles?"Entre:"+entreCalles:null,
+          "Cliente:"+name,phone?"Tel:"+phone:null,nota?"Obs:"+nota:null
+        ].filter(Boolean).join(" | ");
+        if(supabase && local.restauranteId) {
+          await supabase.from("pedidos").insert({
+            id:pid, restaurante_id:local.restauranteId,
+            mesa_numero:0, status:"pendiente_pago", metodo_pago:waPay||"transferencia",
+            propina:0, total:totalConEnvio, nota:notaStr, idioma:"es",
+            tipo_pedido:"delivery", direccion_cliente:direc,
+            entrecalles:entreCalles, observaciones_cliente:nota,
+          });
+          await supabase.from("pedido_items").insert(
+            cartItems.map(i=>({pedido_id:pid,producto_id:i.id,nombre:i.name,precio:i.price,cantidad:i.qty}))
+          );
+        }
+        setPedidoId(pid);
+        setTrackStatus("pendiente_pago");
+      } catch(e){ console.warn("delivery err",e); }
+      setSaving(false);
+      setDone(true);
+      return;
+    }
+    // Retiro: abre WhatsApp
+    const totalConEnvio = total;
     if(supabase && local.restauranteId) {
       try {
-        const pedidoId = crypto.randomUUID();
-        const notaStr = ["PEDIDO WA",tipo==="delivery"?"DELIVERY":"RETIRO",
-          tipo==="delivery"&&direc?"Dir:"+direc:null,
-          tipo==="delivery"&&zoneInfo&&!zoneInfo.fuera?`Zona:${zoneInfo.zona.nombre}|Envío:$${zoneInfo.zona.precio}|~${zoneInfo.zona.minutos}min|Dist:${zoneInfo.distKm}km`:null,
-          "Cliente:"+name, phone?"Tel:"+phone:null, nota?"Nota:"+nota:null
-        ].filter(Boolean).join(" | ");
+        const pid = crypto.randomUUID();
+        const notaStr = ["RETIRO","Cliente:"+name,phone?"Tel:"+phone:null,nota?"Nota:"+nota:null].filter(Boolean).join(" | ");
         await supabase.from("pedidos").insert({
-          id:pedidoId, restaurante_id:local.restauranteId,
-          mesa_numero:0, status:"nuevo", metodo_pago:"whatsapp",
-          propina:0, total:totalConEnvio, nota:notaStr, idioma:"es",
+          id:pid, restaurante_id:local.restauranteId,
+          mesa_numero:0, status:"nuevo", metodo_pago:waPay||"whatsapp",
+          propina:0, total:totalConEnvio, nota:notaStr, idioma:"es", tipo_pedido:"retiro",
         });
         await supabase.from("pedido_items").insert(
-          cartItems.map(i=>({pedido_id:pedidoId,producto_id:i.id,nombre:i.name,precio:i.price,cantidad:i.qty}))
+          cartItems.map(i=>({pedido_id:pid,producto_id:i.id,nombre:i.name,precio:i.price,cantidad:i.qty}))
         );
       } catch(e){ console.warn("wa order err",e); }
     }
     const lineas = cartItems.map(i=>"• "+i.qty+"x "+i.name+" — $"+fmt(i.price*i.qty)).join("\n");
     const msg = "*Hola "+local.nombre+"! Quiero hacer un pedido* 🍽️\n\n"
-      +(tipo==="delivery"?"📍 *DELIVERY* a: "+direc+(entreCalles?" (entre "+entreCalles+")":""):"🏪 *RETIRO en el local*")+"\n"
-      +(zoneInfo&&!zoneInfo.fuera?"🛵 "+zoneInfo.zona.nombre+" · $"+zoneInfo.zona.precio+" envío · ~"+(zoneInfo.etaMins||zoneInfo.zona.minutos)+" min\n":"")
+      +"🏪 *RETIRO en el local*\n"
       +"👤 "+name+(phone?" · 📱 "+phone:"")+"\n\n"
-      +"*Mi pedido:*\n"+lineas+"\n\n"
-      +(deliveryCost>0?"\n🛵 *Envío: $"+fmt(deliveryCost)+"*":"")+"\n💰 *Total con envío: $"+fmt(totalConEnvio)+"*"
+      +"*Mi pedido:*\n"+lineas+"\n\n💰 *Total: $"+fmt(totalConEnvio)+"*"
       +(nota?"\n📝 "+nota:"")
       +(waPay?"\n💳 Pago: "+{"efectivo":"Efectivo","debito":"Débito","mp":"Mercado Pago","trans":"Transferencia"}[waPay]:"");
-    window.open("https://wa.me/"+local.whatsapp_vitrina_numero+"?text="+encodeURIComponent(msg),"_blank");
+    window.open("https://wa.me/"+(local.whatsapp_vitrina_numero||local.telefono||"").replace(/\D/g,"")+"?text="+encodeURIComponent(msg),"_blank");
     setSaving(false);
     setDone(true);
   };
+  const TRACK_LABELS = {
+    pendiente_pago:"⏳ Esperando pago",
+    nuevo:"✅ Pago confirmado — preparando",
+    preparando:"👨‍🍳 En cocina",
+    listo:"📦 Listo para enviar",
+    en_camino:"🛵 En camino",
+    entregado:"✅ Entregado"
+  };
+
+  if(done && tipo==="delivery") return (
+    <div style={{position:"fixed",inset:0,background:"var(--cb)",zIndex:9999,
+      display:"flex",flexDirection:"column",overflowY:"auto"}}>
+      <div style={{padding:"16px",borderBottom:"1px solid rgba(255,255,255,.07)"}}>
+        <button onClick={onClose} style={{background:"rgba(255,255,255,.08)",border:"none",color:"var(--cbri)",cursor:"pointer",fontSize:18,width:34,height:34,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center"}}>←</button>
+      </div>
+      <div style={{padding:"24px 20px",display:"flex",flexDirection:"column",alignItems:"center",textAlign:"center",gap:16}}>
+        <div style={{width:72,height:72,borderRadius:"50%",background:"rgba(201,168,76,.15)",border:"2px solid #C9A84C",display:"flex",alignItems:"center",justifyContent:"center",fontSize:32}}>🛵</div>
+        <div>
+          <h2 style={{fontFamily:"'Outfit',sans-serif",fontSize:22,fontWeight:800,color:"var(--cbri)",marginBottom:6}}>¡Pedido registrado!</h2>
+          <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"rgba(255,255,255,.5)",lineHeight:1.6}}>Completá el pago para que empecemos a prepararlo.</p>
+        </div>
+        {/* Estado del pedido */}
+        <div style={{width:"100%",background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.08)",borderRadius:14,padding:"14px 16px",textAlign:"left"}}>
+          <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,color:"rgba(255,255,255,.3)",letterSpacing:2,marginBottom:8}}>ESTADO DEL PEDIDO</p>
+          <TrackPedido pedidoId={pedidoId} initialStatus={trackStatus}/>
+        </div>
+        {/* Alias para pagar */}
+        {local.alias_pago&&(
+          <div style={{width:"100%",background:"rgba(201,168,76,.08)",border:"1px solid rgba(201,168,76,.35)",borderRadius:14,padding:"14px 16px",textAlign:"left"}}>
+            <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,color:"rgba(201,168,76,.8)",letterSpacing:2,marginBottom:10}}>ALIAS PARA EL PAGO</p>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10}}>
+              <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:18,fontWeight:700,color:"#fff"}}>{local.alias_pago}</div>
+              <button onClick={()=>navigator.clipboard.writeText(local.alias_pago)}
+                style={{background:"#C9A84C",border:"none",borderRadius:8,padding:"8px 14px",fontFamily:"'IBM Plex Mono',monospace",fontSize:11,fontWeight:700,color:"#1C1008",cursor:"pointer"}}>📋 Copiar</button>
+            </div>
+            {local.alias_titular&&<p style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,color:"rgba(255,255,255,.4)",marginTop:4}}>Titular: {local.alias_titular}</p>}
+          </div>
+        )}
+        {/* Enviar comprobante */}
+        {(local.telefono||local.whatsapp_vitrina_numero)&&(
+          <button onClick={()=>window.open("https://wa.me/"+(local.telefono||local.whatsapp_vitrina_numero||"").replace(/\D/g,"")+"?text="+encodeURIComponent("Hola! Te mando el comprobante de pago de mi pedido 🧾"),"_blank")}
+            style={{width:"100%",background:"#25D366",border:"none",borderRadius:12,padding:"14px",fontFamily:"'Outfit',sans-serif",fontSize:14,fontWeight:700,color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+            📲 Enviar comprobante por WhatsApp
+          </button>
+        )}
+        <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,color:"rgba(255,255,255,.3)",lineHeight:1.6}}>
+          Tu pedido estará visible aquí. Actualizamos el estado a medida que avanza.
+        </p>
+      </div>
+    </div>
+  );
 
   if(done) return (
     <div style={{position:"fixed",inset:0,background:"var(--cb)",zIndex:9999,
@@ -1128,7 +1235,7 @@ function WAOrderFlow({local, prods, cats, tipo, onClose}) {
         Se abrió WhatsApp con tu pedido escrito.<br/>Solo tocá <b style={{color:"#25D366"}}>Enviar</b> y el local lo recibe.
       </p>
       <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"rgba(255,255,255,.35)",marginBottom:28}}>
-        {tipo==="delivery"?"🛵 Delivery — te contactarán para coordinar":"🏪 Retiro — te avisan cuando está listo"}
+        🏪 Retiro — te avisan cuando está listo
       </p>
       <button onClick={onClose} style={{background:"#25D366",color:"#fff",border:"none",
         borderRadius:12,padding:"14px 36px",fontFamily:"'Outfit',sans-serif",
@@ -1373,8 +1480,10 @@ function WAOrderFlow({local, prods, cats, tipo, onClose}) {
             <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,color:"rgba(255,255,255,.3)",letterSpacing:2,marginBottom:10}}>FORMA DE PAGO</p>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
               {[
-                {id:"efectivo",icon:"💵",label:"Efectivo"},
-                {id:"debito",icon:"💳",label:"Débito"},
+                ...(tipo!=="delivery"?[
+                  {id:"efectivo",icon:"💵",label:"Efectivo"},
+                  {id:"debito",icon:"💳",label:"Débito"},
+                ]:[]),
                 {id:"mp",icon:"📲",label:"Mercado Pago"},
                 {id:"trans",icon:"🏦",label:"Transferencia"},
               ].map(p=>(
@@ -1390,29 +1499,44 @@ function WAOrderFlow({local, prods, cats, tipo, onClose}) {
             </div>
           </div>
           {/* Alias MP / Transferencia en WAOrderFlow */}
-          {(waPay==="mp"||waPay==="trans")&&local.mp_mostrar_alias&&local.mp_alias&&(
+          {(waPay==="mp"||waPay==="trans")&&local.alias_pago&&(
             <div style={{background:"rgba(201,168,76,.08)",border:"1px solid rgba(201,168,76,.35)",borderRadius:14,padding:"14px 16px",marginBottom:12}}>
               <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,letterSpacing:2,color:"rgba(201,168,76,.8)",marginBottom:10,textTransform:"uppercase"}}>
-                {waPay==="mp"?"💳 Pagar con Mercado Pago":"🏦 Datos de transferencia"}
+                {waPay==="mp"?"💳 Pagar con Mercado Pago":"🏦 Transferencia bancaria"}
               </div>
-              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,marginBottom:local.mp_titular?6:0}}>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,marginBottom:local.alias_titular?6:0}}>
                 <div>
-                  <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:17,fontWeight:700,color:"#fff",letterSpacing:.5}}>{local.mp_alias}</div>
-                  {local.mp_titular&&<div style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,color:"rgba(255,255,255,.45)",marginTop:3}}>Titular: {local.mp_titular}</div>}
+                  <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:19,fontWeight:700,color:"#fff",letterSpacing:.5}}>{local.alias_pago}</div>
+                  {local.alias_titular&&<div style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,color:"rgba(255,255,255,.45)",marginTop:3}}>Titular: {local.alias_titular}</div>}
                 </div>
-                <button onClick={()=>navigator.clipboard.writeText(local.mp_alias)}
+                <button onClick={()=>navigator.clipboard.writeText(local.alias_pago)}
                   style={{background:"#C9A84C",border:"none",borderRadius:9,padding:"9px 16px",fontFamily:"'IBM Plex Mono',monospace",fontSize:12,fontWeight:700,color:"#1C1008",cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>
-                  📋 Copiar alias
+                  📋 Copiar
                 </button>
               </div>
+              {tipo==="delivery"&&(
+                <div style={{background:"rgba(37,211,102,.08)",border:"1px solid rgba(37,211,102,.2)",borderRadius:10,padding:"10px 12px",marginTop:10}}>
+                  <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"rgba(255,255,255,.65)",margin:"0 0 8px",lineHeight:1.6}}>
+                    Hacé el pago y después enviá el comprobante por WhatsApp. Tu pedido entra a preparación cuando confirmemos el pago.
+                  </p>
+                  {(local.telefono||local.whatsapp_vitrina_numero)&&(
+                    <button onClick={()=>window.open("https://wa.me/"+(local.telefono||local.whatsapp_vitrina_numero||"").replace(/\D/g,"")+"?text="+encodeURIComponent("Hola! Te envío el comprobante de pago de mi pedido 🧾"),"_blank")}
+                      style={{background:"#25D366",border:"none",borderRadius:8,padding:"9px 14px",fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:700,color:"#fff",cursor:"pointer",width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+                      📲 Enviar comprobante por WhatsApp
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           )}
+          {tipo!=="delivery"&&(
           <div style={{background:"rgba(37,211,102,.06)",border:"1px solid rgba(37,211,102,.2)",
             borderRadius:12,padding:"12px 16px",marginBottom:16}}>
             <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"rgba(255,255,255,.45)",lineHeight:1.6}}>
               Al tocar <b style={{color:"#25D366"}}>Enviar por WhatsApp</b> se abre la app con el pedido ya escrito. Solo tocás enviar y el local lo recibe de inmediato.
             </p>
           </div>
+          )}
         </div>
       )}
 
@@ -1461,12 +1585,15 @@ function WAOrderFlow({local, prods, cats, tipo, onClose}) {
               padding:14,fontFamily:"'Outfit',sans-serif",fontSize:14,fontWeight:600,cursor:"pointer"}}>
               ← Atrás
             </button>
-            <button onClick={sendWA} disabled={saving}
-              style={{flex:2,background:saving?"rgba(37,211,102,.5)":"#25D366",
-                color:"#fff",border:"none",borderRadius:12,padding:14,
+            <button onClick={sendWA} disabled={saving||(tipo==="delivery"&&!(waPay==="mp"||waPay==="trans"))}
+              style={{flex:2,background:saving?"rgba(37,211,102,.5)":(tipo==="delivery"&&!(waPay==="mp"||waPay==="trans"))?"rgba(255,255,255,.08)":"#25D366",
+                color:(tipo==="delivery"&&!(waPay==="mp"||waPay==="trans"))?"rgba(255,255,255,.25)":"#fff",border:"none",borderRadius:12,padding:14,
                 fontFamily:"'Outfit',sans-serif",fontSize:15,fontWeight:700,cursor:"pointer",
                 display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-              {WASVG()}{saving?"Abriendo WhatsApp...":"Enviar por WhatsApp"}
+              {tipo==="delivery"
+                ? (saving?"Registrando...":"🛵 Confirmar pedido")
+                : <>{WASVG()}{saving?"Abriendo WhatsApp...":"Enviar por WhatsApp"}</>
+              }
             </button>
           </div>
         )}
