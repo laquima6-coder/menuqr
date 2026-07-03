@@ -245,6 +245,41 @@ const AP_STYLES = `
   #ap2-root .ap-switch::after { content:''; position:absolute; width:20px; height:20px; border-radius:50%; background:#fff; top:2px; transition:left .2s }
   #ap2-root .ap-switch.on::after { left:calc(100% - 22px) }
   #ap2-root .ap-switch.off::after { left:2px }
+  /* MOBILE — sidebar como drawer desde la derecha */
+  @media (max-width:768px){
+    #ap2-root { flex-direction:column; height:100dvh }
+    #ap2-root .ap-sidebar {
+      position:fixed; top:0; right:0; height:100dvh; z-index:300;
+      transform:translateX(100%); transition:transform .28s cubic-bezier(.4,0,.2,1);
+      box-shadow:-8px 0 40px rgba(0,0,0,.6);
+      width:min(320px,88vw) !important;
+    }
+    #ap2-root .ap-sidebar.nav-open { transform:translateX(0) }
+    #ap2-root .ap-overlay {
+      display:none; position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:299;
+      backdrop-filter:blur(2px);
+    }
+    #ap2-root .ap-overlay.nav-open { display:block }
+    #ap2-root .ap-menu-btn {
+      display:flex; align-items:center; justify-content:center;
+      width:38px; height:38px; border-radius:10px; border:1px solid var(--border2);
+      background:var(--bg3); cursor:pointer; font-size:18px; flex-shrink:0;
+    }
+    #ap2-root .ap-sidebar-close {
+      display:flex; align-items:center; justify-content:center;
+      width:32px; height:32px; border-radius:8px; border:1px solid var(--border);
+      background:var(--bg3); cursor:pointer; font-size:16px; color:var(--text2); flex-shrink:0;
+    }
+    #ap2-root .ap-topbar { padding:0 14px; gap:10px }
+    #ap2-root .ap-content { padding:16px }
+    #ap2-root .ap-topbar-time { display:none }
+    #ap2-root .ap-nav-item { padding:13px 14px; font-size:14px }
+  }
+  @media (min-width:769px){
+    #ap2-root .ap-menu-btn { display:none }
+    #ap2-root .ap-sidebar-close { display:none }
+    #ap2-root .ap-overlay { display:none !important }
+  }
 `;
 
 /* ══════════════════════════════════════════════════════════════
@@ -335,12 +370,12 @@ const SCREEN_TITLES = {
 /* ══════════════════════════════════════════════════════════════
    SIDEBAR
 ══════════════════════════════════════════════════════════════ */
-function Sidebar({ screen, setScreen, pendingCount, kitchenCount, local, onLogout }) {
+function Sidebar({ screen, setScreen, pendingCount, kitchenCount, local, onLogout, open, onClose }) {
   const nav = (id, icon, label, badge) => (
     <div
       key={id}
       className={`ap-nav-item${screen === id ? " active" : ""}`}
-      onClick={() => setScreen(id)}
+      onClick={() => { setScreen(id); onClose?.(); }}
     >
       <span className="ap-nav-icon">{icon}</span>
       {label}
@@ -351,13 +386,14 @@ function Sidebar({ screen, setScreen, pendingCount, kitchenCount, local, onLogou
   const initial = (local?.nombre || "A").charAt(0).toUpperCase();
 
   return (
-    <div className="ap-sidebar">
+    <div className={`ap-sidebar${open ? " nav-open" : ""}`}>
       <div className="ap-logo">
         <div className="ap-logo-icon">🍽️</div>
-        <div>
+        <div style={{flex:1}}>
           <div className="ap-logo-name">MenuQR</div>
           <div className="ap-logo-tag">SISTEMA DE GESTIÓN</div>
         </div>
+        <div className="ap-sidebar-close" onClick={onClose}>✕</div>
       </div>
 
       <div className="ap-nav">
@@ -405,7 +441,7 @@ function Sidebar({ screen, setScreen, pendingCount, kitchenCount, local, onLogou
 /* ══════════════════════════════════════════════════════════════
    TOPBAR
 ══════════════════════════════════════════════════════════════ */
-function Topbar({ screen, clock }) {
+function Topbar({ screen, clock, onMenuOpen }) {
   const timeStr = clock.toLocaleTimeString("es-AR", {
     hour: "2-digit", minute: "2-digit", second: "2-digit"
   });
@@ -414,6 +450,7 @@ function Topbar({ screen, clock }) {
       <div className="ap-topbar-title">{SCREEN_TITLES[screen] || screen}</div>
       <div className="ap-live"><div className="ap-live-dot" />EN VIVO</div>
       <div className="ap-topbar-time">{timeStr}</div>
+      <div className="ap-menu-btn" onClick={onMenuOpen}>☰</div>
     </div>
   );
 }
@@ -2206,16 +2243,19 @@ export default function AdminPanel({ local, setLocal, cats, setCats, prods, setP
     gestion:   <ScreenGestion prods={prods} setProds={setProds} cats={cats} local={local} setLocal={setLocal} />,
   };
 
+  const [navOpen, setNavOpen] = React.useState(false);
+
   return (
     <>
       <style>{AP_STYLES}</style>
       <div id="ap2-root">
         <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-          <Topbar screen={screen} clock={clock} />
+          <Topbar screen={screen} clock={clock} onMenuOpen={() => setNavOpen(true)} />
           <div style={{ flex: 1, overflowY: "auto", padding: "20px 24px" }}>
             {screenMap[screen] || <ScreenDashboard pedidos={pedidos} cats={cats} prods={prods} local={local} />}
           </div>
         </div>
+        <div className={`ap-overlay${navOpen ? " nav-open" : ""}`} onClick={() => setNavOpen(false)} />
         <Sidebar
           screen={screen}
           setScreen={setScreen}
@@ -2223,6 +2263,8 @@ export default function AdminPanel({ local, setLocal, cats, setCats, prods, setP
           kitchenCount={kitchenCount}
           local={local}
           onLogout={onLogout}
+          open={navOpen}
+          onClose={() => setNavOpen(false)}
         />
       </div>
     </>
