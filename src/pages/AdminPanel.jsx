@@ -1538,18 +1538,17 @@ function ScreenReportes({ pedidos, prods }) {
 /* ══════════════════════════════════════════════════════════════
    SCREEN: QR Y LINKS
 ══════════════════════════════════════════════════════════════ */
-// QR generation — client-side, sin dependencia de api.qrserver.com
+// QR generation — canvas directo, sin estado, sin flicker
 function QRImg({ data, size = 200, style = {} }) {
-  const [src, setSrc] = React.useState("");
+  const canvasRef = React.useRef(null);
   React.useEffect(() => {
-    if (!data) return;
-    QRCodeLib.toDataURL(data, {
+    if (!data || !canvasRef.current) return;
+    QRCodeLib.toCanvas(canvasRef.current, data, {
       width: size, margin: 2,
       color: { dark: "#000000", light: "#FFFFFF" }
-    }).then(setSrc).catch(console.error);
+    }).catch(console.error);
   }, [data, size]);
-  if (!src) return <div style={{ background: "#fff", ...style }} />;
-  return <img src={src} alt="QR" style={style} />;
+  return <canvas ref={canvasRef} style={{ display: 'block', background: '#fff', ...style }} />;
 }
 
 function ScreenQR({ local }) {
