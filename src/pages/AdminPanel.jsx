@@ -16,7 +16,7 @@ const AP_STYLES = `
     --text:#ffffff; --text2:rgba(255,255,255,.65); --text3:rgba(255,255,255,.35);
     --border:rgba(255,255,255,.08); --border2:rgba(255,255,255,.14);
     --green:#3ecf6e; --red:#e84040; --blue:#4090e8;
-    --sidebar:220px; --header:60px; --radius:12px;
+    --sidebar:280px; --header:60px; --radius:12px;
     display:flex; height:100vh; overflow:hidden;
     background:var(--bg); color:var(--text);
     font-family:'Segoe UI',system-ui,sans-serif; font-size:14px;
