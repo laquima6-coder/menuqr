@@ -195,6 +195,46 @@ export default function ScreenCajaPOS({ prods=[], cats=[], local={} }) {
     win.print();
   };
 
+  // Imprimir movimientos del día
+  const imprimirMovimientos = () => {
+    const win = window.open('','_blank','width=460,height=700');
+    const cols = {ingreso:'#22c55e', egreso:'#ef4444', gasto:'#f59e0b'};
+    const icons = {ingreso:'↑', egreso:'↓', gasto:'$'};
+    const totales = {};
+    TIPOS_MOV.forEach(tp => { totales[tp] = movs.filter(m=>m.tipo===tp).reduce((s,m)=>s+Number(m.monto),0); });
+    const totalNeto = totales.ingreso - totales.egreso - totales.gasto;
+    const rows = movs.map(m => `
+      <tr>
+        <td style="color:${cols[m.tipo]}">${icons[m.tipo]} ${m.tipo}</td>
+        <td>${new Date(m.created_at).toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})}</td>
+        <td>${m.detalle||'—'}</td>
+        <td>${m.metodo}</td>
+        <td style="text-align:right;font-weight:600;color:${cols[m.tipo]}">${ARS(m.monto)}</td>
+      </tr>`).join('');
+    win.document.write(`<html><head><title>Movimientos del día</title>
+      <style>body{font-family:monospace;padding:20px;max-width:460px;margin:0 auto}
+      table{width:100%;border-collapse:collapse}th{text-align:left;padding:6px 4px;border-bottom:2px solid #333;font-size:12px}
+      td{padding:5px 4px;border-bottom:1px solid #222;font-size:12px}hr{border:1px dashed #555}
+      .tot{display:flex;justify-content:space-between;padding:4px 0;font-size:13px}</style>
+      </head><body>
+      <h2 style="text-align:center;margin-bottom:4px">Movimientos de caja</h2>
+      <p style="text-align:center;margin-top:0;font-size:12px">${new Date().toLocaleDateString('es-AR')} — ${local?.nombre||'MenuQR'}</p>
+      <hr>
+      <table>
+        <thead><tr><th>Tipo</th><th>Hora</th><th>Detalle</th><th>Método</th><th style="text-align:right">Monto</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <hr>
+      <div class="tot"><span>↑ Ingresos</span><span style="color:#22c55e;font-weight:700">${ARS(totales.ingreso)}</span></div>
+      <div class="tot"><span>↓ Egresos</span><span style="color:#ef4444;font-weight:700">${ARS(totales.egreso)}</span></div>
+      <div class="tot"><span>$ Gastos</span><span style="color:#f59e0b;font-weight:700">${ARS(totales.gasto)}</span></div>
+      <hr>
+      <div class="tot" style="font-size:16px;font-weight:bold"><span>NETO</span><span style="color:${totalNeto>=0?'#22c55e':'#ef4444'}">${ARS(totalNeto)}</span></div>
+      <p style="text-align:center;font-size:11px;margin-top:16px">Total movimientos: ${movs.length}</p>
+      </body></html>`);
+    win.print();
+  };
+
   // Movimientos actions
   const addMov = async () => {
     if (!supabase || !ridl || !movForm.monto) return;
@@ -434,7 +474,10 @@ export default function ScreenCajaPOS({ prods=[], cats=[], local={} }) {
           <div>
             <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:14}}>
               <span style={{fontWeight:700, fontSize:15}}>Movimientos de hoy</span>
-              <button style={S.btn()} onClick={()=>setShowMovModal(true)}>+ Agregar</button>
+              <div style={{display:'flex', gap:8}}>
+                <button style={S.btnSm()} onClick={imprimirMovimientos}>🖨️ Imprimir</button>
+                <button style={S.btn()} onClick={()=>setShowMovModal(true)}>+ Agregar</button>
+              </div>
             </div>
             <div style={{display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:10, marginBottom:16}}>
               {TIPOS_MOV.map(tp=>{

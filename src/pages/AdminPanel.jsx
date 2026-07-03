@@ -29,7 +29,7 @@ const AP_STYLES = `
   /* SIDEBAR */
   #ap2-root .ap-sidebar {
     width:var(--sidebar); background:var(--bg2);
-    border-right:1px solid var(--border);
+    border-left:1px solid var(--border);
     display:flex; flex-direction:column; flex-shrink:0; height:100vh;
   }
   #ap2-root .ap-logo { padding:20px 18px 16px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:10px }
@@ -47,7 +47,7 @@ const AP_STYLES = `
   #ap2-root .ap-nav-item:hover { background:var(--bg4); color:var(--text) }
   #ap2-root .ap-nav-item.active { background:var(--gold-dim); color:var(--gold); font-weight:700 }
   #ap2-root .ap-nav-item.active::before {
-    content:''; position:absolute; left:0; top:50%; transform:translateY(-50%);
+    content:''; position:absolute; right:0; top:50%; transform:translateY(-50%);
     width:3px; height:20px; background:var(--gold); border-radius:0 3px 3px 0;
   }
   #ap2-root .ap-nav-icon { font-size:18px; width:22px; text-align:center; flex-shrink:0 }
@@ -326,6 +326,7 @@ const SCREEN_TITLES = {
   reportes: "Reportes y estadísticas",
   qr: "QR y links de acceso",
   config: "Configuración",
+  gestion: "Gestión rápida",
 };
 
 /* ══════════════════════════════════════════════════════════════
@@ -380,6 +381,7 @@ function Sidebar({ screen, setScreen, pendingCount, kitchenCount, local, onLogou
         <div className="ap-nav-group">
           <div className="ap-nav-label">SISTEMA</div>
           {nav("qr", "📱", "QR y Links")}
+          {nav("gestion", "🔧", "Gestión")}
           {nav("config", "⚙️", "Configuración")}
         </div>
       </div>
@@ -1566,16 +1568,23 @@ function ScreenConfiguracion({ local, setLocal }) {
   const PAGOS_LABELS = {efectivo:"Efectivo",tarjeta:"Tarjeta (déb/créd)",mercadopago:"Mercado Pago",transferencia:"Transferencia"};
 
   const [form, setForm] = React.useState({
-    nombre:            local?.nombre || "",
-    slug:              local?.slug || "",
-    telefono:          local?.telefono || "",
-    direccion:         local?.direccion || "",
-    mesas:             local?.mesas || 0,
-    wifi_ssid:         local?.wifi_ssid || "",
-    wifi_pass:         local?.wifi_pass || "",
-    metodos_pago:      local?.metodos_pago || ["efectivo","tarjeta","mercadopago"],
-    retiro_habilitado: local?.retiro_habilitado !== false,
-    retiro_horario:    local?.retiro_horario || "Lunes a Domingo 12:00 - 23:00",
+    nombre:              local?.nombre || "",
+    slug:                local?.slug || "",
+    telefono:            local?.telefono || "",
+    direccion:           local?.direccion || "",
+    descripcion:         local?.descripcion || "",
+    horario:             local?.horario || "",
+    mesas:               local?.mesas || 0,
+    wifi_ssid:           local?.wifi_ssid || "",
+    wifi_pass:           local?.wifi_pass || "",
+    logo_url:            local?.logo_url || "",
+    metodos_pago:        local?.metodos_pago || ["efectivo","tarjeta","mercadopago"],
+    retiro_habilitado:   local?.retiro_habilitado !== false,
+    retiro_horario:      local?.retiro_horario || "Lunes a Domingo 12:00 - 23:00",
+    delivery_habilitado: local?.delivery_habilitado !== false,
+    delivery_precio:     local?.delivery_precio || 0,
+    delivery_horario:    local?.delivery_horario || "",
+    delivery_radio:      local?.delivery_radio || "",
   });
   const [saved, setSaved] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
@@ -1594,16 +1603,23 @@ function ScreenConfiguracion({ local, setLocal }) {
     if (setLocal) setLocal(prev => ({ ...prev, ...form }));
     if (supabase && local?.restauranteId) {
       await supabase.from("restaurantes").update({
-        nombre:            form.nombre,
-        slug:              form.slug,
-        telefono:          form.telefono,
-        direccion:         form.direccion,
-        mesas:             form.mesas,
-        wifi_ssid:         form.wifi_ssid,
-        wifi_pass:         form.wifi_pass,
-        metodos_pago:      form.metodos_pago,
-        retiro_habilitado: form.retiro_habilitado,
-        retiro_horario:    form.retiro_horario,
+        nombre:              form.nombre,
+        slug:                form.slug,
+        telefono:            form.telefono,
+        direccion:           form.direccion,
+        descripcion:         form.descripcion,
+        horario:             form.horario,
+        mesas:               form.mesas,
+        wifi_ssid:           form.wifi_ssid,
+        wifi_pass:           form.wifi_pass,
+        logo_url:            form.logo_url,
+        metodos_pago:        form.metodos_pago,
+        retiro_habilitado:   form.retiro_habilitado,
+        retiro_horario:      form.retiro_horario,
+        delivery_habilitado: form.delivery_habilitado,
+        delivery_precio:     form.delivery_precio,
+        delivery_horario:    form.delivery_horario,
+        delivery_radio:      form.delivery_radio,
       }).eq("id", local.restauranteId);
     }
     setSaving(false);
@@ -1641,6 +1657,56 @@ function ScreenConfiguracion({ local, setLocal }) {
             <label>Dirección</label>
             <input type="text" value={form.direccion} onChange={e => setForm({ ...form, direccion: e.target.value })} placeholder="Av. Corrientes 1234" />
           </div>
+          <div className="ap-form-group">
+            <label>Descripción breve (se muestra en la vitrina)</label>
+            <textarea value={form.descripcion} onChange={e => setForm({ ...form, descripcion: e.target.value })} placeholder="El mejor restaurante de la zona..." rows={2} style={{ width: "100%", boxSizing: "border-box", resize: "vertical" }} />
+          </div>
+          <div className="ap-grid-2">
+            <div className="ap-form-group">
+              <label>Horario de atención</label>
+              <input type="text" value={form.horario} onChange={e => setForm({ ...form, horario: e.target.value })} placeholder="Mar–Dom 12:00–23:00" />
+            </div>
+            <div className="ap-form-group">
+              <label>URL del logo (imagen)</label>
+              <input type="text" value={form.logo_url} onChange={e => setForm({ ...form, logo_url: e.target.value })} placeholder="https://..." />
+            </div>
+          </div>
+        </div>
+
+        {/* ─ Delivery ─ */}
+        <div className="ap-card">
+          <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 14, color: "var(--gold)" }}>🛵 Delivery</div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 600 }}>Delivery habilitado</div>
+              <div style={{ fontSize: 11, color: "rgba(255,255,255,.35)" }}>Los clientes podrán pedir con envío a domicilio</div>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontSize: 11, color: form.delivery_habilitado ? "#00FF88" : "rgba(255,255,255,.35)" }}>
+                {form.delivery_habilitado ? "Habilitado" : "Deshabilitado"}
+              </span>
+              <div onClick={() => setForm(f => ({ ...f, delivery_habilitado: !f.delivery_habilitado }))}
+                style={{ width: 40, height: 22, borderRadius: 11, background: form.delivery_habilitado ? "rgba(0,255,136,.3)" : "rgba(255,255,255,.1)", border: `1px solid ${form.delivery_habilitado ? "rgba(0,255,136,.5)" : "rgba(255,255,255,.1)"}`, position: "relative", transition: "all .25s", cursor: "pointer" }}>
+                <div style={{ position: "absolute", top: 3, left: form.delivery_habilitado ? 20 : 3, width: 14, height: 14, borderRadius: "50%", background: form.delivery_habilitado ? "#00FF88" : "rgba(255,255,255,.4)", transition: "left .25s" }} />
+              </div>
+            </div>
+          </div>
+          {form.delivery_habilitado && (
+            <div className="ap-grid-2">
+              <div className="ap-form-group">
+                <label>Precio de envío (ARS)</label>
+                <input type="number" value={form.delivery_precio} onChange={e => setForm({ ...form, delivery_precio: Number(e.target.value) })} placeholder="0" min={0} />
+              </div>
+              <div className="ap-form-group">
+                <label>Radio de entrega</label>
+                <input type="text" value={form.delivery_radio} onChange={e => setForm({ ...form, delivery_radio: e.target.value })} placeholder="Ej: 5 km, barrio centro" />
+              </div>
+              <div className="ap-form-group" style={{ gridColumn: "1/-1" }}>
+                <label>Horario de delivery</label>
+                <input type="text" value={form.delivery_horario} onChange={e => setForm({ ...form, delivery_horario: e.target.value })} placeholder="Lunes a Domingo 12:00–23:00" />
+              </div>
+            </div>
+          )}
         </div>
 
         {/* ─ WiFi ─ */}
@@ -1723,6 +1789,191 @@ function ScreenConfiguracion({ local, setLocal }) {
   );
 }
 
+
+/* ══════════════════════════════════════════════════════════════
+   SCREEN: GESTIÓN RÁPIDA
+══════════════════════════════════════════════════════════════ */
+function ScreenGestion({ prods, setProds, cats, local, setLocal }) {
+  const ridl = local?.restauranteId;
+  const [search, setSearch] = React.useState('');
+  const [showPrecioModal, setShowPrecioModal] = React.useState(false);
+  const [precioItem, setPrecioItem] = React.useState(null);
+  const [nuevoPrecio, setNuevoPrecio] = React.useState('');
+  const [saving, setSaving] = React.useState(false);
+  const [savedId, setSavedId] = React.useState(null);
+  const [pausaPedidos, setPausaPedidos] = React.useState(local?.pausa_pedidos || false);
+  const [pausaDelivery, setPausaDelivery] = React.useState(!(local?.delivery_habilitado !== false));
+
+  const vitranaUrl = local?.slug ? `https://menuqr.vercel.app/v/${local.slug}` : null;
+
+  const prodsFiltrados = prods.filter(p =>
+    !search || p.nombre?.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const toggleActivo = async (prod) => {
+    const nuevoEstado = !prod.activo;
+    if (supabase) {
+      await supabase.from('productos').update({ activo: nuevoEstado }).eq('id', prod.id);
+    }
+    if (setProds) setProds(prev => prev.map(p => p.id === prod.id ? {...p, activo: nuevoEstado} : p));
+    setSavedId(prod.id);
+    setTimeout(() => setSavedId(null), 1200);
+  };
+
+  const openPrecio = (prod) => {
+    setPrecioItem(prod);
+    setNuevoPrecio(String(prod.precio));
+    setShowPrecioModal(true);
+  };
+
+  const guardarPrecio = async () => {
+    if (!precioItem || !nuevoPrecio) return;
+    setSaving(true);
+    const p = parseFloat(nuevoPrecio);
+    if (supabase) {
+      await supabase.from('productos').update({ precio: p }).eq('id', precioItem.id);
+    }
+    if (setProds) setProds(prev => prev.map(x => x.id === precioItem.id ? {...x, precio: p} : x));
+    setSaving(false);
+    setShowPrecioModal(false);
+  };
+
+  const togglePausa = async (campo, valor, setter) => {
+    setter(valor);
+    if (supabase && ridl) {
+      await supabase.from('restaurantes').update({ [campo]: valor }).eq('id', ridl);
+    }
+    if (setLocal) setLocal(prev => ({ ...prev, [campo]: valor }));
+  };
+
+  const copiarLink = () => {
+    if (vitranaUrl) { navigator.clipboard.writeText(vitranaUrl); }
+  };
+
+  const ARS = (n) => '$ ' + Number(n||0).toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2});
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+      {/* ─ Controles rápidos ─ */}
+      <div className="ap-grid-2" style={{ gap: 12 }}>
+
+        {/* Pausa pedidos */}
+        <div className="ap-card" style={{ borderColor: pausaPedidos ? 'rgba(239,68,68,.4)' : 'var(--border)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--gold)', marginBottom: 4 }}>⏸️ Pausar pedidos</div>
+              <div style={{ fontSize: 11, color: 'var(--text3)' }}>Bloquea nuevos pedidos del sistema</div>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+              <div onClick={() => togglePausa('pausa_pedidos', !pausaPedidos, setPausaPedidos)}
+                style={{ width: 44, height: 24, borderRadius: 12, background: pausaPedidos ? 'rgba(239,68,68,.3)' : 'rgba(0,255,136,.15)', border: `1px solid ${pausaPedidos ? 'rgba(239,68,68,.5)' : 'rgba(0,255,136,.3)'}`, position: 'relative', cursor: 'pointer', transition: 'all .25s' }}>
+                <div style={{ position: 'absolute', top: 4, left: pausaPedidos ? 22 : 4, width: 14, height: 14, borderRadius: '50%', background: pausaPedidos ? '#ef4444' : '#00ff88', transition: 'left .25s' }} />
+              </div>
+              <span style={{ fontSize: 10, fontWeight: 700, color: pausaPedidos ? '#ef4444' : '#00ff88' }}>{pausaPedidos ? 'PAUSADO' : 'ACTIVO'}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Pausa delivery */}
+        <div className="ap-card" style={{ borderColor: pausaDelivery ? 'rgba(239,68,68,.4)' : 'var(--border)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--gold)', marginBottom: 4 }}>🛵 Pausar delivery</div>
+              <div style={{ fontSize: 11, color: 'var(--text3)' }}>Desactiva el delivery temporalmente</div>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+              <div onClick={() => togglePausa('delivery_habilitado', pausaDelivery, v => setPausaDelivery(!v))}
+                style={{ width: 44, height: 24, borderRadius: 12, background: pausaDelivery ? 'rgba(239,68,68,.3)' : 'rgba(0,255,136,.15)', border: `1px solid ${pausaDelivery ? 'rgba(239,68,68,.5)' : 'rgba(0,255,136,.3)'}`, position: 'relative', cursor: 'pointer', transition: 'all .25s' }}>
+                <div style={{ position: 'absolute', top: 4, left: pausaDelivery ? 22 : 4, width: 14, height: 14, borderRadius: '50%', background: pausaDelivery ? '#ef4444' : '#00ff88', transition: 'left .25s' }} />
+              </div>
+              <span style={{ fontSize: 10, fontWeight: 700, color: pausaDelivery ? '#ef4444' : '#00ff88' }}>{pausaDelivery ? 'PAUSADO' : 'ACTIVO'}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Link vitrina */}
+        <div className="ap-card">
+          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--gold)', marginBottom: 8 }}>🔗 Link de la vitrina</div>
+          {vitranaUrl
+            ? <div style={{ display: 'flex', gap: 8 }}>
+                <div style={{ flex: 1, background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 8, padding: '8px 10px', fontSize: 11, color: 'var(--text2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{vitranaUrl}</div>
+                <button className="ap-btn ap-btn-gold" style={{ padding: '6px 12px', fontSize: 12 }} onClick={copiarLink}>Copiar</button>
+                <a href={vitranaUrl} target="_blank" rel="noreferrer" style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 8, padding: '6px 12px', fontSize: 12, color: 'var(--text)', textDecoration: 'none', display: 'flex', alignItems: 'center' }}>Abrir ↗</a>
+              </div>
+            : <div style={{ fontSize: 12, color: 'var(--text3)' }}>Configurá el slug en Configuración para ver el link</div>
+          }
+        </div>
+
+        {/* Ir a configuración */}
+        <div className="ap-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: 8, textAlign: 'center' }}>
+          <div style={{ fontSize: 28 }}>⚙️</div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--gold)' }}>Configuración completa</div>
+          <div style={{ fontSize: 11, color: 'var(--text3)' }}>Datos, delivery, pagos, WiFi y más</div>
+        </div>
+      </div>
+
+      {/* ─ Productos: activar/desactivar + precio rápido ─ */}
+      <div className="ap-card">
+        <div className="ap-sec-hdr" style={{ marginBottom: 12 }}>
+          <h2 style={{ margin: 0, fontSize: 14 }}>🍽️ Productos — activar / precio rápido</h2>
+        </div>
+        <input
+          style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 8, padding: '8px 12px', color: 'var(--text)', fontSize: 13, width: '100%', boxSizing: 'border-box', marginBottom: 12, outline: 'none' }}
+          placeholder="Buscar producto..." value={search} onChange={e => setSearch(e.target.value)}
+        />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 380, overflowY: 'auto' }}>
+          {prodsFiltrados.map(p => {
+            const cat = cats.find(c => c.id === p.categoria_id);
+            const isOn = p.activo !== false;
+            const justSaved = savedId === p.id;
+            return (
+              <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', background: isOn ? 'var(--bg3)' : 'rgba(239,68,68,.06)', border: `1px solid ${isOn ? 'var(--border)' : 'rgba(239,68,68,.2)'}`, borderRadius: 10, transition: 'all .2s' }}>
+                {p.foto_url
+                  ? <img src={p.foto_url} alt="" style={{ width: 38, height: 38, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} onError={e => e.target.style.display='none'}/>
+                  : <div style={{ width: 38, height: 38, borderRadius: 8, background: 'var(--bg4)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>🍽️</div>
+                }
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: isOn ? 'var(--text)' : 'var(--text3)' }}>{p.nombre}</div>
+                  <div style={{ fontSize: 11, color: 'var(--text3)' }}>{cat?.nombre || '—'}</div>
+                </div>
+                <button className="ap-btn" style={{ padding: '5px 10px', fontSize: 12, background: 'transparent', border: '1px solid var(--border)', color: 'var(--text2)' }} onClick={() => openPrecio(p)}>
+                  {ARS(p.precio)} ✏️
+                </button>
+                <div onClick={() => toggleActivo(p)}
+                  style={{ width: 44, height: 24, borderRadius: 12, background: isOn ? 'rgba(0,255,136,.15)' : 'rgba(239,68,68,.2)', border: `1px solid ${isOn ? 'rgba(0,255,136,.3)' : 'rgba(239,68,68,.4)'}`, position: 'relative', cursor: 'pointer', transition: 'all .25s', flexShrink: 0 }}>
+                  <div style={{ position: 'absolute', top: 4, left: isOn ? 22 : 4, width: 14, height: 14, borderRadius: '50%', background: isOn ? '#00ff88' : '#ef4444', transition: 'left .25s' }} />
+                </div>
+                {justSaved && <span style={{ fontSize: 10, color: '#00ff88', fontWeight: 700, position: 'absolute', marginLeft: 4 }}>✓</span>}
+              </div>
+            );
+          })}
+          {prodsFiltrados.length === 0 && <div style={{ textAlign: 'center', color: 'var(--text3)', padding: 24 }}>Sin productos</div>}
+        </div>
+      </div>
+
+      {/* Modal precio */}
+      {showPrecioModal && precioItem && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.75)', zIndex: 500, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 16, padding: 24, width: 320 }}>
+            <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>✏️ Cambiar precio</div>
+            <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 16 }}>{precioItem.nombre}</div>
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ fontSize: 12, color: 'var(--text2)', display: 'block', marginBottom: 4 }}>Nuevo precio</label>
+              <input type="number" value={nuevoPrecio} onChange={e => setNuevoPrecio(e.target.value)} autoFocus
+                style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 8, padding: '10px 12px', color: 'var(--text)', fontSize: 15, width: '100%', boxSizing: 'border-box', outline: 'none' }}/>
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button className="ap-btn" style={{ flex: 1, background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text)' }} onClick={() => setShowPrecioModal(false)}>Cancelar</button>
+              <button className="ap-btn ap-btn-gold" style={{ flex: 1 }} disabled={saving} onClick={guardarPrecio}>{saving ? 'Guardando...' : 'Guardar'}</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ══════════════════════════════════════════════════════════════
    MAIN ADMIN PANEL
 ══════════════════════════════════════════════════════════════ */
@@ -1767,12 +2018,19 @@ export default function AdminPanel({ local, setLocal, cats, setCats, prods, setP
     reportes:  <ScreenReportes pedidos={pedidos} prods={prods} />,
     qr:        <ScreenQR local={local} />,
     config:    <ScreenConfiguracion local={local} setLocal={setLocal} />,
+    gestion:   <ScreenGestion prods={prods} setProds={setProds} cats={cats} local={local} setLocal={setLocal} />,
   };
 
   return (
     <>
       <style>{AP_STYLES}</style>
       <div id="ap2-root">
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+          <Topbar screen={screen} clock={clock} />
+          <div style={{ flex: 1, overflowY: "auto", padding: "20px 24px" }}>
+            {screenMap[screen] || <ScreenDashboard pedidos={pedidos} cats={cats} prods={prods} local={local} />}
+          </div>
+        </div>
         <Sidebar
           screen={screen}
           setScreen={setScreen}
@@ -1781,12 +2039,6 @@ export default function AdminPanel({ local, setLocal, cats, setCats, prods, setP
           local={local}
           onLogout={onLogout}
         />
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-          <Topbar screen={screen} clock={clock} />
-          <div style={{ flex: 1, overflowY: "auto", padding: "20px 24px" }}>
-            {screenMap[screen] || <ScreenDashboard pedidos={pedidos} cats={cats} prods={prods} local={local} />}
-          </div>
-        </div>
       </div>
     </>
   );
