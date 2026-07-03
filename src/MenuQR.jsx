@@ -1977,9 +1977,9 @@ return (
               <div style={{fontSize:11, fontWeight:700, letterSpacing:2, color:"rgba(201,168,76,.7)", marginBottom:8, textTransform:"uppercase"}}>Promoción activa</div>
               <div style={{fontSize:16, fontWeight:800, color:"#fff", marginBottom:12, lineHeight:1.4}}>{local.promo_desc}</div>
               <div style={{display:"flex", justifyContent:"center", marginBottom:12}}>
-                <img
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent((local.slug?`${window.location.origin}/menu/${local.slug}/promo`:`${window.location.origin}/promo`)+"?desc="+encodeURIComponent(local.promo_desc))}&bgcolor=ffffff&color=000000&margin=8`}
-                  alt="QR Promo"
+                <QRImg
+                  data={(local.slug?`${window.location.origin}/menu/${local.slug}/promo`:`${window.location.origin}/promo`)+"?desc="+encodeURIComponent(local.promo_desc)}
+                  size={160}
                   style={{width:120, height:120, background:"#fff", borderRadius:10, padding:4}}
                 />
               </div>

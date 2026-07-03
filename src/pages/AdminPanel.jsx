@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import QRCodeLib from "qrcode";
 import ScreenCajaPOS from "./ScreenCajaPOS.jsx";
 import { supabase, getPedidos, updatePedidoStatus, subscribePedidos,
          toggleProducto, upsertCategoria } from "../lib/supabase.js";
@@ -1549,8 +1550,18 @@ function ScreenQR({ local }) {
   const [modal, setModal] = React.useState(null);
   const [copied, setCopied] = React.useState({});
 
-  function qrUrl(link, size = 300) {
-    return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(link)}&bgcolor=ffffff&color=000000&margin=12`;
+  // QR generation — client-side, sin dependencia de api.qrserver.com
+  function QRImg({ data, size = 200, style = {} }) {
+    const [src, setSrc] = React.useState("");
+    React.useEffect(() => {
+      if (!data) return;
+      QRCodeLib.toDataURL(data, {
+        width: size, margin: 2,
+        color: { dark: "#000000", light: "#FFFFFF" }
+      }).then(setSrc).catch(() => {});
+    }, [data, size]);
+    if (!src) return <div style={{ background: "#fff", ...style }} />;
+    return <img src={src} alt="QR" style={style} />;
   }
 
   function copyLink(key, url) {
@@ -1561,24 +1572,26 @@ function ScreenQR({ local }) {
 
   async function copyImage(url) {
     try {
-      const resp = await fetch(qrUrl(url, 600));
+      const dataUrl = await QRCodeLib.toDataURL(url, { width: 600, margin: 2, color: { dark: "#000000", light: "#FFFFFF" } });
+      const resp = await fetch(dataUrl);
       const blob = await resp.blob();
       await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
     } catch (e) { alert("No se pudo copiar la imagen. Usá Descargar PNG."); }
   }
 
   function downloadPNG(url, filename) {
-    const a = document.createElement("a");
-    a.href = qrUrl(url, 800);
-    a.download = filename + ".png";
-    a.target = "_blank";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    QRCodeLib.toDataURL(url, { width: 800, margin: 2, color: { dark: "#000000", light: "#FFFFFF" } }).then(dataUrl => {
+      const a = document.createElement("a");
+      a.href = dataUrl;
+      a.download = filename + ".png";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    });
   }
 
-  function downloadPDF(url, title) {
-    const imgSrc = qrUrl(url, 800);
+  async function downloadPDF(url, title) {
+    const imgSrc = await QRCodeLib.toDataURL(url, { width: 800, margin: 2, color: { dark: "#000000", light: "#FFFFFF" } });
     const w = window.open("", "_blank");
     w.document.write(`<!DOCTYPE html><html><head><title>${title}</title><style>
       *{margin:0;padding:0;box-sizing:border-box}
@@ -1625,7 +1638,7 @@ function ScreenQR({ local }) {
       <div style={{ fontSize:14, fontWeight:800, marginBottom:4 }}>{title}</div>
       <div style={{ fontSize:11, color:"rgba(255,255,255,.35)", marginBottom:12 }}>{desc}</div>
       <div style={{ display:"flex", justifyContent:"center", marginBottom:10, cursor:"pointer" }} onClick={() => setModal({ title, url })}>
-        <img src={qrUrl(url, 200)} alt="QR" style={{ width:150, height:150, borderRadius:8, background:"#fff", padding:4 }} />
+        <QRImg data={url} size={200} style={{ width:150, height:150, borderRadius:8, background:"#fff", padding:4 }} />
       </div>
       <div style={{ fontSize:9, color:"rgba(255,255,255,.3)", fontFamily:"monospace", wordBreak:"break-all", marginBottom:8 }}>{url}</div>
       <ActionRow id={id} url={url} title={title} />
@@ -1646,7 +1659,7 @@ function ScreenQR({ local }) {
         <div onClick={() => setModal(null)} style={{ position:"fixed",inset:0,background:"rgba(0,0,0,.85)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center" }}>
           <div onClick={e => e.stopPropagation()} style={{ background:"var(--bg2)",border:"1px solid var(--border)",borderRadius:16,padding:28,textAlign:"center",maxWidth:400,width:"90%" }}>
             <div style={{ fontSize:18,fontWeight:800,marginBottom:16 }}>{modal.title}</div>
-            <img src={qrUrl(modal.url, 280)} alt="QR" style={{ width:250,height:250,background:"#fff",borderRadius:10,padding:8,marginBottom:16 }} />
+            <QRImg data={modal.url} size={280} style={{ width:250,height:250,background:"#fff",borderRadius:10,padding:8,marginBottom:16 }} />
             <div style={{ fontSize:10,color:"rgba(255,255,255,.35)",fontFamily:"monospace",wordBreak:"break-all",marginBottom:16 }}>{modal.url}</div>
             <ActionRow id={"modal-"+modal.title} url={modal.url} title={modal.title} />
             <button className="ap-btn ap-btn-ghost ap-btn-sm" style={{ marginTop:12 }} onClick={() => setModal(null)}>✕ Cerrar</button>
@@ -1670,7 +1683,7 @@ function ScreenQR({ local }) {
             <div key={n} style={{ background:"var(--bg3)",borderRadius:10,padding:"10px 14px" }}>
               <div style={{ display:"flex",alignItems:"center",gap:12,flexWrap:"wrap" }}>
                 <div style={{ width:60,height:60,background:"#fff",borderRadius:6,padding:2,flexShrink:0,cursor:"pointer" }} onClick={() => setModal({ title:`Mesa ${n}`, url:`${base}/mesa/${n}` })}>
-                  <img src={qrUrl(`${base}/mesa/${n}`, 120)} style={{ width:"100%",height:"100%" }} alt={`Mesa ${n}`} />
+                  <QRImg data={`${base}/mesa/${n}`} size={120} style={{ width:"100%",height:"100%" }} />
                 </div>
                 <div style={{ flex:1 }}>
                   <div style={{ fontWeight:800,fontSize:14,marginBottom:6 }}>Mesa {n}</div>
@@ -1712,7 +1725,7 @@ function ScreenQR({ local }) {
             <>
               <div style={{ display:"flex",justifyContent:"center",marginBottom:10,cursor:"pointer" }}
                 onClick={() => setModal({ title:"WiFi "+local.wifi_ssid, url:`WIFI:T:WPA;S:${local.wifi_ssid};P:${local.wifi_pass||""};H:;;` })}>
-                <img src={qrUrl(`WIFI:T:WPA;S:${local.wifi_ssid};P:${local.wifi_pass||""};H:;;`, 160)} style={{ width:130,height:130,background:"#fff",borderRadius:8,padding:4 }} alt="QR WiFi" />
+                <QRImg data={`WIFI:T:WPA;S:${local.wifi_ssid};P:${local.wifi_pass||""};H:;;`} size={160} style={{ width:130,height:130,background:"#fff",borderRadius:8,padding:4 }} alt="QR WiFi" />
               </div>
               <ActionRow id="wifi" url={`WIFI:T:WPA;S:${local.wifi_ssid};P:${local.wifi_pass||""};H:;;`} title={`WiFi ${local.wifi_ssid}`} />
             </>
@@ -1733,7 +1746,7 @@ function ScreenQR({ local }) {
               </div>
               <div style={{ display:"flex",justifyContent:"center",marginBottom:10,cursor:"pointer" }}
                 onClick={() => setModal({ title:"Promo: "+local.promo_desc, url:`${base}/promo?desc=${encodeURIComponent(local.promo_desc)}` })}>
-                <img src={qrUrl(`${base}/promo?desc=${encodeURIComponent(local.promo_desc)}`,180)} style={{ width:150,height:150,background:"#fff",borderRadius:8,padding:4 }} alt="QR Promo" />
+                <QRImg data={`${base}/promo?desc=${encodeURIComponent(local.promo_desc)}`} size={180} style={{ width:150,height:150,background:"#fff",borderRadius:8,padding:4 }} alt="QR Promo" />
               </div>
               <ActionRow id="promo" url={`${base}/promo?desc=${encodeURIComponent(local.promo_desc)}`} title={"Promo: "+local.promo_desc} />
               <div style={{ fontSize:11,color:"rgba(255,255,255,.35)",marginTop:10,textAlign:"center" }}>
