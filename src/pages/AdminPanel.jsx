@@ -1538,6 +1538,20 @@ function ScreenReportes({ pedidos, prods }) {
 /* ══════════════════════════════════════════════════════════════
    SCREEN: QR Y LINKS
 ══════════════════════════════════════════════════════════════ */
+// QR generation — client-side, sin dependencia de api.qrserver.com
+function QRImg({ data, size = 200, style = {} }) {
+  const [src, setSrc] = React.useState("");
+  React.useEffect(() => {
+    if (!data) return;
+    QRCodeLib.toDataURL(data, {
+      width: size, margin: 2,
+      color: { dark: "#000000", light: "#FFFFFF" }
+    }).then(setSrc).catch(console.error);
+  }, [data, size]);
+  if (!src) return <div style={{ background: "#fff", ...style }} />;
+  return <img src={src} alt="QR" style={style} />;
+}
+
 function ScreenQR({ local }) {
   const slug = local?.slug || "mi-restaurante";
   // Si el panel se abre en localhost (dev), los QR deben apuntar al dominio de produccion
@@ -1550,19 +1564,6 @@ function ScreenQR({ local }) {
   const [modal, setModal] = React.useState(null);
   const [copied, setCopied] = React.useState({});
 
-  // QR generation — client-side, sin dependencia de api.qrserver.com
-  function QRImg({ data, size = 200, style = {} }) {
-    const [src, setSrc] = React.useState("");
-    React.useEffect(() => {
-      if (!data) return;
-      QRCodeLib.toDataURL(data, {
-        width: size, margin: 2,
-        color: { dark: "#000000", light: "#FFFFFF" }
-      }).then(setSrc).catch(() => {});
-    }, [data, size]);
-    if (!src) return <div style={{ background: "#fff", ...style }} />;
-    return <img src={src} alt="QR" style={style} />;
-  }
 
   function copyLink(key, url) {
     navigator.clipboard.writeText(url).catch(() => {});
