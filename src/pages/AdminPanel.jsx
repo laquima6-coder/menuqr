@@ -1678,21 +1678,30 @@ function ScreenQR({ local }) {
           <div style={{ display:"flex",alignItems:"center",gap:10,marginBottom:14 }}>
             <span style={{ fontSize:32 }}>🏷️</span>
             <div>
-              <div style={{ fontSize:14,fontWeight:800 }}>QR Promoción del día</div>
-              <div style={{ fontSize:11,color:"rgba(255,255,255,.35)" }}>El cliente escanea y ve la oferta</div>
+              <div style={{ fontSize:14,fontWeight:800 }}>QR Promoción / Happy Hour</div>
+              <div style={{ fontSize:11,color:"rgba(255,255,255,.35)" }}>Se muestra en la carta del cliente y acá para compartir</div>
             </div>
           </div>
-          <div className="ap-form-group">
-            <label>Descripción de la promoción</label>
-            <input type="text" id="promo-desc" placeholder="Ej: 50% OFF en bifes hasta las 23:59" />
-          </div>
-          <div id="promo-qr-area"></div>
-          <button className="ap-btn ap-btn-gold" style={{ width:"100%",marginTop:8 }} onClick={() => {
-            const desc = document.getElementById("promo-desc")?.value;
-            if (!desc) return;
-            const url = `${base}/promo?desc=${encodeURIComponent(desc)}`;
-            setModal({ title:"Promoción: "+desc, url });
-          }}>📲 Generar QR de esta promo</button>
+          {local?.promo_desc ? (
+            <>
+              <div style={{ background:"rgba(201,168,76,.08)",border:"1px solid rgba(201,168,76,.2)",borderRadius:10,padding:"10px 14px",marginBottom:12,fontSize:13,color:"var(--gold)",fontWeight:600 }}>
+                {local.promo_desc}
+              </div>
+              <div style={{ display:"flex",justifyContent:"center",marginBottom:10,cursor:"pointer" }}
+                onClick={() => setModal({ title:"Promo: "+local.promo_desc, url:`${base}/promo?desc=${encodeURIComponent(local.promo_desc)}` })}>
+                <img src={qrUrl(`${base}/promo?desc=${encodeURIComponent(local.promo_desc)}`,180)} style={{ width:150,height:150,background:"#fff",borderRadius:8,padding:4 }} alt="QR Promo" />
+              </div>
+              <ActionRow id="promo" url={`${base}/promo?desc=${encodeURIComponent(local.promo_desc)}`} title={"Promo: "+local.promo_desc} />
+              <div style={{ fontSize:11,color:"rgba(255,255,255,.35)",marginTop:10,textAlign:"center" }}>
+                Para cambiarla: Configuración → Promoción fija
+              </div>
+            </>
+          ) : (
+            <div style={{ textAlign:"center",padding:"20px 0",color:"rgba(255,255,255,.35)",fontSize:13 }}>
+              <div style={{ fontSize:28,marginBottom:8 }}>🏷️</div>
+              Configurá la promo en <strong>Configuración → Promoción / Happy Hour</strong>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -1727,6 +1736,7 @@ function ScreenConfiguracion({ local, setLocal }) {
     delivery_radio:      local?.delivery_radio || "",
     alias_pago:          local?.alias_pago || "",
     alias_titular:       local?.alias_titular || "",
+    promo_desc:          local?.promo_desc || "",
   });
   const [saved, setSaved] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
@@ -1764,6 +1774,7 @@ function ScreenConfiguracion({ local, setLocal }) {
         delivery_radio:      form.delivery_radio,
         alias_pago:          form.alias_pago,
         alias_titular:       form.alias_titular,
+        promo_desc:          form.promo_desc,
       }).eq("id", local.restauranteId);
     }
     setSaving(false);
@@ -1868,6 +1879,18 @@ function ScreenConfiguracion({ local, setLocal }) {
               <label>Titular de la cuenta</label>
               <input type="text" value={form.alias_titular} onChange={e => setForm({ ...form, alias_titular: e.target.value })} placeholder="Juan García" />
             </div>
+          </div>
+        </div>
+
+        {/* ─ Promoción fija ─ */}
+        <div className="ap-card">
+          <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 14, color: "var(--gold)" }}>🏷️ Promoción / Happy Hour (fija)</div>
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,.35)", marginBottom: 14 }}>
+            Se muestra como QR en la carta del cliente. Usala para Happy Hour, promos del día, descuentos fijos, etc.
+          </div>
+          <div className="ap-form-group">
+            <label>Descripción de la promoción</label>
+            <input type="text" value={form.promo_desc} onChange={e => setForm({ ...form, promo_desc: e.target.value })} placeholder="Ej: Happy Hour 🍺 50% OFF de 18 a 21hs" />
           </div>
         </div>
 

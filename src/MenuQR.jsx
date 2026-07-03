@@ -1971,6 +1971,21 @@ return (
               <div style={{fontSize:14}}>No hay productos en esta categoría</div>
             </div>
           )}
+          {/* ===== PROMO QR EN CARTA ===== */}
+          {local?.promo_desc && (
+            <div style={{margin:"24px 0 8px", background:"linear-gradient(135deg,rgba(201,168,76,.12),rgba(201,168,76,.06))", border:"1px solid rgba(201,168,76,.25)", borderRadius:16, padding:"20px 16px", textAlign:"center"}}>
+              <div style={{fontSize:11, fontWeight:700, letterSpacing:2, color:"rgba(201,168,76,.7)", marginBottom:8, textTransform:"uppercase"}}>Promoción activa</div>
+              <div style={{fontSize:16, fontWeight:800, color:"#fff", marginBottom:12, lineHeight:1.4}}>{local.promo_desc}</div>
+              <div style={{display:"flex", justifyContent:"center", marginBottom:12}}>
+                <img
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent((local.slug?`https://menuqr.app/menu/${local.slug}/promo`:`menuqr.app/promo`)+"?desc="+encodeURIComponent(local.promo_desc))}&bgcolor=ffffff&color=000000&margin=8`}
+                  alt="QR Promo"
+                  style={{width:120, height:120, background:"#fff", borderRadius:10, padding:4}}
+                />
+              </div>
+              <div style={{fontSize:11, color:"rgba(255,255,255,.4)"}}>Escaneá para más info</div>
+            </div>
+          )}
         </div>
       </div>
     )}
