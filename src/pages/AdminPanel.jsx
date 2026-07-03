@@ -1504,20 +1504,31 @@ function ScreenQR({ local }) {
   const slug = local?.slug || "mi-restaurante";
   const base = `https://menuqr.app/menu/${slug}`;
   const totalMesas = local?.mesas || 3;
-  const [modal, setModal] = React.useState(null); // { title, url }
+  const tel = (local?.telefono || "").replace(/\D/g, "");
+  const [modal, setModal] = React.useState(null);
+  const [copied, setCopied] = React.useState({});
 
   function qrUrl(link, size = 300) {
-    return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(link)}&bgcolor=ffffff&color=000000&margin=10`;
+    return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(link)}&bgcolor=ffffff&color=000000&margin=12`;
   }
 
-  function copyLink(url) {
+  function copyLink(key, url) {
     navigator.clipboard.writeText(url).catch(() => {});
+    setCopied(p => ({ ...p, [key]: true }));
+    setTimeout(() => setCopied(p => ({ ...p, [key]: false })), 1800);
   }
 
-  async function downloadQR(url, filename) {
-    const img = qrUrl(url, 600);
+  async function copyImage(url) {
+    try {
+      const resp = await fetch(qrUrl(url, 600));
+      const blob = await resp.blob();
+      await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
+    } catch (e) { alert("No se pudo copiar la imagen. Usá Descargar PNG."); }
+  }
+
+  function downloadPNG(url, filename) {
     const a = document.createElement("a");
-    a.href = img;
+    a.href = qrUrl(url, 800);
     a.download = filename + ".png";
     a.target = "_blank";
     document.body.appendChild(a);
@@ -1525,115 +1536,169 @@ function ScreenQR({ local }) {
     document.body.removeChild(a);
   }
 
-  const QRCard = ({ icon, title, desc, url, children }) => (
-    <div className="ap-card" style={{ textAlign: "center" }}>
-      <div style={{ fontSize: 36, marginBottom: 8 }}>{icon}</div>
-      <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 4 }}>{title}</div>
-      <div style={{ fontSize: 11, color: "rgba(255,255,255,.35)", marginBottom: 12 }}>{desc}</div>
-      {children || (
-        <>
-          <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}>
-            <img src={qrUrl(url)} alt="QR" style={{ width: 160, height: 160, borderRadius: 8, background: "#fff", padding: 4 }} />
-          </div>
-          <div style={{ background: "#262626", borderRadius: 8, padding: "6px 10px", marginBottom: 12, fontSize: 10, color: "rgba(255,255,255,.4)", fontFamily: "monospace", wordBreak: "break-all" }}>{url}</div>
-          <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
-            <button className="ap-btn ap-btn-ghost ap-btn-sm" onClick={() => downloadQR(url, title)}>⬇ Descargar</button>
-            <button className="ap-btn ap-btn-gold ap-btn-sm" onClick={() => { copyLink(url); }}>📋 Copiar link</button>
-          </div>
-        </>
-      )}
+  function downloadPDF(url, title) {
+    const imgSrc = qrUrl(url, 800);
+    const w = window.open("", "_blank");
+    w.document.write(`<!DOCTYPE html><html><head><title>${title}</title><style>
+      *{margin:0;padding:0;box-sizing:border-box}
+      body{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;font-family:system-ui;background:#fff;padding:40px}
+      img{width:280px;height:280px;display:block}
+      h2{font-size:22px;margin-bottom:8px;text-align:center}
+      p{font-size:13px;color:#555;text-align:center;margin-top:10px;word-break:break-all;max-width:300px}
+      @media print{body{padding:20px}}
+    </style></head><body>
+      <h2>${title}</h2>
+      <img src="${imgSrc}" onload="window.print()" />
+      <p>${url}</p>
+    </body></html>`);
+    w.document.close();
+  }
+
+  function shareWA(url, title) {
+    window.open(`https://wa.me/?text=${encodeURIComponent(title + "\n" + url)}`, "_blank");
+  }
+
+  function shareMail(url, title) {
+    window.open(`mailto:?subject=${encodeURIComponent("QR " + title)}&body=${encodeURIComponent("QR de acceso: " + url)}`, "_blank");
+  }
+
+  const ActionRow = ({ id, url, title }) => (
+    <div style={{ display:"flex", flexWrap:"wrap", gap:6, justifyContent:"center", marginTop:10 }}>
+      <button className="ap-btn ap-btn-ghost ap-btn-sm" onClick={() => downloadPNG(url, id)}>⬇ PNG</button>
+      <button className="ap-btn ap-btn-ghost ap-btn-sm" onClick={() => downloadPDF(url, title)}>🖨️ PDF</button>
+      <button className="ap-btn ap-btn-ghost ap-btn-sm" onClick={() => copyImage(url)}>🖼️ Copiar img</button>
+      <button className="ap-btn ap-btn-gold ap-btn-sm" onClick={() => copyLink(id, url)}>
+        {copied[id] ? "✓ Copiado" : "📋 Copiar link"}
+      </button>
+      <button className="ap-btn ap-btn-ghost ap-btn-sm" style={{background:"rgba(37,211,102,.15)",color:"#25D366",border:"1px solid rgba(37,211,102,.3)"}} onClick={() => shareWA(url, title)}>📲 WA</button>
+      <button className="ap-btn ap-btn-ghost ap-btn-sm" onClick={() => shareMail(url, title)}>✉️ Mail</button>
     </div>
   );
 
+  const QRCard = ({ id, icon, title, desc, url }) => (
+    <div className="ap-card" style={{ textAlign:"center" }}>
+      <div style={{ fontSize:32, marginBottom:6 }}>{icon}</div>
+      <div style={{ fontSize:14, fontWeight:800, marginBottom:4 }}>{title}</div>
+      <div style={{ fontSize:11, color:"rgba(255,255,255,.35)", marginBottom:12 }}>{desc}</div>
+      <div style={{ display:"flex", justifyContent:"center", marginBottom:10, cursor:"pointer" }} onClick={() => setModal({ title, url })}>
+        <img src={qrUrl(url, 200)} alt="QR" style={{ width:150, height:150, borderRadius:8, background:"#fff", padding:4 }} />
+      </div>
+      <div style={{ fontSize:9, color:"rgba(255,255,255,.3)", fontFamily:"monospace", wordBreak:"break-all", marginBottom:8 }}>{url}</div>
+      <ActionRow id={id} url={url} title={title} />
+    </div>
+  );
+
+  const qrCards = [
+    { id:"vitrina", icon:"📱", title:"Vitrina", desc:"Carta + opciones de pedido", url:`${base}/vitrina` },
+    { id:"delivery", icon:"🛵", title:"Delivery", desc:"Para compartir por redes o WhatsApp", url:`${base}/delivery` },
+    { id:"cocina", icon:"👨‍🍳", title:"Pantalla Cocina", desc:"QR para acceso al panel de cocina", url:`${base}/cocina` },
+    ...(tel ? [{ id:"telefono", icon:"📞", title:"Teléfono", desc:"Escanear para llamar al local", url:`tel:+${tel}` }] : []),
+  ];
+
   return (
     <div>
-      {/* Modal QR */}
+      {/* Modal */}
       {modal && (
-        <div onClick={() => setModal(null)} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,.8)", zIndex:9999, display:"flex", alignItems:"center", justifyContent:"center" }}>
-          <div onClick={e => e.stopPropagation()} style={{ background:"var(--bg2)", border:"1px solid var(--border)", borderRadius:16, padding:28, textAlign:"center", maxWidth:360, width:"90%" }}>
-            <div style={{ fontSize:18, fontWeight:800, marginBottom:16 }}>{modal.title}</div>
-            <img src={qrUrl(modal.url, 280)} alt="QR" style={{ width:240, height:240, background:"#fff", borderRadius:8, padding:6, marginBottom:16 }} />
-            <div style={{ fontSize:11, color:"rgba(255,255,255,.4)", fontFamily:"monospace", wordBreak:"break-all", marginBottom:16 }}>{modal.url}</div>
-            <div style={{ display:"flex", gap:10, justifyContent:"center" }}>
-              <button className="ap-btn ap-btn-ghost ap-btn-sm" onClick={() => downloadQR(modal.url, modal.title)}>⬇ Descargar PNG</button>
-              <button className="ap-btn ap-btn-gold ap-btn-sm" onClick={() => copyLink(modal.url)}>📋 Copiar</button>
-              <button className="ap-btn ap-btn-ghost ap-btn-sm" onClick={() => setModal(null)}>✕ Cerrar</button>
-            </div>
+        <div onClick={() => setModal(null)} style={{ position:"fixed",inset:0,background:"rgba(0,0,0,.85)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center" }}>
+          <div onClick={e => e.stopPropagation()} style={{ background:"var(--bg2)",border:"1px solid var(--border)",borderRadius:16,padding:28,textAlign:"center",maxWidth:400,width:"90%" }}>
+            <div style={{ fontSize:18,fontWeight:800,marginBottom:16 }}>{modal.title}</div>
+            <img src={qrUrl(modal.url, 280)} alt="QR" style={{ width:250,height:250,background:"#fff",borderRadius:10,padding:8,marginBottom:16 }} />
+            <div style={{ fontSize:10,color:"rgba(255,255,255,.35)",fontFamily:"monospace",wordBreak:"break-all",marginBottom:16 }}>{modal.url}</div>
+            <ActionRow id={"modal-"+modal.title} url={modal.url} title={modal.title} />
+            <button className="ap-btn ap-btn-ghost ap-btn-sm" style={{ marginTop:12 }} onClick={() => setModal(null)}>✕ Cerrar</button>
           </div>
         </div>
       )}
 
-      <div className="ap-sec-hdr"><h2>QR y links de acceso</h2></div>
-      <div className="ap-grid-3" style={{ marginBottom: 16 }}>
-        <QRCard icon="📱" title="QR Vitrina" desc="Escaneá y mostrá la carta + opciones de pedido" url={`${base}/vitrina`} />
-        <QRCard icon="🪑" title="QR por Mesa" desc={`${totalMesas} mesas configuradas`} url={`${base}/mesa/1`}>
-          <div style={{ display:"flex", flexDirection:"column", gap:6, maxHeight:300, overflowY:"auto" }}>
-            {Array.from({ length: totalMesas }, (_, i) => i + 1).map((n) => (
-              <div key={n} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", background:"#262626", padding:"8px 12px", borderRadius:8, fontSize:12 }}>
-                <span style={{ fontWeight:700 }}>Mesa {n}</span>
-                <div style={{ display:"flex", gap:6 }}>
-                  <button className="ap-btn ap-btn-ghost ap-btn-sm" onClick={() => setModal({ title:`Mesa ${n}`, url:`${base}/mesa/${n}` })}>🔍 Ver QR</button>
-                  <button className="ap-btn ap-btn-ghost ap-btn-sm" onClick={() => downloadQR(`${base}/mesa/${n}`, `mesa-${n}`)}>⬇</button>
-                  <button className="ap-btn ap-btn-gold ap-btn-sm" onClick={() => copyLink(`${base}/mesa/${n}`)}>📋</button>
+      <div className="ap-sec-hdr" style={{ marginBottom:16 }}><h2>QR y links de acceso</h2></div>
+
+      {/* Generales */}
+      <div className="ap-card-title" style={{ marginBottom:10 }}>QR GENERALES</div>
+      <div className="ap-grid-3" style={{ marginBottom:24 }}>
+        {qrCards.map(q => <QRCard key={q.id} {...q} />)}
+      </div>
+
+      {/* Por mesa */}
+      <div className="ap-card-title" style={{ marginBottom:10 }}>QR POR MESA ({totalMesas} mesas)</div>
+      <div className="ap-card" style={{ marginBottom:24 }}>
+        <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+          {Array.from({ length: totalMesas }, (_, i) => i + 1).map((n) => (
+            <div key={n} style={{ background:"var(--bg3)",borderRadius:10,padding:"10px 14px" }}>
+              <div style={{ display:"flex",alignItems:"center",gap:12,flexWrap:"wrap" }}>
+                <div style={{ width:60,height:60,background:"#fff",borderRadius:6,padding:2,flexShrink:0,cursor:"pointer" }} onClick={() => setModal({ title:`Mesa ${n}`, url:`${base}/mesa/${n}` })}>
+                  <img src={qrUrl(`${base}/mesa/${n}`, 120)} style={{ width:"100%",height:"100%" }} alt={`Mesa ${n}`} />
+                </div>
+                <div style={{ flex:1 }}>
+                  <div style={{ fontWeight:800,fontSize:14,marginBottom:6 }}>Mesa {n}</div>
+                  <ActionRow id={`mesa-${n}`} url={`${base}/mesa/${n}`} title={`Mesa ${n}`} />
                 </div>
               </div>
-            ))}
-          </div>
-          <button className="ap-btn ap-btn-gold" style={{ marginTop:10, width:"100%" }} onClick={() => {
-            Array.from({ length: totalMesas }, (_, i) => i + 1).forEach((n, idx) => {
-              setTimeout(() => downloadQR(`${base}/mesa/${n}`, `mesa-${n}`), idx * 800);
-            });
-          }}>⬇ Descargar todos los QR</button>
-        </QRCard>
-        <QRCard icon="🛵" title="Link Delivery" desc="Para compartir por redes o WhatsApp" url={`${base}/delivery`} />
-      </div>
-      <div className="ap-grid-2">
-        {/* WiFi QR */}
-        <div className="ap-card" style={{ display: "flex", gap: 20, alignItems: "center" }}>
-          <div style={{ fontSize: 56, flexShrink: 0 }}>📶</div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 15, fontWeight: 800, marginBottom: 6 }}>QR WiFi del local</div>
-            <div style={{ fontSize: 12, color: "rgba(255,255,255,.35)", marginBottom: 14 }}>
-              Los clientes escanean y se conectan automáticamente
             </div>
-            <div style={{ display: "flex", gap: 10, marginBottom: 12 }}>
-              <div className="ap-form-group" style={{ flex: 1, margin: 0 }}>
-                <label>Red (SSID)</label>
-                <input type="text" defaultValue={local?.wifi_ssid || ""} placeholder="Nombre de la red" />
-              </div>
-              <div className="ap-form-group" style={{ flex: 1, margin: 0 }}>
-                <label>Contraseña</label>
-                <input type="text" defaultValue={local?.wifi_pass || ""} placeholder="Contraseña" />
-              </div>
-            </div>
-            <div style={{ display: "flex", gap: 8 }}>
-              <button className="ap-btn ap-btn-ghost ap-btn-sm">⬇ Descargar QR</button>
-              <button className="ap-btn ap-btn-gold ap-btn-sm">🔄 Actualizar</button>
-            </div>
-          </div>
+          ))}
         </div>
-        {/* Promo QR */}
-        <div className="ap-card" style={{ borderColor: "rgba(232,160,32,.3)" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
-            <span style={{ fontSize: 28 }}>🏷️</span>
+        <button className="ap-btn ap-btn-gold" style={{ marginTop:14,width:"100%" }} onClick={() => {
+          Array.from({ length: totalMesas }, (_, i) => i + 1).forEach((n, idx) => {
+            setTimeout(() => downloadPDF(`${base}/mesa/${n}`, `Mesa ${n}`), idx * 1200);
+          });
+        }}>🖨️ Imprimir / PDF todos los QR de mesas</button>
+      </div>
+
+      {/* WiFi y Promo */}
+      <div className="ap-card-title" style={{ marginBottom:10 }}>QR ESPECIALES</div>
+      <div className="ap-grid-2">
+        <div className="ap-card">
+          <div style={{ display:"flex",alignItems:"center",gap:12,marginBottom:14 }}>
+            <span style={{ fontSize:32 }}>📶</span>
             <div>
-              <div style={{ fontSize: 15, fontWeight: 800 }}>QR Promoción del día</div>
-              <div style={{ fontSize: 11, color: "rgba(255,255,255,.35)" }}>El cliente escanea y ve la oferta activa</div>
+              <div style={{ fontSize:14,fontWeight:800 }}>QR WiFi del local</div>
+              <div style={{ fontSize:11,color:"rgba(255,255,255,.35)" }}>Los clientes escanean y se conectan</div>
+            </div>
+          </div>
+          <div style={{ display:"flex",gap:10,marginBottom:12 }}>
+            <div className="ap-form-group" style={{ flex:1,margin:0 }}>
+              <label>Red (SSID)</label>
+              <input type="text" id="wifi-ssid" defaultValue={local?.wifi_ssid||""} placeholder="Nombre de la red" />
+            </div>
+            <div className="ap-form-group" style={{ flex:1,margin:0 }}>
+              <label>Contraseña</label>
+              <input type="text" id="wifi-pass" defaultValue={local?.wifi_pass||""} placeholder="Contraseña" />
+            </div>
+          </div>
+          {local?.wifi_ssid && (
+            <>
+              <div style={{ display:"flex",justifyContent:"center",marginBottom:10,cursor:"pointer" }}
+                onClick={() => setModal({ title:"WiFi "+local.wifi_ssid, url:`WIFI:T:WPA;S:${local.wifi_ssid};P:${local.wifi_pass||""};H:;;` })}>
+                <img src={qrUrl(`WIFI:T:WPA;S:${local.wifi_ssid};P:${local.wifi_pass||""};H:;;`, 160)} style={{ width:130,height:130,background:"#fff",borderRadius:8,padding:4 }} alt="QR WiFi" />
+              </div>
+              <ActionRow id="wifi" url={`WIFI:T:WPA;S:${local.wifi_ssid};P:${local.wifi_pass||""};H:;;`} title={`WiFi ${local.wifi_ssid}`} />
+            </>
+          )}
+        </div>
+        <div className="ap-card" style={{ borderColor:"rgba(232,160,32,.3)" }}>
+          <div style={{ display:"flex",alignItems:"center",gap:10,marginBottom:14 }}>
+            <span style={{ fontSize:32 }}>🏷️</span>
+            <div>
+              <div style={{ fontSize:14,fontWeight:800 }}>QR Promoción del día</div>
+              <div style={{ fontSize:11,color:"rgba(255,255,255,.35)" }}>El cliente escanea y ve la oferta</div>
             </div>
           </div>
           <div className="ap-form-group">
             <label>Descripción de la promoción</label>
-            <input type="text" placeholder="Ej: 50% OFF en bifes de chorizo hasta las 23:59" />
+            <input type="text" id="promo-desc" placeholder="Ej: 50% OFF en bifes hasta las 23:59" />
           </div>
-          <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
-            <button className="ap-btn ap-btn-ghost ap-btn-sm">⬇ Descargar QR</button>
-            <button className="ap-btn ap-btn-gold ap-btn-sm">💾 Guardar promo</button>
-          </div>
+          <div id="promo-qr-area"></div>
+          <button className="ap-btn ap-btn-gold" style={{ width:"100%",marginTop:8 }} onClick={() => {
+            const desc = document.getElementById("promo-desc")?.value;
+            if (!desc) return;
+            const url = `${base}/promo?desc=${encodeURIComponent(desc)}`;
+            setModal({ title:"Promoción: "+desc, url });
+          }}>📲 Generar QR de esta promo</button>
         </div>
       </div>
     </div>
   );
 }
+
 
 /* ══════════════════════════════════════════════════════════════
    SCREEN: CONFIGURACIÓN
