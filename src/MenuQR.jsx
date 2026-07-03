@@ -1978,7 +1978,7 @@ return (
               <div style={{fontSize:16, fontWeight:800, color:"#fff", marginBottom:12, lineHeight:1.4}}>{local.promo_desc}</div>
               <div style={{display:"flex", justifyContent:"center", marginBottom:12}}>
                 <img
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent((local.slug?`https://menuqr.app/menu/${local.slug}/promo`:`menuqr.app/promo`)+"?desc="+encodeURIComponent(local.promo_desc))}&bgcolor=ffffff&color=000000&margin=8`}
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent((local.slug?`${window.location.origin}/menu/${local.slug}/promo`:`${window.location.origin}/promo`)+"?desc="+encodeURIComponent(local.promo_desc))}&bgcolor=ffffff&color=000000&margin=8`}
                   alt="QR Promo"
                   style={{width:120, height:120, background:"#fff", borderRadius:10, padding:4}}
                 />

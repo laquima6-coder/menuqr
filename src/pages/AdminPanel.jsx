@@ -1502,7 +1502,7 @@ function ScreenReportes({ pedidos, prods }) {
 ══════════════════════════════════════════════════════════════ */
 function ScreenQR({ local }) {
   const slug = local?.slug || "mi-restaurante";
-  const base = `https://menuqr.app/menu/${slug}`;
+  const base = `${window.location.origin}/menu/${slug}`;
   const totalMesas = local?.mesas || 3;
   const tel = (local?.telefono || "").replace(/\D/g, "");
   const [modal, setModal] = React.useState(null);
@@ -1989,7 +1989,7 @@ function ScreenGestion({ prods, setProds, cats, local, setLocal }) {
   const [pausaPedidos, setPausaPedidos] = React.useState(local?.pausa_pedidos || false);
   const [pausaDelivery, setPausaDelivery] = React.useState(!(local?.delivery_habilitado !== false));
 
-  const vitranaUrl = local?.slug ? `https://menuqr.vercel.app/v/${local.slug}` : null;
+  const vitranaUrl = local?.slug ? `${window.location.origin}/menu/${local.slug}/vitrina` : null;
 
   const prodsFiltrados = prods.filter(p =>
     !search || p.nombre?.toLowerCase().includes(search.toLowerCase())
