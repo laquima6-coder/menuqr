@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import ScreenCajaPOS from "./ScreenCajaPOS.jsx";
 import { supabase, getPedidos, updatePedidoStatus, subscribePedidos,
          toggleProducto, upsertCategoria } from "../lib/supabase.js";
 
@@ -1762,7 +1763,7 @@ export default function AdminPanel({ local, setLocal, cats, setCats, prods, setP
     categorias:<ScreenCategorias cats={cats} prods={prods} />,
     stock:     <ScreenStock />,
     clientes:  <ScreenClientes />,
-    caja:      <ScreenCaja pedidos={pedidos} local={local} />,
+    caja:      <ScreenCajaPOS prods={prods} cats={cats} local={local} />,
     reportes:  <ScreenReportes pedidos={pedidos} prods={prods} />,
     qr:        <ScreenQR local={local} />,
     config:    <ScreenConfiguracion local={local} setLocal={setLocal} />,
