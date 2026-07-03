@@ -432,9 +432,7 @@ export default function DeliveryPage() {
         await sb.from('pedidos').insert({
           id: pedidoId, restaurante_id: local.restauranteId,
           mesa_numero: 0, status: 'nuevo', metodo_pago: payMethod,
-          propina: 0, total: totalConEnvio, nota: nota_str, idioma: 'es',
-          tipo: 'delivery',
-          // Extra delivery fields stored in nota — Supabase schema may not have these columns yet
+          propina: 0, total: totalConEnvio, nota: nota_str,
         })
         await sb.from('pedido_items').insert(
           cartItems.map(i => ({ pedido_id: pedidoId, producto_id: i.id, nombre: i.name, precio: i.price, cantidad: i.qty }))
@@ -789,12 +787,12 @@ export default function DeliveryPage() {
           </div>
 
           {/* MP alias */}
-          {payMethod === 'mp' && local.mp_alias && (
+          {payMethod === 'mp' && (
             <div style={S.goldCard}>
               <p style={{ ...S.mono, fontSize: 8, color: `${GA}0.8)`, letterSpacing: 2, marginBottom: 10 }}>💳 ALIAS MERCADO PAGO</p>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
                 <div>
-                  <div style={{ ...S.mono, fontSize: 18, fontWeight: 700, color: '#fff', letterSpacing: 0.5 }}>{local.mp_alias}</div>
+                  <div style={{ ...S.mono, fontSize: 18, fontWeight: 700, color: '#fff', letterSpacing: 0.5 }}>{local.mp_alias || '—'}</div>
                   {local.mp_titular && (
                     <div style={{ ...S.dmsans, fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 3 }}>Titular: {local.mp_titular}</div>
                   )}
@@ -810,7 +808,7 @@ export default function DeliveryPage() {
           )}
 
           {/* Transfer alias */}
-          {payMethod === 'trans' && (local.alias_trans || local.mp_alias) && (
+          {payMethod === 'trans' && (
             <div style={S.goldCard}>
               <p style={{ ...S.mono, fontSize: 8, color: `${GA}0.8)`, letterSpacing: 2, marginBottom: 10 }}>🏦 ALIAS DE TRANSFERENCIA</p>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
