@@ -9,6 +9,25 @@ const TOMTOM_KEY  = import.meta.env.VITE_TOMTOM_KEY
 const sb  = SUPABASE_URL && SUPABASE_KEY ? createClient(SUPABASE_URL, SUPABASE_KEY) : null
 const fmt = n => Number(n || 0).toLocaleString('es-AR')
 
+// ─── TomTom SDK loader (CDN, one-time) ───────────────────────────────────────
+let _ttSDKState = 'idle' // idle | loading | ready
+let _ttSDKCbs   = []
+function loadTomTomSDK(cb) {
+  if (window.tt) { cb(); return }
+  _ttSDKCbs.push(cb)
+  if (_ttSDKState !== 'idle') return
+  _ttSDKState = 'loading'
+  const link = document.createElement('link'); link.rel = 'stylesheet'
+  link.href = 'https://api.tomtom.com/maps-sdk-for-web/cdn/6.x/6.25.0/maps/maps.css'
+  document.head.appendChild(link)
+  const script = document.createElement('script')
+  script.src = 'https://api.tomtom.com/maps-sdk-for-web/cdn/6.x/6.25.0/maps/maps-web.min.js'
+  script.onload = () => { _ttSDKState = 'ready'; _ttSDKCbs.forEach(f => f()); _ttSDKCbs = [] }
+  script.onerror = () => { _ttSDKState = 'idle'; _ttSDKCbs = [] }
+  document.head.appendChild(script)
+}
+
+
 const G  = '#e8a020'
 const GA = 'rgba(232,160,32,'
 
@@ -57,6 +76,84 @@ function ErrorScreen({ msg }) {
 }
 
 // ─── Main component ───────────────────────────────────────────────────────────
+
+// ─── DeliveryMap ─────────────────────────────────────────────────────────────
+function DeliveryMap({ apiKey, restaurantLat, restaurantLon, deliveryPos }) {
+  const containerRef = useRef(null)
+  const mapRef       = useRef(null)
+  const delMarker    = useRef(null)
+
+  // Init map (once)
+  useEffect(() => {
+    if (!apiKey || !containerRef.current) return
+    let cancelled = false
+    loadTomTomSDK(() => {
+      if (cancelled || mapRef.current || !containerRef.current) return
+      const map = window.tt.map({
+        key: apiKey,
+        container: containerRef.current,
+        center: [restaurantLon, restaurantLat],
+        zoom: 13,
+      })
+      mapRef.current = map
+      map.on('load', () => {
+        new window.tt.Marker({ color: '#e8a020' })
+          .setLngLat([restaurantLon, restaurantLat])
+          .addTo(map)
+      })
+    })
+    return () => {
+      cancelled = true
+      if (mapRef.current) { mapRef.current.remove(); mapRef.current = null }
+    }
+  }, [])  // eslint-disable-line
+
+  // Update route when delivery address selected
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || !deliveryPos || !apiKey) return
+    const draw = () => {
+      try {
+        if (delMarker.current) delMarker.current.remove()
+        delMarker.current = new window.tt.Marker({ color: '#ff4444' })
+          .setLngLat([deliveryPos.lon, deliveryPos.lat]).addTo(map)
+        fetch(`https://api.tomtom.com/routing/1/calculateRoute/${restaurantLat},${restaurantLon}:${deliveryPos.lat},${deliveryPos.lon}/json?key=${apiKey}&routeType=fastest&traffic=false`)
+          .then(r => r.json()).then(data => {
+            const pts = data?.routes?.[0]?.legs?.[0]?.points
+            if (!pts) return
+            const coords = pts.map(p => [p.longitude, p.latitude])
+            const geo = { type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: coords } }
+            try {
+              if (map.getSource('route-line')) { map.getSource('route-line').setData(geo) }
+              else {
+                map.addSource('route-line', { type: 'geojson', data: geo })
+                map.addLayer({ id: 'route-line', type: 'line', source: 'route-line',
+                  layout: { 'line-join': 'round', 'line-cap': 'round' },
+                  paint: { 'line-color': '#e8a020', 'line-width': 5, 'line-opacity': 0.85 } })
+              }
+            } catch (e) { console.warn('route layer:', e) }
+            const b = new window.tt.LngLatBounds()
+            coords.forEach(c => b.extend(c))
+            map.fitBounds(b, { padding: 60, maxZoom: 15 })
+          }).catch(() => {})
+      } catch (e) { console.warn('draw route:', e) }
+    }
+    if (map.loaded()) draw(); else map.once('load', draw)
+  }, [deliveryPos])  // eslint-disable-line
+
+  return (
+    <div style={{ borderRadius: 16, overflow: 'hidden', height: 230, background: '#111', margin: '10px 0 18px', border: '1px solid rgba(255,255,255,0.1)', position: 'relative' }}>
+      <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
+      {!deliveryPos && (
+        <div style={{ position: 'absolute', bottom: 10, left: 0, right: 0, textAlign: 'center', pointerEvents: 'none' }}>
+          <span style={{ background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(6px)', borderRadius: 20, padding: '5px 14px', fontSize: 11, color: 'rgba(255,255,255,0.5)', fontFamily: "'DM Sans',sans-serif" }}>
+            Seleccioná una dirección para ver la ruta
+          </span>
+        </div>
+      )}
+    </div>
+  )
+}
 
 export default function DeliveryPage() {
   const { slug } = useParams()
@@ -489,6 +586,17 @@ export default function DeliveryPage() {
                 ℹ️ Ingresá tu dirección — el costo de envío se coordina con el local
               </p>
             </div>
+          )}
+
+
+          {/* Mapa TomTom */}
+          {TOMTOM_KEY && (
+            <DeliveryMap
+              apiKey={TOMTOM_KEY}
+              restaurantLat={local?.delivery_config?.lat ?? -34.6037}
+              restaurantLon={local?.delivery_config?.lng ?? -58.3816}
+              deliveryPos={direcPos}
+            />
           )}
 
           {/* Piso / depto */}
