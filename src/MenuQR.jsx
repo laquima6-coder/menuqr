@@ -1747,7 +1747,7 @@ return (
           <div style={{width:50, height:50, borderRadius:"50%", border:"2px solid rgba(201,168,76,.4)", background:"rgba(201,168,76,.08)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:20, marginBottom:12}}>📖</div>
           <div style={{fontFamily:"Georgia,serif", fontSize:30, fontWeight:900, color:"#fff", lineHeight:1, marginBottom:4}}>CARTA</div>
           <div style={{fontSize:9, fontWeight:700, letterSpacing:2, color:"rgba(201,168,76,.8)", marginBottom:14}}>EXPLORÁ NUESTRO MENÚ</div>
-          <button onClick={()=>{setShowCarta(true); setCartaCat(cats&&cats.length>0?cats[0].id:null);}}
+          <button onClick={()=>{setShowCarta(true); setCartaCat(null);}}
             style={{display:"inline-flex", alignItems:"center", gap:8, background:"linear-gradient(135deg,#b8900a,#c9a020,#e0b830)", color:"#000", fontSize:12, fontWeight:800, letterSpacing:1, padding:"10px 18px", borderRadius:8, border:"none", cursor:"pointer"}}>
             VER CARTA &nbsp;›
           </button>
