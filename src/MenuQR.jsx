@@ -2512,17 +2512,17 @@ export function ClientApp({onBack, local, cats, prods, vitrina=false, sinPedidos
               </div>
             </div>
             {/* MP/Transfer alias card — PC */}
-            {(pay==="mp"||pay==="trans"||(pay==="mixto"&&(mixto1==="mp"||mixto1==="trans"||mixto2==="mp"||mixto2==="trans"))) && local.mp_mostrar_alias && local.mp_alias && (
+            {(pay==="mp"||pay==="trans"||(pay==="mixto"&&(mixto1==="mp"||mixto1==="trans"||mixto2==="mp"||mixto2==="trans"))) && (
               <div style={{marginBottom:20,background:"#FFF8EC",border:"1px solid #C9A84C66",borderRadius:14,padding:"16px 18px"}}>
                 <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:700,letterSpacing:2,textTransform:"uppercase",color:"#8A6A30",marginBottom:10}}>
                   {pay==="mp"?"💳 Datos para pagar por Mercado Pago":"🏦 Datos para transferencia bancaria"}
                 </div>
                 <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,marginBottom:10}}>
                   <div>
-                    <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:18,fontWeight:700,color:"#1C1008",letterSpacing:.5}}>{local.mp_alias}</div>
-                    {local.mp_titular&&<div style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"#7A6050",marginTop:2}}>Titular: {local.mp_titular}</div>}
+                    <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:18,fontWeight:700,color:"#1C1008",letterSpacing:.5}}>{local.mp_alias||local.alias_pago||"Sin configurar — ir a panel admin"}</div>
+                    {(local.mp_titular||local.alias_titular)&&<div style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"#7A6050",marginTop:2}}>Titular: {local.mp_titular||local.alias_titular}</div>}
                   </div>
-                  <button onClick={()=>{navigator.clipboard.writeText(local.mp_alias);}} className="pr"
+                  <button onClick={()=>{navigator.clipboard.writeText(local.mp_alias||local.alias_pago||"");}} className="pr"
                     style={{background:"#C9A84C",border:"none",borderRadius:8,padding:"8px 14px",fontFamily:"'IBM Plex Mono',monospace",fontSize:12,fontWeight:700,color:"#1C1008",cursor:"pointer",whiteSpace:"nowrap"}}>
                     📋 Copiar alias
                   </button>
@@ -2724,14 +2724,14 @@ export function ClientApp({onBack, local, cats, prods, vitrina=false, sinPedidos
         </div>
 
         {/* Alias MP/Transfer */}
-        {(pay==="mp"||pay==="trans"||(pay==="mixto"&&(mixto1==="mp"||mixto1==="trans"||mixto2==="mp"||mixto2==="trans")))&&local.mp_mostrar_alias&&local.mp_alias&&(
+        {(pay==="mp"||pay==="trans"||(pay==="mixto"&&(mixto1==="mp"||mixto1==="trans"||mixto2==="mp"||mixto2==="trans")))&&(
           <div style={{background:"#FFFBEB",border:"1px solid #FDE68A",borderRadius:14,padding:"14px 16px",marginBottom:12}}>
             <div style={{fontSize:10,fontWeight:700,letterSpacing:1.5,color:"#D97706",marginBottom:8,textTransform:"uppercase"}}>
               {(pay==="mp"||(pay==="mixto"&&(mixto1==="mp"||mixto2==="mp")))?"💳 Mercado Pago":"🏦 Transferencia"}
             </div>
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,marginBottom:local.whatsapp?10:0}}>
               <div>
-                <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:16,fontWeight:700,color:"#111"}}>{local.mp_alias}</div>
+                <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:16,fontWeight:700,color:"#111"}}>{local.mp_alias||local.alias_pago||"Sin configurar"}</div>
                 {local.mp_titular&&<div style={{fontSize:11,color:"#888",marginTop:2}}>Titular: {local.mp_titular}</div>}
               </div>
               <button onClick={()=>navigator.clipboard.writeText(local.mp_alias)} className="pr"
