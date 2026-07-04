@@ -730,7 +730,7 @@ function ScreenPedidos({ pedidos, setPedidos, local }) {
 
   const nuevos    = filtered.filter(p => p.status === "nuevo" || p.status === "pendiente_pago");
   const enCocina  = filtered.filter(p => p.status === "preparando");
-  const listos    = filtered.filter(p => p.status === "listo");
+  const listos    = filtered.filter(p => p.status === "listo" || p.status === "en_camino");
   const historial = filter !== "activos" ? filtered.filter(p => p.status === "entregado" || p.status === "cancelado") : [];
 
   async function toCocinaTx(p) {
@@ -770,8 +770,10 @@ function ScreenPedidos({ pedidos, setPedidos, local }) {
       }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
           <span style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 16, fontWeight: 800, color: "#e8a020" }}>#{p.id?.slice(-4)}</span>
-          <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+          <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" }}>
             {p.mesa_numero > 0 && <span style={{ background: "rgba(255,255,255,.06)", border: "1px solid rgba(255,255,255,.1)", borderRadius: 6, padding: "2px 8px", fontFamily: "'IBM Plex Mono',monospace", fontSize: 10, color: "#A0B8C8" }}>MESA {p.mesa_numero}</span>}
+            {p.tipo_pedido === "delivery" && <span style={{ background: "rgba(201,168,76,.15)", border: "1px solid rgba(201,168,76,.4)", borderRadius: 6, padding: "2px 8px", fontFamily: "'IBM Plex Mono',monospace", fontSize: 10, color: "#C9A84C" }}>🛵 DELIVERY</span>}
+            {p.tipo_pedido === "retiro" && <span style={{ background: "rgba(37,211,102,.1)", border: "1px solid rgba(37,211,102,.3)", borderRadius: 6, padding: "2px 8px", fontFamily: "'IBM Plex Mono',monospace", fontSize: 10, color: "#25D366" }}>🏪 RETIRO</span>}
             <span style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 10, color: isUrgent ? "#e84040" : "rgba(255,255,255,.35)" }}>{minutesSince(p.created_at)}m</span>
           </div>
         </div>
@@ -784,7 +786,14 @@ function ScreenPedidos({ pedidos, setPedidos, local }) {
           ))}
           {!p.pedido_items?.length && <span style={{ color: "rgba(255,255,255,.35)" }}>{pedidoItems(p)}</span>}
         </div>
-        {p.nota && <div style={{ background: "rgba(255,176,32,.08)", border: "1px solid rgba(255,176,32,.2)", borderRadius: 6, padding: "5px 8px", fontSize: 11, color: "#FFB020", marginBottom: 8 }}>📝 {p.nota}</div>}
+        {p.tipo_pedido === "delivery" && p.direccion_cliente && (
+          <div style={{ background: "rgba(201,168,76,.06)", border: "1px solid rgba(201,168,76,.2)", borderRadius: 6, padding: "5px 8px", fontSize: 11, color: "#C9A84C", marginBottom: 6 }}>
+            📍 {p.direccion_cliente}{p.entrecalles ? ` (entre ${p.entrecalles})` : ""}
+            {p.nombre_cliente && <span style={{ color: "rgba(255,255,255,.45)", marginLeft: 8 }}>👤 {p.nombre_cliente}</span>}
+          </div>
+        )}
+        {p.nota && !p.tipo_pedido?.match(/delivery|retiro/) && <div style={{ background: "rgba(255,176,32,.08)", border: "1px solid rgba(255,176,32,.2)", borderRadius: 6, padding: "5px 8px", fontSize: 11, color: "#FFB020", marginBottom: 8 }}>📝 {p.nota}</div>}
+        {(p.tipo_pedido === "delivery" || p.tipo_pedido === "retiro") && p.nota && <div style={{ background: "rgba(255,176,32,.08)", border: "1px solid rgba(255,176,32,.2)", borderRadius: 6, padding: "5px 8px", fontSize: 11, color: "#FFB020", marginBottom: 8 }}>📝 {p.nota?.split("|").filter(s=>s.startsWith("Obs:")).map(s=>s.slice(4)).join("")||p.nota}</div>}
         <div style={{ fontWeight: 700, fontSize: 12, color: "#e8a020", marginBottom: 10 }}>{ARS(p.total)}</div>
         <div style={{ display: "flex", gap: 6 }}>
           {actions}
@@ -847,9 +856,21 @@ function ScreenPedidos({ pedidos, setPedidos, local }) {
             {colHdr("ENTREGAR", listos.length, "#00FF88", "#00FF88")}
             {listos.length === 0 ? <div style={{ textAlign: "center", color: "rgba(255,255,255,.2)", fontSize: 12, padding: "24px 0" }}>Sin pedidos listos</div>
               : listos.map(p => (
-                <OrderKanban key={p.id} p={p} actions={[
-                  <button key="e" style={btnStyle("rgba(201,168,76,.12)","#C9A84C","rgba(201,168,76,.4)")} onClick={() => entregar(p)}>📦 Entregado</button>
-                ]}/>
+                <OrderKanban key={p.id} p={p} actions={
+                  p.tipo_pedido === "delivery" ? (
+                    p.status === "en_camino" ? [
+                      <button key="ed" style={btnStyle("rgba(37,211,102,.15)","#25D366","rgba(37,211,102,.4)")} onClick={() => entregar(p)}>✅ Entregado</button>
+                    ] : [
+                      <button key="dp" style={btnStyle("rgba(201,168,76,.12)","#C9A84C","rgba(201,168,76,.4)")} onClick={async () => {
+                        await updatePedidoStatus(p.id, "en_camino");
+                        setPedidos(prev => prev.map(o => o.id === p.id ? { ...o, status: "en_camino" } : o));
+                        if (p.telefono_cliente) window.open("https://wa.me/"+(p.telefono_cliente||"").replace(/\D/g,"")+"?text="+encodeURIComponent("Hola "+p.nombre_cliente+"! Tu pedido ya está en camino 🛵🔥"),"_blank");
+                      }}>🛵 Despachar</button>
+                    ]
+                  ) : [
+                    <button key="e" style={btnStyle("rgba(201,168,76,.12)","#C9A84C","rgba(201,168,76,.4)")} onClick={() => entregar(p)}>📦 Entregado</button>
+                  ]
+                }/>
               ))
             }
           </div>
@@ -1288,7 +1309,7 @@ function ScreenMesas({ local, pedidos }) {
 ══════════════════════════════════════════════════════════════ */
 function ScreenDelivery({ pedidos, setPedidos, local }) {
   const deliveryOrders = pedidos.filter(
-    (p) => (p.tipo_pedido === "delivery" || (!p.mesa_numero && p.tipo_pedido !== "retiro")) && p.status !== "entregado"
+    (p) => (p.tipo_pedido === "delivery" || (p.mesa_numero === 0 && !p.tipo_pedido && p.nota?.includes("DELIVERY"))) && p.status !== "entregado"
   );
   const [notaDelivery, setNotaDelivery] = React.useState({});
 
@@ -1341,31 +1362,38 @@ function ScreenDelivery({ pedidos, setPedidos, local }) {
               <span className={`ap-pill ${statusClass(p.status)}`}>{statusLabel(p.status)}</span>
               <span style={{ color: "#e8a020", fontWeight: 800, fontSize: 15 }}>{ARS(p.total)}</span>
             </div>
-            {/* Dirección */}
-            {(p.direccion_cliente || p.nota) && (
-              <div style={{ background: "rgba(255,255,255,.03)", border: "1px solid rgba(255,255,255,.07)", borderRadius: 8, padding: "10px 12px", width: "100%", boxSizing: "border-box" }}>
-                {p.direccion_cliente && <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", marginBottom: 2 }}>📍 {p.direccion_cliente}</div>}
-                {p.entrecalles && <div style={{ fontSize: 12, color: "var(--text2)" }}>Entre: {p.entrecalles}</div>}
-                {p.observaciones_cliente && <div style={{ fontSize: 12, color: "rgba(255,255,255,.45)", marginTop: 4 }}>💬 {p.observaciones_cliente}</div>}
-              </div>
-            )}
+            {/* Cliente + dirección */}
+            <div style={{ background: "rgba(255,255,255,.03)", border: "1px solid rgba(255,255,255,.07)", borderRadius: 8, padding: "10px 12px", width: "100%", boxSizing: "border-box" }}>
+              {p.nombre_cliente && <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", marginBottom: 4 }}>👤 {p.nombre_cliente}{p.telefono_cliente ? ` · ${p.telefono_cliente}` : ""}</div>}
+              {p.direccion_cliente ? (
+                <>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: "#C9A84C", marginBottom: 2 }}>📍 {p.direccion_cliente}</div>
+                  {p.entrecalles && <div style={{ fontSize: 12, color: "var(--text2)" }}>Entre: {p.entrecalles}</div>}
+                </>
+              ) : p.nota ? (
+                <div style={{ fontSize: 12, color: "var(--text2)" }}>📝 {p.nota}</div>
+              ) : null}
+            </div>
             {/* Productos */}
-            <div style={{ fontSize: 12, color: "rgba(255,255,255,.4)", width: "100%" }}>{pedidoItems(p)}</div>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,.55)", width: "100%", lineHeight: 1.6 }}>
+              {(p.pedido_items||[]).map((it,i) => <span key={i}>{it.cantidad}× {it.nombre}{"  "}</span>)}
+              {!p.pedido_items?.length && pedidoItems(p)}
+            </div>
             {/* Nota del delivery */}
             <div style={{ width: "100%", display: "flex", gap: 8 }}>
               <input
                 style={{ flex: 1, background: "var(--bg3)", border: "1px solid var(--border)", borderRadius: 8, padding: "6px 10px", color: "var(--text)", fontSize: 12, outline: "none" }}
-                placeholder="Nota para el delivery (piso, timbre, referencia...)"
+                placeholder="Nota para el repartidor (piso, timbre, referencia...)"
                 value={notaDelivery[p.id] ?? (p.observaciones_delivery || "")}
                 onChange={e => setNotaDelivery(prev => ({ ...prev, [p.id]: e.target.value }))}
               />
-              <button className="ap-btn ap-btn-gold" style={{ padding: "6px 12px", fontSize: 11 }} onClick={() => guardarNotaDelivery(p)}>Guardar</button>
+              <button className="ap-btn ap-btn-gold" style={{ padding: "6px 12px", fontSize: 11 }} onClick={() => guardarNotaDelivery(p)}>💾</button>
             </div>
             {/* Acciones */}
             <div style={{ display: "flex", gap: 8, width: "100%", flexWrap: "wrap" }}>
               {p.status === "pendiente_pago" && (
                 <button className="ap-btn ap-btn-gold" style={{ flex: 1, minWidth: 160 }} onClick={() => confirmarPago(p)}>
-                  ✅ Confirmar pago recibido
+                  ✅ Confirmar pago
                 </button>
               )}
               {p.status !== "pendiente_pago" && p.status !== "entregado" && (
@@ -1373,11 +1401,11 @@ function ScreenDelivery({ pedidos, setPedidos, local }) {
                   {BTN_LABELS[p.status] || "Avanzar"}
                 </button>
               )}
-              {local?.telefono && (
-                <a href={"https://wa.me/"+(local.telefono||"").replace(/\D/g,"")+"?text="+encodeURIComponent("Hola! Tu pedido #"+p.id?.slice(-3)+" está "+statusLabel(p.status))}
+              {(p.telefono_cliente || local?.telefono) && (
+                <a href={"https://wa.me/"+((p.telefono_cliente||local?.telefono||"").replace(/\D/g,""))+"?text="+encodeURIComponent("Hola "+(p.nombre_cliente||"!")+"! Tu pedido #"+p.id?.slice(-3)+" está: "+statusLabel(p.status)+" 🛵")}
                   target="_blank" rel="noreferrer"
                   style={{ background: "#25D366", border: "none", borderRadius: 8, padding: "8px 12px", fontSize: 11, fontWeight: 700, color: "#fff", textDecoration: "none", display: "flex", alignItems: "center", gap: 4 }}>
-                  📲 WA
+                  📲 Avisar al cliente
                 </a>
               )}
             </div>

@@ -933,12 +933,32 @@ function TrackPedido({ pedidoId, initialStatus }) {
   }, [pedidoId]);
 
   const info = LABELS[status] || {icon:"📋", label:status, color:"rgba(255,255,255,.5)"};
+  const STEPS = ["pendiente_pago","nuevo","preparando","listo","en_camino","entregado"];
+  const currentStep = STEPS.indexOf(status);
+  const stepDots = STEPS.map((s,i) => {
+    const done = i <= currentStep;
+    const sl = LABELS[s];
+    return (
+      <div key={s} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:4,flex:1}}>
+        <div style={{width:10,height:10,borderRadius:"50%",background:done?sl.color:"rgba(255,255,255,.12)",
+          transition:"all .4s",boxShadow:done?`0 0 6px ${sl.color}`:"none"}}/>
+        <div style={{fontSize:9,color:done?sl.color:"rgba(255,255,255,.2)",textAlign:"center",lineHeight:1.2,fontFamily:"'DM Sans',sans-serif"}}>{sl.icon}</div>
+      </div>
+    );
+  });
   return (
-    <div style={{display:"flex",alignItems:"center",gap:12}}>
-      <div style={{fontSize:28}}>{info.icon}</div>
-      <div>
-        <div style={{fontFamily:"'Outfit',sans-serif",fontSize:15,fontWeight:700,color:info.color}}>{info.label}</div>
-        <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,color:"rgba(255,255,255,.35)",marginTop:2}}>Actualizamos el estado en tiempo real</div>
+    <div>
+      <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:12}}>
+        <div style={{fontSize:28}}>{info.icon}</div>
+        <div>
+          <div style={{fontFamily:"'Outfit',sans-serif",fontSize:15,fontWeight:700,color:info.color}}>{info.label}</div>
+          <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,color:"rgba(255,255,255,.35)",marginTop:2}}>Actualizamos el estado en tiempo real</div>
+        </div>
+      </div>
+      <div style={{display:"flex",alignItems:"center",position:"relative",paddingTop:4}}>
+        <div style={{position:"absolute",top:9,left:"5%",right:"5%",height:2,background:"rgba(255,255,255,.08)",borderRadius:1}}/>
+        <div style={{position:"absolute",top:9,left:"5%",width:Math.max(0,Math.min(currentStep/(STEPS.length-1)*90,90))+"%",height:2,background:info.color,borderRadius:1,transition:"width .5s"}}/>
+        {stepDots}
       </div>
     </div>
   );
@@ -1130,6 +1150,11 @@ function WAOrderFlow({local, prods, cats, tipo, onClose}) {
             id:pid, restaurante_id:local.restauranteId,
             mesa_numero:0, status:"pendiente_pago", metodo_pago:waPay||"transferencia",
             propina:0, total:totalConEnvio, nota:notaStr,
+            tipo_pedido:"delivery",
+            nombre_cliente:name||null,
+            telefono_cliente:phone||null,
+            direccion_cliente:direc||null,
+            entrecalles:entreCalles||null,
           });
           if(_pedErr) throw new Error("pedidos: "+_pedErr.message);
           const {error:_itmErr}=await supabase.from("pedido_items").insert(
@@ -1154,6 +1179,9 @@ function WAOrderFlow({local, prods, cats, tipo, onClose}) {
           id:pid, restaurante_id:local.restauranteId,
           mesa_numero:0, status:"nuevo", metodo_pago:waPay||"whatsapp",
           propina:0, total:totalConEnvio, nota:notaStr,
+          tipo_pedido:"retiro",
+          nombre_cliente:name||null,
+          telefono_cliente:phone||null,
         });
         if(_pedErr2) throw new Error("pedidos: "+_pedErr2.message);
         const {error:_itmErr2}=await supabase.from("pedido_items").insert(
