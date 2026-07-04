@@ -34,6 +34,7 @@ export default function ScreenCajaPOS({ prods=[], cats=[], local={} }) {
   })), [cats]);
 
   const [tab, setTab] = React.useState('mostrador');
+  const [mobileView, setMobileView] = React.useState('prods'); // 'prods' | 'ticket'
   const [ticket, setTicket] = React.useState([]);
   const [selIdx, setSelIdx] = React.useState(null);
   const [metodoPago, setMetodoPago] = React.useState('efectivo');
@@ -114,6 +115,7 @@ export default function ScreenCajaPOS({ prods=[], cats=[], local={} }) {
 
   // Mostrador actions
   const addProd = (prod) => {
+    setMobileView('ticket');
     setTicket(prev => {
       const idx = prev.findIndex(it => it.id === prod.id && it.precio_especial === 0 && (it.desc_pct||0) === 0);
       if (idx >= 0) {
@@ -342,10 +344,27 @@ export default function ScreenCajaPOS({ prods=[], cats=[], local={} }) {
 
         {/* ===== MOSTRADOR ===== */}
         {tab === 'mostrador' && (
-          <div style={{display:'grid', gridTemplateColumns:'1fr 350px', gap:12, height:'calc(100vh - 190px)'}}>
+          <div style={{display:'flex', flexDirection:'column', height:'calc(100vh - 190px)'}}>
+            {/* Mobile view switcher */}
+            <div style={{display:'flex', gap:0, marginBottom:8, borderRadius:8, overflow:'hidden', border:'1px solid var(--border)'}}>
+              <button onClick={()=>setMobileView('prods')}
+                style={{flex:1, padding:'8px', fontSize:12, fontWeight:700, border:'none', cursor:'pointer',
+                  background:mobileView==='prods'?'var(--gold)':'var(--bg3)',
+                  color:mobileView==='prods'?'#000':'var(--text2)'}}>
+                🛒 Productos
+              </button>
+              <button onClick={()=>setMobileView('ticket')}
+                style={{flex:1, padding:'8px', fontSize:12, fontWeight:700, border:'none', cursor:'pointer',
+                  background:mobileView==='ticket'?'var(--gold)':'var(--bg3)',
+                  color:mobileView==='ticket'?'#000':'var(--text2)'}}>
+                🧾 Ticket {ticket.length > 0 ? `(${ticket.length})` : ''}
+                {total > 0 ? ` · $${Math.round(total).toLocaleString('es-AR')}` : ''}
+              </button>
+            </div>
+          <div style={{display:'grid', gridTemplateColumns:'1fr', gap:12, flex:1, overflow:'hidden'}}>
 
             {/* Left: products */}
-            <div style={{display:'flex', flexDirection:'column', gap:8, minWidth:0}}>
+            <div style={{display: mobileView==='prods' ? 'flex' : 'none', flexDirection:'column', gap:8, minWidth:0}}>
               <input style={S.inp} placeholder="Buscar producto..." value={search} onChange={e=>setSearch(e.target.value)}/>
               <div style={{display:'flex', gap:6, flexWrap:'wrap'}}>
                 <button style={S.btnSm(catF===null?'var(--gold)':'var(--bg3)', catF===null?'#000':'var(--text)')} onClick={()=>setCatF(null)}>Todos</button>
@@ -372,7 +391,7 @@ export default function ScreenCajaPOS({ prods=[], cats=[], local={} }) {
             </div>
 
             {/* Right: ticket */}
-            <div style={{background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:12, display:'flex', flexDirection:'column', overflow:'hidden'}}>
+            <div style={{display: mobileView==='ticket' ? 'flex' : 'none', background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:12, flexDirection:'column', overflow:'hidden'}}>
               <div style={{padding:'10px 12px', borderBottom:'1px solid var(--border)', display:'flex', justifyContent:'space-between', alignItems:'center'}}>
                 <span style={{fontWeight:700, fontSize:14}}>🧾 Ticket</span>
                 <div style={{display:'flex', gap:6}}>
@@ -499,6 +518,7 @@ export default function ScreenCajaPOS({ prods=[], cats=[], local={} }) {
                 </div>
               </div>
             </div>
+          </div>
           </div>
         )}
 

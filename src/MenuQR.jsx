@@ -332,51 +332,9 @@ export const INIT_LOCAL = {
   activo:true,
 };
 
-export const INIT_CATS = [
-  {id:"mundo",  label:"Panchos del Mundo", icon:"🌍", activa:true},
-  {id:"clasico",label:"Clásicos",          icon:"⭐", activa:true},
-  {id:"combo",  label:"Combos",            icon:"🔥", activa:true},
-  {id:"beb",    label:"Bebidas",           icon:"🥤", activa:true},
-];
+export const INIT_CATS = [];
 
-export const INIT_PRODS = [
-  // ── Panchos del Mundo ──
-  {id:1,  cat:"mundo",  name:"Chicago Dog",    price:3200, orig:null,  pais:"Estados Unidos", emoji:"🇺🇸", active:true,
-   desc:"El rey de Wrigley Field. Mostaza amarilla, pepinillos, cebolla morada, tomate fresco, chile sport y sal de apio sobre pan de amapola. En Chicago, el ketchup está prohibido."},
-  {id:2,  cat:"mundo",  name:"Frankfurt",      price:3400, orig:null,  pais:"Alemania",       emoji:"🇩🇪", active:true,
-   desc:"La original alemana. Salchicha ahumada con mostaza dulce bávara, chucrut tierno y pan tipo pretzel. Así se come en la Oktoberfest desde 1870."},
-  {id:3,  cat:"mundo",  name:"Porteño",        price:2800, orig:null,  pais:"Argentina",      emoji:"🇦🇷", active:true,
-   desc:"El nuestro, pero elevado. Chimichurri casero, papas fritas crocantes, mayonesa y limón. El sabor del asado en formato pancho."},
-  {id:4,  cat:"mundo",  name:"Sonora",         price:3600, orig:null,  pais:"México",         emoji:"🇲🇽", active:true,
-   desc:"El pancho más picante del mundo. Envuelto en bacon crocante, cargado de jalapeños, tomate, mayo y mostaza. Inspirado en los street dogs de Hermosillo."},
-  {id:5,  cat:"mundo",  name:"Romano",         price:3500, orig:null,  pais:"Italia",         emoji:"🇮🇹", active:true,
-   desc:"Mozzarella derretida, salsa marinara, albahaca fresca y un hilo de aceite de oliva extravirgen. Como una pizza, pero en pancho."},
-  {id:6,  cat:"mundo",  name:"Carioca",        price:3300, orig:null,  pais:"Brasil",         emoji:"🇧🇷", active:true,
-   desc:"Vinagrete fresco, queso prato derretido y una lluvia de farofa crocante. El pancho favorito de los puestos de Copacabana."},
-  {id:7,  cat:"mundo",  name:"Parisiense",     price:3800, orig:null,  pais:"Francia",        emoji:"🇫🇷", active:true,
-   desc:"Brie cremoso, cebolla caramelizada lentamente y mostaza de Dijon sobre pan tipo baguette. Elegante y directo, como la cocina francesa."},
-  {id:8,  cat:"mundo",  name:"Tokio Dog",      price:3900, orig:null,  pais:"Japón",          emoji:"🇯🇵", active:true,
-   desc:"Salsa teriyaki brillante, alga nori en tiras, semillas de sésamo tostado y mayonesa Kewpie japonesa. El umami en cada bocado."},
-  // ── Clásicos ──
-  {id:9,  cat:"clasico",name:"Completo Simple",price:1800, orig:null,  pais:null, emoji:"🌭", active:true,
-   desc:"Pan, salchicha, mostaza, ketchup y mayonesa. El de siempre, siempre bien."},
-  {id:10, cat:"clasico",name:"Con Todo",       price:2200, orig:null,  pais:null, emoji:"🌭", active:true,
-   desc:"Salchicha, mayonesa, ketchup, mostaza, chucrut, queso rallado y jalapeños. Sin vueltas."},
-  {id:11, cat:"clasico",name:"Cheesedog",      price:2400, orig:null,  pais:null, emoji:"🧀", active:true,
-   desc:"Doble queso cheddar derretido sobre salchicha grillada. Pan tostado con manteca. Simple y poderoso."},
-  // ── Combos ──
-  {id:12, cat:"combo",  name:"Combo Dúo",      price:5500, orig:7000,  pais:null, emoji:"🔥", active:true, tag:"−21%",
-   desc:"2 panchos a elección + 2 bebidas. El combo para compartir. Elegís los países."},
-  {id:13, cat:"combo",  name:"Combo Mundial",  price:8500, orig:11000, pais:null, emoji:"🌍", active:true, tag:"−23%",
-   desc:"4 panchos del mundo a tu elección + 2 bebidas + papas fritas. La vuelta al mundo en una mesa."},
-  // ── Bebidas ──
-  {id:14, cat:"beb",    name:"Gaseosa",        price:800,  orig:null,  pais:null, emoji:"🥤", active:true,
-   desc:"Coca-Cola, Sprite o Fanta. Lata 354ml bien fría."},
-  {id:15, cat:"beb",    name:"Agua Mineral",   price:600,  orig:null,  pais:null, emoji:"💧", active:true,
-   desc:"Con o sin gas. 500ml."},
-  {id:16, cat:"beb",    name:"Cerveza",        price:1400, orig:null,  pais:null, emoji:"🍺", active:true,
-   desc:"Lata 473ml. Rubia o negra."},
-];
+export const INIT_PRODS = [];
 
 const INIT_ORDERS = []; // Pedidos reales vienen de Supabase en tiempo real
 
