@@ -2238,18 +2238,16 @@ export default function AdminPanel({ local, setLocal, cats, setCats, prods, setP
   }, []);
 
   useEffect(() => {
-    getPedidos().then((data) => { if (data) setPedidos(data); });
-    const unsub = subscribePedidos((payload) => {
-      setPedidos((prev) => {
-        const { eventType, new: nuevo, old } = payload;
-        if (eventType === "INSERT") return [nuevo, ...prev];
-        if (eventType === "UPDATE") return prev.map((p) => (p.id === nuevo.id ? nuevo : p));
-        if (eventType === "DELETE") return prev.filter((p) => p.id !== old.id);
-        return prev;
-      });
-    });
+    if (!local?.restauranteId) return;
+    const today = new Date().toISOString().slice(0, 10);
+    getPedidos(local.restauranteId, today).then((data) => { if (data) setPedidos(data); });
+    const unsub = subscribePedidos(
+      local.restauranteId,
+      (newP) => setPedidos((prev) => [newP, ...prev]),
+      (upd)  => setPedidos((prev) => prev.map((p) => (p.id === upd.id ? upd : p)))
+    );
     return () => { if (unsub) unsub(); };
-  }, []);
+  }, [local?.restauranteId]);
 
   const pendingCount = pedidos.filter((p) => p.status === "pendiente").length;
   const kitchenCount = pedidos.filter((p) => p.status === "en_cocina").length;
