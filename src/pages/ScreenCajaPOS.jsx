@@ -9,7 +9,7 @@ export default function ScreenCajaPOS({ prods=[], cats=[], local={} }) {
   const ridl = local?.restauranteId;
 
   // Normalizar campos — el panel usa name/price/active, el POS espera nombre/precio/activo
-  const prodsNorm = React.useMemo(() => prods.map(p => ({
+  const prodsNorm = React.useMemo(() => prodsAll.map(p => ({
     ...p,
     nombre:       p.nombre      || p.name       || "",
     precio:       p.precio      ?? p.price       ?? 0,
@@ -33,9 +33,20 @@ export default function ScreenCajaPOS({ prods=[], cats=[], local={} }) {
   const [search, setSearch] = React.useState('');
   const [catF, setCatF] = React.useState(null);
 
+  // Self-load products if not passed via props
+  const [prodsLocal, setProdsLocal] = React.useState([]);
+  React.useEffect(() => {
+    if (prods.length > 0 || !ridl) return;
+    supabase?.from('productos').select('*')
+      .eq('restaurante_id', ridl)
+      .then(({ data }) => { if (data) setProdsLocal(data); });
+  }, [ridl, prods.length]);
+  const prodsAll = prods.length > 0 ? prods : prodsLocal;
+
   // Cobrar modal
   const [showCobrar, setShowCobrar] = React.useState(false);
   const [montoRec, setMontoRec] = React.useState('');
+  const [lastTicket, setLastTicket] = React.useState(null);
 
   // Special price modal
   const [showPrecio, setShowPrecio] = React.useState(false);
@@ -146,11 +157,24 @@ export default function ScreenCajaPOS({ prods=[], cats=[], local={} }) {
       total, metodo_pago: metodoPago2 ? `${metodoPago}+${metodoPago2}` : metodoPago, estado: 'cerrado'
     });
     if (!error) {
-      vaciarTicket();
+      setLastTicket({ numero, items: [...ticket], total, metodo_pago: metodoPago2 ? `${metodoPago}+${metodoPago2}` : metodoPago });
       setShowCobrar(false);
       setMontoRec('');
       loadTickets();
     }
+  };
+
+  const compartirTicket = (t) => {
+    if (!t) return;
+    const items = (t.items||[]).map(it => {
+      const p = it.precio_especial > 0 ? it.precio_especial : it.precio_base;
+      const lin = p * (1-(it.desc_pct||0)/100) * it.qty;
+      return `${it.qty}x ${it.nombre}: ${ARS(lin)}`;
+    }).join('%0A');
+    const txt = encodeURIComponent(`🧾 Ticket #${t.numero} — ${local?.nombre||'MenuQR'}%0A${items}%0ATOTAL: ${ARS(t.total)}%0APago: ${t.metodo_pago}`);
+    const waNum = (local?.whatsapp||local?.telefono||'').replace(/\D/g,'');
+    const url = waNum ? `https://wa.me/${waNum}?text=${txt}` : `https://wa.me/?text=${txt}`;
+    window.open(url, '_blank');
   };
 
   const openPrecio = (idx) => {
@@ -644,9 +668,51 @@ export default function ScreenCajaPOS({ prods=[], cats=[], local={} }) {
                 Vuelto: {ARS(vuelto)}
               </div>
             )}
+            {(metodoPago==='mercadopago'||metodoPago==='transferencia'||metodoPago2==='mercadopago'||metodoPago2==='transferencia')&&(
+              <div style={{margin:'10px 0',padding:'10px 12px',background:'rgba(201,168,76,.08)',
+                border:'1px solid rgba(201,168,76,.3)',borderRadius:8,fontSize:12,
+                color:'#D4A843',lineHeight:1.5,textAlign:'center'}}>
+                💬 Una vez hecho el pago, compartí el comprobante a este número:<br/>
+                <span style={{fontWeight:800,fontSize:14}}>
+                  {local?.whatsapp||local?.telefono||'—'}
+                </span>
+              </div>
+            )}
             <div style={{display:'flex', gap:8, marginTop:16}}>
               <button style={{...S.btn('var(--bg3)','var(--text)'), flex:1}} onClick={()=>setShowCobrar(false)}>Cancelar</button>
               <button style={{...S.btn(), flex:2}} onClick={cobrar}>✓ Confirmar cobro</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Post-cobro: éxito con opciones de imprimir / compartir */}
+      {lastTicket && (
+        <div style={S.overlay}>
+          <div style={{...S.modal, textAlign:'center', maxWidth:360}}>
+            <div style={{fontSize:28, marginBottom:8}}>✅</div>
+            <div style={{fontWeight:700, fontSize:17, color:'var(--gold)', marginBottom:4}}>
+              Ticket #{lastTicket.numero} cobrado
+            </div>
+            <div style={{fontSize:22, fontWeight:800, color:'var(--text)', marginBottom:4}}>
+              {ARS(lastTicket.total)}
+            </div>
+            <div style={{fontSize:12, color:'var(--text3)', marginBottom:16, textTransform:'capitalize'}}>
+              Pago: {lastTicket.metodo_pago}
+            </div>
+            <div style={{display:'flex', flexDirection:'column', gap:8}}>
+              <button style={{...S.btn('var(--bg3)','var(--text)'), padding:'12px', fontSize:14}}
+                onClick={()=>imprimir({...lastTicket, items: lastTicket.items.map(it=>({...it, nombre:it.nombre, precio_base:it.precio_base, precio_especial:it.precio_especial, desc_pct:it.desc_pct, qty:it.qty}))})}>
+                🖨️ Imprimir ticket
+              </button>
+              <button style={{...S.btn('rgba(37,211,102,.12)','#25D366'), border:'1px solid rgba(37,211,102,.3)', padding:'12px', fontSize:14}}
+                onClick={()=>compartirTicket(lastTicket)}>
+                📲 Compartir por WhatsApp
+              </button>
+              <button style={{...S.btn(), padding:'12px', fontSize:14}}
+                onClick={()=>{ vaciarTicket(); setLastTicket(null); }}>
+                ✓ Nuevo pedido
+              </button>
             </div>
           </div>
         </div>

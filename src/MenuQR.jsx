@@ -1213,6 +1213,14 @@ function WAOrderFlow({local, prods, cats, tipo, onClose}) {
         )}
         {/* Enviar comprobante */}
         {(local.telefono||local.whatsapp_vitrina_numero)&&(
+          <div style={{width:"100%",background:"rgba(201,168,76,.08)",border:"1px solid rgba(201,168,76,.3)",borderRadius:10,padding:"10px 14px",marginBottom:8,textAlign:"center",fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"#D4A843",lineHeight:1.5}}>
+            💬 Una vez hecho el pago, compartí el comprobante a este número:<br/>
+            <span style={{fontWeight:800,fontSize:15}}>
+              {local.whatsapp||local.whatsapp_vitrina_numero||local.telefono||"—"}
+            </span>
+          </div>
+        )}
+        {(local.telefono||local.whatsapp_vitrina_numero)&&(
           <button onClick={()=>window.open("https://wa.me/"+(local.telefono||local.whatsapp_vitrina_numero||"").replace(/\D/g,"")+"?text="+encodeURIComponent("Hola! Te mando el comprobante de pago de mi pedido 🧾"),"_blank")}
             style={{width:"100%",background:"#25D366",border:"none",borderRadius:12,padding:"14px",fontFamily:"'Outfit',sans-serif",fontSize:14,fontWeight:700,color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
             📲 Enviar comprobante por WhatsApp
@@ -1518,9 +1526,15 @@ function WAOrderFlow({local, prods, cats, tipo, onClose}) {
               </div>
               {tipo==="delivery"&&(
                 <div style={{background:"rgba(37,211,102,.08)",border:"1px solid rgba(37,211,102,.2)",borderRadius:10,padding:"10px 12px",marginTop:10}}>
-                  <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"rgba(255,255,255,.65)",margin:"0 0 8px",lineHeight:1.6}}>
+                  <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"rgba(255,255,255,.65)",margin:"0 0 4px",lineHeight:1.6}}>
                     Hacé el pago y después enviá el comprobante por WhatsApp. Tu pedido entra a preparación cuando confirmemos el pago.
                   </p>
+                  {(local.telefono||local.whatsapp_vitrina_numero)&&(
+                    <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"#D4A843",margin:"0 0 8px",lineHeight:1.5,textAlign:"center"}}>
+                      📱 Compartí el comprobante a este número:<br/>
+                      <strong>{local.whatsapp||local.whatsapp_vitrina_numero||local.telefono}</strong>
+                    </p>
+                  )}
                   {(local.telefono||local.whatsapp_vitrina_numero)&&(
                     <button onClick={()=>window.open("https://wa.me/"+(local.telefono||local.whatsapp_vitrina_numero||"").replace(/\D/g,"")+"?text="+encodeURIComponent("Hola! Te envío el comprobante de pago de mi pedido 🧾"),"_blank")}
                       style={{background:"#25D366",border:"none",borderRadius:8,padding:"9px 14px",fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:700,color:"#fff",cursor:"pointer",width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
@@ -2534,7 +2548,7 @@ export function ClientApp({onBack, local, cats, prods, vitrina=false, sinPedidos
                     <span style={{fontSize:18}}>📱</span>
                     <div>
                       <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,color:"#fff"}}>Enviar comprobante por WhatsApp</div>
-                      <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,color:"rgba(255,255,255,.8)"}}>Una vez abonado, compartí el comprobante al local</div>
+                      <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,color:"rgba(255,255,255,.8)"}}>Compartí el comprobante a: <strong>{local.whatsapp||local.telefono||"este número"}</strong></div>
                     </div>
                   </a>
                 )}
@@ -2747,7 +2761,7 @@ export function ClientApp({onBack, local, cats, prods, vitrina=false, sinPedidos
                 <span style={{fontSize:18}}>📱</span>
                 <div style={{flex:1}}>
                   <div style={{fontSize:13,fontWeight:700,color:"#fff"}}>Enviar comprobante por WhatsApp</div>
-                  <div style={{fontSize:10,color:"rgba(255,255,255,.85)"}}>Compartí el comprobante al local</div>
+                  <div style={{fontSize:10,color:"rgba(255,255,255,.85)"}}>Compartí a: <strong>{local.whatsapp||local.telefono||"este número"}</strong></div>
                 </div>
               </a>
             )}
