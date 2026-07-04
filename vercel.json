@@ -1,7 +1,7 @@
 {
   "rewrites": [
     { "source": "/demo.html", "destination": "/demo.html" },
-    { "source": "/((?!demo\\.html).*)", "destination": "/index.html" }
+    { "source": "/((?!demo\\.html|api/).*)", "destination": "/index.html" }
   ],
   "headers": [
     {
