@@ -11,12 +11,13 @@ export default function ScreenCajaPOS({ prods=[], cats=[], local={} }) {
   // Self-load products if not passed via props
   const [prodsLocal, setProdsLocal] = React.useState([]);
   React.useEffect(() => {
-    if (prods.length > 0 || !ridl) return;
+    if (!ridl) return;
     supabase?.from('productos').select('*')
       .eq('restaurante_id', ridl)
-      .then(({ data }) => { if (data) setProdsLocal(data); });
-  }, [ridl, prods.length]);
-  const prodsAll = prods.length > 0 ? prods : prodsLocal;
+      .then(({ data }) => { if (data?.length) setProdsLocal(data); });
+  }, [ridl]);
+  // Prefer real Supabase data over cached prop (which may have demo data)
+  const prodsAll = prodsLocal.length > 0 ? prodsLocal : prods;
 
   // Normalizar campos — el panel usa name/price/active, el POS espera nombre/precio/activo
   const prodsNorm = React.useMemo(() => prodsAll.map(p => ({
