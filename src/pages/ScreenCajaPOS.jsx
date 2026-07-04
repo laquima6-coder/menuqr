@@ -8,6 +8,16 @@ const TIPOS_MOV = ['ingreso','egreso','gasto'];
 export default function ScreenCajaPOS({ prods=[], cats=[], local={} }) {
   const ridl = local?.restauranteId;
 
+  // Self-load products if not passed via props
+  const [prodsLocal, setProdsLocal] = React.useState([]);
+  React.useEffect(() => {
+    if (prods.length > 0 || !ridl) return;
+    supabase?.from('productos').select('*')
+      .eq('restaurante_id', ridl)
+      .then(({ data }) => { if (data) setProdsLocal(data); });
+  }, [ridl, prods.length]);
+  const prodsAll = prods.length > 0 ? prods : prodsLocal;
+
   // Normalizar campos — el panel usa name/price/active, el POS espera nombre/precio/activo
   const prodsNorm = React.useMemo(() => prodsAll.map(p => ({
     ...p,
@@ -16,7 +26,7 @@ export default function ScreenCajaPOS({ prods=[], cats=[], local={} }) {
     activo:       p.activo      ?? p.active      ?? true,
     categoria_id: p.categoria_id || p.cat        || null,
     foto_url:     p.foto_url    || p.imagen      || null,
-  })), [prods]);
+  })), [prodsAll]);
   const catsNorm = React.useMemo(() => cats.map(c => ({
     ...c,
     nombre: c.nombre || c.label || "",
@@ -32,16 +42,6 @@ export default function ScreenCajaPOS({ prods=[], cats=[], local={} }) {
   const [descGlobal, setDescGlobal] = React.useState(0);
   const [search, setSearch] = React.useState('');
   const [catF, setCatF] = React.useState(null);
-
-  // Self-load products if not passed via props
-  const [prodsLocal, setProdsLocal] = React.useState([]);
-  React.useEffect(() => {
-    if (prods.length > 0 || !ridl) return;
-    supabase?.from('productos').select('*')
-      .eq('restaurante_id', ridl)
-      .then(({ data }) => { if (data) setProdsLocal(data); });
-  }, [ridl, prods.length]);
-  const prodsAll = prods.length > 0 ? prods : prodsLocal;
 
   // Cobrar modal
   const [showCobrar, setShowCobrar] = React.useState(false);
