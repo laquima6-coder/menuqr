@@ -2669,6 +2669,7 @@ export function ClientApp({onBack, local, cats, prods, vitrina=false, sinPedidos
           {/* Pago mixto expandido */}
           {pay==="mixto"&&(
             <div style={{background:"#F8F8F8",borderRadius:12,padding:"14px",marginTop:4,border:"1px solid #EBEBEB"}}>
+              <button onClick={()=>{setPay(null);setMixto1(null);setMixto2(null);setSplitAmt("");setSplitAmt2("");}} style={{width:"100%",background:"none",border:"1px solid #F59E0B55",borderRadius:10,padding:"9px",fontSize:12,fontWeight:700,color:"#F59E0B",cursor:"pointer",marginBottom:12,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>✕ Cancelar pago mixto</button>
               {/* Total a dividir */}
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12,padding:"8px 10px",background:"#FFF",borderRadius:8,border:"1px solid #E8E8E8"}}>
                 <span style={{fontSize:11,fontWeight:700,color:"#999"}}>TOTAL A DIVIDIR</span>
@@ -2912,9 +2913,12 @@ export function ClientApp({onBack, local, cats, prods, vitrina=false, sinPedidos
         {/* RIGHT — warm carta */}
         <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",background:creamBg}}>
           {/* Header with category tabs */}
-          <div style={{padding:"18px 32px 14px",borderBottom:`2px solid ${warmBorder}`,display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
+          <div style={{padding:"18px 32px 14px",borderBottom:`2px solid ${warmBorder}`,display:"flex",alignItems:"center",gap:12,flexShrink:0}}>
             <span style={{fontSize:13,letterSpacing:4,textTransform:"uppercase",color:warmText,fontFamily:"'DM Sans',sans-serif",fontWeight:700}}>La Carta</span>
-            <div style={{display:"flex",gap:0,overflowX:"auto",scrollbarWidth:"none"}}>
+            {local.mesa&&local.feat_solicitudes!==false&&(
+              <button onClick={()=>setShowSolicitudes(true)} style={{width:34,height:34,borderRadius:10,background:"#EAE0CC",border:`1px solid ${warmBorder}`,fontSize:18,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>🛎️</button>
+            )}
+            <div style={{flex:1,display:"flex",gap:0,overflowX:"auto",scrollbarWidth:"none",justifyContent:"flex-end"}}>
               {[{id:"TODO",icon:"",label:lang==="en"?"All":lang==="pt"?"Tudo":lang==="fr"?"Tout":lang==="de"?"Alle":lang==="it"?"Tutto":lang==="zh"?"全部":lang==="ja"?"全て":lang==="ko"?"전체":lang==="gn"?"Mba'etéva":"Todo"},...activeCats].map(cat=>(
                 <button key={cat.id} onClick={()=>setAC(cat.id)} className="pr" style={{
                   padding:"6px 18px",fontSize:11,cursor:"pointer",

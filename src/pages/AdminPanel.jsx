@@ -7,6 +7,33 @@ import { supabase, getPedidos, updatePedidoStatus, subscribePedidos,
 /* Supabase storage (anon key, bucket product-images debe tener RLS off o policy permisiva) */
 const supabaseAdmin = supabase;
 
+/* ══ AUDIO ALERTS ══════════════════════════════════════════ */
+let _alarmCtx = null;
+function playAlarm(type = 'nuevo') {
+  try {
+    if (!_alarmCtx) _alarmCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const ctx = _alarmCtx;
+    const sounds = {
+      nuevo:    [[880,.00,.12],[1100,.18,.10],[880,.32,.10],[1100,.48,.12]],
+      cocina:   [[660,.00,.10],[880,.15,.10],[660,.30,.08]],
+      listo:    [[880,.00,.08],[1100,.12,.08],[1320,.26,.18],[1100,.48,.10]],
+      entregado:[[660,.00,.08],[660,.14,.08]],
+    };
+    const pairs = sounds[type] || sounds.nuevo;
+    pairs.forEach(([freq, delay, dur]) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.frequency.value = freq; osc.type = 'sine';
+      gain.gain.setValueAtTime(0, ctx.currentTime + delay);
+      gain.gain.linearRampToValueAtTime(0.7, ctx.currentTime + delay + .02);
+      gain.gain.linearRampToValueAtTime(0, ctx.currentTime + delay + dur);
+      osc.start(ctx.currentTime + delay);
+      osc.stop(ctx.currentTime + delay + dur + .05);
+    });
+  } catch {}
+}
+
 /* ══════════════════════════════════════════════════════════════
    STYLES — dark+gold, scoped under #ap2-root
 ══════════════════════════════════════════════════════════════ */
@@ -81,6 +108,7 @@ const AP_STYLES = `
   #ap2-root .ap-live { display:flex; align-items:center; gap:6px; font-size:11px; color:var(--green); font-weight:700 }
   #ap2-root .ap-live-dot { width:7px; height:7px; border-radius:50%; background:var(--green); animation:ap-livepulse 1.5s infinite }
   @keyframes ap-livepulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.8)} }
+  @keyframes ap-newpop { from { transform:scale(.96); opacity:0 } to { transform:scale(1); opacity:1 } }
   #ap2-root .ap-content { flex:1; overflow-y:auto; padding:24px }
 
   /* BUTTONS */
@@ -688,93 +716,181 @@ function ScreenDashboard({ pedidos, cats, prods, local }) {
 }
 
 /* ══════════════════════════════════════════════════════════════
-   SCREEN: PEDIDOS
+   SCREEN: PEDIDOS  (kanban: Nuevo → Cocina → Entregar)
 ══════════════════════════════════════════════════════════════ */
 function ScreenPedidos({ pedidos, setPedidos, local }) {
   const [filter, setFilter] = useState("activos");
-
   const today = new Date().toISOString().split("T")[0];
+
   const filtered = pedidos.filter((p) => {
-    if (filter === "activos") return p.status !== "entregado";
+    if (filter === "activos") return p.status !== "entregado" && p.status !== "cancelado";
     if (filter === "hoy") return p.created_at?.startsWith(today);
     return true;
   });
 
-  async function advance(p) {
-    const nextStatus = p.status === "nuevo" ? "preparando" : p.status === "preparando" ? "listo" : "entregado";
-    await updatePedidoStatus(p.id, nextStatus);
-    setPedidos((prev) => prev.map((o) => o.id === p.id ? { ...o, status: nextStatus } : o));
+  const nuevos    = filtered.filter(p => p.status === "nuevo" || p.status === "pendiente_pago");
+  const enCocina  = filtered.filter(p => p.status === "preparando");
+  const listos    = filtered.filter(p => p.status === "listo");
+  const historial = filter !== "activos" ? filtered.filter(p => p.status === "entregado" || p.status === "cancelado") : [];
+
+  async function toCocinaTx(p) {
+    if (p.status === "pendiente_pago") {
+      await supabase?.from("pedidos").update({ status: "nuevo" }).eq("id", p.id);
+      setPedidos(prev => prev.map(o => o.id === p.id ? { ...o, status: "nuevo" } : o));
+      return;
+    }
+    playAlarm('cocina');
+    await updatePedidoStatus(p.id, "preparando");
+    setPedidos(prev => prev.map(o => o.id === p.id ? { ...o, status: "preparando" } : o));
   }
+
+  async function entregar(p) {
+    await updatePedidoStatus(p.id, "entregado");
+    setPedidos(prev => prev.map(o => o.id === p.id ? { ...o, status: "entregado" } : o));
+  }
+
+  const colStyle = { flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 10 };
+  const colHdr = (label, count, color, glow) => (
+    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14, paddingBottom: 10, borderBottom: "1px solid rgba(255,255,255,.08)" }}>
+      <div style={{ width: 8, height: 8, borderRadius: "50%", background: color, boxShadow: `0 0 8px ${color}` }}/>
+      <span style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 11, fontWeight: 700, color, letterSpacing: 1 }}>{label}</span>
+      <span style={{ marginLeft: "auto", fontFamily: "'IBM Plex Mono',monospace", fontSize: 11, color: "rgba(255,255,255,.35)" }}>{count}</span>
+    </div>
+  );
+
+  function OrderKanban({ p, actions }) {
+    const mins = minutesSince(p.created_at);
+    const isUrgent = mins > 20;
+    return (
+      <div style={{
+        background: "#161616", border: `1px solid ${isUrgent ? "rgba(232,64,64,.4)" : "rgba(255,255,255,.08)"}`,
+        borderRadius: 12, padding: "13px 14px",
+        boxShadow: isUrgent ? "0 0 12px rgba(232,64,64,.15)" : "none",
+        animation: p.status === "nuevo" ? "ap-newpop .3s ease" : "none",
+      }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+          <span style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 16, fontWeight: 800, color: "#e8a020" }}>#{p.id?.slice(-4)}</span>
+          <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+            {p.mesa_numero > 0 && <span style={{ background: "rgba(255,255,255,.06)", border: "1px solid rgba(255,255,255,.1)", borderRadius: 6, padding: "2px 8px", fontFamily: "'IBM Plex Mono',monospace", fontSize: 10, color: "#A0B8C8" }}>MESA {p.mesa_numero}</span>}
+            <span style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 10, color: isUrgent ? "#e84040" : "rgba(255,255,255,.35)" }}>{minutesSince(p.created_at)}m</span>
+          </div>
+        </div>
+        <div style={{ fontSize: 12, color: "rgba(255,255,255,.65)", marginBottom: 8, lineHeight: 1.5 }}>
+          {(p.pedido_items || []).map((item, i) => (
+            <div key={i} style={{ display: "flex", gap: 6 }}>
+              <span style={{ color: "#e8a020", fontFamily: "'IBM Plex Mono',monospace", minWidth: 18 }}>x{item.cantidad}</span>
+              <span>{item.nombre}</span>
+            </div>
+          ))}
+          {!p.pedido_items?.length && <span style={{ color: "rgba(255,255,255,.35)" }}>{pedidoItems(p)}</span>}
+        </div>
+        {p.nota && <div style={{ background: "rgba(255,176,32,.08)", border: "1px solid rgba(255,176,32,.2)", borderRadius: 6, padding: "5px 8px", fontSize: 11, color: "#FFB020", marginBottom: 8 }}>📝 {p.nota}</div>}
+        <div style={{ fontWeight: 700, fontSize: 12, color: "#e8a020", marginBottom: 10 }}>{ARS(p.total)}</div>
+        <div style={{ display: "flex", gap: 6 }}>
+          {actions}
+        </div>
+      </div>
+    );
+  }
+
+  const btnStyle = (bg, color, border) => ({
+    flex: 1, padding: "8px 4px", borderRadius: 8, border: `1px solid ${border}`,
+    background: bg, color, fontFamily: "'IBM Plex Mono',monospace", fontSize: 10,
+    fontWeight: 700, cursor: "pointer", letterSpacing: .5,
+  });
 
   return (
     <div>
-      <div className="ap-sec-hdr">
-        <h2>Todos los pedidos</h2>
-        <div className="ap-sec-hdr-r">
-          <div className="ap-tab-bar">
-            <div className={`ap-tab${filter === "activos" ? " active" : ""}`} onClick={() => setFilter("activos")}>
-              Activos ({pedidos.filter((p) => p.status !== "entregado").length})
-            </div>
-            <div className={`ap-tab${filter === "hoy" ? " active" : ""}`} onClick={() => setFilter("hoy")}>
-              Hoy ({pedidos.filter((p) => p.created_at?.startsWith(today)).length})
-            </div>
-            <div className={`ap-tab${filter === "todos" ? " active" : ""}`} onClick={() => setFilter("todos")}>
-              Historial
-            </div>
-          </div>
+      <div className="ap-sec-hdr" style={{ marginBottom: 16 }}>
+        <h2>Pedidos</h2>
+        <div style={{ display: "flex", gap: 8 }}>
+          {["activos","hoy","todos"].map(f => (
+            <button key={f} className={`ap-btn ap-btn-sm ${filter===f?"ap-btn-gold":"ap-btn-ghost"}`} onClick={() => setFilter(f)}>
+              {f === "activos" ? `Activos (${pedidos.filter(p=>p.status!=="entregado").length})` : f === "hoy" ? `Hoy (${pedidos.filter(p=>p.created_at?.startsWith(today)).length})` : "Historial"}
+            </button>
+          ))}
         </div>
       </div>
-      <div className="ap-card">
-        <table>
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>MESA / ORIGEN</th>
-              <th>PRODUCTOS</th>
-              <th>TOTAL</th>
-              <th>PAGO</th>
-              <th>HORA</th>
-              <th>ESTADO</th>
-              <th>ACCIONES</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.length === 0 && (
-              <tr>
-                <td colSpan={8} style={{ textAlign: "center", padding: 32, color: "rgba(255,255,255,.35)" }}>
-                  Sin pedidos
-                </td>
-              </tr>
-            )}
-            {filtered.map((p) => (
-              <tr key={p.id}>
-                <td><b style={{ color: "#e8a020" }}>#{p.id?.slice(-4)}</b></td>
-                <td>{pedidoTitle(p)}</td>
-                <td style={{ maxWidth: 220, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                  {pedidoItems(p)}
-                </td>
-                <td style={{ color: "#e8a020", fontWeight: 700 }}>{ARS(p.total)}</td>
-                <td>{p.metodo_pago || "—"}</td>
-                <td>{new Date(p.created_at).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}</td>
-                <td><span className={`ap-pill ${statusClass(p.status)}`}>{statusLabel(p.status)}</span></td>
-                <td>
-                  {p.status === "pendiente_pago" && (
-                    <button className="ap-btn ap-btn-gold ap-btn-sm" onClick={() => {
-                      if (supabase) supabase.from("pedidos").update({ status: "nuevo" }).eq("id", p.id);
-                      setPedidos(prev => prev.map(o => o.id === p.id ? { ...o, status: "nuevo" } : o));
-                    }}>✅ Pago recibido</button>
-                  )}
-                  {p.status !== "entregado" && p.status !== "pendiente_pago" && (
-                    <button className="ap-btn ap-btn-ghost ap-btn-sm" onClick={() => advance(p)}>
-                      {p.status === "nuevo" ? "▶ Preparar" : p.status === "preparando" ? "✓ Listo" : "📦 Entregar"}
-                    </button>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+
+      {filter === "activos" && (
+        <div style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
+          {/* NUEVOS */}
+          <div style={colStyle}>
+            {colHdr("NUEVO", nuevos.length, "#FFB020", "#FFB020")}
+            {nuevos.length === 0 ? <div style={{ textAlign: "center", color: "rgba(255,255,255,.2)", fontSize: 12, padding: "24px 0" }}>Sin pedidos nuevos</div>
+              : nuevos.map(p => (
+                <OrderKanban key={p.id} p={p} actions={[
+                  <button key="c" style={btnStyle("rgba(61,142,255,.15)","#3D8EFF","rgba(61,142,255,.35)")} onClick={() => toCocinaTx(p)}>
+                    {p.status === "pendiente_pago" ? "✅ Pago ok" : "👨‍🍳 Cocina"}
+                  </button>
+                ]}/>
+              ))
+            }
+          </div>
+          {/* EN COCINA */}
+          <div style={colStyle}>
+            {colHdr("EN COCINA", enCocina.length, "#3D8EFF", "#3D8EFF")}
+            {enCocina.length === 0 ? <div style={{ textAlign: "center", color: "rgba(255,255,255,.2)", fontSize: 12, padding: "24px 0" }}>Nada en cocina</div>
+              : enCocina.map(p => (
+                <OrderKanban key={p.id} p={p} actions={[
+                  <button key="l" style={btnStyle("rgba(0,255,136,.1)","#00FF88","rgba(0,255,136,.3)")} onClick={async () => {
+                    playAlarm('listo');
+                    await updatePedidoStatus(p.id, "listo");
+                    setPedidos(prev => prev.map(o => o.id === p.id ? { ...o, status: "listo" } : o));
+                  }}>✓ Listo</button>
+                ]}/>
+              ))
+            }
+          </div>
+          {/* LISTO — ENTREGAR */}
+          <div style={colStyle}>
+            {colHdr("ENTREGAR", listos.length, "#00FF88", "#00FF88")}
+            {listos.length === 0 ? <div style={{ textAlign: "center", color: "rgba(255,255,255,.2)", fontSize: 12, padding: "24px 0" }}>Sin pedidos listos</div>
+              : listos.map(p => (
+                <OrderKanban key={p.id} p={p} actions={[
+                  <button key="e" style={btnStyle("rgba(201,168,76,.12)","#C9A84C","rgba(201,168,76,.4)")} onClick={() => entregar(p)}>📦 Entregado</button>
+                ]}/>
+              ))
+            }
+          </div>
+        </div>
+      )}
+
+      {filter !== "activos" && (
+        <div className="ap-card">
+          <table>
+            <thead>
+              <tr><th>#</th><th>MESA</th><th>PRODUCTOS</th><th>TOTAL</th><th>HORA</th><th>ESTADO</th><th>ACCIÓN</th></tr>
+            </thead>
+            <tbody>
+              {filtered.length === 0 && <tr><td colSpan={7} style={{ textAlign: "center", padding: 32, color: "rgba(255,255,255,.35)" }}>Sin pedidos</td></tr>}
+              {filtered.map(p => (
+                <tr key={p.id}>
+                  <td><b style={{ color: "#e8a020" }}>#{p.id?.slice(-4)}</b></td>
+                  <td>{pedidoTitle(p)}</td>
+                  <td style={{ maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{pedidoItems(p)}</td>
+                  <td style={{ color: "#e8a020", fontWeight: 700 }}>{ARS(p.total)}</td>
+                  <td>{new Date(p.created_at).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}</td>
+                  <td><span className={`ap-pill ${statusClass(p.status)}`}>{statusLabel(p.status)}</span></td>
+                  <td>
+                    {p.status !== "entregado" && p.status !== "cancelado" && (
+                      <button className="ap-btn ap-btn-ghost ap-btn-sm" onClick={async () => {
+                        const next = p.status === "nuevo" || p.status === "pendiente_pago" ? "preparando" : p.status === "preparando" ? "listo" : "entregado";
+                        if (next === "preparando") playAlarm('cocina');
+                        if (next === "listo") playAlarm('listo');
+                        await updatePedidoStatus(p.id, next);
+                        setPedidos(prev => prev.map(o => o.id === p.id ? { ...o, status: next } : o));
+                      }}>
+                        {p.status === "nuevo" || p.status === "pendiente_pago" ? "▶ Cocina" : p.status === "preparando" ? "✓ Listo" : "📦 Entregar"}
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
@@ -782,14 +898,28 @@ function ScreenPedidos({ pedidos, setPedidos, local }) {
 /* ══════════════════════════════════════════════════════════════
    SCREEN: COCINA
 ══════════════════════════════════════════════════════════════ */
-function ScreenCocina({ pedidos, setPedidos }) {
+function ScreenCocina({ pedidos, setPedidos, local }) {
   const kitchen = pedidos.filter((p) => p.status === "nuevo" || p.status === "preparando");
+  const [qrUrl, setQrUrl] = React.useState(null);
+
+  React.useEffect(() => {
+    const origin = window.location.hostname === 'localhost' ? window.location.origin : 'https://menuqr-ten.vercel.app';
+    const slug = local?.slug || "mi-restaurante";
+    const url = `${origin}/${slug}/cocina`;
+    QRCodeLib.toDataURL(url, { width: 200, margin: 1, color: { dark: '#111', light: '#FFF' } })
+      .then(setQrUrl).catch(() => {});
+  }, [local?.slug]);
 
   async function markReady(p) {
     const next = p.status === "nuevo" ? "preparando" : "listo";
+    playAlarm(next === "preparando" ? "cocina" : "listo");
     await updatePedidoStatus(p.id, next);
     setPedidos((prev) => prev.map((o) => o.id === p.id ? { ...o, status: next } : o));
   }
+
+  const cocinaUrl = local?.slug
+    ? (window.location.hostname === 'localhost' ? window.location.origin : 'https://menuqr-ten.vercel.app') + `/${local.slug}/cocina`
+    : null;
 
   return (
     <div>
@@ -797,6 +927,20 @@ function ScreenCocina({ pedidos, setPedidos }) {
         <h2>Pantalla de cocina</h2>
         <div className="ap-live"><div className="ap-live-dot" />{kitchen.length} pedidos en preparación</div>
       </div>
+      {/* Kitchen QR */}
+      {cocinaUrl && (
+        <div className="ap-card" style={{ marginBottom: 20, display: "flex", gap: 24, alignItems: "center" }}>
+          <div>
+            <div className="ap-card-title" style={{ marginBottom: 6 }}>QR PANTALLA COCINA</div>
+            <div style={{ fontSize: 13, color: "rgba(255,255,255,.65)", marginBottom: 10 }}>
+              Escaneá con la tablet de cocina para abrir la pantalla dedicada.
+            </div>
+            <div style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 11, color: "#e8a020", marginBottom: 10 }}>{cocinaUrl}</div>
+            <button className="ap-btn ap-btn-ghost ap-btn-sm" onClick={() => { navigator.clipboard?.writeText(cocinaUrl); }}>📋 Copiar link</button>
+          </div>
+          {qrUrl && <img src={qrUrl} alt="QR cocina" style={{ width: 100, height: 100, borderRadius: 10, flexShrink: 0 }} />}
+        </div>
+      )}
       {kitchen.length === 0 && (
         <div className="ap-card" style={{ textAlign: "center", padding: 48, color: "rgba(255,255,255,.35)" }}>
           <div style={{ fontSize: 48, marginBottom: 12 }}>✅</div>
@@ -2243,8 +2387,11 @@ export default function AdminPanel({ local, setLocal, cats, setCats, prods, setP
     getPedidos(local.restauranteId, today).then((data) => { if (data) setPedidos(data); });
     const unsub = subscribePedidos(
       local.restauranteId,
-      (newP) => setPedidos((prev) => [newP, ...prev]),
-      (upd)  => setPedidos((prev) => prev.map((p) => (p.id === upd.id ? upd : p)))
+      (newP) => { playAlarm('nuevo'); setPedidos((prev) => [newP, ...prev]); },
+      (upd)  => {
+        if (upd.status === 'listo') playAlarm('listo');
+        setPedidos((prev) => prev.map((p) => (p.id === upd.id ? upd : p)));
+      }
     );
     return () => { if (unsub) unsub(); };
   }, [local?.restauranteId]);
@@ -2255,7 +2402,7 @@ export default function AdminPanel({ local, setLocal, cats, setCats, prods, setP
   const screenMap = {
     dashboard: <ScreenDashboard pedidos={pedidos} cats={cats} prods={prods} local={local} />,
     pedidos:   <ScreenPedidos pedidos={pedidos} setPedidos={setPedidos} local={local} />,
-    cocina:    <ScreenCocina pedidos={pedidos} setPedidos={setPedidos} />,
+    cocina:    <ScreenCocina pedidos={pedidos} setPedidos={setPedidos} local={local} />,
     delivery:  <ScreenDelivery pedidos={pedidos} setPedidos={setPedidos} local={local} />,
     mesas:     <ScreenMesas local={local} pedidos={pedidos} />,
     carta:     <ScreenCarta prods={prods} setProds={setProds} cats={cats} local={local} />,
