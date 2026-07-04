@@ -2421,10 +2421,11 @@ export function ClientApp({onBack, local, cats, prods, vitrina=false, sinPedidos
           if(error){errorMsg=error.message;alert("Error pedido: "+error.message);}
           else{
             if(descuentoAplicado>0){localStorage.removeItem("menuqr_promo10_"+(local.restauranteId||"x"));setPromoActiva(false);}
-            const its=cartItems.map(i=>({pedido_id:pedidoId,producto_id:i.id,nombre:i.name,precio:i.price,cantidad:i.qty}));
-            await supabase.from("pedido_items").insert(its);
+            const its=cartItems.map(i=>({pedido_id:pedidoId,producto_id:i.id,nombre:i.nombre||i.name||"?",precio:Math.round(i.precio??i.price??0),cantidad:i.qty}));
+            const {error:itmErr}=await supabase.from("pedido_items").insert(its);
+            if(itmErr){errorMsg=itmErr.message;alert("Error items: "+itmErr.message);}
           }
-        } catch(e){errorMsg=e.message;}
+        } catch(e){errorMsg=e.message;alert("Error pedido: "+e.message);}
       }
       if(errorMsg) localStorage.setItem("menuqr_last_order_error",errorMsg);
       else{localStorage.removeItem("menuqr_last_order_error");setLastPedidoId(pedidoId);setOrderStatus("nuevo");}
@@ -2812,8 +2813,9 @@ export function ClientApp({onBack, local, cats, prods, vitrina=false, sinPedidos
               if(error){errorMsg=error.message;alert("Error pedido: "+error.message);}
               else{
                 if(descuentoAplicado>0){localStorage.removeItem("menuqr_promo10_"+(local.restauranteId||"x"));setPromoActiva(false);}
-                const its=cartItems.map(i=>({pedido_id:pedidoId,producto_id:i.id,nombre:i.name,precio:i.price,cantidad:i.qty}));
-                await supabase.from("pedido_items").insert(its);
+                const its=cartItems.map(i=>({pedido_id:pedidoId,producto_id:i.id,nombre:i.nombre||i.name||"?",precio:Math.round(i.precio??i.price??0),cantidad:i.qty}));
+                const {error:itmErr2}=await supabase.from("pedido_items").insert(its);
+                if(itmErr2){errorMsg=itmErr2.message;alert("Error items: "+itmErr2.message);}
               }
             } catch(e){errorMsg=e.message;}
           }
