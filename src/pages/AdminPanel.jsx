@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import QRCodeLib from "qrcode";
 import ScreenCajaPOS from "./ScreenCajaPOS.jsx";
 import { supabase, getPedidos, updatePedidoStatus, subscribePedidos,
-         toggleProducto, upsertCategoria } from "../lib/supabase.js";
+         toggleProducto, upsertCategoria, upsertProducto, deleteProducto } from "../lib/supabase.js";
 
 /* Supabase storage (anon key, bucket product-images debe tener RLS off o policy permisiva) */
 const supabaseAdmin = supabase;
@@ -385,7 +385,7 @@ const SCREEN_TITLES = {
   cocina: "Cocina — En preparación",
   delivery: "Delivery en tiempo real",
   mesas: "Plano de mesas",
-  carta: "Carta digital — Productos",
+  carta: "Carta",
   categorias: "Categorías",
   stock: "Stock e inventario",
   clientes: "Clientes",
@@ -436,7 +436,7 @@ function Sidebar({ screen, setScreen, pendingCount, kitchenCount, local, onLogou
         </div>
         <div className="ap-nav-group">
           <div className="ap-nav-label">CARTA</div>
-          {nav("carta", "📋", "Productos")}
+          {nav("carta", "📋", "Carta")}
           {nav("categorias", "🗂️", "Categorías")}
           {nav("stock", "📦", "Stock")}
         </div>
@@ -1018,20 +1018,22 @@ function ScreenCocina({ pedidos, setPedidos, local }) {
 }
 
 /* ══════════════════════════════════════════════════════════════
-   PRODUCT EDIT MODAL
+   PRODUCT MODAL (create + edit)
 ══════════════════════════════════════════════════════════════ */
-function ProductEditModal({ product, cats, onClose, onSave }) {
-  const [nombre,   setNombre]   = useState(product.name  || "");
-  const [precio,   setPrecio]   = useState(product.price || 0);
-  const [desc,     setDesc]     = useState(product.desc  || "");
-  const [activo,   setActivo]   = useState(product.active !== false);
-  const [imagen,   setImagen]   = useState(product.imagen || "");
+function ProductModal({ product, cats, restauranteId, onClose, onSave }) {
+  const isNew = !product?.id;
+  const [nombre,    setNombre]    = useState(product?.name    || product?.nombre    || "");
+  const [precio,    setPrecio]    = useState(product?.price   ?? product?.precio    ?? 0);
+  const [desc,      setDesc]      = useState(product?.desc    || product?.descripcion || "");
+  const [catId,     setCatId]     = useState(product?.cat     || product?.categoria_id || "");
+  const [activo,    setActivo]    = useState(product?.active  !== false && product?.activo !== false);
+  const [imagen,    setImagen]    = useState(product?.imagen  || "");
   const [uploading, setUploading] = useState(false);
   const [saving,    setSaving]    = useState(false);
   const [uploadErr, setUploadErr] = useState("");
   const fileRef = useRef(null);
 
-  const catLabel  = cats.find((c) => c.id === product.cat)?.label || "";
+  const catLabel   = cats.find((c) => c.id === catId)?.label || "";
   const previewUrl = imagen || getPlaceholder(catLabel);
 
   async function handleFile(e) {
@@ -1040,17 +1042,15 @@ function ProductEditModal({ product, cats, onClose, onSave }) {
     setUploading(true);
     setUploadErr("");
     try {
-      /* Crear bucket si no existe */
-      await supabaseAdmin.storage.createBucket("product-images", { public: true });
-      /* Upload */
+      await supabase.storage.createBucket("product-images", { public: true });
       const ext      = file.name.split(".").pop().toLowerCase();
-      const filename = `${product.id}-${Date.now()}.${ext}`;
-      const { error: upErr } = await supabaseAdmin.storage
+      const refId    = product?.id || `new-${Date.now()}`;
+      const filename = `${refId}-${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage
         .from("product-images")
         .upload(filename, file, { contentType: file.type, upsert: true });
       if (upErr) throw upErr;
-      /* URL pública */
-      const { data: urlData } = supabaseAdmin.storage
+      const { data: urlData } = supabase.storage
         .from("product-images")
         .getPublicUrl(filename);
       setImagen(urlData.publicUrl);
@@ -1062,20 +1062,30 @@ function ProductEditModal({ product, cats, onClose, onSave }) {
   }
 
   async function handleSave() {
+    if (!nombre.trim()) { alert("El nombre es obligatorio"); return; }
     setSaving(true);
     try {
-      const { error } = await supabase
-        .from("productos")
-        .update({
-          nombre,
-          precio:      Number(precio),
-          descripcion: desc,
-          activo,
-          imagen:      imagen || null,
-        })
-        .eq("id", product.id);
-      if (error) throw error;
-      onSave({ ...product, name: nombre, price: Number(precio), desc, active: activo, imagen });
+      const payload = {
+        nombre:       nombre.trim(),
+        precio:       Number(precio),
+        descripcion:  desc,
+        activo,
+        imagen:       imagen || null,
+        categoria_id: catId  || null,
+        restaurante_id: restauranteId,
+      };
+      if (!isNew) payload.id = product.id;
+      const saved = await upsertProducto(payload);
+      if (!saved) throw new Error("Sin respuesta del servidor");
+      onSave({
+        id:     saved.id,
+        cat:    saved.categoria_id,
+        name:   saved.nombre     || "",
+        desc:   saved.descripcion || "",
+        price:  saved.precio     ?? 0,
+        active: saved.activo     ?? true,
+        imagen: saved.imagen     || null,
+      });
     } catch (err) {
       alert("Error al guardar: " + (err.message || "intente de nuevo"));
     } finally {
@@ -1102,7 +1112,7 @@ function ProductEditModal({ product, cats, onClose, onSave }) {
       >
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
-          <div style={{ fontSize: 16, fontWeight: 800 }}>✏️ Editar producto</div>
+          <div style={{ fontSize: 16, fontWeight: 800 }}>{isNew ? "➕ Nuevo producto" : "✏️ Editar producto"}</div>
           <div style={{ cursor: "pointer", color: "rgba(255,255,255,.4)", fontSize: 22, lineHeight: 1 }} onClick={onClose}>✕</div>
         </div>
 
@@ -1131,12 +1141,25 @@ function ProductEditModal({ product, cats, onClose, onSave }) {
 
         {/* Fields */}
         <div className="ap-form-group">
-          <label>Nombre</label>
+          <label>Nombre *</label>
           <input type="text" value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Nombre del producto" />
         </div>
         <div className="ap-form-group">
           <label>Precio</label>
           <input type="number" value={precio} min={0} onChange={(e) => setPrecio(e.target.value)} />
+        </div>
+        <div className="ap-form-group">
+          <label>Categoría</label>
+          <select
+            value={catId}
+            onChange={(e) => setCatId(e.target.value)}
+            style={{ background: "#2a2a2a", color: "var(--text)", border: "1px solid var(--border)", borderRadius: 8, padding: "8px 12px", width: "100%", fontSize: 13, outline: "none" }}
+          >
+            <option value="">Sin categoría</option>
+            {cats.map((c) => (
+              <option key={c.id} value={c.id}>{c.icon ? `${c.icon} ` : ""}{c.label}</option>
+            ))}
+          </select>
         </div>
         <div className="ap-form-group">
           <label>Descripción</label>
@@ -1161,7 +1184,7 @@ function ProductEditModal({ product, cats, onClose, onSave }) {
             disabled={saving || uploading}
             onClick={handleSave}
           >
-            {saving ? "Guardando..." : "💾 Guardar cambios"}
+            {saving ? "Guardando..." : isNew ? "✅ Crear producto" : "💾 Guardar cambios"}
           </button>
         </div>
       </div>
@@ -1172,19 +1195,35 @@ function ProductEditModal({ product, cats, onClose, onSave }) {
 /* ══════════════════════════════════════════════════════════════
    SCREEN: CARTA / PRODUCTOS
 ══════════════════════════════════════════════════════════════ */
-function ScreenCarta({ prods, setProds, cats, local }) {
-  const [search,      setSearch]      = useState("");
-  const [editProduct, setEditProduct] = useState(null);
+const CARTA_TEMPLATES = [
+  { id:"clasico",   nombre:"Clásico",      emoji:"🖤", fondo:"#18181b", acento:"#C9A84C" },
+  { id:"rojo",      nombre:"Rojo fuego",   emoji:"🔴", fondo:"#1a0808", acento:"#e84040" },
+  { id:"verde",     nombre:"Verde natural",emoji:"🌿", fondo:"#081a0e", acento:"#3ecf6e" },
+  { id:"azul",      nombre:"Azul noche",   emoji:"🔵", fondo:"#08101a", acento:"#3e8cff" },
+  { id:"morado",    nombre:"Morado",       emoji:"🟣", fondo:"#100818", acento:"#a855f7" },
+  { id:"dorado",    nombre:"Dorado VIP",   emoji:"✨", fondo:"#0f0c02", acento:"#f5c518" },
+  { id:"rosado",    nombre:"Rosa premium", emoji:"🌸", fondo:"#1a080f", acento:"#ec4899" },
+  { id:"blanco",    nombre:"Claro",        emoji:"☀️", fondo:"#f0f0f0", acento:"#1a1a1a" },
+];
 
-  const filtered = prods.filter((p) =>
-    p.name?.toLowerCase().includes(search.toLowerCase())
-  );
+function ScreenCarta({ prods, setProds, cats, local, setLocal }) {
+  const [search,    setSearch]    = useState("");
+  const [filterCat, setFilterCat] = useState("all");
+  const [modal,     setModal]     = useState(null); // null=closed | "new" | product obj = edit
+  const [dragOver,  setDragOver]  = useState(null);
+  const dragSrc = useRef(null);
+
+  const filtered = prods.filter((p) => {
+    const matchSearch = !search || (p.name || p.nombre || "").toLowerCase().includes(search.toLowerCase());
+    const matchCat    = filterCat === "all" || p.cat === filterCat;
+    return matchSearch && matchCat;
+  });
 
   async function toggleActive(e, p) {
     e.stopPropagation();
-    const newActive = !p.active;
-    await toggleProducto(p.id, newActive);
-    setProds((prev) => prev.map((pr) => pr.id === p.id ? { ...pr, active: newActive } : pr));
+    const nv = !p.active;
+    await toggleProducto(p.id, nv);
+    setProds((prev) => prev.map((pr) => pr.id === p.id ? { ...pr, active: nv } : pr));
   }
 
   function getCatLabel(catId) {
@@ -1197,33 +1236,167 @@ function ScreenCarta({ prods, setProds, cats, local }) {
   }
 
   function handleSaveProduct(updated) {
-    setProds((prev) => prev.map((p) => p.id === updated.id ? updated : p));
-    setEditProduct(null);
+    setProds((prev) => {
+      const exists = prev.find(p => p.id === updated.id);
+      if (exists) return prev.map((p) => p.id === updated.id ? updated : p);
+      return [...prev, updated];
+    });
+    setModal(null);
+  }
+
+  async function handleDelete(e, p) {
+    e.stopPropagation();
+    if (!confirm(`¿Eliminar "${p.name || p.nombre}"? No se puede deshacer.`)) return;
+    const ok = await deleteProducto(p.id);
+    if (ok) setProds((prev) => prev.filter((pr) => pr.id !== p.id));
+  }
+
+  // ── Drag to reorder ──
+  function onDragStart(e, p) {
+    dragSrc.current = p;
+    e.dataTransfer.effectAllowed = "move";
+  }
+
+  function onDragOverItem(e, p) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    if (p.id !== dragSrc.current?.id) setDragOver(p.id);
+  }
+
+  async function onDrop(e, target) {
+    e.preventDefault();
+    setDragOver(null);
+    const src = dragSrc.current;
+    if (!src || src.id === target.id) return;
+    dragSrc.current = null;
+    const newProds = [...prods];
+    const si = newProds.findIndex(p => p.id === src.id);
+    const ti = newProds.findIndex(p => p.id === target.id);
+    newProds.splice(si, 1);
+    newProds.splice(ti, 0, src);
+    setProds(newProds);
+    // Persist order
+    await Promise.all(newProds.map((p, i) =>
+      supabase.from("productos").update({ orden: i }).eq("id", p.id)
+    ));
+  }
+
+  // ── Background color for menu ──
+  const colorFondo = local?.color_fondo_carta || "#18181b";
+
+  async function saveColorFondo(color) {
+    if (!local?.restauranteId) return;
+    if (setLocal) setLocal(prev => ({ ...prev, color_fondo_carta: color }));
+    const cfg = local?.config || {};
+    await supabase.from("restaurantes")
+      .update({ config: { ...cfg, color_fondo_carta: color } })
+      .eq("id", local.restauranteId);
   }
 
   return (
     <div>
-      {editProduct && (
-        <ProductEditModal
-          product={editProduct}
+      {modal !== null && (
+        <ProductModal
+          product={modal === "new" ? null : modal}
           cats={cats}
-          onClose={() => setEditProduct(null)}
+          restauranteId={local?.restauranteId}
+          onClose={() => setModal(null)}
           onSave={handleSaveProduct}
         />
       )}
 
       <div className="ap-sec-hdr">
-        <h2>Carta digital — Productos</h2>
-        <div className="ap-sec-hdr-r">
+        <h2>Carta</h2>
+        <div className="ap-sec-hdr-r" style={{ flexWrap: "wrap", gap: 8 }}>
+          <label style={{ display:"flex", alignItems:"center", gap:6, fontSize:11, color:"rgba(255,255,255,.5)", cursor:"pointer", whiteSpace:"nowrap" }}>
+            🎨 Color menú
+            <input
+              type="color"
+              value={colorFondo}
+              onChange={(e) => saveColorFondo(e.target.value)}
+              title="Color de fondo del menú"
+              style={{ width:28, height:28, border:"1px solid rgba(255,255,255,.2)", background:"none", cursor:"pointer", borderRadius:6, padding:1 }}
+            />
+          </label>
           <input
             type="text"
-            placeholder="🔍 Buscar producto..."
-            style={{ width: 220 }}
+            placeholder="🔍 Buscar..."
+            style={{ width: 150 }}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-          <button className="ap-btn ap-btn-gold">+ Nuevo producto</button>
+          <button className="ap-btn ap-btn-gold" onClick={() => setModal("new")}>+ Nuevo producto</button>
         </div>
+      </div>
+
+      {/* ── Templates de diseño ── */}
+      <div style={{ marginBottom: 18 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,.4)", letterSpacing: 1, marginBottom: 8 }}>PLANTILLAS DE DISEÑO</div>
+        <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+          {CARTA_TEMPLATES.map((t) => {
+            const isActive = (local?.color_fondo_carta || "#18181b") === t.fondo && (local?.color || "#C9A84C") === t.acento;
+            return (
+              <button
+                key={t.id}
+                onClick={() => {
+                  saveColorFondo(t.fondo);
+                  if (local?.restauranteId && setLocal) {
+                    setLocal(prev => ({ ...prev, color: t.acento }));
+                    supabase.from("restaurantes")
+                      .update({ color: t.acento })
+                      .eq("id", local.restauranteId);
+                  }
+                }}
+                title={t.nombre}
+                style={{
+                  background: t.fondo,
+                  border: isActive ? `2px solid ${t.acento}` : "2px solid rgba(255,255,255,.12)",
+                  borderRadius: 10,
+                  padding: "8px 14px",
+                  cursor: "pointer",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: 4,
+                  minWidth: 70,
+                  transition: "border 0.15s",
+                }}
+              >
+                <div style={{ display:"flex", gap:4, alignItems:"center" }}>
+                  <div style={{ width:12, height:12, borderRadius:"50%", background:t.fondo, border:"1px solid rgba(255,255,255,.3)" }} />
+                  <div style={{ width:12, height:12, borderRadius:"50%", background:t.acento }} />
+                </div>
+                <span style={{ fontSize:10, color:t.fondo === "#f0f0f0" ? "#333" : "rgba(255,255,255,.7)", fontWeight:600 }}>{t.nombre}</span>
+                {isActive && <span style={{ fontSize:9, color:t.acento, fontWeight:800 }}>✓ Activa</span>}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Category filter tabs */}
+      {cats.length > 0 && (
+        <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:16 }}>
+          <button
+            className={`ap-btn ap-btn-sm ${filterCat === "all" ? "ap-btn-gold" : "ap-btn-ghost"}`}
+            onClick={() => setFilterCat("all")}
+          >
+            Todos ({prods.length})
+          </button>
+          {cats.map((c) => (
+            <button
+              key={c.id}
+              className={`ap-btn ap-btn-sm ${filterCat === c.id ? "ap-btn-gold" : "ap-btn-ghost"}`}
+              onClick={() => setFilterCat(c.id)}
+            >
+              {c.icon ? `${c.icon} ` : ""}{c.label} ({prods.filter(p => p.cat === c.id).length})
+            </button>
+          ))}
+        </div>
+      )}
+
+      <div style={{ fontSize: 11, color: "rgba(255,255,255,.3)", marginBottom: 10 }}>
+        ☰ Arrastrá las tarjetas para ordenar los platos
       </div>
 
       <div className="ap-prod-grid">
@@ -1231,33 +1404,55 @@ function ScreenCarta({ prods, setProds, cats, local }) {
           <div
             key={p.id}
             className="ap-prod-card"
-            style={{ cursor: "pointer" }}
-            onClick={() => setEditProduct(p)}
+            draggable
+            onDragStart={(e) => onDragStart(e, p)}
+            onDragOver={(e) => onDragOverItem(e, p)}
+            onDrop={(e) => onDrop(e, p)}
+            onDragLeave={() => setDragOver(null)}
+            style={{
+              cursor: "grab",
+              outline: dragOver === p.id ? "2px solid #e8a020" : "none",
+              outlineOffset: 2,
+              transition: "outline 0.1s",
+              opacity: dragSrc.current?.id === p.id ? 0.5 : 1,
+            }}
+            onClick={() => setModal(p)}
           >
             <div className="ap-prod-thumb">
               <img
                 src={p.imagen || getPlaceholder(getCatName(p.cat))}
-                alt={p.name}
+                alt={p.name || p.nombre}
                 loading="lazy"
               />
             </div>
             <div className="ap-prod-body">
-              <div className="ap-prod-name">{p.name}</div>
+              <div className="ap-prod-name">{p.name || p.nombre}</div>
               <div className="ap-prod-cat">{getCatLabel(p.cat)}</div>
               <div className="ap-prod-footer">
-                <div className="ap-prod-price">{ARS(p.price)}</div>
-                <div
-                  className={`ap-toggle ${p.active ? "on" : "off"}`}
-                  onClick={(e) => toggleActive(e, p)}
-                  title={p.active ? "Activo — click para desactivar" : "Inactivo — click para activar"}
-                />
+                <div className="ap-prod-price">{ARS(p.price ?? p.precio)}</div>
+                <div style={{ display:"flex", gap:4, alignItems:"center" }}>
+                  <div
+                    className={`ap-toggle ${p.active ? "on" : "off"}`}
+                    onClick={(e) => toggleActive(e, p)}
+                    title={p.active ? "Activo — click para desactivar" : "Inactivo — click para activar"}
+                  />
+                  <div
+                    onClick={(e) => handleDelete(e, p)}
+                    title="Eliminar producto"
+                    style={{ cursor:"pointer", color:"rgba(255,80,80,.55)", fontSize:13, lineHeight:1, padding:"3px 5px", borderRadius:4 }}
+                  >
+                    🗑
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         ))}
         {filtered.length === 0 && (
           <div style={{ gridColumn: "1/-1", textAlign: "center", padding: 48, color: "rgba(255,255,255,.35)" }}>
-            {search ? "Sin resultados para esa búsqueda" : "No hay productos cargados"}
+            {search
+              ? "Sin resultados para esa búsqueda"
+              : "No hay productos. Hacé clic en + Nuevo producto para agregar el primero"}
           </div>
         )}
       </div>
@@ -2433,7 +2628,7 @@ export default function AdminPanel({ local, setLocal, cats, setCats, prods, setP
     cocina:    <ScreenCocina pedidos={pedidos} setPedidos={setPedidos} local={local} />,
     delivery:  <ScreenDelivery pedidos={pedidos} setPedidos={setPedidos} local={local} />,
     mesas:     <ScreenMesas local={local} pedidos={pedidos} />,
-    carta:     <ScreenCarta prods={prods} setProds={setProds} cats={cats} local={local} />,
+    carta:     <ScreenCarta prods={prods} setProds={setProds} cats={cats} local={local} setLocal={setLocal} />,
     categorias:<ScreenCategorias cats={cats} prods={prods} />,
     stock:     <ScreenStock />,
     clientes:  <ScreenClientes />,

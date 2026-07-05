@@ -447,7 +447,7 @@ export default function ScreenCajaPOS({ prods=[], cats=[], local={} }) {
                   <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:6}}>
                     <span style={{fontSize:11, color:'var(--text2)'}}>Pago:</span>
                     <button
-                      style={{background:'none', border:'none', color: metodoPago2 !== null ? 'var(--red)' : 'var(--gold)', fontSize:10, cursor:'pointer', fontWeight:700, padding:'2px 6px', borderRadius:6, border:`1px solid ${metodoPago2 !== null ? 'var(--red)' : 'var(--gold)'}` }}
+                      style={{background:'none', color: metodoPago2 !== null ? 'var(--red)' : 'var(--gold)', fontSize:10, cursor:'pointer', fontWeight:700, padding:'2px 6px', borderRadius:6, border:`1px solid ${metodoPago2 !== null ? 'var(--red)' : 'var(--gold)'}` }}
                       onClick={()=>{ if(metodoPago2!==null){setMetodoPago2(null);setSplitAmt('');setSplitAmt2('');}else{setMetodoPago2('tarjeta');} }}>
                       {metodoPago2 !== null ? '✕ cancelar mixto' : '÷ Pago Mixto'}
                     </button>
