@@ -1441,7 +1441,7 @@ function ScreenCartaDesigner({ prods, cats, local, setLocal, setProds, goBack })
   const [saving,      setSaving]      = useState(false);
   const [showPub,     setShowPub]     = useState(false);
   const [filterCat,   setFilterCat]   = useState('Todos');
-  const [pubCfg,      setPubCfg]      = useState(() => local?.config?.carta_publicada_en || {});
+  const [pubCfg,      setPubCfg]      = useState(() => { const ex=local?.config?.carta_publicada_en||{}; return Object.keys(ex).length?ex:{mesa:true}; });
   const [templateId,  setTemplateId]  = useState(savedV3.templateId  || null);
   const [bgColor,     setBgColor]     = useState(savedV3.bgColor     || savedV2.bgColor     || '#18181b');
   const [accentColor, setAccentColor] = useState(savedV3.accentColor || savedV2.accentColor || '#C9A84C');
@@ -2212,7 +2212,7 @@ function ScreenCartaDesigner({ prods, cats, local, setLocal, setProds, goBack })
             <button className="ap-btn ap-btn-ghost ap-btn-sm" onClick={shareLink} title="Compartir link">🔗</button>
             <button className="ap-btn ap-btn-ghost ap-btn-sm" onClick={()=>setTab('preview')||setTimeout(exportAsImage,120)} disabled={exporting} title="Descargar imagen">🖼️</button>
             <button className="ap-btn ap-btn-ghost ap-btn-sm" onClick={()=>setTab('preview')||setTimeout(exportAsPDF,120)} disabled={exporting} title="Descargar PDF">📄</button>
-            <button className="ap-btn ap-btn-ghost ap-btn-sm" onClick={()=>setShowPub(true)}>📲</button>
+            <button className="ap-btn ap-btn-sm" style={{background:Object.values(pubCfg).some(Boolean)?'#1a4a1a':'rgba(255,255,255,.07)',border:'1px solid '+( Object.values(pubCfg).some(Boolean)?'#4A9A5A':'rgba(255,255,255,.15)'),color:Object.values(pubCfg).some(Boolean)?'#4A9A5A':'rgba(255,255,255,.4)'}} onClick={()=>setShowPub(true)} title="Publicar carta">{Object.values(pubCfg).some(Boolean)?'✅ Publicada':'📲 Publicar'}</button>
             <button className="ap-btn ap-btn-gold ap-btn-sm" onClick={async()=>{ const ok=await doSave(); if(ok)alert('✅ Guardado'); }} disabled={saving}>{saving?'…':'💾'}</button>
           </div>
         )}
