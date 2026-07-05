@@ -1220,7 +1220,7 @@ const CDV3_FONTS = [
 ];
 
 /* prodS: 'horizontal' | 'vertical' | 'compact-list' | 'full-photo'
-   catH:  'banner' | 'divider' | 'bold-label' | 'pill'                */
+   catH:  'banner' | 'divider' | 'bold-label' | 'pill' | 'text-only'  */
 const CDV3_TEMPLATES = [
   {id:'nobu',       nombre:'Nobu Tokyo',          cat:'Japonés',     emoji:'🍣', mood:'Minimalista premium',
    dark:true,  bg:'#0a0a0a', ac:'#C41E3A', font:"'Helvetica Neue',Arial,sans-serif",
@@ -1253,6 +1253,10 @@ const CDV3_TEMPLATES = [
   {id:'vegano',     nombre:'Raíces',               cat:'Vegano',      emoji:'🌿', mood:'Orgánico natural',
    dark:true,  bg:'#0b1a0d', ac:'#6DBE45', font:"system-ui,sans-serif",
    catH:'banner',     prodS:'horizontal',    headerAlign:'left'},
+
+  {id:'lamaison',   nombre:'La Maison',           cat:'Alta cocina', emoji:'✨', mood:'Cocina de autor',
+   dark:true,  bg:'#0d0d08', ac:'#C9A84C', font:"'Raleway','Helvetica Neue',sans-serif",
+   catH:'text-only',  prodS:'horizontal',    headerAlign:'center'},
 
   {id:'grand',      nombre:'Grand Hotel',          cat:'Alta cocina', emoji:'🍽️', mood:'Fine dining formal',
    dark:false, bg:'#faf8f2', ac:'#2D5016', ac2:'#C9A84C', font:"'Georgia',serif",
@@ -1352,6 +1356,12 @@ function cdv3CatHeader(cat, cfg, tpl, isExp, onToggle) {
       </div>
     </div>
   );
+  if (tpl.catH==='text-only') return (
+    <div onClick={onToggle} style={{ display:'flex',alignItems:'baseline',padding:'20px 0 10px',cursor:'pointer' }}>
+      <span style={{ fontSize:13,fontWeight:700,color:ac,letterSpacing:2,textTransform:'uppercase',fontFamily:tpl.font,flex:1 }}>{cat.label}</span>
+      <span style={{ fontSize:11,color:`${ac}50`,flexShrink:0 }}>{isExp?'−':'+'}</span>
+    </div>
+  );
   /* banner */
   return (
     <div onClick={onToggle} style={cdv2CardStyle(cfg.formato,cfg.imagen,tpl.ac,cfg.color)}>
@@ -1370,13 +1380,13 @@ function cdv3ProdCard(p, cat, prodS, tpl, catColor) {
   const desc   = (p.desc || p.descripcion || '').slice(0, 58);
 
   if (prodS==='horizontal') return (
-    <div key={p.id} style={{ display:'flex',height:88,borderRadius:10,overflow:'hidden',marginBottom:8,background:'rgba(255,255,255,.04)',border:`1px solid ${ac}22` }}>
-      <img src={imgSrc} alt="" style={{ width:'38%',objectFit:'cover',flexShrink:0 }} />
-      <div style={{ flex:1,padding:'10px 12px',display:'flex',flexDirection:'column',justifyContent:'center',minWidth:0 }}>
+    <div key={p.id} style={{ display:'flex',alignItems:'center',gap:12,padding:'10px 0',borderBottom:`1px solid ${ac}12`,marginBottom:0 }}>
+      <img src={imgSrc} alt="" style={{ width:62,height:62,borderRadius:8,objectFit:'cover',flexShrink:0 }} />
+      <div style={{ flex:1,minWidth:0 }}>
         <div style={{ fontSize:13,fontWeight:700,color:tc,lineHeight:1.3,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' }}>{name}</div>
-        {desc&&<div style={{ fontSize:10,color:`${tc}60`,lineHeight:1.3,marginTop:3,overflow:'hidden',display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical' }}>{desc}</div>}
-        <div style={{ fontSize:14,fontWeight:800,color:ac,marginTop:5 }}>{price}</div>
+        {desc&&<div style={{ fontSize:10,color:`${tc}55`,lineHeight:1.4,marginTop:2,overflow:'hidden',display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical' }}>{desc}</div>}
       </div>
+      <div style={{ fontSize:14,fontWeight:800,color:ac,flexShrink:0,minWidth:52,textAlign:'right' }}>{price}</div>
     </div>
   );
 
@@ -1534,6 +1544,11 @@ function ScreenCartaDesigner({ prods, cats, local, setLocal }) {
         if (t.catH==='bold-label') return (
           <div style={{ borderBottom:`2px solid ${t.ac}`,paddingBottom:3,marginBottom:5 }}>
             <div style={{ height:5,background:t.ac,borderRadius:2,width:44,marginLeft:t.headerAlign==='left'?0:'auto',marginRight:t.headerAlign==='center'?'auto':undefined }} />
+          </div>
+        );
+        if (t.catH==='text-only') return (
+          <div style={{ margin:'6px 0 4px',paddingBottom:3 }}>
+            <div style={{ height:4,background:t.ac,borderRadius:2,width:42,opacity:.9 }} />
           </div>
         );
         if (t.catH==='pill') return (
