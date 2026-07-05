@@ -2043,7 +2043,7 @@ const CDV3_RENDER_TPLS = [
   {id:'fusion',    bg:'#0c0c14', ac:'#FFB830', font:"'Helvetica Neue',Arial,sans-serif",      catH:'pill',       prodS:'vertical',     dark:true,  mood:'Fusión asiática',     headerAlign:'center'},
 ];
 
-function CartaV3ClientView({ cartaV3, local, cats, prods, cart, add, rem, cartCount, setView, effectiveVitrina, lang }) {
+function CartaV3ClientView({ cartaV3, local, cats, prods, cart, add, rem, cartCount, setView, effectiveVitrina, lang, onCampanita, grandTotal }) {
   const baseTpl = CDV3_RENDER_TPLS.find(t=>t.id===cartaV3.templateId) || CDV3_RENDER_TPLS[0];
   const tpl = { ...baseTpl, bg:cartaV3.bgColor||baseTpl.bg, ac:cartaV3.accentColor||baseTpl.ac, font:cartaV3.fontFamily||baseTpl.font };
   const bgColor=tpl.bg, accentColor=tpl.ac, fontFamily=tpl.font;
@@ -2184,11 +2184,16 @@ function CartaV3ClientView({ cartaV3, local, cats, prods, cart, add, rem, cartCo
             <div style={{fontSize:15,fontWeight:700,color:tc,fontFamily,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{local.nombre}</div>
             {local.mesa&&<div style={{fontSize:10,fontWeight:700,color:accentColor,marginTop:1}}>Mesa {local.mesa}</div>}
           </div>
-          {!effectiveVitrina&&cartCount>0&&(
-            <button onClick={()=>setView('cart')} style={{flexShrink:0,background:accentColor,border:'none',borderRadius:20,padding:'7px 14px',cursor:'pointer'}}>
-              <span style={{fontSize:12,fontWeight:800,color:tpl.dark?'#000':'#fff'}}>🛒 {cartCount}</span>
-            </button>
-          )}
+          <div style={{display:'flex',gap:6,flexShrink:0}}>
+            {!effectiveVitrina&&local?.mesa&&local?.feat_solicitudes!==false&&onCampanita&&(
+              <button onClick={onCampanita} style={{width:34,height:34,borderRadius:10,background:`${accentColor}22`,border:`1px solid ${accentColor}44`,fontSize:16,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>🛎️</button>
+            )}
+            {!effectiveVitrina&&cartCount>0&&(
+              <button onClick={()=>setView('cart')} style={{background:accentColor,border:'none',borderRadius:20,padding:'7px 14px',cursor:'pointer',display:'flex',alignItems:'center',gap:6}}>
+                <span style={{fontSize:12,fontWeight:800,color:tpl.dark?'#000':'#fff'}}>🛒 {cartCount}</span>
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -2260,6 +2265,17 @@ function CartaV3ClientView({ cartaV3, local, cats, prods, cart, add, rem, cartCo
 
         <div style={{height:24}}/>
       </div>
+
+      {/* Floating cart button */}
+      {!effectiveVitrina&&cartCount>0&&(
+        <div style={{position:'fixed',bottom:24,left:'50%',transform:'translateX(-50%)',zIndex:40,width:'calc(100% - 32px)',maxWidth:398}}>
+          <button onClick={()=>setView('cart')} style={{width:'100%',background:accentColor,border:'none',borderRadius:16,padding:'15px 20px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'space-between',boxShadow:'0 8px 28px rgba(0,0,0,.35)',fontFamily}}>
+            <div style={{background:'rgba(0,0,0,.2)',borderRadius:10,width:30,height:30,display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,fontWeight:900,color:'#fff'}}>{cartCount}</div>
+            <div style={{fontSize:15,fontWeight:800,color:tpl.dark===false?'#fff':'#000'}}>Ver mi pedido</div>
+            <div style={{fontSize:15,fontWeight:800,color:tpl.dark===false?'#fff':'#000'}}>$ {grandTotal?new Intl.NumberFormat('es-AR',{minimumFractionDigits:0}).format(grandTotal):''}</div>
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -2983,6 +2999,12 @@ export function ClientApp({onBack, local, cats, prods, vitrina=false, sinPedidos
                 📋 Copiar
               </button>
             </div>
+            <div style={{background:"#FFF7E6",border:"1px solid #F6D860",borderRadius:10,padding:"10px 12px",marginBottom:local.whatsapp?8:0,display:"flex",gap:8,alignItems:"flex-start"}}>
+              <span style={{fontSize:16,flexShrink:0}}>⚠️</span>
+              <div style={{fontSize:12,color:"#92400E",lineHeight:1.5,fontWeight:600}}>
+                Compartí el comprobante de pago para que tu pedido entre a cocina.
+              </div>
+            </div>
             {local.whatsapp&&(
               <a href={`https://wa.me/${local.whatsapp.replace(/\D/g,"")}?text=${encodeURIComponent("Hola! Te envío el comprobante de pago de mi pedido en "+local.nombre+".")}`}
                 target="_blank" rel="noreferrer"
@@ -3088,7 +3110,7 @@ export function ClientApp({onBack, local, cats, prods, vitrina=false, sinPedidos
     const _surf=vitrina?'vitrina':'mesa';
     // Show if templateId set AND surface not explicitly disabled
     if(_cv3?.templateId&&_pub[_surf]!==false){
-      return <CartaV3ClientView cartaV3={_cv3} local={local} cats={cats} prods={translatedProds} cart={cart} add={add} rem={rem} cartCount={cartCount} setView={setView} effectiveVitrina={effectiveVitrina} lang={lang}/>;
+      return <CartaV3ClientView cartaV3={_cv3} local={local} cats={cats} prods={translatedProds} cart={cart} add={add} rem={rem} cartCount={cartCount} setView={setView} effectiveVitrina={effectiveVitrina} lang={lang} onCampanita={()=>setShowSolicitudes(true)} grandTotal={grandTotal}/>;
     }
   }
 
@@ -9571,7 +9593,10 @@ export default function MenuQR({
         activo: rest.activo !== false,
         logo_url: rest.logo_url || "",
         delivery_config: rest.delivery_config || null,
-        config: rest.config || {},          // keep nested for ScreenCartaDesigner
+        alias_pago:    rest.alias_pago    || "",   // columna directa
+        alias_titular: rest.alias_titular || "",   // columna directa
+        mp_alias:      rest.alias_pago    || "",   // alias para cart view
+        config: rest.config || {},
         ...(rest.config || {}),
       });
       const [categorias, productos] = await Promise.all([
