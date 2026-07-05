@@ -2022,252 +2022,248 @@ return (
 }
 
 
-// ─── CARTA V3 CLIENT VIEW ─────────────────────────────────────
-const CDV3_CLIENT_TPLS = [
-  {id:'nobu',      bg:'#0a0a0a', ac:'#C41E3A', font:"'Helvetica Neue',Arial,sans-serif", catH:'divider',    prodS:'horizontal',   dark:true},
-  {id:'bistro',    bg:'#f8f4e8', ac:'#1a3a5c', font:"'Georgia',serif",                   catH:'divider',    prodS:'compact-list', dark:false},
-  {id:'parrilla',  bg:'#120a04', ac:'#C9A84C', font:"'Georgia',serif",                   catH:'banner',     prodS:'horizontal',   dark:true},
-  {id:'lamaison',  bg:'#0d0d08', ac:'#C9A84C', font:"'Raleway','Helvetica Neue',sans-serif", catH:'text-only', prodS:'horizontal', dark:true},
-  {id:'trattoria', bg:'#1a0a04', ac:'#D4503A', font:"'Georgia',serif",                   catH:'bold-label', prodS:'vertical',     dark:true},
-  {id:'botanico',  bg:'#0a1208', ac:'#4A9A5A', font:"'Georgia',serif",                   catH:'pill',       prodS:'compact-list', dark:true},
-  {id:'izakaya',   bg:'#08080f', ac:'#6B48D0', font:"'Helvetica Neue',Arial,sans-serif", catH:'divider',    prodS:'horizontal',   dark:true},
-  {id:'cevicheria',bg:'#041218', ac:'#00A8C6', font:"'Helvetica Neue',Arial,sans-serif", catH:'divider',    prodS:'full-photo',   dark:true},
-  {id:'grand',     bg:'#F8F5F0', ac:'#8B1A1A', font:"'Georgia',serif",                   catH:'banner',     prodS:'vertical',     dark:false},
-  {id:'finedining',bg:'#FAFAF8', ac:'#2C2C2C', font:"'Georgia',serif",                   catH:'text-only',  prodS:'compact-list', dark:false},
-  {id:'neon',      bg:'#0a0512', ac:'#FF006E', font:"'Helvetica Neue',Arial,sans-serif", catH:'pill',       prodS:'full-photo',   dark:true},
-  {id:'coastal',   bg:'#F0F8FF', ac:'#1A6B8A', font:"'Georgia',serif",                   catH:'divider',    prodS:'horizontal',   dark:false},
-  {id:'asador',    bg:'#0f0a06', ac:'#C9A84C', font:"'Georgia',serif",                   catH:'banner',     prodS:'horizontal',   dark:true},
-  {id:'sake',      bg:'#0a0508', ac:'#E8748A', font:"'Helvetica Neue',Arial,sans-serif", catH:'text-only',  prodS:'compact-list', dark:true},
-  {id:'pergola',   bg:'#f5f0e8', ac:'#5A3A1A', font:"'Georgia',serif",                   catH:'bold-label', prodS:'vertical',     dark:false},
-  {id:'moderno',   bg:'#FAFAFA', ac:'#1A1A1A', font:"'Helvetica Neue',Arial,sans-serif", catH:'divider',    prodS:'compact-list', dark:false},
-  {id:'fusion',    bg:'#0c0c14', ac:'#FFB830', font:"'Helvetica Neue',Arial,sans-serif", catH:'pill',       prodS:'vertical',     dark:true},
+// ─── CARTA V3 CLIENT VIEW — matches AdminPanel Preview() exactly ──────────────
+const CDV3_RENDER_TPLS = [
+  {id:'nobu',      bg:'#0a0a0a', ac:'#C41E3A', font:"'Helvetica Neue',Arial,sans-serif",      catH:'divider',    prodS:'horizontal',   dark:true,  mood:'Minimalista premium', headerAlign:'center'},
+  {id:'bistro',    bg:'#f8f4e8', ac:'#1a3a5c', font:"'Georgia',serif",                        catH:'divider',    prodS:'compact-list', dark:false, mood:'Clásico francés',     headerAlign:'center'},
+  {id:'parrilla',  bg:'#120a04', ac:'#C9A84C', font:"'Georgia',serif",                        catH:'banner',     prodS:'horizontal',   dark:true,  mood:'Rústico premium',     headerAlign:'left'},
+  {id:'lamaison',  bg:'#0d0d08', ac:'#C9A84C', font:"'Raleway','Helvetica Neue',sans-serif",  catH:'text-only',  prodS:'horizontal',   dark:true,  mood:'Cocina de autor',     headerAlign:'center'},
+  {id:'trattoria', bg:'#1a0a04', ac:'#D4503A', font:"'Georgia',serif",                        catH:'bold-label', prodS:'vertical',     dark:true,  mood:'Italiano tradicional',headerAlign:'left'},
+  {id:'botanico',  bg:'#0a1208', ac:'#4A9A5A', font:"'Georgia',serif",                        catH:'pill',       prodS:'compact-list', dark:true,  mood:'Orgánico & natural',  headerAlign:'center'},
+  {id:'izakaya',   bg:'#08080f', ac:'#6B48D0', font:"'Helvetica Neue',Arial,sans-serif",      catH:'divider',    prodS:'horizontal',   dark:true,  mood:'Bar japonés',         headerAlign:'center'},
+  {id:'cevicheria',bg:'#041218', ac:'#00A8C6', font:"'Helvetica Neue',Arial,sans-serif",      catH:'divider',    prodS:'full-photo',   dark:true,  mood:'Mar & ceviche',       headerAlign:'center'},
+  {id:'grand',     bg:'#F8F5F0', ac:'#8B1A1A', font:"'Georgia',serif",                        catH:'banner',     prodS:'vertical',     dark:false, mood:'Fine dining formal',  headerAlign:'center'},
+  {id:'finedining',bg:'#FAFAF8', ac:'#2C2C2C', font:"'Georgia',serif",                        catH:'text-only',  prodS:'compact-list', dark:false, mood:'Minimalista blanco',  headerAlign:'center'},
+  {id:'neon',      bg:'#0a0512', ac:'#FF006E', font:"'Helvetica Neue',Arial,sans-serif",      catH:'pill',       prodS:'full-photo',   dark:true,  mood:'Bar urbano',          headerAlign:'center'},
+  {id:'coastal',   bg:'#F0F8FF', ac:'#1A6B8A', font:"'Georgia',serif",                        catH:'divider',    prodS:'horizontal',   dark:false, mood:'Fresco mediterráneo', headerAlign:'center'},
+  {id:'asador',    bg:'#0f0a06', ac:'#C9A84C', font:"'Georgia',serif",                        catH:'banner',     prodS:'horizontal',   dark:true,  mood:'Asador clásico',      headerAlign:'left'},
+  {id:'sake',      bg:'#0a0508', ac:'#E8748A', font:"'Helvetica Neue',Arial,sans-serif",      catH:'text-only',  prodS:'compact-list', dark:true,  mood:'Japonés minimalista', headerAlign:'center'},
+  {id:'pergola',   bg:'#f5f0e8', ac:'#5A3A1A', font:"'Georgia',serif",                        catH:'bold-label', prodS:'vertical',     dark:false, mood:'Jardín mediterráneo', headerAlign:'left'},
+  {id:'moderno',   bg:'#FAFAFA', ac:'#1A1A1A', font:"'Helvetica Neue',Arial,sans-serif",      catH:'divider',    prodS:'compact-list', dark:false, mood:'Contemporáneo',       headerAlign:'center'},
+  {id:'fusion',    bg:'#0c0c14', ac:'#FFB830', font:"'Helvetica Neue',Arial,sans-serif",      catH:'pill',       prodS:'vertical',     dark:true,  mood:'Fusión asiática',     headerAlign:'center'},
 ];
 
 function CartaV3ClientView({ cartaV3, local, cats, prods, cart, add, rem, cartCount, setView, effectiveVitrina, lang }) {
-  const baseTpl = CDV3_CLIENT_TPLS.find(t=>t.id===cartaV3.templateId) || CDV3_CLIENT_TPLS[0];
+  const baseTpl = CDV3_RENDER_TPLS.find(t=>t.id===cartaV3.templateId) || CDV3_RENDER_TPLS[0];
   const tpl = { ...baseTpl, bg:cartaV3.bgColor||baseTpl.bg, ac:cartaV3.accentColor||baseTpl.ac, font:cartaV3.fontFamily||baseTpl.font };
-  const bg=tpl.bg, ac=tpl.ac;
-  const tc=tpl.dark?'#FFFFFF':'#111111';
-  const tm=tpl.dark?'rgba(255,255,255,0.45)':'rgba(0,0,0,0.4)';
-  const blocks=cartaV3.blocks||[{id:'cats',type:'categorias',on:true}];
-  const activeCats=cats.filter(c=>c.activa!==false);
-  const fsz=cartaV3.fontSize==='small'?0.85:cartaV3.fontSize==='large'?1.15:1.0;
-  const heroBlock=blocks.find(b=>b.type==='hero');
-  const catsBlock=blocks.find(b=>b.type==='categorias');
-  const contactBlock=blocks.find(b=>b.type==='contacto');
-  const pagoBlock=blocks.find(b=>b.type==='pago');
-  const qrBlock=blocks.find(b=>b.type==='qr');
+  const bgColor=tpl.bg, accentColor=tpl.ac, fontFamily=tpl.font;
+  const tc = tpl.dark===false ? '#1a1a1a' : '#ffffff';
+  const blocks = cartaV3.blocks || [{id:'cats',type:'categorias',on:true,data:{}}];
+  const activeCats = cats.filter(c=>c.activa!==false);
+  const isGrid = tpl.prodS==='vertical';
+  const align = tpl.headerAlign==='left' ? 'left' : 'center';
+  const heroBlock    = blocks.find(b=>b.type==='hero');
+  const catsBlock    = blocks.find(b=>b.type==='categorias');
+  const contactBlock = blocks.find(b=>b.type==='contacto');
+  const pagoBlock    = blocks.find(b=>b.type==='pago');
+  const qrBlock      = blocks.find(b=>b.type==='qr');
 
-  function cv3CatHdr(cat) {
-    const style=cartaV3.catConfigs?.[cat.id]?.formato||tpl.catH;
-    const label=(cat.icon?cat.icon+' ':'')+tCat(cat.label,lang);
-    if(style==='text-only') return(
-      <div style={{padding:'18px 0 10px',borderBottom:`1px solid ${ac}20`}}>
-        <span style={{fontSize:Math.round(11*fsz),fontWeight:700,color:ac,letterSpacing:2.5,textTransform:'uppercase',fontFamily:tpl.font}}>{label}</span>
+  // Category header — identical to AdminPanel cdv3CatHeader
+  function cv3H(cat) {
+    const ac=accentColor;
+    if(tpl.catH==='divider') return(
+      <div style={{display:'flex',alignItems:'center',gap:10,padding:'14px 4px 10px'}}>
+        <div style={{flex:1,height:1,background:`${ac}35`}}/>
+        <span style={{fontSize:12,fontWeight:700,color:ac,letterSpacing:2,textTransform:'uppercase',fontFamily,whiteSpace:'nowrap'}}>{cat.emoji?cat.emoji+' ':''}{tCat(cat.label,lang)}</span>
+        <div style={{flex:1,height:1,background:`${ac}35`}}/>
       </div>
     );
-    if(style==='divider') return(
-      <div style={{display:'flex',alignItems:'center',gap:12,padding:'20px 0 12px'}}>
-        <div style={{flex:1,height:1,background:`${ac}30`}}/>
-        <span style={{fontSize:Math.round(11*fsz),fontWeight:700,color:ac,letterSpacing:2,textTransform:'uppercase',fontFamily:tpl.font}}>{label}</span>
-        <div style={{flex:1,height:1,background:`${ac}30`}}/>
+    if(tpl.catH==='bold-label') return(
+      <div style={{display:'flex',alignItems:'center',padding:'14px 0 8px',borderBottom:`2px solid ${ac}`}}>
+        {cat.emoji&&<span style={{fontSize:18,marginRight:8}}>{cat.emoji}</span>}
+        <span style={{fontSize:14,fontWeight:900,color:ac,letterSpacing:1,textTransform:'uppercase',fontFamily,flex:1}}>{tCat(cat.label,lang)}</span>
       </div>
     );
-    if(style==='bold-label') return(
-      <div style={{padding:'20px 0 10px'}}>
-        <div style={{fontSize:Math.round(20*fsz),fontWeight:900,color:tc,fontFamily:tpl.font,lineHeight:1}}>{label}</div>
-        <div style={{width:32,height:3,background:ac,borderRadius:2,marginTop:6}}/>
+    if(tpl.catH==='pill') return(
+      <div style={{display:'flex',justifyContent:'center',padding:'10px 0 6px'}}>
+        <div style={{background:ac,borderRadius:20,padding:'7px 20px',display:'flex',alignItems:'center',gap:8}}>
+          {cat.emoji&&<span style={{fontSize:16}}>{cat.emoji}</span>}
+          <span style={{fontSize:13,fontWeight:700,color:'#fff',letterSpacing:.5}}>{tCat(cat.label,lang)}</span>
+        </div>
       </div>
     );
-    if(style==='pill') return(
-      <div style={{padding:'20px 0 10px'}}>
-        <span style={{display:'inline-block',padding:'6px 18px',background:ac,borderRadius:999,fontSize:Math.round(12*fsz),fontWeight:700,color:tpl.dark?'#000':'#fff',fontFamily:tpl.font}}>{label}</span>
+    if(tpl.catH==='text-only') return(
+      <div style={{display:'flex',alignItems:'baseline',padding:'20px 0 10px'}}>
+        <span style={{fontSize:13,fontWeight:700,color:ac,letterSpacing:2,textTransform:'uppercase',fontFamily,flex:1}}>{cat.emoji?cat.emoji+' ':''}{tCat(cat.label,lang)}</span>
       </div>
     );
-    if(style==='banner') return(
-      <div style={{margin:'16px 0 8px',padding:'10px 16px',background:ac,borderRadius:8}}>
-        <span style={{fontSize:Math.round(13*fsz),fontWeight:800,color:tpl.dark?'#000':'#fff',letterSpacing:1,textTransform:'uppercase',fontFamily:tpl.font}}>{label}</span>
-      </div>
-    );
+    // banner
     return(
-      <div style={{padding:'18px 0 10px'}}>
-        <span style={{fontSize:Math.round(14*fsz),fontWeight:700,color:tc,fontFamily:tpl.font}}>{label}</span>
+      <div style={{padding:'10px 14px',background:`${ac}20`,border:`1px solid ${ac}35`,borderRadius:6,margin:'8px 0'}}>
+        <span style={{fontSize:13,fontWeight:800,color:ac,letterSpacing:1,textTransform:'uppercase',fontFamily}}>{cat.emoji?cat.emoji+' ':''}{tCat(cat.label,lang)}</span>
       </div>
     );
   }
 
-  function cv3ProdCard(item) {
+  // Product card — identical to AdminPanel cdv3ProdCard + cart buttons
+  function cv3P(item) {
     const inCart=cart[item.id]?.qty||0;
-    const imgSrc=item.foto_url||item.imagen||'';
-    const disc=item.orig?Math.round((1-item.price/item.orig)*100):null;
-    const addRem=item.sin_stock?(
-      <span style={{fontSize:10,color:tm}}>Agotado</span>
+    const imgSrc=item.foto_url||item.imagen||'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=200&h=200&fit=crop';
+    const name=item.name||item.nombre||'';
+    const price='$ '+fmt(item.price??item.precio??0);
+    const desc=(item.desc||item.descripcion||'').slice(0,58);
+    const ar=!effectiveVitrina&&(item.sin_stock?(
+      <span style={{fontSize:10,color:`${tc}55`,flexShrink:0}}>Agotado</span>
     ):inCart===0?(
-      <button onClick={e=>{e.stopPropagation();add(item);}} className="pr" style={{width:28,height:28,borderRadius:7,background:ac,border:'none',color:tpl.dark?'#000':'#fff',fontSize:17,fontWeight:900,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>+</button>
+      <button onClick={e=>{e.stopPropagation();add(item);}} className="pr" style={{width:28,height:28,borderRadius:7,background:accentColor,border:'none',color:tpl.dark?'#000':'#fff',fontSize:17,fontWeight:900,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>+</button>
     ):(
-      <div style={{display:'flex',alignItems:'center',gap:4}} onClick={e=>e.stopPropagation()}>
-        <button onClick={()=>rem(item.id)} className="pr" style={{width:26,height:26,borderRadius:6,background:`${ac}22`,border:`1px solid ${ac}44`,color:ac,fontSize:14,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>−</button>
-        <span style={{fontSize:13,fontWeight:700,color:ac,minWidth:16,textAlign:'center'}}>{inCart}</span>
-        <button onClick={()=>add(item)} className="pr" style={{width:26,height:26,borderRadius:6,background:ac,border:'none',color:tpl.dark?'#000':'#fff',fontSize:14,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>+</button>
+      <div style={{display:'flex',alignItems:'center',gap:4,flexShrink:0}} onClick={e=>e.stopPropagation()}>
+        <button onClick={()=>rem(item.id)} className="pr" style={{width:26,height:26,borderRadius:6,background:`${accentColor}22`,border:`1px solid ${accentColor}44`,color:accentColor,fontSize:14,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>−</button>
+        <span style={{fontSize:13,fontWeight:700,color:accentColor,minWidth:16,textAlign:'center'}}>{inCart}</span>
+        <button onClick={()=>add(item)} className="pr" style={{width:26,height:26,borderRadius:6,background:accentColor,border:'none',color:tpl.dark?'#000':'#fff',fontSize:14,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>+</button>
       </div>
-    );
-    const pStyle=tpl.prodS;
-    if(pStyle==='compact-list') return(
-      <div key={item.id} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'10px 0',borderBottom:`1px solid ${ac}15`}}>
-        <div style={{flex:1,minWidth:0,paddingRight:8}}>
-          <div style={{fontSize:Math.round(13*fsz),fontWeight:600,color:tc,fontFamily:tpl.font,lineHeight:1.3}}>{item.name}</div>
-          {item.desc&&<div style={{fontSize:Math.round(10*fsz),color:tm,marginTop:2,lineHeight:1.3,display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical',overflow:'hidden'}}>{item.desc}</div>}
-        </div>
-        <div style={{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:6,flexShrink:0}}>
-          <span style={{fontSize:Math.round(14*fsz),fontWeight:800,color:ac,fontFamily:tpl.font}}>$ {fmt(item.price)}</span>
-          {!effectiveVitrina&&addRem}
-        </div>
-      </div>
-    );
-    if(pStyle==='full-photo') return(
-      <div key={item.id} style={{borderRadius:12,overflow:'hidden',marginBottom:12,background:`${ac}10`}}>
-        {imgSrc?(
-          <div style={{position:'relative',height:160}}>
-            <img src={imgSrc} alt={item.name} style={{width:'100%',height:'100%',objectFit:'cover'}}/>
-            <div style={{position:'absolute',inset:0,background:'linear-gradient(to top,rgba(0,0,0,.8) 0%,rgba(0,0,0,.1) 60%)'}}/>
-            <div style={{position:'absolute',bottom:0,left:0,right:0,padding:'10px 12px',display:'flex',alignItems:'flex-end',justifyContent:'space-between'}}>
-              <div style={{flex:1,minWidth:0}}>
-                <div style={{fontSize:Math.round(14*fsz),fontWeight:700,color:'#fff',fontFamily:tpl.font}}>{item.name}</div>
-                <div style={{fontSize:Math.round(15*fsz),fontWeight:800,color:ac}}>$ {fmt(item.price)}</div>
-              </div>
-              {!effectiveVitrina&&<div style={{flexShrink:0}}>{addRem}</div>}
-            </div>
-          </div>
-        ):(
-          <div style={{padding:'12px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-            <div>
-              <div style={{fontSize:Math.round(13*fsz),fontWeight:700,color:tc,fontFamily:tpl.font}}>{item.name}</div>
-              <div style={{fontSize:Math.round(14*fsz),fontWeight:800,color:ac}}>$ {fmt(item.price)}</div>
-            </div>
-            {!effectiveVitrina&&addRem}
-          </div>
-        )}
-      </div>
-    );
-    if(pStyle==='vertical') return(
-      <div key={item.id} style={{borderRadius:10,overflow:'hidden',border:`1px solid ${ac}20`,display:'flex',flexDirection:'column',background:`${ac}06`}}>
-        {imgSrc?(<img src={imgSrc} alt={item.name} style={{width:'100%',height:100,objectFit:'cover'}}/>):(
-          <div style={{height:80,background:`${ac}15`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:28}}>{item.emoji||'🍽️'}</div>
-        )}
-        <div style={{padding:'10px',flex:1,display:'flex',flexDirection:'column',gap:4}}>
-          <div style={{fontSize:Math.round(12*fsz),fontWeight:700,color:tc,fontFamily:tpl.font,lineHeight:1.2}}>{item.name}</div>
-          {item.desc&&<div style={{fontSize:Math.round(10*fsz),color:tm,lineHeight:1.3,flex:1,display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical',overflow:'hidden'}}>{item.desc}</div>}
-          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginTop:4}}>
-            <span style={{fontSize:Math.round(13*fsz),fontWeight:800,color:ac}}>$ {fmt(item.price)}</span>
-            {!effectiveVitrina&&addRem}
-          </div>
-        </div>
-      </div>
-    );
-    // horizontal (default)
-    return(
-      <div key={item.id} style={{display:'flex',alignItems:'center',gap:12,padding:'12px 0',borderBottom:`1px solid ${ac}12`}}>
-        {imgSrc?(<img src={imgSrc} alt={item.name} style={{width:64,height:64,borderRadius:8,objectFit:'cover',flexShrink:0}}/>
-        ):item.emoji?(<div style={{width:64,height:64,borderRadius:8,background:`${ac}15`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:26,flexShrink:0}}>{item.emoji}</div>
-        ):null}
+    ));
+    if(tpl.prodS==='horizontal') return(
+      <div key={item.id} style={{display:'flex',alignItems:'center',gap:12,padding:'10px 0',borderBottom:`1px solid ${accentColor}12`}}>
+        <img src={imgSrc} alt="" style={{width:62,height:62,borderRadius:8,objectFit:'cover',flexShrink:0}} onError={e=>e.target.style.display='none'}/>
         <div style={{flex:1,minWidth:0}}>
-          <div style={{fontSize:Math.round(13*fsz),fontWeight:700,color:tc,fontFamily:tpl.font,lineHeight:1.3}}>{item.name}</div>
-          {item.desc&&<div style={{fontSize:Math.round(10*fsz),color:tm,marginTop:2,lineHeight:1.3,display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical',overflow:'hidden'}}>{item.desc}</div>}
-          <div style={{display:'flex',alignItems:'center',gap:6,marginTop:4}}>
-            <span style={{fontSize:Math.round(14*fsz),fontWeight:800,color:ac}}>$ {fmt(item.price)}</span>
-            {item.orig&&<span style={{fontSize:10,color:tm,textDecoration:'line-through'}}>$ {fmt(item.orig)}</span>}
-            {disc&&<span style={{fontSize:9,fontWeight:800,color:'#4CAF50',background:'#4CAF5020',borderRadius:4,padding:'1px 5px'}}>-{disc}%</span>}
+          <div style={{fontSize:13,fontWeight:700,color:tc,lineHeight:1.3,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{name}</div>
+          {desc&&<div style={{fontSize:10,color:`${tc}55`,lineHeight:1.4,marginTop:2,overflow:'hidden',display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical'}}>{desc}</div>}
+        </div>
+        <div style={{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:4,flexShrink:0}}>
+          <div style={{fontSize:14,fontWeight:800,color:accentColor,minWidth:52,textAlign:'right'}}>{price}</div>
+          {ar}
+        </div>
+      </div>
+    );
+    if(tpl.prodS==='compact-list') return(
+      <div key={item.id} style={{display:'flex',alignItems:'center',padding:'11px 0',borderBottom:`1px solid ${accentColor}18`}}>
+        <div style={{flex:1,minWidth:0,paddingRight:8}}>
+          <div style={{fontSize:13,fontWeight:600,color:tc,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{name}</div>
+          {desc&&<div style={{fontSize:10,color:`${tc}55`,marginTop:2,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{desc}</div>}
+        </div>
+        <div style={{display:'flex',alignItems:'center',gap:8,flexShrink:0}}>
+          <div style={{fontFamily:"'Courier New',monospace",fontSize:14,fontWeight:700,color:accentColor}}>{price}</div>
+          {ar}
+        </div>
+      </div>
+    );
+    if(tpl.prodS==='full-photo') return(
+      <div key={item.id} style={{borderRadius:10,overflow:'hidden',marginBottom:8,position:'relative'}}>
+        <img src={imgSrc} alt="" style={{width:'100%',height:140,objectFit:'cover',display:'block'}}/>
+        <div style={{position:'absolute',bottom:0,left:0,right:0,background:'linear-gradient(transparent,rgba(0,0,0,.88))',padding:'20px 12px 10px'}}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-end'}}>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontSize:14,fontWeight:700,color:'#fff',lineHeight:1.3}}>{name}</div>
+              {desc&&<div style={{fontSize:10,color:'rgba(255,255,255,.65)',marginTop:2}}>{desc}</div>}
+            </div>
+            <div style={{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:4,flexShrink:0,marginLeft:10}}>
+              <div style={{fontSize:15,fontWeight:800,color:accentColor}}>{price}</div>
+              {ar}
+            </div>
           </div>
         </div>
-        {!effectiveVitrina&&<div style={{flexShrink:0}}>{addRem}</div>}
+      </div>
+    );
+    // vertical
+    return(
+      <div key={item.id} style={{background:'rgba(255,255,255,.05)',borderRadius:10,overflow:'hidden',border:`1px solid ${accentColor}22`}}>
+        <img src={imgSrc} alt="" style={{width:'100%',height:105,objectFit:'cover',display:'block'}}/>
+        <div style={{padding:'7px 9px'}}>
+          <div style={{fontSize:12,fontWeight:700,color:tc,lineHeight:1.3}}>{name}</div>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',margin:'3px 0 2px'}}>
+            <div style={{fontSize:13,fontWeight:800,color:accentColor}}>{price}</div>
+            {ar}
+          </div>
+          {desc&&<div style={{fontSize:10,color:`${tc}55`,lineHeight:1.4}}>{desc}</div>}
+        </div>
       </div>
     );
   }
 
   return(
-    <div style={{maxWidth:430,margin:'0 auto',minHeight:'100vh',background:bg,display:'flex',flexDirection:'column',fontFamily:tpl.font,color:tc}}>
+    <div style={{maxWidth:430,margin:'0 auto',minHeight:'100vh',background:bgColor,display:'flex',flexDirection:'column',fontFamily}}>
       <GS/>
       {/* Sticky header */}
-      <div style={{position:'sticky',top:0,zIndex:30,background:`${bg}EE`,backdropFilter:'blur(12px)',borderBottom:`1px solid ${ac}25`,padding:'12px 16px'}}>
-        <div style={{display:'flex',alignItems:'center',gap:12}}>
-          {local.logo_url?(
-            <img src={local.logo_url} alt="" style={{width:40,height:40,borderRadius:10,objectFit:'cover',flexShrink:0,border:`1px solid ${ac}30`}}/>
-          ):(
-            <div style={{width:40,height:40,borderRadius:10,background:`${ac}20`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0}}>{local.emoji||'🍽️'}</div>
+      <div style={{position:'sticky',top:0,zIndex:30,background:`${bgColor}EE`,backdropFilter:'blur(12px)',borderBottom:`1px solid ${accentColor}20`,padding:'10px 14px'}}>
+        <div style={{display:'flex',alignItems:'center',gap:10}}>
+          {local.logo_url?(<img src={local.logo_url} alt="" style={{width:36,height:36,borderRadius:8,objectFit:'cover',flexShrink:0,border:`1px solid ${accentColor}40`}}/>):(
+            <div style={{width:36,height:36,borderRadius:8,background:`${accentColor}20`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,flexShrink:0}}>{local.emoji||'🍽️'}</div>
           )}
           <div style={{flex:1,minWidth:0}}>
-            <div style={{fontSize:17,fontWeight:700,color:tc,fontFamily:tpl.font,lineHeight:1.1,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{local.nombre}</div>
-            {local.mesa&&<div style={{fontSize:10,fontWeight:700,color:ac,marginTop:1,fontFamily:tpl.font}}>Mesa {local.mesa}</div>}
+            <div style={{fontSize:15,fontWeight:700,color:tc,fontFamily,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{local.nombre}</div>
+            {local.mesa&&<div style={{fontSize:10,fontWeight:700,color:accentColor,marginTop:1}}>Mesa {local.mesa}</div>}
           </div>
           {!effectiveVitrina&&cartCount>0&&(
-            <button onClick={()=>setView('cart')} style={{flexShrink:0,background:ac,border:'none',borderRadius:20,padding:'7px 14px',cursor:'pointer',display:'flex',alignItems:'center',gap:5}}>
+            <button onClick={()=>setView('cart')} style={{flexShrink:0,background:accentColor,border:'none',borderRadius:20,padding:'7px 14px',cursor:'pointer'}}>
               <span style={{fontSize:12,fontWeight:800,color:tpl.dark?'#000':'#fff'}}>🛒 {cartCount}</span>
             </button>
           )}
         </div>
       </div>
-      {/* Scrollable content */}
+
+      {/* Content — matches AdminPanel Preview() */}
       <div style={{flex:1,overflowY:'auto',paddingBottom:effectiveVitrina?24:100}}>
-        {/* Hero block */}
-        {heroBlock?.on&&(heroBlock.data?.titulo||heroBlock.data?.sub||heroBlock.data?.logo)&&(
-          <div style={{padding:'32px 20px 20px',textAlign:'center'}}>
-            {heroBlock.data.logo&&<img src={heroBlock.data.logo} alt="" style={{width:80,height:80,borderRadius:16,objectFit:'cover',marginBottom:14}}/>}
-            {heroBlock.data.titulo&&<div style={{fontSize:Math.round(26*fsz),fontWeight:800,color:tc,fontFamily:tpl.font,lineHeight:1.1,marginBottom:6}}>{heroBlock.data.titulo}</div>}
-            {heroBlock.data.sub&&<div style={{fontSize:Math.round(13*fsz),color:tm,lineHeight:1.5}}>{heroBlock.data.sub}</div>}
-            <div style={{width:40,height:2,background:ac,borderRadius:1,margin:'14px auto 0'}}/>
+        {/* HERO */}
+        {heroBlock?.on&&(heroBlock.data?.titulo||heroBlock.data?.sub||heroBlock.data?.logo||local?.nombre)&&(
+          <div style={{padding:'22px 18px 14px',textAlign:align,borderBottom:`1px solid ${accentColor}25`}}>
+            {heroBlock.data?.logo&&<img src={heroBlock.data.logo} alt="" style={{width:72,height:72,borderRadius:'50%',objectFit:'cover',margin:`0 ${align==='center'?'auto':0} 12px`,display:'block',border:`2px solid ${accentColor}`}} onError={e=>e.target.style.display='none'}/>}
+            <div style={{fontSize:24,fontWeight:800,color:accentColor,letterSpacing:.3,fontFamily}}>{heroBlock.data?.titulo||local?.nombre||''}</div>
+            {heroBlock.data?.sub&&<div style={{fontSize:12,color:`${tc}80`,marginTop:5,lineHeight:1.5}}>{heroBlock.data.sub}</div>}
+            {tpl.mood&&<div style={{fontSize:9,color:`${accentColor}55`,marginTop:8,letterSpacing:2,textTransform:'uppercase'}}>{tpl.mood}</div>}
           </div>
         )}
-        {/* Categories + products */}
+
+        {/* CATEGORÍAS */}
         {(!catsBlock||catsBlock.on)&&(
-          <div style={{padding:'0 20px'}}>
+          <div style={{padding:'8px 14px 20px'}}>
             {activeCats.map(cat=>{
-              const catProds=prods.filter(p=>p.cat===cat.id&&(p.active||p.active==null));
+              const catProds=prods.filter(p=>(p.cat||p.categoria_id)===cat.id&&p.active!==false&&p.activo!==false);
               if(!catProds.length) return null;
-              const isGrid=tpl.prodS==='vertical';
               return(
-                <section key={cat.id} style={{marginBottom:20}}>
-                  {cv3CatHdr(cat)}
-                  {isGrid?(
-                    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
-                      {catProds.map(item=>cv3ProdCard(item))}
-                    </div>
-                  ):(
-                    <div>{catProds.map(item=>cv3ProdCard(item))}</div>
-                  )}
-                </section>
+                <div key={cat.id} style={{marginBottom:4}}>
+                  {cv3H(cat)}
+                  <div style={{paddingTop:6}}>
+                    {isGrid?(
+                      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(138px,1fr))',gap:8}}>
+                        {catProds.map(item=>cv3P(item))}
+                      </div>
+                    ):(
+                      <div>{catProds.map(item=>cv3P(item))}</div>
+                    )}
+                  </div>
+                </div>
               );
             })}
           </div>
         )}
-        {/* Contacto block */}
+
+        {/* CONTACTO */}
         {contactBlock?.on&&(contactBlock.data?.tel||contactBlock.data?.dir||contactBlock.data?.hs)&&(
-          <div style={{margin:'8px 20px 0',padding:'16px',borderRadius:12,background:`${ac}12`,border:`1px solid ${ac}28`}}>
-            <div style={{fontSize:11,fontWeight:700,color:ac,letterSpacing:2,textTransform:'uppercase',marginBottom:10,fontFamily:tpl.font}}>Contacto</div>
-            {contactBlock.data.tel&&<div style={{fontSize:13,color:tc,marginBottom:6,display:'flex',alignItems:'center',gap:8}}><span>📞</span>{contactBlock.data.tel}</div>}
-            {contactBlock.data.dir&&<div style={{fontSize:13,color:tc,marginBottom:6,display:'flex',alignItems:'center',gap:8}}><span>📍</span>{contactBlock.data.dir}</div>}
-            {contactBlock.data.hs&&<div style={{fontSize:13,color:tc,display:'flex',alignItems:'center',gap:8}}><span>🕐</span>{contactBlock.data.hs}</div>}
+          <div style={{margin:'0 14px 14px',padding:'12px 14px',background:`${accentColor}12`,borderRadius:10,border:`1px solid ${accentColor}30`}}>
+            <div style={{fontSize:9,fontWeight:700,color:accentColor,letterSpacing:1,marginBottom:8}}>CONTACTO</div>
+            {contactBlock.data.tel&&<div style={{fontSize:13,color:tc,marginBottom:4}}>📞 {contactBlock.data.tel}</div>}
+            {contactBlock.data.dir&&<div style={{fontSize:13,color:tc,marginBottom:4}}>📍 {contactBlock.data.dir}</div>}
+            {contactBlock.data.hs&&<div style={{fontSize:13,color:tc}}>🕐 {contactBlock.data.hs}</div>}
           </div>
         )}
-        {/* Pago block */}
+
+        {/* PAGO */}
         {pagoBlock?.on&&pagoBlock.data?.alias&&(
-          <div style={{margin:'12px 20px 0',padding:'16px',borderRadius:12,background:`${ac}12`,border:`1px solid ${ac}28`}}>
-            <div style={{fontSize:11,fontWeight:700,color:ac,letterSpacing:2,textTransform:'uppercase',marginBottom:10,fontFamily:tpl.font}}>{pagoBlock.data.lbl||'Pago'}</div>
-            <div style={{fontSize:13,color:tc,marginBottom:3}}><span style={{color:tm}}>Alias: </span><strong>{pagoBlock.data.alias}</strong></div>
-            {pagoBlock.data.titular&&<div style={{fontSize:12,color:tm}}>Titular: {pagoBlock.data.titular}</div>}
+          <div style={{margin:'0 14px 14px',padding:'14px',background:`${accentColor}10`,borderRadius:10,border:`1px solid ${accentColor}40`}}>
+            <div style={{fontSize:9,fontWeight:700,color:accentColor,letterSpacing:1,marginBottom:8}}>💳 {(pagoBlock.data.lbl||'PAGO').toUpperCase()}</div>
+            <div style={{fontFamily:"'Courier New',monospace",fontSize:16,fontWeight:700,color:tc,letterSpacing:.5}}>{pagoBlock.data.alias}</div>
+            {pagoBlock.data.titular&&<div style={{fontSize:11,color:`${tc}70`,marginTop:3}}>Titular: {pagoBlock.data.titular}</div>}
           </div>
         )}
-        {/* QR block */}
-        {qrBlock?.on&&qrBlock.data?.url&&(
-          <div style={{margin:'12px 20px 0',padding:'16px',borderRadius:12,background:`${ac}12`,border:`1px solid ${ac}28`,textAlign:'center'}}>
-            <div style={{fontSize:11,fontWeight:700,color:ac,letterSpacing:2,textTransform:'uppercase',marginBottom:10,fontFamily:tpl.font}}>{qrBlock.data.lbl||'QR'}</div>
-            <img src={`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(qrBlock.data.url)}`} alt="QR" style={{width:100,height:100,borderRadius:8}}/>
-          </div>
-        )}
+
+        {/* QR */}
+        {qrBlock?.on&&qrBlock.data?.url&&(()=>{
+          const qrBg=bgColor.replace('#',''), qrFg=accentColor.replace('#','');
+          return(
+            <div style={{display:'flex',flexDirection:'column',alignItems:'center',margin:'0 14px 18px',padding:'16px',background:`${accentColor}08`,borderRadius:10,border:`1px solid ${accentColor}25`}}>
+              <img src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&color=${qrFg}&bgcolor=${qrBg}&data=${encodeURIComponent(qrBlock.data.url)}`} alt="QR" style={{width:130,height:130,borderRadius:8}}/>
+              {qrBlock.data.lbl&&<div style={{fontSize:11,color:`${tc}70`,marginTop:8,textAlign:'center'}}>{qrBlock.data.lbl}</div>}
+            </div>
+          );
+        })()}
+
         <div style={{height:24}}/>
       </div>
     </div>
   );
 }
+
 
 
 export function ClientApp({onBack, local, cats, prods, vitrina=false, sinPedidos=false}) {
