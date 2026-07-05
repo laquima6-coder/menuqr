@@ -3085,6 +3085,14 @@ export function ClientApp({onBack, local, cats, prods, vitrina=false, sinPedidos
     </div>
   );
 
+  /* ── CARTA V3 VIEW (overrides both PC and mobile menu) */
+  if(view==="menu"){
+    const _cv3=local?.carta_v3;
+    if(_cv3?.templateId&&(local?.carta_publicada_en||{})[vitrina?'vitrina':'mesa']){
+      return <CartaV3ClientView cartaV3={_cv3} local={local} cats={cats} prods={translatedProds} cart={cart} add={add} rem={rem} cartCount={cartCount} setView={setView} effectiveVitrina={effectiveVitrina} lang={lang}/>;
+    }
+  }
+
   /* ── PC MENU VIEW — OPCION C: BISTRO CLASICO */
   if(view==="menu"&&pcMode){
     const ac=local.color||"#C9A84C";
@@ -3270,11 +3278,6 @@ export function ClientApp({onBack, local, cats, prods, vitrina=false, sinPedidos
     );
   }
   /* ── MENU VIEW — REDISEÑO MOBILE LIMPIO */
-  // Carta v3 override
-  const _cv3=local?.carta_v3;
-  if(_cv3?.templateId&&(local?.carta_publicada_en||{})[vitrina?'vitrina':'mesa']){
-    return <CartaV3ClientView cartaV3={_cv3} local={local} cats={cats} prods={translatedProds} cart={cart} add={add} rem={rem} cartCount={cartCount} setView={setView} effectiveVitrina={effectiveVitrina} lang={lang}/>;
-  }
   return (
     <div style={{maxWidth:430,margin:"0 auto",minHeight:"100vh",background:"#F6F6F6",display:"flex",flexDirection:"column",position:"relative",fontFamily:"'DM Sans',sans-serif"}}>
       <GS/>
