@@ -7,7 +7,7 @@ export default async function handler(req, res) {
   }
 
   const SUPABASE_URL = 'https://fwovflsaghnutysjyaus.supabase.co'
-  const SERVICE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ3b3ZmbHNhZ2hudXR5c2p5YXVzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDY2NzQ3NSwiZXhwIjoyMDk2MjQzNDc1fQ.EEtIVeMFSPt3xgIBy0aPm0O1IRPFOp7zpKZRSET7Otw'
+  const SERVICE_KEY  = process.env.SUPABASE_SERVICE_KEY
   const REST_ID      = '5b52b06e-7aa8-4cf1-be4c-3646611dacaa'
 
   try {
