@@ -1258,7 +1258,6 @@ function ScreenCartaDesigner({ prods, cats, local, setLocal }) {
   const [catConfigs,  setCatConfigs]  = useState(savedV2.catConfigs  || {});
   const [selCatId,    setSelCatId]    = useState(null);
   const [expandedPrev,setExpandedPrev]= useState({});
-  const autoCloseTimers = useRef({});
 
   function getCatCfg(id) { return catConfigs[id] || { formato:'rectangle', imagen:null, color:null }; }
   function updCatCfg(id, upd) { setCatConfigs(p => ({ ...p, [id]: { ...getCatCfg(id), ...upd } })); }
@@ -1301,16 +1300,7 @@ function ScreenCartaDesigner({ prods, cats, local, setLocal }) {
               const isExp = !!expandedPrev[cat.id];
               return (
                 <div key={cat.id} style={{ marginBottom:10 }}>
-                  <div onClick={() => {
-                    const nowOpen = !expandedPrev[cat.id];
-                    setExpandedPrev(p => ({...p,[cat.id]:nowOpen}));
-                    if (autoCloseTimers.current[cat.id]) clearTimeout(autoCloseTimers.current[cat.id]);
-                    if (nowOpen) {
-                      autoCloseTimers.current[cat.id] = setTimeout(() => {
-                        setExpandedPrev(p => ({...p,[cat.id]:false}));
-                      }, 2000);
-                    }
-                  }}
+                  <div onClick={() => setExpandedPrev(p => ({...p,[cat.id]:!p[cat.id]}))}
                     style={cdv2CardStyle(cfg.formato, cfg.imagen, accentColor, cfg.color)}>
                     {cdv2CatContent(cfg.formato, cat, isExp)}
                   </div>
