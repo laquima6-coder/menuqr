@@ -9571,6 +9571,7 @@ export default function MenuQR({
         activo: rest.activo !== false,
         logo_url: rest.logo_url || "",
         delivery_config: rest.delivery_config || null,
+        config: rest.config || {},          // keep nested for ScreenCartaDesigner
         ...(rest.config || {}),
       });
       const [categorias, productos] = await Promise.all([

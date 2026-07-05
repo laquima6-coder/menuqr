@@ -1034,6 +1034,8 @@ function ProductModal({ product, cats, restauranteId, onClose, onSave }) {
   const [uploading, setUploading] = useState(false);
   const [saving,    setSaving]    = useState(false);
   const [uploadErr, setUploadErr] = useState("");
+  const [showGallery, setShowGallery] = useState(false);
+  const [galleryCat, setGalleryCat] = useState("Carnes");
   const fileRef = useRef(null);
 
   const catLabel   = cats.find((c) => c.id === catId)?.label || "";
@@ -1145,15 +1147,60 @@ function ProductModal({ product, cats, restauranteId, onClose, onSave }) {
             )}
           </div>
           <input ref={fileRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleFile} />
-          <button
-            className="ap-btn ap-btn-ghost"
-            style={{ width: "100%" }}
-            disabled={uploading}
-            onClick={() => fileRef.current?.click()}
-          >
-            📷 {imagen ? "Cambiar foto" : "Subir foto"}
-          </button>
+          <div style={{ display: "flex", gap: 8, marginBottom: uploadErr ? 6 : 0 }}>
+            <button
+              className="ap-btn ap-btn-ghost"
+              style={{ flex: 1 }}
+              disabled={uploading}
+              onClick={() => fileRef.current?.click()}
+            >
+              📷 {uploading ? "Subiendo..." : imagen ? "Cambiar foto" : "Subir foto"}
+            </button>
+            <button
+              className="ap-btn ap-btn-ghost"
+              style={{ flex: 1 }}
+              onClick={() => setShowGallery(true)}
+            >
+              🖼️ Galería
+            </button>
+          </div>
           {uploadErr && <div style={{ fontSize: 11, color: "#e84040", marginTop: 6 }}>{uploadErr}</div>}
+          {/* Inline photo gallery */}
+          {showGallery && (() => {
+            const FPHOTOS = [
+              {cat:'Carnes', p:['https://images.unsplash.com/photo-1544025162-d76694265947?w=400&h=400&fit=crop','https://images.unsplash.com/photo-1558030006-b6298e1d1b05?w=400&h=400&fit=crop','https://images.unsplash.com/photo-1546964124-0cce460ebe24?w=400&h=400&fit=crop','https://images.unsplash.com/photo-1600891964092-4316c288032e?w=400&h=400&fit=crop','https://images.unsplash.com/photo-1529692236671-f1f6cf9683ba?w=400&h=400&fit=crop','https://images.unsplash.com/photo-1432139509613-5c4255815697?w=400&h=400&fit=crop']},
+              {cat:'Hamburguesas', p:['https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&h=400&fit=crop','https://images.unsplash.com/photo-1553979459-d1029eb29088?w=400&h=400&fit=crop','https://images.unsplash.com/photo-1572802419224-296b0aeee0d9?w=400&h=400&fit=crop','https://images.unsplash.com/photo-1594212699903-ec8a3eca50f5?w=400&h=400&fit=crop','https://images.unsplash.com/photo-1611483796693-5b048abae463?w=400&h=400&fit=crop','https://images.unsplash.com/photo-1609796741996-05ef11d3fa87?w=400&h=400&fit=crop']},
+              {cat:'Pizzas', p:['https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400&h=400&fit=crop','https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400&h=400&fit=crop','https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=400&h=400&fit=crop','https://images.unsplash.com/photo-1593560708920-61dd98c46a4e?w=400&h=400&fit=crop','https://images.unsplash.com/photo-1628840042765-356cda07504e?w=400&h=400&fit=crop','https://images.unsplash.com/photo-1506354666786-959d6d497f1a?w=400&h=400&fit=crop']},
+              {cat:'Pastas', p:['https://images.unsplash.com/photo-1555949258-eb67b1ef0ceb?w=400&h=400&fit=crop','https://images.unsplash.com/photo-1598514983318-2f5da945b4d9?w=400&h=400&fit=crop','https://images.unsplash.com/photo-1473093226795-af9932fe5856?w=400&h=400&fit=crop','https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=400&h=400&fit=crop','https://images.unsplash.com/photo-1563379926898-05f4575a45d8?w=400&h=400&fit=crop','https://images.unsplash.com/photo-1488477181946-6428a0291777?w=400&h=400&fit=crop']},
+              {cat:'Sushi', p:['https://images.unsplash.com/photo-1583623025817-d180a2221d0a?w=400&h=400&fit=crop','https://images.unsplash.com/photo-1617196034183-421b4040ed20?w=400&h=400&fit=crop','https://images.unsplash.com/photo-1559410545-0bdcd187e0a6?w=400&h=400&fit=crop','https://images.unsplash.com/photo-1562802378-063ec186a863?w=400&h=400&fit=crop','https://images.unsplash.com/photo-1611143669185-af224c5e3252?w=400&h=400&fit=crop','https://images.unsplash.com/photo-1617196034082-138e60fc86a3?w=400&h=400&fit=crop']},
+              {cat:'Postres', p:['https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=400&h=400&fit=crop','https://images.unsplash.com/photo-1551024601-bec78aea704b?w=400&h=400&fit=crop','https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=400&fit=crop','https://images.unsplash.com/photo-1624353365286-3f8d62daad51?w=400&h=400&fit=crop','https://images.unsplash.com/photo-1488477304112-4944851de03d?w=400&h=400&fit=crop','https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=400&h=400&fit=crop']},
+              {cat:'Bebidas', p:['https://images.unsplash.com/photo-1544145945-f90425340c7e?w=400&h=400&fit=crop','https://images.unsplash.com/photo-1497534446932-c925b458314e?w=400&h=400&fit=crop','https://images.unsplash.com/photo-1553361371-9b22f78e8b1d?w=400&h=400&fit=crop','https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=400&h=400&fit=crop','https://images.unsplash.com/photo-1571068316344-75bc76f77890?w=400&h=400&fit=crop','https://images.unsplash.com/photo-1525385133512-2f3bdd039054?w=400&h=400&fit=crop']},
+              {cat:'Ensaladas', p:['https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&h=400&fit=crop','https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400&h=400&fit=crop','https://images.unsplash.com/photo-1607532941433-304659e8198a?w=400&h=400&fit=crop','https://images.unsplash.com/photo-1543339308-43e59d6b73a6?w=400&h=400&fit=crop']},
+              {cat:'Empanadas', p:['https://images.unsplash.com/photo-1600335895229-6e75511892c8?w=400&h=400&fit=crop','https://images.unsplash.com/photo-1559847844-5315695dadae?w=400&h=400&fit=crop','https://images.unsplash.com/photo-1607450936127-34f18c05a0d1?w=400&h=400&fit=crop','https://images.unsplash.com/photo-1574484284002-952d92456975?w=400&h=400&fit=crop']},
+              {cat:'Pollo', p:['https://images.unsplash.com/photo-1598103442097-8b74394b95c7?w=400&h=400&fit=crop','https://images.unsplash.com/photo-1532550907401-a500c9a57435?w=400&h=400&fit=crop','https://images.unsplash.com/photo-1569058242567-93de6f36f8eb?w=400&h=400&fit=crop','https://images.unsplash.com/photo-1587593810167-a84920ea0781?w=400&h=400&fit=crop','https://images.unsplash.com/photo-1562967914-608f82629710?w=400&h=400&fit=crop']},
+            ];
+            const photos = FPHOTOS.find(g=>g.cat===galleryCat)?.p || [];
+            return (
+              <div style={{ marginTop: 10, background: "#111", borderRadius: 10, padding: 10, border: "1px solid rgba(255,255,255,.1)" }}>
+                <div style={{ display: "flex", gap: 6, overflowX: "auto", marginBottom: 10, paddingBottom: 4, WebkitOverflowScrolling: "touch" }}>
+                  {FPHOTOS.map(g => (
+                    <button key={g.cat} onClick={() => setGalleryCat(g.cat)}
+                      className={`ap-btn ap-btn-sm ${galleryCat===g.cat ? "ap-btn-gold" : "ap-btn-ghost"}`}
+                      style={{ flexShrink: 0, fontSize: 10 }}>{g.cat}</button>
+                  ))}
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 6 }}>
+                  {photos.map((url, i) => (
+                    <div key={i} onClick={() => { setImagen(url); setShowGallery(false); }}
+                      style={{ aspectRatio: "1/1", borderRadius: 8, overflow: "hidden", cursor: "pointer", border: imagen===url ? "2px solid #C9A84C" : "2px solid transparent" }}>
+                      <img src={url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                    </div>
+                  ))}
+                </div>
+                <button className="ap-btn ap-btn-ghost" style={{ width: "100%", marginTop: 8, fontSize: 11 }} onClick={() => setShowGallery(false)}>Cerrar galería</button>
+              </div>
+            );
+          })()}
         </div>
 
         {/* Fields */}
