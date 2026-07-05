@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import QRCodeLib from "qrcode";
 import ScreenCajaPOS from "./ScreenCajaPOS.jsx";
 import { supabase, getPedidos, updatePedidoStatus, subscribePedidos,
-         toggleProducto, upsertCategoria, upsertProducto, deleteProducto } from "../lib/supabase.js";
+         toggleProducto, upsertCategoria, deleteCategoria, upsertProducto, deleteProducto } from "../lib/supabase.js";
 
 /* Supabase storage (anon key, bucket product-images debe tener RLS off o policy permisiva) */
 const supabaseAdmin = supabase;
@@ -1625,43 +1625,127 @@ function ScreenDelivery({ pedidos, setPedidos, local }) {
 /* ══════════════════════════════════════════════════════════════
    SCREEN: CATEGORÍAS
 ══════════════════════════════════════════════════════════════ */
-function ScreenCategorias({ cats, prods }) {
+function ScreenCategorias({ cats, setCats, prods, local }) {
+  const [editCat,  setEditCat]  = React.useState(null); // null=closed | {}=new | cat=edit
+  const [label,    setLabel]    = React.useState("");
+  const [icon,     setIcon]     = React.useState("");
+  const [saving,   setSaving]   = React.useState(false);
+
+  function openNew() { setLabel(""); setIcon(""); setEditCat({}); }
+  function openEdit(c) { setLabel(c.label); setIcon(c.icon || ""); setEditCat(c); }
+
+  async function saveCat() {
+    if (!label.trim()) { alert("El nombre es obligatorio"); return; }
+    if (!local?.restauranteId) { alert("Sin restaurante. Recargá la página."); return; }
+    setSaving(true);
+    try {
+      const isNew = !editCat?.id;
+      const payload = { label: label.trim(), icon: icon.trim() || null, restaurante_id: local.restauranteId, activa: true };
+      if (!isNew) payload.id = editCat.id;
+      const saved = await upsertCategoria(payload);
+      if (!saved) throw new Error("Sin respuesta");
+      if (isNew) {
+        setCats(prev => [...prev, { id: saved.id, label: saved.label, icon: saved.icon, activa: true }]);
+      } else {
+        setCats(prev => prev.map(c => c.id === saved.id ? { ...c, label: saved.label, icon: saved.icon } : c));
+      }
+      setEditCat(null);
+    } catch (err) {
+      alert("Error: " + (err.message || JSON.stringify(err)));
+    } finally { setSaving(false); }
+  }
+
+  async function deleteCat(c) {
+    const count = prods.filter(p => p.cat === c.id).length;
+    const msg = count > 0
+      ? `"${c.label}" tiene ${count} producto(s). Si la eliminás, esos productos quedan sin categoría. ¿Confirmás?`
+      : `¿Eliminar la categoría "${c.label}"?`;
+    if (!confirm(msg)) return;
+    const ok = await deleteCategoria(c.id);
+    if (ok) setCats(prev => prev.filter(x => x.id !== c.id));
+  }
+
+  async function toggleCatVisible(c) {
+    const nv = c.activa === false ? true : false;
+    await supabase.from("categorias").update({ activa: nv }).eq("id", c.id);
+    setCats(prev => prev.map(x => x.id === c.id ? { ...x, activa: nv } : x));
+  }
+
   return (
     <div>
+      {/* Modal crear/editar */}
+      {editCat !== null && (
+        <div style={{ position:"fixed",inset:0,background:"rgba(0,0,0,.72)",backdropFilter:"blur(4px)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",padding:20 }}
+          onClick={() => setEditCat(null)}>
+          <div style={{ background:"#1e1e1e",border:"1px solid rgba(255,255,255,.12)",borderRadius:16,width:"100%",maxWidth:400,padding:24 }}
+            onClick={e => e.stopPropagation()}>
+            <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:18 }}>
+              <div style={{ fontSize:16,fontWeight:800 }}>{!editCat?.id ? "➕ Nueva categoría" : "✏️ Editar categoría"}</div>
+              <div style={{ cursor:"pointer",color:"rgba(255,255,255,.4)",fontSize:22 }} onClick={() => setEditCat(null)}>✕</div>
+            </div>
+            <div className="ap-form-group">
+              <label>Ícono (emoji)</label>
+              <input type="text" value={icon} maxLength={4} onChange={e => setIcon(e.target.value)} placeholder="🍕" style={{ width:80 }} />
+            </div>
+            <div className="ap-form-group">
+              <label>Nombre *</label>
+              <input type="text" value={label} onChange={e => setLabel(e.target.value)} placeholder="Ej: Pizzas, Bebidas, Postres" />
+            </div>
+            <div style={{ display:"flex",gap:10,marginTop:8 }}>
+              <button className="ap-btn ap-btn-ghost" style={{ flex:1 }} onClick={() => setEditCat(null)}>Cancelar</button>
+              <button className="ap-btn ap-btn-gold" style={{ flex:2 }} disabled={saving} onClick={saveCat}>
+                {saving ? "Guardando..." : !editCat?.id ? "✅ Crear" : "💾 Guardar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="ap-sec-hdr">
         <h2>Categorías</h2>
-        <button className="ap-btn ap-btn-gold">+ Nueva categoría</button>
+        <button className="ap-btn ap-btn-gold" onClick={openNew}>+ Nueva categoría</button>
       </div>
+
       <div className="ap-card">
-        <table>
-          <thead>
-            <tr>
-              <th>ICONO</th><th>NOMBRE</th><th>PRODUCTOS</th><th>VISIBLE</th><th>ORDEN</th><th>ACCIONES</th>
-            </tr>
-          </thead>
-          <tbody>
-            {cats.map((c) => {
-              const count = prods.filter((p) => p.cat === c.id).length;
-              return (
-                <tr key={c.id}>
-                  <td style={{ fontSize: 22 }}>{c.icon || "📁"}</td>
-                  <td>{c.label}</td>
-                  <td>{count} productos</td>
-                  <td>
-                    <span className={`ap-pill ${c.activa !== false ? "pill-listo" : "pill-entregado"}`}>
-                      {c.activa !== false ? "✓ Visible" : "Oculta"}
-                    </span>
-                  </td>
-                  <td>{c.orden ?? "—"}</td>
-                  <td><button className="ap-btn ap-btn-ghost ap-btn-sm">✏️ Editar</button></td>
-                </tr>
-              );
-            })}
-            {cats.length === 0 && (
-              <tr><td colSpan={6} style={{ textAlign: "center", padding: 32, color: "rgba(255,255,255,.35)" }}>Sin categorías</td></tr>
-            )}
-          </tbody>
-        </table>
+        {cats.length === 0 ? (
+          <div style={{ textAlign:"center",padding:40,color:"rgba(255,255,255,.35)" }}>
+            Sin categorías. Creá la primera para organizar tu carta.
+          </div>
+        ) : (
+          <table>
+            <thead>
+              <tr><th>ÍCONO</th><th>NOMBRE</th><th>PRODUCTOS</th><th>VISIBLE</th><th>ACCIONES</th></tr>
+            </thead>
+            <tbody>
+              {cats.map((c) => {
+                const count = prods.filter(p => p.cat === c.id).length;
+                return (
+                  <tr key={c.id}>
+                    <td style={{ fontSize:22 }}>{c.icon || "📁"}</td>
+                    <td style={{ fontWeight:600 }}>{c.label}</td>
+                    <td style={{ color:"rgba(255,255,255,.5)" }}>{count} producto{count!==1?"s":""}</td>
+                    <td>
+                      <div className={`ap-toggle ${c.activa !== false ? "on" : "off"}`}
+                        onClick={() => toggleCatVisible(c)}
+                        title={c.activa !== false ? "Visible — click para ocultar" : "Oculta — click para mostrar"} />
+                    </td>
+                    <td>
+                      <div style={{ display:"flex",gap:6 }}>
+                        <button className="ap-btn ap-btn-ghost ap-btn-sm" onClick={() => openEdit(c)}>✏️ Editar</button>
+                        <button
+                          className="ap-btn ap-btn-sm"
+                          style={{ background:"rgba(232,64,64,.12)",color:"#e84040",border:"1px solid rgba(232,64,64,.25)" }}
+                          onClick={() => deleteCat(c)}>
+                          🗑 Borrar
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   );
@@ -2640,7 +2724,7 @@ export default function AdminPanel({ local, setLocal, cats, setCats, prods, setP
     delivery:  <ScreenDelivery pedidos={pedidos} setPedidos={setPedidos} local={local} />,
     mesas:     <ScreenMesas local={local} pedidos={pedidos} />,
     carta:     <ScreenCarta prods={prods} setProds={setProds} cats={cats} local={local} setLocal={setLocal} />,
-    categorias:<ScreenCategorias cats={cats} prods={prods} />,
+    categorias:<ScreenCategorias cats={cats} setCats={setCats} prods={prods} local={local} />,
     stock:     <ScreenStock />,
     clientes:  <ScreenClientes />,
     caja:      <ScreenCajaPOS prods={prods} cats={cats} local={local} />,
