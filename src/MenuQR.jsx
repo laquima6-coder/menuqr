@@ -3088,7 +3088,10 @@ export function ClientApp({onBack, local, cats, prods, vitrina=false, sinPedidos
   /* ── CARTA V3 VIEW (overrides both PC and mobile menu) */
   if(view==="menu"){
     const _cv3=local?.carta_v3;
-    if(_cv3?.templateId&&(local?.carta_publicada_en||{})[vitrina?'vitrina':'mesa']){
+    const _pub=local?.carta_publicada_en||{};
+    const _surf=vitrina?'vitrina':'mesa';
+    // Show if templateId set AND surface not explicitly disabled
+    if(_cv3?.templateId&&_pub[_surf]!==false){
       return <CartaV3ClientView cartaV3={_cv3} local={local} cats={cats} prods={translatedProds} cart={cart} add={add} rem={rem} cartCount={cartCount} setView={setView} effectiveVitrina={effectiveVitrina} lang={lang}/>;
     }
   }
