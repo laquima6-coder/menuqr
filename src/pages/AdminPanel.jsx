@@ -1208,14 +1208,45 @@ function ProductModal({ product, cats, restauranteId, onClose, onSave }) {
 }
 
 /* ══════════════════════════════════════════════════════════════
-   SCREEN: CARTA DESIGNER v2 — category-based structured layout
+   SCREEN: CARTA DESIGNER v3 — Template Gallery + Block Builder
 ══════════════════════════════════════════════════════════════ */
-const CDV2_FONTS = [
+
+const CDV3_FONTS = [
   { label:'Sistema',  value:'system-ui, sans-serif' },
-  { label:'Serif',    value:'Georgia, "Times New Roman", serif' },
-  { label:'Moderna',  value:'"Helvetica Neue", Arial, sans-serif' },
-  { label:'Monospace',value:'"Courier New", Courier, monospace' },
+  { label:'Clásica',  value:"'Georgia', 'Times New Roman', serif" },
+  { label:'Moderna',  value:"'Helvetica Neue', Arial, sans-serif" },
+  { label:'Bold',     value:"'Arial Black', 'Impact', sans-serif" },
+  { label:'Mono',     value:"'Courier New', Courier, monospace" },
 ];
+
+const CDV3_TEMPLATES = [
+  {id:'pizzeria',   nombre:'Pizzería Napolitana',  cat:'Pizzería',    emoji:'🍕', dark:true,  bg:'#1a0500', ac:'#FF4500', font:"'Georgia', serif",                   catStyle:'rectangle'},
+  {id:'cafe',       nombre:'Café & Brunch',        cat:'Cafetería',   emoji:'☕', dark:true,  bg:'#2C1810', ac:'#D4956A', font:"'Georgia', serif",                   catStyle:'square'},
+  {id:'parrilla',   nombre:'Parrilla Argentina',   cat:'Parrilla',    emoji:'🥩', dark:true,  bg:'#0f0800', ac:'#C9A84C', font:'system-ui, sans-serif',              catStyle:'rectangle'},
+  {id:'sushi',      nombre:'Japonés & Sushi',      cat:'Japonés',     emoji:'🍣', dark:true,  bg:'#0a0a0f', ac:'#E8403E', font:"'Helvetica Neue', Arial, sans-serif", catStyle:'rectangle'},
+  {id:'helado',     nombre:'Heladería & Postres',  cat:'Heladería',   emoji:'🍦', dark:false, bg:'#f5f0ff', ac:'#9B59B6', font:'system-ui, sans-serif',              catStyle:'round'},
+  {id:'burger',     nombre:'Hamburguesería',       cat:'Hamburguesas',emoji:'🍔', dark:true,  bg:'#1a1200', ac:'#FFD700', font:"'Arial Black', sans-serif",          catStyle:'rectangle'},
+  {id:'bar',        nombre:'Bar & Coctelería',     cat:'Bar',         emoji:'🍸', dark:true,  bg:'#08001a', ac:'#8B5CF6', font:"'Georgia', serif",                   catStyle:'square'},
+  {id:'vegano',     nombre:'Vegano & Natural',     cat:'Vegano',      emoji:'🥗', dark:true,  bg:'#0a1a0a', ac:'#4CAF50', font:'system-ui, sans-serif',              catStyle:'rectangle'},
+  {id:'finedining', nombre:'Fine Dining',          cat:'Alta cocina', emoji:'🍽️', dark:true,  bg:'#080808', ac:'#C9A84C', font:"'Georgia', serif",                   catStyle:'rectangle'},
+  {id:'mariscos',   nombre:'Mariscos & Mar',       cat:'Mariscos',    emoji:'🦐', dark:true,  bg:'#001a2e', ac:'#00B4D8', font:'system-ui, sans-serif',              catStyle:'rectangle'},
+  {id:'arabe',      nombre:'Árabe & Oriental',     cat:'Árabe',       emoji:'🥙', dark:true,  bg:'#1a0f00', ac:'#F0C040', font:"'Georgia', serif",                   catStyle:'square'},
+  {id:'pasteleria', nombre:'Pastelería',           cat:'Pastelería',  emoji:'🎂', dark:false, bg:'#fff5f8', ac:'#E91E8C', font:'system-ui, sans-serif',              catStyle:'round'},
+  {id:'chino',      nombre:'Comida China',         cat:'Asiático',    emoji:'🍜', dark:true,  bg:'#1a0000', ac:'#FF3333', font:'system-ui, sans-serif',              catStyle:'rectangle'},
+  {id:'cerveceria', nombre:'Cervecería & Brew',    cat:'Cervecería',  emoji:'🍺', dark:true,  bg:'#100800', ac:'#E8A020', font:"'Arial Black', sans-serif",          catStyle:'rectangle'},
+  {id:'tacos',      nombre:'Tacos & Mexicano',     cat:'Mexicano',    emoji:'🌮', dark:true,  bg:'#1a0800', ac:'#FF5722', font:"'Arial Black', sans-serif",          catStyle:'square'},
+  {id:'desayunos',  nombre:'Desayunos & Merienda', cat:'Desayunos',   emoji:'🥞', dark:false, bg:'#fff8f0', ac:'#FF8C00', font:'system-ui, sans-serif',              catStyle:'square'},
+];
+
+function cdv3MakeDefaultBlocks(local) {
+  return [
+    {id:'hero',     type:'hero',       on:true,  data:{titulo:local?.nombre||'',sub:'',logo:''}},
+    {id:'cats',     type:'categorias', on:true,  data:{}},
+    {id:'contacto', type:'contacto',   on:false, data:{tel:local?.config?.telefono||'',dir:'',hs:''}},
+    {id:'pago',     type:'pago',       on:false, data:{alias:local?.config?.alias_mp||'',titular:'',lbl:'Transferencias / MP'}},
+    {id:'qr',       type:'qr',         on:false, data:{url:'',lbl:'Escanear para más info'}},
+  ];
+}
 
 /* ── card style helpers ── */
 function cdv2CardStyle(formato, imagen, accentColor, catColor) {
@@ -1246,30 +1277,52 @@ function cdv2CatContent(formato, cat, isExp) {
 }
 
 function ScreenCartaDesigner({ prods, cats, local, setLocal }) {
-  const savedV2     = local?.config?.carta_v2 || {};
+  const savedV3    = local?.config?.carta_v3 || {};
+  const savedV2    = local?.config?.carta_v2 || {};
+  const initView   = savedV3.templateId ? 'editor' : (savedV2.bgColor ? 'editor' : 'gallery');
+
+  const [view,        setView]        = useState(initView);
   const [tab,         setTab]         = useState('design');
   const [saving,      setSaving]      = useState(false);
   const [showPub,     setShowPub]     = useState(false);
+  const [filterCat,   setFilterCat]   = useState('Todos');
   const [pubCfg,      setPubCfg]      = useState(() => local?.config?.carta_publicada_en || {});
-  const [bgColor,     setBgColor]     = useState(savedV2.bgColor     || '#18181b');
-  const [accentColor, setAccentColor] = useState(savedV2.accentColor || '#C9A84C');
-  const [fontFamily,  setFontFamily]  = useState(savedV2.fontFamily  || 'system-ui, sans-serif');
-  const [titulo,      setTitulo]      = useState(savedV2.titulo      || (local?.nombre || ''));
-  const [catConfigs,  setCatConfigs]  = useState(savedV2.catConfigs  || {});
+  const [templateId,  setTemplateId]  = useState(savedV3.templateId  || null);
+  const [bgColor,     setBgColor]     = useState(savedV3.bgColor     || savedV2.bgColor     || '#18181b');
+  const [accentColor, setAccentColor] = useState(savedV3.accentColor || savedV2.accentColor || '#C9A84C');
+  const [fontFamily,  setFontFamily]  = useState(savedV3.fontFamily  || savedV2.fontFamily  || 'system-ui, sans-serif');
+  const [titulo,      setTitulo]      = useState(savedV3.titulo      || savedV2.titulo      || (local?.nombre || ''));
+  const [catConfigs,  setCatConfigs]  = useState(savedV3.catConfigs  || savedV2.catConfigs  || {});
+  const [blocks,      setBlocks]      = useState(() => savedV3.blocks || cdv3MakeDefaultBlocks(local));
   const [selCatId,    setSelCatId]    = useState(null);
+  const [selBlockId,  setSelBlockId]  = useState(null);
   const [expandedPrev,setExpandedPrev]= useState({});
 
-  function getCatCfg(id) { return catConfigs[id] || { formato:'rectangle', imagen:null, color:null }; }
-  function updCatCfg(id, upd) { setCatConfigs(p => ({ ...p, [id]: { ...getCatCfg(id), ...upd } })); }
+  const curTemplate = CDV3_TEMPLATES.find(t => t.id === templateId) || null;
+  const textColor   = curTemplate?.dark === false ? '#1a1a1a' : '#ffffff';
+  const activeCats  = (cats||[]).filter(c => c.activa !== false);
 
-  const activeCats = (cats||[]).filter(c => c.activa !== false);
+  function getCatCfg(id) { return catConfigs[id] || { formato: curTemplate?.catStyle || 'rectangle', imagen:null, color:null }; }
+  function updCatCfg(id, upd) { setCatConfigs(p => ({ ...p, [id]: { ...getCatCfg(id), ...upd } })); }
+  function updBlock(id, upd)  { setBlocks(p => p.map(b => b.id===id ? {...b,...upd} : b)); }
+  function updBlockData(id, upd) { setBlocks(p => p.map(b => b.id===id ? {...b,data:{...b.data,...upd}} : b)); }
+
+  function applyTemplate(t) {
+    setTemplateId(t.id);
+    setBgColor(t.bg);
+    setAccentColor(t.ac);
+    setFontFamily(t.font);
+    setCatConfigs({});
+    setView('editor');
+    setTab('preview');
+  }
 
   async function doSave(extraPub) {
     if (!local?.restauranteId) { alert('Sin restaurante'); return false; }
     setSaving(true);
     try {
-      const carta_v2 = { bgColor, accentColor, fontFamily, titulo, catConfigs };
-      const cfg = { ...(local?.config||{}), carta_v2, carta_publicada_en: extraPub !== undefined ? extraPub : pubCfg };
+      const carta_v3 = { templateId, bgColor, accentColor, fontFamily, titulo, catConfigs, blocks };
+      const cfg = { ...(local?.config||{}), carta_v3, carta_publicada_en: extraPub !== undefined ? extraPub : pubCfg };
       const { error } = await supabase.from('restaurantes').update({ config: cfg }).eq('id', local.restauranteId);
       if (error) throw error;
       if (setLocal) setLocal(p => ({ ...p, config: cfg }));
@@ -1278,153 +1331,351 @@ function ScreenCartaDesigner({ prods, cats, local, setLocal }) {
     finally { setSaving(false); }
   }
 
-  /* ── PREVIEW ── */
-  function Preview() {
+  const CTX_LIST = [
+    {key:'mesa',    label:'🪑 Mesa (QR)',       desc:'El cliente escanea el QR de la mesa'},
+    {key:'vitrina', label:'📺 Vitrina',          desc:'Pantalla en el local'},
+    {key:'caja',    label:'💰 Caja',             desc:'Visible en el mostrador'},
+    {key:'delivery',label:'🛵 Delivery/Retiro',  desc:'Pedidos desde el celular'},
+  ];
+
+  /* ── GALLERY VIEW ── */
+  function GalleryView() {
+    const filtered = filterCat==='Todos' ? CDV3_TEMPLATES : CDV3_TEMPLATES.filter(t => t.cat===filterCat);
+    const catTabs  = ['Todos','Pizzería','Cafetería','Parrilla','Japonés','Bar','Vegano','Heladería','Hamburguesas','Alta cocina','Mariscos','Árabe','Pastelería','Cervecería','Mexicano','Desayunos','Asiático'];
     return (
-      <div style={{ overflowY:'auto', flex:1, display:'flex', justifyContent:'center', padding:'4px 0 16px', overscrollBehavior:'contain', WebkitOverflowScrolling:'touch' }}>
-        <div style={{ width:'100%', maxWidth:430, background:bgColor, borderRadius:14, fontFamily, overflow:'hidden', boxShadow:'0 6px 32px rgba(0,0,0,.55)', minHeight:500 }}>
-          {titulo && (
-            <div style={{ padding:'18px 16px 8px', textAlign:'center', fontSize:21, fontWeight:800, color:accentColor, letterSpacing:.4 }}>
-              {titulo}
-            </div>
-          )}
-          <div style={{ padding:'8px 12px 24px' }}>
-            {activeCats.length===0 && (
-              <div style={{ textAlign:'center',color:'rgba(255,255,255,.15)',padding:'40px 0',fontSize:12,lineHeight:1.7 }}>
-                No hay categorías activas.<br/>Agregá en el sidebar → Categorías.
-              </div>
-            )}
-            {activeCats.map(cat => {
-              const cfg = getCatCfg(cat.id);
-              const catProds = (prods||[]).filter(p => (p.cat||p.categoria_id)===cat.id && p.active!==false && p.activo!==false);
-              const isExp = !!expandedPrev[cat.id];
+      <div style={{ display:'flex', flexDirection:'column', height:'100%', overflow:'hidden' }}>
+        <div style={{ flexShrink:0, paddingBottom:10 }}>
+          <div style={{ fontSize:11, color:'rgba(255,255,255,.4)', marginBottom:10 }}>
+            {CDV3_TEMPLATES.length} plantillas — elegí una base y personalizala al 100%
+          </div>
+          <div style={{ display:'flex', gap:5, overflowX:'auto', paddingBottom:4, WebkitOverflowScrolling:'touch' }}>
+            {catTabs.map(c=>(
+              <button key={c} onClick={()=>setFilterCat(c)}
+                className={`ap-btn ap-btn-sm ${filterCat===c?'ap-btn-gold':'ap-btn-ghost'}`}
+                style={{ flexShrink:0, fontSize:10, padding:'4px 10px' }}>{c}</button>
+            ))}
+          </div>
+        </div>
+        <div style={{ flex:1, overflowY:'auto', overscrollBehavior:'contain', WebkitOverflowScrolling:'touch' }}>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:10, paddingBottom:20 }}>
+            {filtered.map(t => {
+              const isActive = t.id === templateId;
+              const tc = t.dark===false ? '#1a1a1a' : '#ffffff';
               return (
-                <div key={cat.id} style={{ marginBottom:10 }}>
-                  <div onClick={() => setExpandedPrev(p => ({...p,[cat.id]:!p[cat.id]}))}
-                    style={cdv2CardStyle(cfg.formato, cfg.imagen, accentColor, cfg.color)}>
-                    {cdv2CatContent(cfg.formato, cat, isExp)}
-                  </div>
-                  {isExp && (
-                    <div style={{ paddingTop:8 }}>
-                      {catProds.length===0
-                        ? <div style={{ fontSize:11,color:'rgba(255,255,255,.2)',textAlign:'center',padding:'10px 0' }}>Sin productos</div>
-                        : <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(142px,1fr))', gap:8 }}>
-                            {catProds.map(p => (
-                              <div key={p.id} style={{ background:'rgba(255,255,255,.05)', borderRadius:10, overflow:'hidden', border:`1px solid ${(cfg.color||accentColor)}26` }}>
-                                <img src={p.imagen||getPlaceholder(cat.label)} alt="" style={{ width:'100%',height:105,objectFit:'cover',display:'block' }} />
-                                <div style={{ padding:'7px 9px' }}>
-                                  <div style={{ fontSize:12,fontWeight:700,color:'#fff',lineHeight:1.3 }}>{p.name||p.nombre}</div>
-                                  <div style={{ fontSize:13,fontWeight:800,color:cfg.color||accentColor,margin:'3px 0 2px' }}>{ARS(p.price??p.precio)}</div>
-                                  {(p.desc||p.descripcion) && (
-                                    <div style={{ fontSize:10,color:'rgba(255,255,255,.38)',lineHeight:1.4 }}>
-                                      {((p.desc||p.descripcion)||'').slice(0,65)}{((p.desc||p.descripcion)||'').length>65?'…':''}
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                      }
+                <div key={t.id} onClick={()=>applyTemplate(t)}
+                  style={{ borderRadius:12, overflow:'hidden', cursor:'pointer',
+                    border: isActive ? `2px solid ${t.ac}` : '2px solid transparent',
+                    boxShadow: isActive ? `0 0 0 2px ${t.ac}55` : '0 2px 14px rgba(0,0,0,.45)',
+                    position:'relative', transition:'transform .1s' }}>
+                  {/* Mini preview */}
+                  <div style={{ background:t.bg, padding:'10px 10px 8px' }}>
+                    <div style={{ display:'flex',alignItems:'center',gap:5,marginBottom:8 }}>
+                      <span style={{ fontSize:16 }}>{t.emoji}</span>
+                      <div>
+                        <div style={{ fontSize:9,fontWeight:800,color:t.ac,fontFamily:t.font,lineHeight:1.2,whiteSpace:'nowrap',overflow:'hidden',maxWidth:90 }}>{t.nombre}</div>
+                        <div style={{ fontSize:7,color:tc+'55' }}>{t.cat}</div>
+                      </div>
                     </div>
+                    {[0,1,2].map(i=>(
+                      <div key={i} style={{ display:'flex',alignItems:'center',gap:5,marginBottom:5 }}>
+                        <div style={{ width:t.catStyle==='round'?20:28, height:t.catStyle==='round'?20:14,
+                          borderRadius:t.catStyle==='round'?'50%':t.catStyle==='square'?5:3,
+                          background:`${t.ac}${i===0?'cc':i===1?'77':'33'}`,flexShrink:0 }} />
+                        <div style={{ flex:1,height:6,borderRadius:2,background:tc+(i===0?'25':i===1?'15':'0d') }} />
+                      </div>
+                    ))}
+                    <div style={{ display:'flex',gap:3,marginTop:7 }}>
+                      {[0.55,0.35,0.2].map((op,i)=>(
+                        <div key={i} style={{ flex:1,height:28,borderRadius:4,background:`${t.ac}${Math.round(op*255).toString(16).padStart(2,'0')}`,border:`1px solid ${t.ac}44` }} />
+                      ))}
+                    </div>
+                  </div>
+                  <div style={{ background:t.ac, padding:'5px 8px', display:'flex',alignItems:'center',justifyContent:'space-between' }}>
+                    <span style={{ fontSize:8,fontWeight:800,color:t.dark===false?'rgba(0,0,0,.8)':'rgba(0,0,0,.7)' }}>{t.cat.toUpperCase()}</span>
+                    <span style={{ fontSize:9,color:t.dark===false?'rgba(0,0,0,.55)':'rgba(0,0,0,.5)' }}>Usar →</span>
+                  </div>
+                  {isActive && (
+                    <div style={{ position:'absolute',top:6,right:6,background:t.ac,borderRadius:'50%',width:18,height:18,fontSize:10,display:'flex',alignItems:'center',justifyContent:'center',fontWeight:800,color:'#000',boxShadow:'0 1px 4px rgba(0,0,0,.4)' }}>✓</div>
                   )}
                 </div>
               );
             })}
           </div>
         </div>
+        {templateId && (
+          <div style={{ flexShrink:0,paddingTop:10,borderTop:'1px solid rgba(255,255,255,.07)' }}>
+            <button className="ap-btn ap-btn-gold" style={{ width:'100%' }} onClick={()=>setView('editor')}>
+              ✏️ Continuar editando — {curTemplate?.emoji} {curTemplate?.nombre}
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  /* ── PREVIEW ── */
+  function Preview() {
+    return (
+      <div style={{ overflowY:'auto', flex:1, display:'flex', justifyContent:'center', padding:'4px 0 20px', overscrollBehavior:'contain', WebkitOverflowScrolling:'touch' }}>
+        <div style={{ width:'100%', maxWidth:430, background:bgColor, borderRadius:14, fontFamily, overflow:'hidden', boxShadow:'0 6px 32px rgba(0,0,0,.55)', minHeight:500 }}>
+
+          {/* HERO */}
+          {(() => {
+            const b = blocks.find(x=>x.type==='hero');
+            if (!b||!b.on) return null;
+            return (
+              <div style={{ padding:'22px 16px 12px', textAlign:'center', borderBottom:`1px solid ${accentColor}22` }}>
+                {b.data.logo && <img src={b.data.logo} alt="" style={{ width:72,height:72,borderRadius:'50%',objectFit:'cover',margin:'0 auto 10px',display:'block',border:`2px solid ${accentColor}` }} onError={e=>e.target.style.display='none'} />}
+                <div style={{ fontSize:24,fontWeight:800,color:accentColor,letterSpacing:.3 }}>{b.data.titulo||titulo||local?.nombre||'Mi Restaurante'}</div>
+                {b.data.sub && <div style={{ fontSize:12,color:textColor+'80',marginTop:5,lineHeight:1.5 }}>{b.data.sub}</div>}
+                {curTemplate && <div style={{ fontSize:9,color:accentColor+'55',marginTop:8,letterSpacing:1 }}>{curTemplate.emoji} {curTemplate.cat.toUpperCase()}</div>}
+              </div>
+            );
+          })()}
+
+          {/* CATEGORÍAS */}
+          {(() => {
+            const b = blocks.find(x=>x.type==='categorias');
+            if (!b||!b.on) return null;
+            return (
+              <div style={{ padding:'10px 12px 16px' }}>
+                {activeCats.length===0
+                  ? <div style={{ textAlign:'center',color:'rgba(255,255,255,.15)',padding:'30px 0',fontSize:11 }}>Sin categorías activas</div>
+                  : activeCats.map(cat => {
+                      const cfg = getCatCfg(cat.id);
+                      const catProds = (prods||[]).filter(p => (p.cat||p.categoria_id)===cat.id && p.active!==false && p.activo!==false);
+                      const isExp = !!expandedPrev[cat.id];
+                      return (
+                        <div key={cat.id} style={{ marginBottom:10 }}>
+                          <div onClick={()=>setExpandedPrev(p=>({...p,[cat.id]:!p[cat.id]}))}
+                            style={cdv2CardStyle(cfg.formato,cfg.imagen,accentColor,cfg.color)}>
+                            {cdv2CatContent(cfg.formato,cat,isExp)}
+                          </div>
+                          {isExp && (
+                            <div style={{ paddingTop:8 }}>
+                              {catProds.length===0
+                                ? <div style={{ fontSize:11,color:'rgba(255,255,255,.2)',textAlign:'center',padding:'8px 0' }}>Sin productos en esta categoría</div>
+                                : <div style={{ display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(138px,1fr))',gap:8 }}>
+                                    {catProds.map(p=>(
+                                      <div key={p.id} style={{ background:'rgba(255,255,255,.05)',borderRadius:10,overflow:'hidden',border:`1px solid ${(cfg.color||accentColor)}26` }}>
+                                        <img src={p.imagen||getPlaceholder(cat.label)} alt="" style={{ width:'100%',height:100,objectFit:'cover',display:'block' }} />
+                                        <div style={{ padding:'7px 9px' }}>
+                                          <div style={{ fontSize:12,fontWeight:700,color:textColor,lineHeight:1.3 }}>{p.name||p.nombre}</div>
+                                          <div style={{ fontSize:13,fontWeight:800,color:cfg.color||accentColor,margin:'3px 0 2px' }}>{ARS(p.price??p.precio)}</div>
+                                          {(p.desc||p.descripcion)&&<div style={{ fontSize:10,color:textColor+'55',lineHeight:1.4 }}>{((p.desc||p.descripcion)||'').slice(0,60)}{((p.desc||p.descripcion)||'').length>60?'…':''}</div>}
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                              }
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })
+                }
+              </div>
+            );
+          })()}
+
+          {/* CONTACTO */}
+          {(() => {
+            const b = blocks.find(x=>x.type==='contacto');
+            if (!b||!b.on||(!b.data.tel&&!b.data.dir&&!b.data.hs)) return null;
+            return (
+              <div style={{ margin:'0 12px 12px',padding:'12px 14px',background:`${accentColor}12`,borderRadius:10,border:`1px solid ${accentColor}30` }}>
+                <div style={{ fontSize:9,fontWeight:700,color:accentColor,letterSpacing:1,marginBottom:8 }}>CONTACTO</div>
+                {b.data.tel&&<div style={{ fontSize:13,color:textColor,marginBottom:4 }}>📞 {b.data.tel}</div>}
+                {b.data.dir&&<div style={{ fontSize:13,color:textColor,marginBottom:4 }}>📍 {b.data.dir}</div>}
+                {b.data.hs &&<div style={{ fontSize:13,color:textColor }}>🕐 {b.data.hs}</div>}
+              </div>
+            );
+          })()}
+
+          {/* PAGO */}
+          {(() => {
+            const b = blocks.find(x=>x.type==='pago');
+            if (!b||!b.on||!b.data.alias) return null;
+            return (
+              <div style={{ margin:'0 12px 12px',padding:'14px',background:`${accentColor}10`,borderRadius:10,border:`1px solid ${accentColor}40` }}>
+                <div style={{ fontSize:9,fontWeight:700,color:accentColor,letterSpacing:1,marginBottom:8 }}>💳 {(b.data.lbl||'PAGO').toUpperCase()}</div>
+                <div style={{ fontFamily:"'Courier New',monospace",fontSize:16,fontWeight:700,color:textColor,letterSpacing:.5 }}>{b.data.alias}</div>
+                {b.data.titular&&<div style={{ fontSize:11,color:textColor+'70',marginTop:3 }}>Titular: {b.data.titular}</div>}
+              </div>
+            );
+          })()}
+
+          {/* QR */}
+          {(() => {
+            const b = blocks.find(x=>x.type==='qr');
+            if (!b||!b.on||!b.data.url) return null;
+            const qrBg = bgColor.replace('#','');
+            const qrFg = accentColor.replace('#','');
+            return (
+              <div style={{ display:'flex',flexDirection:'column',alignItems:'center',margin:'0 12px 16px',padding:'16px',background:`${accentColor}08`,borderRadius:10,border:`1px solid ${accentColor}25` }}>
+                <img src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&color=${qrFg}&bgcolor=${qrBg}&data=${encodeURIComponent(b.data.url)}`}
+                  alt="QR" style={{ width:130,height:130,borderRadius:8 }} />
+                {b.data.lbl&&<div style={{ fontSize:11,color:textColor+'70',marginTop:8,textAlign:'center' }}>{b.data.lbl}</div>}
+              </div>
+            );
+          })()}
+
+        </div>
       </div>
     );
   }
 
   /* ── DESIGN PANEL ── */
+  const BLOCK_META = {
+    hero:      { icon:'🏷️', label:'Encabezado',              desc:'Nombre, logo y eslogan' },
+    categorias:{ icon:'📋', label:'Categorías & Productos',   desc:'Tu menú completo' },
+    contacto:  { icon:'📞', label:'Contacto',                 desc:'Teléfono, dirección, horarios' },
+    pago:      { icon:'💳', label:'Alias / Pago',             desc:'Alias MP, MODO u otro medio' },
+    qr:        { icon:'🔳', label:'QR personalizado',         desc:'QR con cualquier enlace' },
+  };
+
   function DesignPanel() {
     return (
       <div style={{ display:'flex', flexDirection:'column', height:'100%', overflow:'hidden' }}>
-        {/* Global */}
         <div style={{ padding:'12px', borderBottom:'1px solid rgba(255,255,255,.07)', flexShrink:0 }}>
-          <div style={{ fontSize:9,fontWeight:700,color:'rgba(255,255,255,.3)',letterSpacing:1,marginBottom:10,textTransform:'uppercase' }}>Diseño global</div>
+          <div style={{ fontSize:9,fontWeight:700,color:'rgba(255,255,255,.3)',letterSpacing:1,marginBottom:10,textTransform:'uppercase' }}>Colores y tipografía</div>
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:10 }}>
-            <label style={{ fontSize:10, display:'flex', alignItems:'center', justifyContent:'space-between', padding:'6px 8px', background:'rgba(255,255,255,.04)', borderRadius:7, gap:6 }}>
+            <label style={{ fontSize:10,display:'flex',alignItems:'center',justifyContent:'space-between',padding:'6px 8px',background:'rgba(255,255,255,.04)',borderRadius:7,gap:6 }}>
               🎨 Fondo
               <input type="color" value={bgColor} onChange={e=>setBgColor(e.target.value)}
                 style={{ width:30,height:22,border:'1px solid rgba(255,255,255,.1)',background:'none',cursor:'pointer',borderRadius:4 }} />
             </label>
-            <label style={{ fontSize:10, display:'flex', alignItems:'center', justifyContent:'space-between', padding:'6px 8px', background:'rgba(255,255,255,.04)', borderRadius:7, gap:6 }}>
+            <label style={{ fontSize:10,display:'flex',alignItems:'center',justifyContent:'space-between',padding:'6px 8px',background:'rgba(255,255,255,.04)',borderRadius:7,gap:6 }}>
               ✨ Acento
               <input type="color" value={accentColor} onChange={e=>setAccentColor(e.target.value)}
                 style={{ width:30,height:22,border:'1px solid rgba(255,255,255,.1)',background:'none',cursor:'pointer',borderRadius:4 }} />
             </label>
           </div>
-          <div style={{ marginBottom:8 }}>
-            <label style={{ fontSize:10, display:'block', marginBottom:4, color:'rgba(255,255,255,.45)' }}>Tipografía</label>
+          <div>
+            <label style={{ fontSize:10,display:'block',marginBottom:4,color:'rgba(255,255,255,.45)' }}>Tipografía</label>
             <select value={fontFamily} onChange={e=>setFontFamily(e.target.value)}
               style={{ background:'#2a2a2a',color:'var(--text)',border:'1px solid var(--border)',borderRadius:7,padding:'5px 8px',width:'100%',fontSize:11 }}>
-              {CDV2_FONTS.map(f=><option key={f.value} value={f.value}>{f.label}</option>)}
+              {CDV3_FONTS.map(f=><option key={f.value} value={f.value}>{f.label}</option>)}
             </select>
           </div>
-          <div>
-            <label style={{ fontSize:10, display:'block', marginBottom:4, color:'rgba(255,255,255,.45)' }}>Título del menú</label>
-            <input value={titulo} onChange={e=>setTitulo(e.target.value)} placeholder="Ej: La Bella Napoli"
-              style={{ background:'#2a2a2a',color:'var(--text)',border:'1px solid var(--border)',borderRadius:7,padding:'6px 8px',width:'100%',fontSize:11,boxSizing:'border-box' }} />
-          </div>
         </div>
-        {/* Categories */}
+
         <div style={{ flex:1, overflowY:'auto', padding:'12px', overscrollBehavior:'contain', WebkitOverflowScrolling:'touch' }}>
+
+          {/* BLOCKS */}
           <div style={{ fontSize:9,fontWeight:700,color:'rgba(255,255,255,.3)',letterSpacing:1,marginBottom:10,textTransform:'uppercase' }}>
-            Categorías ({activeCats.length})
+            Bloques ({blocks.filter(b=>b.on).length} activos)
           </div>
-          {activeCats.length===0 && (
-            <div style={{ fontSize:11,color:'rgba(255,255,255,.18)',textAlign:'center',padding:'20px 0',lineHeight:1.7 }}>
-              Sin categorías activas.<br/>Usá el sidebar → Categorías.
-            </div>
-          )}
-          {activeCats.map(cat => {
-            const cfg = getCatCfg(cat.id);
-            const isSel = selCatId===cat.id;
-            const cnt = (prods||[]).filter(p=>(p.cat||p.categoria_id)===cat.id && p.active!==false).length;
+          {blocks.map(b => {
+            const meta  = BLOCK_META[b.type] || {icon:'📄',label:b.type,desc:''};
+            const isSel = selBlockId===b.id;
             return (
-              <div key={cat.id} style={{ marginBottom:8, borderRadius:9, overflow:'hidden', border:`1px solid ${isSel?'rgba(232,160,32,.35)':'rgba(255,255,255,.07)'}` }}>
+              <div key={b.id} style={{ marginBottom:8,borderRadius:9,overflow:'hidden',border:`1px solid ${b.on?(isSel?'rgba(201,168,76,.4)':'rgba(255,255,255,.1)'):'rgba(255,255,255,.05)'}` }}>
+                <div style={{ display:'flex',alignItems:'center',gap:8,padding:'9px 11px',background:b.on?'rgba(255,255,255,.03)':'transparent',cursor:'pointer' }}
+                  onClick={()=>{ if(b.type!=='categorias'&&b.on) setSelBlockId(isSel?null:b.id); }}>
+                  <span style={{ fontSize:16 }}>{meta.icon}</span>
+                  <div style={{ flex:1,minWidth:0 }}>
+                    <div style={{ fontSize:12,fontWeight:600,color:b.on?'var(--text)':'rgba(255,255,255,.3)' }}>{meta.label}</div>
+                    <div style={{ fontSize:9,color:'rgba(255,255,255,.22)',marginTop:1 }}>{meta.desc}</div>
+                  </div>
+                  {b.type!=='categorias'&&b.on&&<span style={{ fontSize:10,color:'rgba(255,255,255,.28)',flexShrink:0 }}>{isSel?'▲':'✏️'}</span>}
+                  <div className={`ap-switch ${b.on?'on':'off'}`} onClick={e=>{ e.stopPropagation(); updBlock(b.id,{on:!b.on}); }} style={{ flexShrink:0 }} />
+                </div>
+                {isSel&&b.on&&b.type==='hero'&&(
+                  <div style={{ padding:'10px 12px',background:'rgba(0,0,0,.25)',borderTop:'1px solid rgba(255,255,255,.05)' }}>
+                    {[{k:'titulo',l:'Nombre',p:'La Bella Napoli'},{k:'sub',l:'Descripción / eslogan',p:'Pizzas artesanales...'},{k:'logo',l:'Logo (URL imagen)',p:'https://...'}].map(f=>(
+                      <div key={f.k} style={{ marginBottom:10 }}>
+                        <label style={{ fontSize:10,color:'rgba(255,255,255,.38)',display:'block',marginBottom:4 }}>{f.l}</label>
+                        <input value={b.data[f.k]||''} onChange={e=>updBlockData(b.id,{[f.k]:e.target.value})} placeholder={f.p}
+                          style={{ background:'#1a1a1a',color:'var(--text)',border:'1px solid var(--border)',borderRadius:6,padding:'6px 8px',width:'100%',fontSize:11,boxSizing:'border-box' }} />
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {isSel&&b.on&&b.type==='contacto'&&(
+                  <div style={{ padding:'10px 12px',background:'rgba(0,0,0,.25)',borderTop:'1px solid rgba(255,255,255,.05)' }}>
+                    {[{k:'tel',l:'Teléfono / WhatsApp',p:'+54 9 11 0000-0000'},{k:'dir',l:'Dirección',p:'Av. Corrientes 1234'},{k:'hs',l:'Horarios',p:'Lun-Vie 12-23 hs'}].map(f=>(
+                      <div key={f.k} style={{ marginBottom:10 }}>
+                        <label style={{ fontSize:10,color:'rgba(255,255,255,.38)',display:'block',marginBottom:4 }}>{f.l}</label>
+                        <input value={b.data[f.k]||''} onChange={e=>updBlockData(b.id,{[f.k]:e.target.value})} placeholder={f.p}
+                          style={{ background:'#1a1a1a',color:'var(--text)',border:'1px solid var(--border)',borderRadius:6,padding:'6px 8px',width:'100%',fontSize:11,boxSizing:'border-box' }} />
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {isSel&&b.on&&b.type==='pago'&&(
+                  <div style={{ padding:'10px 12px',background:'rgba(0,0,0,.25)',borderTop:'1px solid rgba(255,255,255,.05)' }}>
+                    {[{k:'alias',l:'Alias de transferencia',p:'mirestaurante.mp'},{k:'titular',l:'Nombre del titular',p:'Juan García'},{k:'lbl',l:'Etiqueta',p:'Transferencias / MP'}].map(f=>(
+                      <div key={f.k} style={{ marginBottom:10 }}>
+                        <label style={{ fontSize:10,color:'rgba(255,255,255,.38)',display:'block',marginBottom:4 }}>{f.l}</label>
+                        <input value={b.data[f.k]||''} onChange={e=>updBlockData(b.id,{[f.k]:e.target.value})} placeholder={f.p}
+                          style={{ background:'#1a1a1a',color:'var(--text)',border:'1px solid var(--border)',borderRadius:6,padding:'6px 8px',width:'100%',fontSize:11,boxSizing:'border-box' }} />
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {isSel&&b.on&&b.type==='qr'&&(
+                  <div style={{ padding:'10px 12px',background:'rgba(0,0,0,.25)',borderTop:'1px solid rgba(255,255,255,.05)' }}>
+                    {[{k:'url',l:'URL del QR',p:'https://instagram.com/mirestaurante'},{k:'lbl',l:'Texto debajo del QR',p:'Seguinos en Instagram'}].map(f=>(
+                      <div key={f.k} style={{ marginBottom:10 }}>
+                        <label style={{ fontSize:10,color:'rgba(255,255,255,.38)',display:'block',marginBottom:4 }}>{f.l}</label>
+                        <input value={b.data[f.k]||''} onChange={e=>updBlockData(b.id,{[f.k]:e.target.value})} placeholder={f.p}
+                          style={{ background:'#1a1a1a',color:'var(--text)',border:'1px solid var(--border)',borderRadius:6,padding:'6px 8px',width:'100%',fontSize:11,boxSizing:'border-box' }} />
+                      </div>
+                    ))}
+                    {b.data.url&&<img src={`https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(b.data.url)}`} alt="QR" style={{ width:80,height:80,borderRadius:6,marginTop:4 }} />}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+
+          {/* CATEGORIES */}
+          <div style={{ fontSize:9,fontWeight:700,color:'rgba(255,255,255,.3)',letterSpacing:1,marginBottom:10,marginTop:18,textTransform:'uppercase' }}>
+            Estilo por categoría
+          </div>
+          {activeCats.length===0&&<div style={{ fontSize:11,color:'rgba(255,255,255,.18)',textAlign:'center',padding:'14px 0' }}>Sin categorías activas</div>}
+          {activeCats.map(cat => {
+            const cfg  = getCatCfg(cat.id);
+            const isSel= selCatId===cat.id;
+            const cnt  = (prods||[]).filter(p=>(p.cat||p.categoria_id)===cat.id&&p.active!==false).length;
+            return (
+              <div key={cat.id} style={{ marginBottom:8,borderRadius:9,overflow:'hidden',border:`1px solid ${isSel?'rgba(201,168,76,.35)':'rgba(255,255,255,.07)'}` }}>
                 <div onClick={()=>setSelCatId(isSel?null:cat.id)}
-                  style={{ display:'flex',alignItems:'center',gap:8,padding:'9px 11px',cursor:'pointer',background:isSel?'rgba(232,160,32,.08)':'rgba(255,255,255,.03)' }}>
+                  style={{ display:'flex',alignItems:'center',gap:8,padding:'9px 11px',cursor:'pointer',background:isSel?'rgba(201,168,76,.08)':'rgba(255,255,255,.03)' }}>
                   <span style={{ fontSize:18 }}>{cat.emoji}</span>
                   <div style={{ flex:1,minWidth:0 }}>
                     <div style={{ fontSize:12,fontWeight:600,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' }}>{cat.label}</div>
-                    <div style={{ fontSize:9,color:'rgba(255,255,255,.3)',marginTop:1 }}>{cnt} productos · {cfg.formato}</div>
+                    <div style={{ fontSize:9,color:'rgba(255,255,255,.28)',marginTop:1 }}>{cnt} prods · {cfg.formato}</div>
                   </div>
-                  <span style={{ fontSize:10,color:'rgba(255,255,255,.3)',flexShrink:0 }}>{isSel?'▲':'▼'}</span>
+                  <span style={{ fontSize:10,color:'rgba(255,255,255,.28)',flexShrink:0 }}>{isSel?'▲':'▼'}</span>
                 </div>
-                {isSel && (
+                {isSel&&(
                   <div style={{ padding:'12px',background:'rgba(0,0,0,.25)',borderTop:'1px solid rgba(255,255,255,.05)' }}>
-                    <div style={{ fontSize:10,color:'rgba(255,255,255,.4)',marginBottom:8 }}>Formato de la categoría</div>
+                    <div style={{ fontSize:10,color:'rgba(255,255,255,.4)',marginBottom:8 }}>Formato</div>
                     <div style={{ display:'flex',gap:6,marginBottom:14 }}>
-                      {[
-                        {key:'rectangle', icon:'▬', label:'Rectángulo'},
-                        {key:'square',    icon:'■', label:'Cuadrado'},
-                        {key:'round',     icon:'●', label:'Círculo'},
-                      ].map(fmt=>(
+                      {[{key:'rectangle',icon:'▬',label:'Rectángulo'},{key:'square',icon:'■',label:'Cuadrado'},{key:'round',icon:'●',label:'Círculo'}].map(fmt=>(
                         <button key={fmt.key} onClick={()=>updCatCfg(cat.id,{formato:fmt.key})}
                           className={`ap-btn ap-btn-sm ${cfg.formato===fmt.key?'ap-btn-gold':'ap-btn-ghost'}`}
                           style={{ flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:3,padding:'7px 0',fontSize:10 }}>
-                          <span style={{ fontSize:17 }}>{fmt.icon}</span>
-                          {fmt.label}
+                          <span style={{ fontSize:17 }}>{fmt.icon}</span>{fmt.label}
                         </button>
                       ))}
                     </div>
                     <div style={{ marginBottom:14 }}>
-                      <div style={{ fontSize:10,color:'rgba(255,255,255,.38)',marginBottom:8 }}>Color de la tarjeta</div>
+                      <div style={{ fontSize:10,color:'rgba(255,255,255,.38)',marginBottom:8 }}>Color</div>
                       <div style={{ display:'flex',gap:6,flexWrap:'wrap' }}>
                         {['#C9A84C','#e84040','#3ecf6e','#3e8cff','#a855f7','#f5c518','#ec4899','#ff6b35','#00bcd4','#ffffff'].map(c=>(
                           <div key={c} onClick={()=>updCatCfg(cat.id,{color:cfg.color===c?null:c})}
                             style={{ width:26,height:26,borderRadius:'50%',background:c,cursor:'pointer',
-                              outline:cfg.color===c?`3px solid #fff`:'2px solid transparent',
-                              outlineOffset:1,transition:'outline .12s',flexShrink:0 }} />
+                              outline:cfg.color===c?'3px solid #fff':'2px solid transparent',outlineOffset:1,transition:'outline .12s',flexShrink:0 }} />
                         ))}
-                        <label title="Color personalizado" style={{ width:26,height:26,borderRadius:'50%',overflow:'hidden',cursor:'pointer',border:'1px solid rgba(255,255,255,.2)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:12 }}>
+                        <label style={{ width:26,height:26,borderRadius:'50%',overflow:'hidden',cursor:'pointer',border:'1px solid rgba(255,255,255,.2)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:12 }}>
                           🎨
                           <input type="color" value={cfg.color||'#ffffff'} onChange={e=>updCatCfg(cat.id,{color:e.target.value})}
                             style={{ position:'absolute',opacity:0,width:1,height:1 }} />
                         </label>
-                        {cfg.color && <div onClick={()=>updCatCfg(cat.id,{color:null})} title="Sin color" style={{ width:26,height:26,borderRadius:'50%',border:'1px dashed rgba(255,255,255,.25)',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,color:'rgba(255,255,255,.4)' }}>✕</div>}
+                        {cfg.color&&<div onClick={()=>updCatCfg(cat.id,{color:null})} style={{ width:26,height:26,borderRadius:'50%',border:'1px dashed rgba(255,255,255,.25)',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,color:'rgba(255,255,255,.4)' }}>✕</div>}
                       </div>
                     </div>
                     <div>
@@ -1432,11 +1683,7 @@ function ScreenCartaDesigner({ prods, cats, local, setLocal }) {
                       <input value={cfg.imagen||''} onChange={e=>updCatCfg(cat.id,{imagen:e.target.value||null})}
                         placeholder="https://imagen.com/portada.jpg"
                         style={{ background:'#1a1a1a',color:'var(--text)',border:'1px solid var(--border)',borderRadius:6,padding:'6px 8px',width:'100%',fontSize:10,boxSizing:'border-box' }} />
-                      {cfg.imagen && (
-                        <div style={{ marginTop:7,borderRadius:7,overflow:'hidden',height:52 }}>
-                          <img src={cfg.imagen} alt="" style={{ width:'100%',height:'100%',objectFit:'cover' }} onError={e=>e.target.style.display='none'} />
-                        </div>
-                      )}
+                      {cfg.imagen&&<div style={{ marginTop:7,borderRadius:7,overflow:'hidden',height:52 }}><img src={cfg.imagen} alt="" style={{ width:'100%',height:'100%',objectFit:'cover' }} onError={e=>e.target.style.display='none'} /></div>}
                     </div>
                   </div>
                 )}
@@ -1448,18 +1695,11 @@ function ScreenCartaDesigner({ prods, cats, local, setLocal }) {
     );
   }
 
-  const CTX_LIST = [
-    {key:'mesa',    label:'🪑 Mesa (QR)',        desc:'El cliente escanea el QR de la mesa'},
-    {key:'vitrina', label:'📺 Vitrina',           desc:'Pantalla en el local (modo display)'},
-    {key:'caja',    label:'💰 Caja',              desc:'Visible en el mostrador'},
-    {key:'delivery',label:'🛵 Delivery/Retiro',   desc:'Pedidos desde el celular'},
-  ];
-
   return (
     <div style={{ display:'flex', flexDirection:'column', height:'calc(100vh - 110px)', minHeight:520, margin:'-4px -4px 0' }}>
 
-      {/* ── Publish modal ── */}
-      {showPub && (
+      {/* Publish modal */}
+      {showPub&&(
         <div style={{ position:'fixed',inset:0,background:'rgba(0,0,0,.76)',backdropFilter:'blur(4px)',zIndex:9999,display:'flex',alignItems:'center',justifyContent:'center',padding:16 }}
           onClick={()=>setShowPub(false)}>
           <div style={{ background:'#1c1c1c',border:'1px solid rgba(255,255,255,.12)',borderRadius:16,width:'100%',maxWidth:380,padding:24 }} onClick={e=>e.stopPropagation()}>
@@ -1485,32 +1725,49 @@ function ScreenCartaDesigner({ prods, cats, local, setLocal }) {
         </div>
       )}
 
-      {/* ── Header ── */}
+      {/* Header */}
       <div className="ap-sec-hdr" style={{ flexShrink:0, flexWrap:'wrap', gap:8 }}>
-        <h2>🎨 Carta</h2>
-        <div className="ap-sec-hdr-r" style={{ gap:6 }}>
-          <button className="ap-btn ap-btn-ghost ap-btn-sm" onClick={()=>setShowPub(true)}>📲 Publicar</button>
-          <button className="ap-btn ap-btn-gold ap-btn-sm" onClick={async()=>{ const ok=await doSave(); if(ok)alert('✅ Guardado'); }} disabled={saving}>
-            {saving?'…':'💾 Guardar'}
-          </button>
+        <div style={{ display:'flex',alignItems:'center',gap:8,minWidth:0 }}>
+          {view==='editor'&&<button className="ap-btn ap-btn-ghost ap-btn-sm" onClick={()=>setView('gallery')}>← Plantillas</button>}
+          <h2 style={{ margin:0 }}>{view==='gallery'?'🎭 Plantillas':'🎨 Carta'}</h2>
+          {view==='editor'&&curTemplate&&(
+            <span style={{ fontSize:10,background:'rgba(201,168,76,.15)',color:'#C9A84C',padding:'2px 8px',borderRadius:10,border:'1px solid rgba(201,168,76,.3)',whiteSpace:'nowrap' }}>
+              {curTemplate.emoji} {curTemplate.nombre}
+            </span>
+          )}
         </div>
+        {view==='editor'&&(
+          <div className="ap-sec-hdr-r" style={{ gap:6 }}>
+            <button className="ap-btn ap-btn-ghost ap-btn-sm" onClick={()=>setShowPub(true)}>📲 Publicar</button>
+            <button className="ap-btn ap-btn-gold ap-btn-sm" onClick={async()=>{ const ok=await doSave(); if(ok)alert('✅ Guardado'); }} disabled={saving}>
+              {saving?'…':'💾 Guardar'}
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* ── Tab bar ── */}
-      <div style={{ display:'flex', gap:4, marginBottom:10, flexShrink:0 }}>
-        {[{key:'design',label:'⚙️ Diseño'},{key:'preview',label:'👁️ Vista previa'}].map(t=>(
-          <button key={t.key} className={`ap-btn ap-btn-sm ${tab===t.key?'ap-btn-gold':'ap-btn-ghost'}`}
-            style={{ flex:1 }} onClick={()=>setTab(t.key)}>{t.label}</button>
-        ))}
-      </div>
+      {/* Tab bar (editor only) */}
+      {view==='editor'&&(
+        <div style={{ display:'flex', gap:4, marginBottom:10, flexShrink:0 }}>
+          {[{key:'design',label:'⚙️ Diseño'},{key:'preview',label:'👁️ Vista previa'}].map(t=>(
+            <button key={t.key} className={`ap-btn ap-btn-sm ${tab===t.key?'ap-btn-gold':'ap-btn-ghost'}`}
+              style={{ flex:1 }} onClick={()=>setTab(t.key)}>{t.label}</button>
+          ))}
+        </div>
+      )}
 
-      {/* ── Content (never overlapping) ── */}
+      {/* Content */}
       <div style={{ flex:1, overflow:'hidden', minHeight:0, display:'flex', flexDirection:'column' }}>
-        {tab==='design' ? DesignPanel() : Preview()}
+        {view==='gallery'
+          ? GalleryView()
+          : (tab==='design' ? DesignPanel() : Preview())
+        }
       </div>
     </div>
   );
 }
+
+
 
 /* ══════════════════════════════════════════════════════════════
    SCREEN: CARTA / PRODUCTOS
