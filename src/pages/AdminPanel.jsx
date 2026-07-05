@@ -1068,9 +1068,12 @@ function ProductModal({ product, cats, restauranteId, onClose, onSave }) {
     try {
       const payload = {
         nombre:         nombre.trim(),
+        name:           nombre.trim(),   // columna legacy NOT NULL
         precio:         Number(precio),
+        price:          Number(precio),  // columna legacy
         descripcion:    desc,
         activo,
+        active:         activo,          // columna legacy
         imagen:         imagen || null,
         categoria_id:   catId  || null,
         restaurante_id: restauranteId,
