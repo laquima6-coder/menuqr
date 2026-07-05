@@ -1208,123 +1208,65 @@ function ProductModal({ product, cats, restauranteId, onClose, onSave }) {
 }
 
 /* ══════════════════════════════════════════════════════════════
-   SCREEN: CARTA DESIGNER (canvas visual)
+   SCREEN: CARTA DESIGNER v2 — category-based structured layout
 ══════════════════════════════════════════════════════════════ */
-const CD_FONTS = [
+const CDV2_FONTS = [
   { label:'Sistema',  value:'system-ui, sans-serif' },
   { label:'Serif',    value:'Georgia, "Times New Roman", serif' },
   { label:'Moderna',  value:'"Helvetica Neue", Arial, sans-serif' },
   { label:'Monospace',value:'"Courier New", Courier, monospace' },
 ];
-const CD_EMOJIS = ['🍕','🍔','🥗','🍝','🥩','🍷','🍻','🥂','🍰','🎂','☕','🍵','🌮','🥘','🍜','🫕',
-  '⭐','❤️','✨','🔥','👨‍🍳','🍽️','🥄','🍴','💫','🌟','🎉','📍','📌','🌿','🦐','🦑','🥦','🫑','🥕',
-  '🫐','🍓','🥭','🍑','🍋','🫒','🧄','🧅','🥔','🌽'];
-const CD_BORDERS = [
-  { label:'Sin marco', value:'none' },
-  { label:'Blanco',    value:'2px solid #ffffff' },
-  { label:'Dorado',    value:'2px solid #C9A84C' },
-  { label:'Punteado',  value:'2px dashed #ffffff' },
-  { label:'Doble ✨',  value:'3px double #C9A84C' },
-  { label:'Sutil',     value:'2px solid rgba(255,255,255,.22)' },
-];
 
-let _cd_eid = 1000;
-function cdNid() { return ++_cd_eid; }
+/* ── card style helpers ── */
+function cdv2CardStyle(formato, imagen, accentColor) {
+  const imgBg = imagen
+    ? `linear-gradient(rgba(0,0,0,.42),rgba(0,0,0,.62)), url(${imagen}) center/cover no-repeat`
+    : `linear-gradient(135deg, ${accentColor}28, ${accentColor}08)`;
+  const base = { background:imgBg, border:`1px solid ${accentColor}33`, cursor:'pointer', transition:'opacity .12s', userSelect:'none' };
+  if (formato==='rectangle') return { ...base, borderRadius:10, minHeight:72, display:'flex', alignItems:'center', padding:'0 16px' };
+  if (formato==='square')    return { ...base, borderRadius:10, aspectRatio:'1/1', maxWidth:160, margin:'0 auto', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:12 };
+  /* round */                return { ...base, borderRadius:'50%', width:110, height:110, margin:'0 auto', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:8 };
+}
+function cdv2CatContent(formato, cat, isExp) {
+  if (formato==='rectangle') {
+    return (<div style={{ display:'flex',alignItems:'center',gap:12,width:'100%' }}>
+      <span style={{ fontSize:24 }}>{cat.emoji}</span>
+      <span style={{ fontSize:16,fontWeight:700,color:'#fff',flex:1,textShadow:'0 1px 6px rgba(0,0,0,.8)' }}>{cat.label}</span>
+      <span style={{ fontSize:13,color:'rgba(255,255,255,.45)',transition:'transform .15s',display:'inline-block',transform:isExp?'rotate(180deg)':'none' }}>▼</span>
+    </div>);
+  }
+  return (<>
+    <span style={{ fontSize:formato==='round'?30:26, marginBottom:4 }}>{cat.emoji}</span>
+    <span style={{ fontSize:formato==='round'?11:13, fontWeight:700, color:'#fff', textAlign:'center', textShadow:'0 1px 5px rgba(0,0,0,.8)', lineHeight:1.2 }}>{cat.label}</span>
+    {formato==='square' && <span style={{ fontSize:10,color:'rgba(255,255,255,.35)',marginTop:4 }}>{isExp?'▲':'▼'}</span>}
+  </>);
+}
 
 function ScreenCartaDesigner({ prods, cats, local, setLocal }) {
-  const initEls = () => {
-    try { const d = local?.config?.carta_design; return Array.isArray(d) ? d : []; }
-    catch { return []; }
-  };
-  const [els,      setEls]      = useState(initEls);
-  const [sel,      setSel]      = useState(null);
-  const [bg,       setBg]       = useState(local?.config?.color_fondo_carta || '#18181b');
-  const [drag,     setDrag]     = useState(null);
-  const [editTxt,  setEditTxt]  = useState(null);
-  const [showEmoji,setShowEmoji]= useState(false);
-  const [showPub,  setShowPub]  = useState(false);
-  const [pubCfg,   setPubCfg]   = useState(() => local?.config?.carta_publicada_en || {});
-  const [saving,   setSaving]   = useState(false);
-  const cvsRef = useRef(null);
-  const selEl  = els.find(e => e.id === sel) || null;
+  const savedV2     = local?.config?.carta_v2 || {};
+  const [tab,         setTab]         = useState('design');
+  const [saving,      setSaving]      = useState(false);
+  const [showPub,     setShowPub]     = useState(false);
+  const [pubCfg,      setPubCfg]      = useState(() => local?.config?.carta_publicada_en || {});
+  const [bgColor,     setBgColor]     = useState(savedV2.bgColor     || '#18181b');
+  const [accentColor, setAccentColor] = useState(savedV2.accentColor || '#C9A84C');
+  const [fontFamily,  setFontFamily]  = useState(savedV2.fontFamily  || 'system-ui, sans-serif');
+  const [titulo,      setTitulo]      = useState(savedV2.titulo      || (local?.nombre || ''));
+  const [catConfigs,  setCatConfigs]  = useState(savedV2.catConfigs  || {});
+  const [selCatId,    setSelCatId]    = useState(null);
+  const [expandedPrev,setExpandedPrev]= useState({});
 
-  function addProd(p) {
-    const offset = (els.length % 6) * 24;
-    setEls(prev => [...prev, {
-      id: cdNid(), type:'product',
-      x: 20 + offset, y: 20 + offset,
-      w: 150, h: 200,
-      prod: { id:p.id, name: p.name||p.nombre||'', price: p.price??p.precio??0, desc: p.desc||p.descripcion||'', imagen: p.imagen||null, cat: p.cat||p.categoria_id||null },
-      s: { borderRadius:12, border:'none', bgAlpha:0.80, showPrice:true, showDesc:false, fontFamily:'system-ui, sans-serif' },
-    }]);
-  }
+  function getCatCfg(id) { return catConfigs[id] || { formato:'rectangle', imagen:null }; }
+  function updCatCfg(id, upd) { setCatConfigs(p => ({ ...p, [id]: { ...getCatCfg(id), ...upd } })); }
 
-  function addTxt() {
-    setEls(prev => [...prev, {
-      id: cdNid(), type:'text',
-      x: 50, y: 50, w: 220, h: 50,
-      content:'Título del menú',
-      s:{ fontSize:28, fontFamily:'system-ui, sans-serif', color:'#ffffff', fontWeight:'700', textAlign:'center', border:'none', borderRadius:0 },
-    }]);
-  }
+  const activeCats = (cats||[]).filter(c => c.activa !== false);
 
-  function addEmoji(em) {
-    setEls(prev => [...prev, {
-      id: cdNid(), type:'emoji',
-      x: 80, y: 80, w: 64, h: 64,
-      content: em,
-      s:{ fontSize:46, border:'none', borderRadius:0 },
-    }]);
-    setShowEmoji(false);
-  }
-
-  /* ── drag (mouse) ── */
-  function onMD(e, id) {
-    if (editTxt === id) return;
-    e.stopPropagation(); e.preventDefault();
-    const el = els.find(x => x.id === id);
-    if (!el) return;
-    setDrag({ id, sx: e.clientX, sy: e.clientY, ox: el.x, oy: el.y });
-    setSel(id);
-  }
-  function onMM(e) {
-    if (!drag) return;
-    const dx = e.clientX - drag.sx, dy = e.clientY - drag.sy;
-    setEls(p => p.map(el => el.id===drag.id ? {...el, x:Math.max(0,drag.ox+dx), y:Math.max(0,drag.oy+dy)} : el));
-  }
-  function onMU() { setDrag(null); }
-
-  /* ── drag (touch) ── */
-  function onTD(e, id) {
-    if (editTxt === id) return;
-    e.stopPropagation();
-    const t = e.touches[0];
-    const el = els.find(x => x.id === id);
-    if (!el) return;
-    setDrag({ id, sx: t.clientX, sy: t.clientY, ox: el.x, oy: el.y });
-    setSel(id);
-  }
-  function onTM(e) {
-    if (!drag) return;
-    e.preventDefault();
-    const t = e.touches[0];
-    const dx = t.clientX - drag.sx, dy = t.clientY - drag.sy;
-    setEls(p => p.map(el => el.id===drag.id ? {...el, x:Math.max(0,drag.ox+dx), y:Math.max(0,drag.oy+dy)} : el));
-  }
-
-  function updS(upd)  { setEls(p => p.map(el => el.id===sel ? {...el, s:{...el.s,...upd}} : el)); }
-  function updC(c)    { setEls(p => p.map(el => el.id===sel ? {...el, content:c} : el)); }
-  function delSel()   { setEls(p => p.filter(el => el.id!==sel)); setSel(null); }
-  function bringFwd() { setEls(p => { const i=p.findIndex(e=>e.id===sel); if(i<p.length-1){const n=[...p];[n[i],n[i+1]]=[n[i+1],n[i]];return n;}return p; }); }
-  function sendBck()  { setEls(p => { const i=p.findIndex(e=>e.id===sel); if(i>0){const n=[...p];[n[i],n[i-1]]=[n[i-1],n[i]];return n;}return p; }); }
-
-  function getCatName(catId) { return (cats||[]).find(c=>c.id===catId)?.label||''; }
-
-  async function doSave(extra={}) {
+  async function doSave(extraPub) {
     if (!local?.restauranteId) { alert('Sin restaurante'); return false; }
     setSaving(true);
     try {
-      const cfg = { ...(local?.config||{}), carta_design: els, color_fondo_carta: bg, carta_publicada_en: {...pubCfg,...extra} };
+      const carta_v2 = { bgColor, accentColor, fontFamily, titulo, catConfigs };
+      const cfg = { ...(local?.config||{}), carta_v2, carta_publicada_en: extraPub !== undefined ? extraPub : pubCfg };
       const { error } = await supabase.from('restaurantes').update({ config: cfg }).eq('id', local.restauranteId);
       if (error) throw error;
       if (setLocal) setLocal(p => ({ ...p, config: cfg }));
@@ -1333,181 +1275,53 @@ function ScreenCartaDesigner({ prods, cats, local, setLocal }) {
     finally { setSaving(false); }
   }
 
-  const CTX_LIST = [
-    { key:'mesa',    label:'🪑 Mesa (QR)',    desc:'Cuando el cliente escanea en su mesa' },
-    { key:'vitrina', label:'📺 Vitrina',       desc:'Pantalla en el local (modo display)' },
-    { key:'caja',    label:'💰 Caja',          desc:'Visible en el mostrador/caja' },
-    { key:'delivery',label:'🛵 Delivery/Retiro',desc:'Pedidos desde el celular' },
-  ];
-
-  const prodList = (prods||[]).filter(p => p.active !== false && p.activo !== false);
-
-  return (
-    <div style={{ display:'flex', flexDirection:'column', height:'calc(100vh - 110px)', minHeight:520 }}>
-
-      {/* ── Publish modal ── */}
-      {showPub && (
-        <div style={{ position:'fixed',inset:0,background:'rgba(0,0,0,.75)',backdropFilter:'blur(4px)',zIndex:9999,display:'flex',alignItems:'center',justifyContent:'center',padding:16 }}
-          onClick={()=>setShowPub(false)}>
-          <div style={{ background:'#1c1c1c',border:'1px solid rgba(255,255,255,.12)',borderRadius:16,width:'100%',maxWidth:380,padding:24 }} onClick={e=>e.stopPropagation()}>
-            <div style={{ fontSize:16,fontWeight:800,marginBottom:6 }}>📲 Publicar carta en...</div>
-            <div style={{ fontSize:11,color:'rgba(255,255,255,.4)',marginBottom:18 }}>Elegí en qué contextos se muestra este diseño</div>
-            {CTX_LIST.map(ctx=>(
-              <div key={ctx.key} style={{ display:'flex',alignItems:'center',justifyContent:'space-between',padding:'11px 0',borderBottom:'1px solid rgba(255,255,255,.06)' }}>
-                <div>
-                  <div style={{ fontSize:13,fontWeight:600 }}>{ctx.label}</div>
-                  <div style={{ fontSize:10,color:'rgba(255,255,255,.32)',marginTop:2 }}>{ctx.desc}</div>
-                </div>
-                <div className={`ap-switch ${pubCfg[ctx.key]?'on':'off'}`}
-                  onClick={()=>setPubCfg(p=>({...p,[ctx.key]:!p[ctx.key]}))} />
-              </div>
-            ))}
-            <div style={{ display:'flex',gap:10,marginTop:20 }}>
-              <button className="ap-btn ap-btn-ghost" style={{ flex:1 }} onClick={()=>setShowPub(false)}>Cancelar</button>
-              <button className="ap-btn ap-btn-gold" style={{ flex:2 }} disabled={saving}
-                onClick={async()=>{ const ok=await doSave(pubCfg); if(ok){setShowPub(false); alert('✅ Guardado y publicado');} }}>
-                {saving?'Guardando...':'💾 Guardar y publicar'}
-              </button>
+  /* ── PREVIEW ── */
+  function Preview() {
+    return (
+      <div style={{ overflowY:'auto', flex:1, display:'flex', justifyContent:'center', padding:'4px 0 16px' }}>
+        <div style={{ width:'100%', maxWidth:430, background:bgColor, borderRadius:14, fontFamily, overflow:'hidden', boxShadow:'0 6px 32px rgba(0,0,0,.55)', minHeight:500 }}>
+          {titulo && (
+            <div style={{ padding:'18px 16px 8px', textAlign:'center', fontSize:21, fontWeight:800, color:accentColor, letterSpacing:.4 }}>
+              {titulo}
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── Header toolbar ── */}
-      <div className="ap-sec-hdr" style={{ flexShrink:0, flexWrap:'wrap', gap:8, rowGap:8 }}>
-        <h2>🎨 Diseñador de Carta</h2>
-        <div className="ap-sec-hdr-r" style={{ flexWrap:'wrap', gap:6 }}>
-          <label style={{ display:'flex',alignItems:'center',gap:5,fontSize:11,color:'rgba(255,255,255,.5)',cursor:'pointer',whiteSpace:'nowrap' }}>
-            🖌️
-            <input type="color" value={bg} onChange={e=>setBg(e.target.value)} title="Fondo"
-              style={{ width:26,height:26,border:'1px solid rgba(255,255,255,.15)',background:'none',cursor:'pointer',borderRadius:5,padding:1 }} />
-          </label>
-          <button className="ap-btn ap-btn-ghost ap-btn-sm" onClick={addTxt}>T+ Texto</button>
-          <div style={{ position:'relative' }}>
-            <button className="ap-btn ap-btn-ghost ap-btn-sm" onClick={()=>setShowEmoji(p=>!p)}>😊</button>
-            {showEmoji && (
-              <div style={{ position:'absolute',top:'110%',right:0,zIndex:300,background:'#1e1e1e',border:'1px solid rgba(255,255,255,.12)',borderRadius:12,padding:10,display:'flex',flexWrap:'wrap',gap:3,width:260,boxShadow:'0 8px 32px rgba(0,0,0,.6)',maxHeight:200,overflowY:'auto' }}>
-                {CD_EMOJIS.map(em=>(
-                  <span key={em} onClick={()=>addEmoji(em)} title={em}
-                    style={{ fontSize:22,cursor:'pointer',padding:'4px 5px',borderRadius:6,transition:'background .1s' }}
-                    onMouseEnter={e=>e.currentTarget.style.background='rgba(255,255,255,.1)'}
-                    onMouseLeave={e=>e.currentTarget.style.background=''}>{em}</span>
-                ))}
+          )}
+          <div style={{ padding:'8px 12px 24px' }}>
+            {activeCats.length===0 && (
+              <div style={{ textAlign:'center',color:'rgba(255,255,255,.15)',padding:'40px 0',fontSize:12,lineHeight:1.7 }}>
+                No hay categorías activas.<br/>Agregá en el sidebar → Categorías.
               </div>
             )}
-          </div>
-          <button className="ap-btn ap-btn-ghost ap-btn-sm" onClick={()=>{ if(window.confirm('¿Limpiar canvas?')){setEls([]);setSel(null);} }} title="Limpiar">🗑</button>
-          <button className="ap-btn ap-btn-ghost ap-btn-sm" onClick={()=>setShowPub(true)}>📲 Publicar</button>
-          <button className="ap-btn ap-btn-gold ap-btn-sm" onClick={async()=>{ const ok=await doSave(); if(ok)alert('✅ Diseño guardado'); }} disabled={saving}>
-            {saving?'…':'💾 Guardar'}
-          </button>
-        </div>
-      </div>
-
-      <div style={{ display:'flex', flex:1, gap:8, overflow:'hidden', minHeight:0 }}>
-
-        {/* ── Product picker ── */}
-        <div style={{ width:130,flexShrink:0,overflowY:'auto',background:'rgba(255,255,255,.03)',border:'1px solid rgba(255,255,255,.07)',borderRadius:10,padding:8,display:'flex',flexDirection:'column',gap:2 }}>
-          <div style={{ fontSize:9,fontWeight:700,color:'rgba(255,255,255,.3)',letterSpacing:1,marginBottom:6,textTransform:'uppercase' }}>Productos</div>
-          {prodList.length===0 && <div style={{ fontSize:9,color:'rgba(255,255,255,.2)',textAlign:'center',padding:8 }}>Sin productos</div>}
-          {prodList.map(p => {
-            const catName = getCatName(p.cat||p.categoria_id);
-            return (
-              <div key={p.id} onClick={()=>addProd(p)} title={'Agregar: '+(p.name||p.nombre)}
-                style={{ cursor:'pointer',borderRadius:7,overflow:'hidden',border:'1px solid rgba(255,255,255,.06)',transition:'border-color .15s',marginBottom:4 }}
-                onMouseEnter={e=>e.currentTarget.style.borderColor='#e8a020'}
-                onMouseLeave={e=>e.currentTarget.style.borderColor='rgba(255,255,255,.06)'}>
-                <div style={{ height:52,overflow:'hidden',background:'#2a2a2a' }}>
-                  <img src={p.imagen||getPlaceholder(catName)} alt="" style={{ width:'100%',height:'100%',objectFit:'cover' }} />
-                </div>
-                <div style={{ padding:'3px 5px' }}>
-                  <div style={{ fontSize:9,fontWeight:600,color:'var(--text)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' }}>{p.name||p.nombre}</div>
-                  <div style={{ fontSize:9,color:'#e8a020',fontWeight:700 }}>{ARS(p.price??p.precio)}</div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* ── Canvas ── */}
-        <div style={{ flex:1,overflow:'auto',borderRadius:10,background:'rgba(0,0,0,.2)' }}>
-          <div
-            ref={cvsRef}
-            onMouseMove={onMM} onMouseUp={onMU} onMouseLeave={onMU}
-            onTouchMove={onTM} onTouchEnd={onMU}
-            onClick={()=>{ setSel(null); setEditTxt(null); setShowEmoji(false); }}
-            style={{ position:'relative',width:'100%',minWidth:360,minHeight:600,background:bg,borderRadius:10,
-              border:`2px dashed rgba(255,255,255,${els.length?'.04':'.12'})`,overflow:'hidden',
-              cursor:drag?'grabbing':'default',touchAction:'none' }}>
-            {els.length===0 && (
-              <div style={{ position:'absolute',inset:0,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:10,pointerEvents:'none' }}>
-                <div style={{ fontSize:52,opacity:.08 }}>🍽️</div>
-                <div style={{ fontSize:12,color:'rgba(255,255,255,.1)',fontWeight:600,textAlign:'center',lineHeight:1.6 }}>Canvas vacío<br/>← Tocá un producto para agregarlo<br/>o usá T+ para añadir texto</div>
-              </div>
-            )}
-            {els.map((el,idx) => {
-              const isSelEl = sel===el.id;
-              const catName = el.type==='product' ? getCatName(el.prod?.cat) : '';
+            {activeCats.map(cat => {
+              const cfg = getCatCfg(cat.id);
+              const catProds = (prods||[]).filter(p => (p.cat||p.categoria_id)===cat.id && p.active!==false && p.activo!==false);
+              const isExp = !!expandedPrev[cat.id];
               return (
-                <div key={el.id}
-                  onMouseDown={e=>onMD(e,el.id)}
-                  onTouchStart={e=>onTD(e,el.id)}
-                  onClick={e=>{ e.stopPropagation(); setSel(el.id); }}
-                  style={{ position:'absolute',left:el.x,top:el.y,width:el.type==='emoji'?'auto':el.w,
-                    cursor:drag?.id===el.id?'grabbing':'grab',
-                    outline:isSelEl?'2px solid #e8a020':'2px solid transparent',outlineOffset:2,
-                    zIndex:isSelEl?50:idx+1,touchAction:'none',userSelect:'none',borderRadius:el.s?.borderRadius||0 }}>
-
-                  {/* ── product card ── */}
-                  {el.type==='product' && (
-                    <div style={{ background:`rgba(0,0,0,${el.s?.bgAlpha??0.80})`,borderRadius:el.s?.borderRadius??12,overflow:'hidden',
-                      border:el.s?.border!=='none'?el.s?.border:undefined,width:el.w,minHeight:el.h }}>
-                      <img src={el.prod?.imagen||getPlaceholder(catName)} alt="" style={{ width:'100%',height:120,objectFit:'cover',display:'block',pointerEvents:'none' }} />
-                      <div style={{ padding:'8px 10px' }}>
-                        <div style={{ fontSize:13,fontWeight:700,color:'#fff',fontFamily:el.s?.fontFamily||'system-ui',lineHeight:1.3,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' }}>{el.prod?.name}</div>
-                        {el.s?.showPrice!==false && <div style={{ fontSize:14,fontWeight:800,color:'#e8a020',marginTop:3 }}>{ARS(el.prod?.price??0)}</div>}
-                        {el.s?.showDesc && el.prod?.desc && <div style={{ fontSize:10,color:'rgba(255,255,255,.5)',marginTop:4,lineHeight:1.4 }}>{el.prod.desc}</div>}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* ── text ── */}
-                  {el.type==='text' && (
-                    editTxt===el.id
-                      ? <textarea autoFocus value={el.content} onChange={e=>updC(e.target.value)}
-                          onBlur={()=>setEditTxt(null)} onClick={e=>e.stopPropagation()}
-                          style={{ width:el.w,background:'rgba(0,0,0,.45)',border:'none',outline:'none',resize:'both',
-                            color:el.s?.color||'#fff',fontSize:el.s?.fontSize||28,fontFamily:el.s?.fontFamily||'system-ui',
-                            fontWeight:el.s?.fontWeight||'700',textAlign:el.s?.textAlign||'center',
-                            minHeight:44,padding:'4px 8px',borderRadius:el.s?.borderRadius||0,
-                            border:el.s?.border!=='none'?el.s?.border:undefined }} />
-                      : <div onDoubleClick={e=>{ e.stopPropagation(); setEditTxt(el.id); }}
-                          style={{ color:el.s?.color||'#fff',fontSize:el.s?.fontSize||28,fontFamily:el.s?.fontFamily||'system-ui',
-                            fontWeight:el.s?.fontWeight||'700',textAlign:el.s?.textAlign||'center',
-                            whiteSpace:'pre-wrap',wordBreak:'break-word',minHeight:44,padding:'4px 8px',width:el.w,
-                            border:el.s?.border!=='none'?el.s?.border:undefined,
-                            borderRadius:el.s?.borderRadius||0 }}>
-                          {el.content}
-                        </div>
-                  )}
-
-                  {/* ── emoji ── */}
-                  {el.type==='emoji' && (
-                    <div style={{ fontSize:el.s?.fontSize||46,textAlign:'center',lineHeight:1.15,padding:4,
-                      border:el.s?.border!=='none'?el.s?.border:undefined,borderRadius:el.s?.borderRadius||0 }}>
-                      {el.content}
-                    </div>
-                  )}
-
-                  {/* ── selection controls ── */}
-                  {isSelEl && (
-                    <div style={{ position:'absolute',top:-10,right:-10,display:'flex',gap:3,zIndex:60 }}>
-                      <div onClick={e=>{e.stopPropagation();sendBck();}}
-                        style={{ width:18,height:18,background:'rgba(255,255,255,.18)',borderRadius:'50%',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,color:'#fff' }} title="Atrás">↓</div>
-                      <div onClick={e=>{e.stopPropagation();bringFwd();}}
-                        style={{ width:18,height:18,background:'rgba(255,255,255,.18)',borderRadius:'50%',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,color:'#fff' }} title="Adelante">↑</div>
-                      <div onClick={e=>{e.stopPropagation();delSel();}}
-                        style={{ width:18,height:18,background:'#e84040',borderRadius:'50%',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,fontWeight:800,color:'#fff' }}>✕</div>
+                <div key={cat.id} style={{ marginBottom:10 }}>
+                  <div onClick={() => setExpandedPrev(p => ({...p,[cat.id]:!p[cat.id]}))}
+                    style={cdv2CardStyle(cfg.formato, cfg.imagen, accentColor)}>
+                    {cdv2CatContent(cfg.formato, cat, isExp)}
+                  </div>
+                  {isExp && (
+                    <div style={{ paddingTop:8 }}>
+                      {catProds.length===0
+                        ? <div style={{ fontSize:11,color:'rgba(255,255,255,.2)',textAlign:'center',padding:'10px 0' }}>Sin productos</div>
+                        : <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(142px,1fr))', gap:8 }}>
+                            {catProds.map(p => (
+                              <div key={p.id} style={{ background:'rgba(255,255,255,.05)', borderRadius:10, overflow:'hidden', border:`1px solid ${accentColor}26` }}>
+                                <img src={p.imagen||getPlaceholder(cat.label)} alt="" style={{ width:'100%',height:105,objectFit:'cover',display:'block' }} />
+                                <div style={{ padding:'7px 9px' }}>
+                                  <div style={{ fontSize:12,fontWeight:700,color:'#fff',lineHeight:1.3 }}>{p.name||p.nombre}</div>
+                                  <div style={{ fontSize:13,fontWeight:800,color:accentColor,margin:'3px 0 2px' }}>{ARS(p.price??p.precio)}</div>
+                                  {(p.desc||p.descripcion) && (
+                                    <div style={{ fontSize:10,color:'rgba(255,255,255,.38)',lineHeight:1.4 }}>
+                                      {((p.desc||p.descripcion)||'').slice(0,65)}{((p.desc||p.descripcion)||'').length>65?'…':''}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                      }
                     </div>
                   )}
                 </div>
@@ -1515,97 +1329,164 @@ function ScreenCartaDesigner({ prods, cats, local, setLocal }) {
             })}
           </div>
         </div>
+      </div>
+    );
+  }
 
-        {/* ── Properties panel ── */}
-        {selEl && (
-          <div style={{ width:185,flexShrink:0,overflowY:'auto',background:'rgba(255,255,255,.03)',border:'1px solid rgba(255,255,255,.07)',borderRadius:10,padding:12,display:'flex',flexDirection:'column',gap:0 }}>
-            <div style={{ fontSize:9,fontWeight:700,color:'rgba(255,255,255,.3)',letterSpacing:1,marginBottom:10,textTransform:'uppercase' }}>
-              {selEl.type==='product'?'🃏 Tarjeta':selEl.type==='text'?'✏️ Texto':'😊 Emoji'}
+  /* ── DESIGN PANEL ── */
+  function DesignPanel() {
+    return (
+      <div style={{ display:'flex', flexDirection:'column', height:'100%', overflow:'hidden' }}>
+        {/* Global */}
+        <div style={{ padding:'12px', borderBottom:'1px solid rgba(255,255,255,.07)', flexShrink:0 }}>
+          <div style={{ fontSize:9,fontWeight:700,color:'rgba(255,255,255,.3)',letterSpacing:1,marginBottom:10,textTransform:'uppercase' }}>Diseño global</div>
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:10 }}>
+            <label style={{ fontSize:10, display:'flex', alignItems:'center', justifyContent:'space-between', padding:'6px 8px', background:'rgba(255,255,255,.04)', borderRadius:7, gap:6 }}>
+              🎨 Fondo
+              <input type="color" value={bgColor} onChange={e=>setBgColor(e.target.value)}
+                style={{ width:30,height:22,border:'1px solid rgba(255,255,255,.1)',background:'none',cursor:'pointer',borderRadius:4 }} />
+            </label>
+            <label style={{ fontSize:10, display:'flex', alignItems:'center', justifyContent:'space-between', padding:'6px 8px', background:'rgba(255,255,255,.04)', borderRadius:7, gap:6 }}>
+              ✨ Acento
+              <input type="color" value={accentColor} onChange={e=>setAccentColor(e.target.value)}
+                style={{ width:30,height:22,border:'1px solid rgba(255,255,255,.1)',background:'none',cursor:'pointer',borderRadius:4 }} />
+            </label>
+          </div>
+          <div style={{ marginBottom:8 }}>
+            <label style={{ fontSize:10, display:'block', marginBottom:4, color:'rgba(255,255,255,.45)' }}>Tipografía</label>
+            <select value={fontFamily} onChange={e=>setFontFamily(e.target.value)}
+              style={{ background:'#2a2a2a',color:'var(--text)',border:'1px solid var(--border)',borderRadius:7,padding:'5px 8px',width:'100%',fontSize:11 }}>
+              {CDV2_FONTS.map(f=><option key={f.value} value={f.value}>{f.label}</option>)}
+            </select>
+          </div>
+          <div>
+            <label style={{ fontSize:10, display:'block', marginBottom:4, color:'rgba(255,255,255,.45)' }}>Título del menú</label>
+            <input value={titulo} onChange={e=>setTitulo(e.target.value)} placeholder="Ej: La Bella Napoli"
+              style={{ background:'#2a2a2a',color:'var(--text)',border:'1px solid var(--border)',borderRadius:7,padding:'6px 8px',width:'100%',fontSize:11,boxSizing:'border-box' }} />
+          </div>
+        </div>
+        {/* Categories */}
+        <div style={{ flex:1, overflowY:'auto', padding:'12px' }}>
+          <div style={{ fontSize:9,fontWeight:700,color:'rgba(255,255,255,.3)',letterSpacing:1,marginBottom:10,textTransform:'uppercase' }}>
+            Categorías ({activeCats.length})
+          </div>
+          {activeCats.length===0 && (
+            <div style={{ fontSize:11,color:'rgba(255,255,255,.18)',textAlign:'center',padding:'20px 0',lineHeight:1.7 }}>
+              Sin categorías activas.<br/>Usá el sidebar → Categorías.
             </div>
-
-            {/* Font family */}
-            <div className="ap-form-group" style={{ marginBottom:8 }}>
-              <label style={{ fontSize:10 }}>Fuente</label>
-              <select value={selEl.s?.fontFamily||'system-ui, sans-serif'} onChange={e=>updS({fontFamily:e.target.value})}
-                style={{ background:'#2a2a2a',color:'var(--text)',border:'1px solid var(--border)',borderRadius:6,padding:'4px 6px',width:'100%',fontSize:11 }}>
-                {CD_FONTS.map(f=><option key={f.value} value={f.value}>{f.label}</option>)}
-              </select>
-            </div>
-
-            {/* Font size */}
-            {(selEl.type==='text'||selEl.type==='emoji') && (
-              <div className="ap-form-group" style={{ marginBottom:8 }}>
-                <label style={{ fontSize:10 }}>Tamaño: {selEl.s?.fontSize||28}px</label>
-                <input type="range" min={10} max={80} value={selEl.s?.fontSize||28} onChange={e=>updS({fontSize:+e.target.value})} style={{ width:'100%' }} />
+          )}
+          {activeCats.map(cat => {
+            const cfg = getCatCfg(cat.id);
+            const isSel = selCatId===cat.id;
+            const cnt = (prods||[]).filter(p=>(p.cat||p.categoria_id)===cat.id && p.active!==false).length;
+            return (
+              <div key={cat.id} style={{ marginBottom:8, borderRadius:9, overflow:'hidden', border:`1px solid ${isSel?'rgba(232,160,32,.35)':'rgba(255,255,255,.07)'}` }}>
+                <div onClick={()=>setSelCatId(isSel?null:cat.id)}
+                  style={{ display:'flex',alignItems:'center',gap:8,padding:'9px 11px',cursor:'pointer',background:isSel?'rgba(232,160,32,.08)':'rgba(255,255,255,.03)' }}>
+                  <span style={{ fontSize:18 }}>{cat.emoji}</span>
+                  <div style={{ flex:1,minWidth:0 }}>
+                    <div style={{ fontSize:12,fontWeight:600,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' }}>{cat.label}</div>
+                    <div style={{ fontSize:9,color:'rgba(255,255,255,.3)',marginTop:1 }}>{cnt} productos · {cfg.formato}</div>
+                  </div>
+                  <span style={{ fontSize:10,color:'rgba(255,255,255,.3)',flexShrink:0 }}>{isSel?'▲':'▼'}</span>
+                </div>
+                {isSel && (
+                  <div style={{ padding:'12px',background:'rgba(0,0,0,.25)',borderTop:'1px solid rgba(255,255,255,.05)' }}>
+                    <div style={{ fontSize:10,color:'rgba(255,255,255,.4)',marginBottom:8 }}>Formato de la categoría</div>
+                    <div style={{ display:'flex',gap:6,marginBottom:14 }}>
+                      {[
+                        {key:'rectangle', icon:'▬', label:'Rectángulo'},
+                        {key:'square',    icon:'■', label:'Cuadrado'},
+                        {key:'round',     icon:'●', label:'Círculo'},
+                      ].map(fmt=>(
+                        <button key={fmt.key} onClick={()=>updCatCfg(cat.id,{formato:fmt.key})}
+                          className={`ap-btn ap-btn-sm ${cfg.formato===fmt.key?'ap-btn-gold':'ap-btn-ghost'}`}
+                          style={{ flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:3,padding:'7px 0',fontSize:10 }}>
+                          <span style={{ fontSize:17 }}>{fmt.icon}</span>
+                          {fmt.label}
+                        </button>
+                      ))}
+                    </div>
+                    <div>
+                      <label style={{ fontSize:10,color:'rgba(255,255,255,.38)',display:'block',marginBottom:5 }}>Foto de portada (URL)</label>
+                      <input value={cfg.imagen||''} onChange={e=>updCatCfg(cat.id,{imagen:e.target.value||null})}
+                        placeholder="https://imagen.com/portada.jpg"
+                        style={{ background:'#1a1a1a',color:'var(--text)',border:'1px solid var(--border)',borderRadius:6,padding:'6px 8px',width:'100%',fontSize:10,boxSizing:'border-box' }} />
+                      {cfg.imagen && (
+                        <div style={{ marginTop:7,borderRadius:7,overflow:'hidden',height:52 }}>
+                          <img src={cfg.imagen} alt="" style={{ width:'100%',height:'100%',objectFit:'cover' }} onError={e=>e.target.style.display='none'} />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
 
-            {/* Text-only props */}
-            {selEl.type==='text' && (<>
-              <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:8 }}>
-                <label style={{ fontSize:10 }}>Color</label>
-                <input type="color" value={selEl.s?.color||'#ffffff'} onChange={e=>updS({color:e.target.value})}
-                  style={{ width:32,height:24,border:'none',background:'none',cursor:'pointer',borderRadius:5 }} />
-              </div>
-              <div className="ap-form-group" style={{ marginBottom:8 }}>
-                <label style={{ fontSize:10 }}>Peso</label>
-                <select value={selEl.s?.fontWeight||'700'} onChange={e=>updS({fontWeight:e.target.value})}
-                  style={{ background:'#2a2a2a',color:'var(--text)',border:'1px solid var(--border)',borderRadius:6,padding:'4px 6px',width:'100%',fontSize:11 }}>
-                  <option value="400">Normal</option>
-                  <option value="600">Semibold</option>
-                  <option value="700">Bold</option>
-                  <option value="800">ExtraBold</option>
-                </select>
-              </div>
-              <div style={{ display:'flex',gap:4,marginBottom:10 }}>
-                {[['left','◀'],['center','◈'],['right','▶']].map(([a,lbl])=>(
-                  <button key={a} className={`ap-btn ap-btn-sm ${(selEl.s?.textAlign||'center')===a?'ap-btn-gold':'ap-btn-ghost'}`}
-                    style={{ flex:1,padding:'3px 0',fontSize:13 }} onClick={()=>updS({textAlign:a})}>{lbl}</button>
-                ))}
-              </div>
-            </>)}
+  const CTX_LIST = [
+    {key:'mesa',    label:'🪑 Mesa (QR)',        desc:'El cliente escanea el QR de la mesa'},
+    {key:'vitrina', label:'📺 Vitrina',           desc:'Pantalla en el local (modo display)'},
+    {key:'caja',    label:'💰 Caja',              desc:'Visible en el mostrador'},
+    {key:'delivery',label:'🛵 Delivery/Retiro',   desc:'Pedidos desde el celular'},
+  ];
 
-            {/* Product-only props */}
-            {selEl.type==='product' && (<>
-              <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:8 }}>
-                <label style={{ fontSize:10 }}>Mostrar precio</label>
-                <div className={`ap-toggle ${selEl.s?.showPrice!==false?'on':'off'}`} onClick={()=>updS({showPrice:!(selEl.s?.showPrice!==false)})} />
-              </div>
-              <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:8 }}>
-                <label style={{ fontSize:10 }}>Mostrar descripción</label>
-                <div className={`ap-toggle ${selEl.s?.showDesc?'on':'off'}`} onClick={()=>updS({showDesc:!selEl.s?.showDesc})} />
-              </div>
-              <div className="ap-form-group" style={{ marginBottom:8 }}>
-                <label style={{ fontSize:10 }}>Transparencia: {Math.round((1-(selEl.s?.bgAlpha??0.80))*100)}%</label>
-                <input type="range" min={0} max={1} step={0.05} value={selEl.s?.bgAlpha??0.80}
-                  onChange={e=>updS({bgAlpha:+e.target.value})} style={{ width:'100%' }} />
-              </div>
-            </>)}
+  return (
+    <div style={{ display:'flex', flexDirection:'column', height:'calc(100vh - 110px)', minHeight:520 }}>
 
-            {/* Border */}
-            <div className="ap-form-group" style={{ marginBottom:8 }}>
-              <label style={{ fontSize:10 }}>Marco</label>
-              <select value={selEl.s?.border||'none'} onChange={e=>updS({border:e.target.value})}
-                style={{ background:'#2a2a2a',color:'var(--text)',border:'1px solid var(--border)',borderRadius:6,padding:'4px 6px',width:'100%',fontSize:11 }}>
-                {CD_BORDERS.map(b=><option key={b.value} value={b.value}>{b.label}</option>)}
-              </select>
-            </div>
-
-            {/* Border radius */}
-            <div className="ap-form-group" style={{ marginBottom:12 }}>
-              <label style={{ fontSize:10 }}>Redondez: {selEl.s?.borderRadius??12}px</label>
-              <input type="range" min={0} max={50} value={selEl.s?.borderRadius??12}
-                onChange={e=>updS({borderRadius:+e.target.value})} style={{ width:'100%' }} />
-            </div>
-
-            <div style={{ borderTop:'1px solid rgba(255,255,255,.06)',paddingTop:10,display:'flex',flexDirection:'column',gap:6 }}>
-              <button className="ap-btn ap-btn-sm ap-btn-ghost" onClick={bringFwd} style={{ fontSize:10 }}>↑ Traer adelante</button>
-              <button className="ap-btn ap-btn-sm ap-btn-ghost" onClick={sendBck} style={{ fontSize:10 }}>↓ Enviar atrás</button>
-              <button className="ap-btn ap-btn-sm" style={{ background:'rgba(232,64,64,.12)',color:'#e84040',border:'1px solid rgba(232,64,64,.2)',fontSize:10 }}
-                onClick={delSel}>🗑 Eliminar</button>
+      {/* ── Publish modal ── */}
+      {showPub && (
+        <div style={{ position:'fixed',inset:0,background:'rgba(0,0,0,.76)',backdropFilter:'blur(4px)',zIndex:9999,display:'flex',alignItems:'center',justifyContent:'center',padding:16 }}
+          onClick={()=>setShowPub(false)}>
+          <div style={{ background:'#1c1c1c',border:'1px solid rgba(255,255,255,.12)',borderRadius:16,width:'100%',maxWidth:380,padding:24 }} onClick={e=>e.stopPropagation()}>
+            <div style={{ fontSize:16,fontWeight:800,marginBottom:6 }}>📲 Publicar carta en...</div>
+            <div style={{ fontSize:11,color:'rgba(255,255,255,.38)',marginBottom:18 }}>Elegí en qué contextos se muestra este diseño</div>
+            {CTX_LIST.map(ctx=>(
+              <div key={ctx.key} style={{ display:'flex',alignItems:'center',justifyContent:'space-between',padding:'11px 0',borderBottom:'1px solid rgba(255,255,255,.06)' }}>
+                <div>
+                  <div style={{ fontSize:13,fontWeight:600 }}>{ctx.label}</div>
+                  <div style={{ fontSize:10,color:'rgba(255,255,255,.3)',marginTop:2 }}>{ctx.desc}</div>
+                </div>
+                <div className={`ap-switch ${pubCfg[ctx.key]?'on':'off'}`} onClick={()=>setPubCfg(p=>({...p,[ctx.key]:!p[ctx.key]}))} />
+              </div>
+            ))}
+            <div style={{ display:'flex',gap:10,marginTop:20 }}>
+              <button className="ap-btn ap-btn-ghost" style={{ flex:1 }} onClick={()=>setShowPub(false)}>Cancelar</button>
+              <button className="ap-btn ap-btn-gold" style={{ flex:2 }} disabled={saving}
+                onClick={async()=>{ const ok=await doSave(pubCfg); if(ok){setShowPub(false);alert('✅ Guardado y publicado');} }}>
+                {saving?'Guardando...':'💾 Guardar y publicar'}
+              </button>
             </div>
           </div>
-        )}
+        </div>
+      )}
+
+      {/* ── Header ── */}
+      <div className="ap-sec-hdr" style={{ flexShrink:0, flexWrap:'wrap', gap:8 }}>
+        <h2>🎨 Carta</h2>
+        <div className="ap-sec-hdr-r" style={{ gap:6 }}>
+          <button className="ap-btn ap-btn-ghost ap-btn-sm" onClick={()=>setShowPub(true)}>📲 Publicar</button>
+          <button className="ap-btn ap-btn-gold ap-btn-sm" onClick={async()=>{ const ok=await doSave(); if(ok)alert('✅ Guardado'); }} disabled={saving}>
+            {saving?'…':'💾 Guardar'}
+          </button>
+        </div>
+      </div>
+
+      {/* ── Tab bar ── */}
+      <div style={{ display:'flex', gap:4, marginBottom:10, flexShrink:0 }}>
+        {[{key:'design',label:'⚙️ Diseño'},{key:'preview',label:'👁️ Vista previa'}].map(t=>(
+          <button key={t.key} className={`ap-btn ap-btn-sm ${tab===t.key?'ap-btn-gold':'ap-btn-ghost'}`}
+            style={{ flex:1 }} onClick={()=>setTab(t.key)}>{t.label}</button>
+        ))}
+      </div>
+
+      {/* ── Content (never overlapping) ── */}
+      <div style={{ flex:1, overflow:'hidden', minHeight:0, display:'flex', flexDirection:'column' }}>
+        {tab==='design' ? <DesignPanel /> : <Preview />}
       </div>
     </div>
   );
