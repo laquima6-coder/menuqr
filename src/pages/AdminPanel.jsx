@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import html2canvas from "html2canvas";
+import { jsPDF } from "jspdf";
 import QRCodeLib from "qrcode";
 import ScreenCajaPOS from "./ScreenCajaPOS.jsx";
 import { supabase, getPedidos, updatePedidoStatus, subscribePedidos,
@@ -1428,10 +1430,11 @@ function cdv3ProdCard(p, cat, prodS, tpl, catColor) {
   );
 }
 
-function ScreenCartaDesigner({ prods, cats, local, setLocal }) {
+function ScreenCartaDesigner({ prods, cats, local, setLocal, setProds, goBack }) {
   const savedV3  = local?.config?.carta_v3 || {};
   const savedV2  = local?.config?.carta_v2 || {};
   const initView = savedV3.templateId ? 'editor' : (savedV2.bgColor ? 'editor' : 'gallery');
+  const previewRef = useRef(null);
 
   const [view,        setView]        = useState(initView);
   const [tab,         setTab]         = useState('design');
@@ -1444,6 +1447,12 @@ function ScreenCartaDesigner({ prods, cats, local, setLocal }) {
   const [accentColor, setAccentColor] = useState(savedV3.accentColor || savedV2.accentColor || '#C9A84C');
   const [fontFamily,  setFontFamily]  = useState(savedV3.fontFamily  || savedV2.fontFamily  || 'system-ui, sans-serif');
   const [titulo,      setTitulo]      = useState(savedV3.titulo      || savedV2.titulo      || (local?.nombre || ''));
+  const [fontSize,    setFontSize]    = useState(savedV3.fontSize    || 'normal'); // 'small'|'normal'|'large'
+  const [showPhotoPicker, setShowPhotoPicker] = useState(null); // null | { target: 'prod'|'cat', id, field }
+  const [showQuickAdd,    setShowQuickAdd]    = useState(null); // null | catId
+  const [quickForm,       setQuickForm]       = useState({ nombre:'', precio:'', desc:'', imagen:'' });
+  const [savingProd,      setSavingProd]      = useState(false);
+  const [exporting,       setExporting]       = useState(false);
   const [catConfigs,  setCatConfigs]  = useState(savedV3.catConfigs  || savedV2.catConfigs  || {});
   const [blocks,      setBlocks]      = useState(() => savedV3.blocks || cdv3MakeDefaultBlocks(local));
   const [selCatId,    setSelCatId]    = useState(null);
@@ -1473,7 +1482,7 @@ function ScreenCartaDesigner({ prods, cats, local, setLocal }) {
     if (!local?.restauranteId) { alert('Sin restaurante'); return false; }
     setSaving(true);
     try {
-      const carta_v3 = { templateId, bgColor, accentColor, fontFamily, titulo, catConfigs, blocks };
+      const carta_v3 = { templateId, bgColor, accentColor, fontFamily, fontSize, titulo, catConfigs, blocks };
       const cfg = { ...(local?.config||{}), carta_v3, carta_publicada_en: extraPub !== undefined ? extraPub : pubCfg };
       const { error } = await supabase.from('restaurantes').update({ config: cfg }).eq('id', local.restauranteId);
       if (error) throw error;
@@ -1489,6 +1498,244 @@ function ScreenCartaDesigner({ prods, cats, local, setLocal }) {
     {key:'caja',    label:'💰 Caja',             desc:'Visible en el mostrador'},
     {key:'delivery',label:'🛵 Delivery/Retiro',  desc:'Pedidos desde el celular'},
   ];
+
+  /* font scale helper */
+  const FS = { small: .85, normal: 1, large: 1.18 }[fontSize] || 1;
+
+  /* ─────────────────── PHOTO GALLERY ─────────────────── */
+  const FOOD_PHOTOS = [
+    /* Carnes */
+    {cat:'Carnes', photos:[
+      'https://images.unsplash.com/photo-1544025162-d76694265947?w=400&h=400&fit=crop',
+      'https://images.unsplash.com/photo-1558030006-b6298e1d1b05?w=400&h=400&fit=crop',
+      'https://images.unsplash.com/photo-1546964124-0cce460ebe24?w=400&h=400&fit=crop',
+      'https://images.unsplash.com/photo-1600891964092-4316c288032e?w=400&h=400&fit=crop',
+      'https://images.unsplash.com/photo-1529692236671-f1f6cf9683ba?w=400&h=400&fit=crop',
+    ]},
+    /* Hamburguesas */
+    {cat:'Hamburguesas', photos:[
+      'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&h=400&fit=crop',
+      'https://images.unsplash.com/photo-1553979459-d1029eb29088?w=400&h=400&fit=crop',
+      'https://images.unsplash.com/photo-1572802419224-296b0aeee0d9?w=400&h=400&fit=crop',
+      'https://images.unsplash.com/photo-1594212699903-ec8a3eca50f5?w=400&h=400&fit=crop',
+      'https://images.unsplash.com/photo-1611483796693-5b048abae463?w=400&h=400&fit=crop',
+    ]},
+    /* Pizzas */
+    {cat:'Pizzas', photos:[
+      'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400&h=400&fit=crop',
+      'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400&h=400&fit=crop',
+      'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=400&h=400&fit=crop',
+      'https://images.unsplash.com/photo-1593560708920-61dd98c46a4e?w=400&h=400&fit=crop',
+      'https://images.unsplash.com/photo-1628840042765-356cda07504e?w=400&h=400&fit=crop',
+    ]},
+    /* Pastas */
+    {cat:'Pastas', photos:[
+      'https://images.unsplash.com/photo-1555949258-eb67b1ef0ceb?w=400&h=400&fit=crop',
+      'https://images.unsplash.com/photo-1598514983318-2f5da945b4d9?w=400&h=400&fit=crop',
+      'https://images.unsplash.com/photo-1473093226795-af9932fe5856?w=400&h=400&fit=crop',
+      'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=400&h=400&fit=crop',
+      'https://images.unsplash.com/photo-1563379926898-05f4575a45d8?w=400&h=400&fit=crop',
+    ]},
+    /* Sushi */
+    {cat:'Sushi', photos:[
+      'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=400&h=400&fit=crop',
+      'https://images.unsplash.com/photo-1583623025817-d180a2221d0a?w=400&h=400&fit=crop',
+      'https://images.unsplash.com/photo-1617196034183-4d6bbd26c11e?w=400&h=400&fit=crop',
+      'https://images.unsplash.com/photo-1611143669185-af224c5e3252?w=400&h=400&fit=crop',
+      'https://images.unsplash.com/photo-1562802378-063ec186a863?w=400&h=400&fit=crop',
+    ]},
+    /* Ensaladas */
+    {cat:'Ensaladas', photos:[
+      'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&h=400&fit=crop',
+      'https://images.unsplash.com/photo-1540420773420-3ccf2e43b32f?w=400&h=400&fit=crop',
+      'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=400&fit=crop',
+      'https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=400&h=400&fit=crop',
+      'https://images.unsplash.com/photo-1607532941433-304659e8198a?w=400&h=400&fit=crop',
+    ]},
+    /* Postres */
+    {cat:'Postres', photos:[
+      'https://images.unsplash.com/photo-1563729784474-d77dbb933a9e?w=400&h=400&fit=crop',
+      'https://images.unsplash.com/photo-1488477181228-c84fceae48b8?w=400&h=400&fit=crop',
+      'https://images.unsplash.com/photo-1486427944299-d1955d23e34d?w=400&h=400&fit=crop',
+      'https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=400&h=400&fit=crop',
+      'https://images.unsplash.com/photo-1551024506-0bccd828d307?w=400&h=400&fit=crop',
+    ]},
+    /* Bebidas */
+    {cat:'Bebidas', photos:[
+      'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=400&h=400&fit=crop',
+      'https://images.unsplash.com/photo-1551538827-9c037cb4f32a?w=400&h=400&fit=crop',
+      'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=400&h=400&fit=crop',
+      'https://images.unsplash.com/photo-1544145945-f90425340c7e?w=400&h=400&fit=crop',
+      'https://images.unsplash.com/photo-1497534446932-c925b458314e?w=400&h=400&fit=crop',
+    ]},
+    /* Desayunos */
+    {cat:'Desayunos', photos:[
+      'https://images.unsplash.com/photo-1484723091739-30acbef02cde?w=400&h=400&fit=crop',
+      'https://images.unsplash.com/photo-1525351484163-7529414344d8?w=400&h=400&fit=crop',
+      'https://images.unsplash.com/photo-1533089860892-a7c6f0a88666?w=400&h=400&fit=crop',
+      'https://images.unsplash.com/photo-1601050690597-df0568f70950?w=400&h=400&fit=crop',
+      'https://images.unsplash.com/photo-1504630083234-14187a9df0f5?w=400&h=400&fit=crop',
+    ]},
+    /* Mariscos */
+    {cat:'Mariscos', photos:[
+      'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=400&h=400&fit=crop',
+      'https://images.unsplash.com/photo-1580822184713-fc5400e7fe10?w=400&h=400&fit=crop',
+      'https://images.unsplash.com/photo-1565680018434-b513d5e5fd47?w=400&h=400&fit=crop',
+      'https://images.unsplash.com/photo-1589927986089-35812388d1f4?w=400&h=400&fit=crop',
+      'https://images.unsplash.com/photo-1612544448445-b8232cff3b6c?w=400&h=400&fit=crop',
+    ]},
+  ];
+
+  /* Photo Picker Modal */
+  function PhotoPickerModal() {
+    const [selCat, setSelCat] = useState(FOOD_PHOTOS[0].cat);
+    const photos = FOOD_PHOTOS.find(g=>g.cat===selCat)?.photos || [];
+    function pick(url) {
+      if (!showPhotoPicker) return;
+      const { target, id, field } = showPhotoPicker;
+      if (target==='prod') {
+        // update product in supabase
+        supabase.from('productos').update({ imagen: url }).eq('id', id)
+          .then(() => { if (setProds) setProds(p => p.map(x => x.id===id ? {...x, imagen:url} : x)); });
+      } else if (target==='cat') {
+        updCatCfg(id, { imagen: url });
+      } else if (target==='block') {
+        updBlockData(id, { [field]: url });
+      }
+      setShowPhotoPicker(null);
+    }
+    return (
+      <div style={{ position:'fixed',inset:0,background:'rgba(0,0,0,.8)',zIndex:9998,display:'flex',alignItems:'flex-end' }}
+        onClick={()=>setShowPhotoPicker(null)}>
+        <div onClick={e=>e.stopPropagation()}
+          style={{ width:'100%',maxWidth:430,margin:'0 auto',background:'#1a1a1a',borderRadius:'18px 18px 0 0',padding:'16px 14px 32px',maxHeight:'75vh',display:'flex',flexDirection:'column' }}>
+          <div style={{ width:36,height:4,borderRadius:2,background:'rgba(255,255,255,.2)',margin:'0 auto 14px' }} />
+          <div style={{ fontSize:14,fontWeight:700,marginBottom:12 }}>📸 Galería de fotos</div>
+          <div style={{ display:'flex',gap:6,overflowX:'auto',marginBottom:12,paddingBottom:4,WebkitOverflowScrolling:'touch' }}>
+            {FOOD_PHOTOS.map(g=>(
+              <button key={g.cat} onClick={()=>setSelCat(g.cat)}
+                className={`ap-btn ap-btn-sm ${selCat===g.cat?'ap-btn-gold':'ap-btn-ghost'}`}
+                style={{ flexShrink:0,fontSize:10 }}>{g.cat}</button>
+            ))}
+          </div>
+          <div style={{ flex:1,overflowY:'auto',overscrollBehavior:'contain' }}>
+            <div style={{ display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8 }}>
+              {photos.map((url,i)=>(
+                <div key={i} onClick={()=>pick(url)}
+                  style={{ aspectRatio:'1/1',borderRadius:10,overflow:'hidden',cursor:'pointer',border:'2px solid transparent',transition:'border .1s' }}
+                  onMouseEnter={e=>e.currentTarget.style.border='2px solid #C9A84C'}
+                  onMouseLeave={e=>e.currentTarget.style.border='2px solid transparent'}>
+                  <img src={url} alt="" style={{ width:'100%',height:'100%',objectFit:'cover',display:'block' }} />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  /* Quick Add Product Modal */
+  function QuickAddModal() {
+    const catId = showQuickAdd;
+    const cat   = (cats||[]).find(c=>c.id===catId) || {};
+    async function submit(e) {
+      e.preventDefault();
+      if (!quickForm.nombre || !quickForm.precio) return;
+      setSavingProd(true);
+      try {
+        const newProd = {
+          restaurante_id: local.restauranteId,
+          nombre: quickForm.nombre,
+          precio: parseFloat(quickForm.precio) || 0,
+          descripcion: quickForm.desc || '',
+          imagen: quickForm.imagen || '',
+          categoria_id: catId,
+          activo: true,
+        };
+        const { data, error } = await supabase.from('productos').insert(newProd).select().single();
+        if (error) throw error;
+        if (setProds) setProds(p => [...p, { ...data, cat: catId, name: data.nombre, price: data.precio, desc: data.descripcion, active: true }]);
+        setQuickForm({ nombre:'', precio:'', desc:'', imagen:'' });
+        setShowQuickAdd(null);
+      } catch(e) { alert('Error: ' + e.message); }
+      finally { setSavingProd(false); }
+    }
+    return (
+      <div style={{ position:'fixed',inset:0,background:'rgba(0,0,0,.8)',zIndex:9997,display:'flex',alignItems:'flex-end' }}
+        onClick={()=>setShowQuickAdd(null)}>
+        <div onClick={e=>e.stopPropagation()}
+          style={{ width:'100%',maxWidth:430,margin:'0 auto',background:'#1c1c1c',borderRadius:'18px 18px 0 0',padding:'16px 16px 32px' }}>
+          <div style={{ width:36,height:4,borderRadius:2,background:'rgba(255,255,255,.2)',margin:'0 auto 14px' }} />
+          <div style={{ fontSize:14,fontWeight:700,marginBottom:14 }}>➕ Nuevo producto — {cat.label||'categoría'}</div>
+          <form onSubmit={submit}>
+            {[
+              {k:'nombre', l:'Nombre *', p:'Ej: Milanesa napolitana', t:'text'},
+              {k:'precio', l:'Precio *', p:'Ej: 2500', t:'number'},
+              {k:'desc',   l:'Descripción', p:'Opcional...', t:'text'},
+            ].map(f=>(
+              <div key={f.k} style={{ marginBottom:10 }}>
+                <label style={{ fontSize:10,color:'rgba(255,255,255,.4)',display:'block',marginBottom:3 }}>{f.l}</label>
+                <input type={f.t} value={quickForm[f.k]} onChange={e=>setQuickForm(q=>({...q,[f.k]:e.target.value}))}
+                  placeholder={f.p} required={f.k==='nombre'||f.k==='precio'}
+                  style={{ background:'#2a2a2a',color:'#fff',border:'1px solid rgba(255,255,255,.1)',borderRadius:7,padding:'8px 10px',width:'100%',fontSize:12,boxSizing:'border-box' }} />
+              </div>
+            ))}
+            <div style={{ marginBottom:14 }}>
+              <label style={{ fontSize:10,color:'rgba(255,255,255,.4)',display:'block',marginBottom:3 }}>Foto</label>
+              <div style={{ display:'flex',gap:8 }}>
+                <input value={quickForm.imagen} onChange={e=>setQuickForm(q=>({...q,imagen:e.target.value}))}
+                  placeholder="URL de la foto..." 
+                  style={{ flex:1,background:'#2a2a2a',color:'#fff',border:'1px solid rgba(255,255,255,.1)',borderRadius:7,padding:'8px 10px',fontSize:12 }} />
+                <button type="button" className="ap-btn ap-btn-ghost ap-btn-sm"
+                  onClick={()=>setShowPhotoPicker({target:'prod',id:'new',field:'imagen',onPick:(url)=>setQuickForm(q=>({...q,imagen:url}))})}>
+                  📸
+                </button>
+              </div>
+              {quickForm.imagen&&<img src={quickForm.imagen} alt="" style={{ width:60,height:60,objectFit:'cover',borderRadius:8,marginTop:6 }} />}
+            </div>
+            <div style={{ display:'flex',gap:8 }}>
+              <button type="button" className="ap-btn ap-btn-ghost" style={{ flex:1 }} onClick={()=>setShowQuickAdd(null)}>Cancelar</button>
+              <button type="submit" className="ap-btn ap-btn-gold" style={{ flex:2 }} disabled={savingProd}>
+                {savingProd?'Guardando...':'✓ Agregar producto'}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
+  /* Export functions */
+  async function exportAsImage() {
+    if (!previewRef.current) return;
+    setExporting(true);
+    try {
+      const canvas = await html2canvas(previewRef.current, { scale:2, useCORS:true, backgroundColor: bgColor });
+      const link = document.createElement('a');
+      link.download = `carta-${(titulo||'menu').toLowerCase().replace(/\s+/g,'-')}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    } catch(e) { alert('Error al exportar: ' + e.message); }
+    finally { setExporting(false); }
+  }
+  async function exportAsPDF() {
+    if (!previewRef.current) return;
+    setExporting(true);
+    try {
+      const canvas = await html2canvas(previewRef.current, { scale:2, useCORS:true, backgroundColor: bgColor });
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({ orientation:'portrait', unit:'px', format:[canvas.width/2, canvas.height/2] });
+      pdf.addImage(imgData, 'PNG', 0, 0, canvas.width/2, canvas.height/2);
+      pdf.save(`carta-${(titulo||'menu').toLowerCase().replace(/\s+/g,'-')}.pdf`);
+    } catch(e) { alert('Error al exportar: ' + e.message); }
+    finally { setExporting(false); }
+  }
+  function shareLink() {
+    const slug = local?.slug || local?.restauranteId || '';
+    const url = `${window.location.origin}/menu/${slug}`;
+    navigator.clipboard?.writeText(url).then(()=>alert('✅ Link copiado al portapapeles')).catch(()=>prompt('Copiá este link:', url));
+  }
 
   /* ─────────────────── GALLERY ─────────────────── */
   function GalleryView() {
@@ -1632,7 +1879,7 @@ function ScreenCartaDesigner({ prods, cats, local, setLocal }) {
 
     return (
       <div style={{ overflowY:'auto',flex:1,display:'flex',justifyContent:'center',padding:'4px 0 20px',overscrollBehavior:'contain',WebkitOverflowScrolling:'touch' }}>
-        <div style={{ width:'100%',maxWidth:430,background:bgColor,borderRadius:14,fontFamily,overflow:'hidden',boxShadow:'0 6px 32px rgba(0,0,0,.55)',minHeight:500 }}>
+        <div ref={previewRef} style={{ width:'100%',maxWidth:430,background:bgColor,borderRadius:14,fontFamily,overflow:'hidden',boxShadow:'0 6px 32px rgba(0,0,0,.55)',minHeight:500 }}>
 
           {/* HERO */}
           {(() => {
@@ -1671,7 +1918,23 @@ function ScreenCartaDesigner({ prods, cats, local, setLocal }) {
                                   ? <div style={{ display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(138px,1fr))',gap:8 }}>
                                       {catProds.map(p=>cdv3ProdCard(p,cat,tplEff.prodS,tplEff,cfg.color))}
                                     </div>
-                                  : <div>{catProds.map(p=>cdv3ProdCard(p,cat,tplEff.prodS,tplEff,cfg.color))}</div>
+                                  : <div>
+                          {catProds.map(p=>(
+                            <div key={p.id} style={{ position:'relative' }}>
+                              {cdv3ProdCard(p,cat,tplEff.prodS,tplEff,cfg.color)}
+                              <div style={{ position:'absolute',top:4,right:4,display:'flex',gap:4 }}>
+                                <button onClick={e=>{e.stopPropagation();setShowPhotoPicker({target:'prod',id:p.id,field:'imagen'});}}
+                                  style={{ width:22,height:22,borderRadius:6,background:'rgba(0,0,0,.6)',border:'none',color:'#fff',fontSize:10,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center' }}>📸</button>
+                                <button onClick={e=>{e.stopPropagation();if(confirm('¿Quitar '+( p.name||p.nombre)+'?')){supabase.from('productos').update({activo:false}).eq('id',p.id).then(()=>{if(setProds)setProds(pp=>pp.map(x=>x.id===p.id?{...x,active:false,activo:false}:x));});}}}
+                                  style={{ width:22,height:22,borderRadius:6,background:'rgba(200,40,40,.7)',border:'none',color:'#fff',fontSize:11,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center' }}>×</button>
+                              </div>
+                            </div>
+                          ))}
+                          <button onClick={()=>setShowQuickAdd(cat.id)}
+                            style={{ width:'100%',marginTop:6,padding:'7px',borderRadius:8,border:`1px dashed ${tplEff.ac}50`,background:'transparent',color:`${tplEff.ac}90`,fontSize:11,cursor:'pointer',fontWeight:600 }}>
+                            ＋ Agregar producto
+                          </button>
+                        </div>
                               }
                             </div>
                           )}
@@ -1758,6 +2021,16 @@ function ScreenCartaDesigner({ prods, cats, local, setLocal }) {
               style={{ background:'#2a2a2a',color:'var(--text)',border:'1px solid var(--border)',borderRadius:7,padding:'5px 8px',width:'100%',fontSize:11 }}>
               {CDV3_FONTS.map(f=><option key={f.value} value={f.value}>{f.label}</option>)}
             </select>
+          </div>
+          <div style={{ marginTop:10 }}>
+            <label style={{ fontSize:10,display:'block',marginBottom:6,color:'rgba(255,255,255,.45)' }}>Tamaño de texto</label>
+            <div style={{ display:'flex',gap:6 }}>
+              {[{k:'small',l:'S'},{k:'normal',l:'M'},{k:'large',l:'L'}].map(s=>(
+                <button key={s.k} onClick={()=>setFontSize(s.k)}
+                  className={`ap-btn ap-btn-sm ${fontSize===s.k?'ap-btn-gold':'ap-btn-ghost'}`}
+                  style={{ flex:1,fontWeight:s.k==='small'?400:s.k==='large'?800:600 }}>{s.l}</button>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -1935,9 +2208,12 @@ function ScreenCartaDesigner({ prods, cats, local, setLocal }) {
           )}
         </div>
         {view==='editor'&&(
-          <div className="ap-sec-hdr-r" style={{ gap:6 }}>
-            <button className="ap-btn ap-btn-ghost ap-btn-sm" onClick={()=>setShowPub(true)}>📲 Publicar</button>
-            <button className="ap-btn ap-btn-gold ap-btn-sm" onClick={async()=>{ const ok=await doSave(); if(ok)alert('✅ Guardado'); }} disabled={saving}>{saving?'…':'💾 Guardar'}</button>
+          <div className="ap-sec-hdr-r" style={{ gap:5,flexWrap:'wrap' }}>
+            <button className="ap-btn ap-btn-ghost ap-btn-sm" onClick={shareLink} title="Compartir link">🔗</button>
+            <button className="ap-btn ap-btn-ghost ap-btn-sm" onClick={()=>setTab('preview')||setTimeout(exportAsImage,120)} disabled={exporting} title="Descargar imagen">🖼️</button>
+            <button className="ap-btn ap-btn-ghost ap-btn-sm" onClick={()=>setTab('preview')||setTimeout(exportAsPDF,120)} disabled={exporting} title="Descargar PDF">📄</button>
+            <button className="ap-btn ap-btn-ghost ap-btn-sm" onClick={()=>setShowPub(true)}>📲</button>
+            <button className="ap-btn ap-btn-gold ap-btn-sm" onClick={async()=>{ const ok=await doSave(); if(ok)alert('✅ Guardado'); }} disabled={saving}>{saving?'…':'💾'}</button>
           </div>
         )}
       </div>
@@ -1954,6 +2230,9 @@ function ScreenCartaDesigner({ prods, cats, local, setLocal }) {
       <div style={{ flex:1,overflow:'hidden',minHeight:0,display:'flex',flexDirection:'column' }}>
         {view==='gallery' ? GalleryView() : (tab==='design' ? DesignPanel() : Preview())}
       </div>
+
+      {showPhotoPicker && PhotoPickerModal()}
+      {showQuickAdd   && QuickAddModal()}
     </div>
   );
 }
@@ -3464,6 +3743,18 @@ function ScreenGestion({ prods, setProds, cats, local, setLocal }) {
 ══════════════════════════════════════════════════════════════ */
 export default function AdminPanel({ local, setLocal, cats, setCats, prods, setProds, authUser, onLogout }) {
   const [screen, setScreen] = React.useState("dashboard");
+  const [screenHistory, setScreenHistory] = React.useState([]);
+  function navTo(to) {
+    if (to !== screen) setScreenHistory(h => [...h.slice(-9), screen]);
+    setScreen(to);
+  }
+  function goBack() {
+    if (screenHistory.length > 0) {
+      const prev = screenHistory[screenHistory.length - 1];
+      setScreenHistory(h => h.slice(0, -1));
+      setScreen(prev);
+    }
+  }
   const [pedidos, setPedidos] = React.useState([]);
   const [clock, setClock] = React.useState(new Date());
 
@@ -3497,7 +3788,7 @@ export default function AdminPanel({ local, setLocal, cats, setCats, prods, setP
     cocina:    <ScreenCocina pedidos={pedidos} setPedidos={setPedidos} local={local} />,
     delivery:  <ScreenDelivery pedidos={pedidos} setPedidos={setPedidos} local={local} />,
     mesas:     <ScreenMesas local={local} pedidos={pedidos} />,
-    carta:     <ScreenCartaDesigner prods={prods} cats={cats} local={local} setLocal={setLocal} />,
+    carta:     <ScreenCartaDesigner prods={prods} cats={cats} local={local} setLocal={setLocal} setProds={setProds} goBack={goBack} />,
     productos: <ScreenCarta prods={prods} setProds={setProds} cats={cats} local={local} setLocal={setLocal} />,
     categorias:<ScreenCategorias cats={cats} setCats={setCats} prods={prods} local={local} />,
     stock:     <ScreenStock />,
@@ -3518,13 +3809,22 @@ export default function AdminPanel({ local, setLocal, cats, setCats, prods, setP
         <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
           <Topbar screen={screen} clock={clock} onMenuOpen={() => setNavOpen(true)} />
           <div style={{ flex: 1, overflowY: "auto", padding: "20px 24px" }}>
+            {screenHistory.length > 0 && (
+              <button onClick={goBack}
+                style={{ marginBottom:10, display:'inline-flex', alignItems:'center', gap:6,
+                  background:'rgba(255,255,255,.06)', border:'1px solid rgba(255,255,255,.1)',
+                  borderRadius:8, padding:'6px 14px 6px 10px', cursor:'pointer',
+                  fontSize:12, color:'rgba(255,255,255,.7)', fontWeight:600 }}>
+                ← Volver
+              </button>
+            )}
             {screenMap[screen] || <ScreenDashboard pedidos={pedidos} cats={cats} prods={prods} local={local} />}
           </div>
         </div>
         <div className={`ap-overlay${navOpen ? " nav-open" : ""}`} onClick={() => setNavOpen(false)} />
         <Sidebar
           screen={screen}
-          setScreen={setScreen}
+          setScreen={navTo}
           pendingCount={pendingCount}
           kitchenCount={kitchenCount}
           deliveryCount={deliveryCount}
