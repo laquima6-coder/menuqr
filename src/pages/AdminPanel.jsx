@@ -3923,17 +3923,35 @@ export default function AdminPanel({ local, setLocal, cats, setCats, prods, setP
 
   useEffect(() => {
     if (!local?.restauranteId) return;
-    const today = new Date().toISOString().slice(0, 10);
-    getPedidos(local.restauranteId, today).then((data) => { if (data) setPedidos(data); });
+
+    const refetch = () => {
+      const d = new Date().toISOString().slice(0, 10);
+      getPedidos(local.restauranteId, d).then((data) => { if (data) setPedidos(data); });
+    };
+
+    refetch();
+
     const unsub = subscribePedidos(
       local.restauranteId,
-      (newP) => { playAlarm('nuevo'); setPedidos((prev) => [newP, ...prev]); },
+      (newP) => { playAlarm('nuevo'); setPedidos((prev) => { if (prev.some(p=>p.id===newP.id)) return prev; return [newP, ...prev]; }); },
       (upd)  => {
         if (upd.status === 'listo') playAlarm('listo');
         setPedidos((prev) => prev.map((p) => (p.id === upd.id ? upd : p)));
       }
     );
-    return () => { if (unsub) unsub(); };
+
+    // Polling fallback cada 20s — por si Realtime pierde conexión en mobile
+    const poll = setInterval(refetch, 20000);
+
+    // Al volver a la pestaña: refetch inmediato
+    const onVisible = () => { if (document.visibilityState === 'visible') refetch(); };
+    document.addEventListener('visibilitychange', onVisible);
+
+    return () => {
+      if (unsub) unsub();
+      clearInterval(poll);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
   }, [local?.restauranteId]);
 
   const pendingCount = pedidos.filter((p) => ["pendiente","pendiente_pago","nuevo"].includes(p.status)).length;

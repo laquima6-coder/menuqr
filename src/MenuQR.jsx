@@ -3494,6 +3494,29 @@ export function ClientApp({onBack, local, cats, prods, vitrina=false, sinPedidos
                 </button>
               ))}
             </div>
+            {/* ── Solicitar algo — texto libre ── */}
+            <div style={{marginBottom:14}}>
+              <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:700,color:"#555",marginBottom:8}}>✏️ Solicitar algo más</p>
+              <textarea
+                value={solicitudTexto}
+                onChange={e=>setSolicitudTexto(e.target.value)}
+                placeholder="Ej: más servilletas, sal, una cuchara…"
+                rows={2}
+                style={{width:"100%",boxSizing:"border-box",border:"1px solid #EBEBEB",borderRadius:12,
+                  padding:"10px 12px",fontSize:13,fontFamily:"'DM Sans',sans-serif",color:"#333",
+                  resize:"none",outline:"none",background:"#FAFAFA"}}
+              />
+              {solicitudTexto.trim()&&(
+                <button
+                  onClick={()=>{ sendSolicitud("📝 "+solicitudTexto.trim()); setSolicitudTexto(""); }}
+                  className="pr"
+                  style={{marginTop:8,width:"100%",background:"#111",border:"none",borderRadius:12,
+                    padding:"12px",fontSize:13,fontWeight:700,color:"#FFF",cursor:"pointer",
+                    fontFamily:"'DM Sans',sans-serif"}}>
+                  Enviar solicitud
+                </button>
+              )}
+            </div>
             <button onClick={()=>setShowSolicitudes(false)} style={{width:"100%",background:"none",border:"1px solid #EBEBEB",borderRadius:12,padding:"12px",fontSize:13,color:"#999",cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}>Cerrar</button>
           </div>
         </div>
@@ -6434,7 +6457,8 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
           setSolicitudes(prev=>[s,...prev]);
           const labels = {mozo:"🙋 Llamado al mozo",cuenta:"💳 Piden la cuenta",
             cubiertos:"🍴 Cubiertos",hielo:"🧊 Hielo",pan:"🍞 Pan",servilletas:"🧻 Servilletas"};
-          toast(`${labels[s.tipo]||s.tipo} · Mesa ${s.mesa}`);
+          const _toastLabel = s.tipo?.startsWith("📝 ") ? "📝 "+s.tipo.slice(3) : (labels[s.tipo]||s.tipo);
+          toast(`${_toastLabel} · Mesa ${s.mesa}`);
           playSound('solicitud');
           pushNotify("🛎️ Solicitud de mesa", `Mesa ${s.mesa} — ${labels[s.tipo]||s.tipo}`);
         })
@@ -7528,6 +7552,9 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
               const icons  = {mozo:"🙋",cuenta:"💳",cubiertos:"🍴",hielo:"🧊",pan:"🍞",servilletas:"🧻"};
               const labels = {mozo:"Llamado al mozo",cuenta:"Piden la cuenta",
                 cubiertos:"Cubiertos",hielo:"Hielo",pan:"Pan",servilletas:"Servilletas"};
+              const _isTexto2 = s.tipo?.startsWith("📝 ");
+              const _tIcon2   = _isTexto2 ? "📝" : (icons[s.tipo]||"🛎️");
+              const _tLabel2  = _isTexto2 ? s.tipo.slice(3) : (labels[s.tipo]||s.tipo);
               return (
                 <div key={s.id} style={{display:"flex",justifyContent:"space-between",
                   alignItems:"center",padding:"10px 14px",
@@ -7536,11 +7563,11 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
                     <div style={{width:36,height:36,borderRadius:10,
                       background:"rgba(255,176,32,.1)",border:"1px solid rgba(255,176,32,.2)",
                       display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>
-                      {icons[s.tipo]||"🛎️"}
+                      {_tIcon2}
                     </div>
                     <div>
                       <p style={{fontFamily:"'Outfit',sans-serif",fontWeight:600,
-                        fontSize:13,color:"var(--abri)"}}>{labels[s.tipo]||s.tipo}</p>
+                        fontSize:13,color:"var(--abri)"}}>{_tLabel2}</p>
                       <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,
                         color:"var(--ad)"}}>Mesa {s.mesa} · {new Date(s.created_at).toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"})}</p>
                     </div>
