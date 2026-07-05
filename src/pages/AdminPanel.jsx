@@ -1218,11 +1218,14 @@ const CDV2_FONTS = [
 ];
 
 /* ── card style helpers ── */
-function cdv2CardStyle(formato, imagen, accentColor) {
+function cdv2CardStyle(formato, imagen, accentColor, catColor) {
+  const effectiveColor = catColor || accentColor;
   const imgBg = imagen
     ? `linear-gradient(rgba(0,0,0,.42),rgba(0,0,0,.62)), url(${imagen}) center/cover no-repeat`
-    : `linear-gradient(135deg, ${accentColor}28, ${accentColor}08)`;
-  const base = { background:imgBg, border:`1px solid ${accentColor}33`, cursor:'pointer', transition:'opacity .12s', userSelect:'none' };
+    : catColor
+      ? `linear-gradient(135deg, ${catColor}ee, ${catColor}99)`
+      : `linear-gradient(135deg, ${accentColor}28, ${accentColor}08)`;
+  const base = { background:imgBg, border:`1px solid ${effectiveColor}55`, cursor:'pointer', transition:'opacity .12s', userSelect:'none' };
   if (formato==='rectangle') return { ...base, borderRadius:10, minHeight:72, display:'flex', alignItems:'center', padding:'0 16px' };
   if (formato==='square')    return { ...base, borderRadius:10, aspectRatio:'1/1', maxWidth:160, margin:'0 auto', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:12 };
   /* round */                return { ...base, borderRadius:'50%', width:110, height:110, margin:'0 auto', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:8 };
@@ -1255,8 +1258,9 @@ function ScreenCartaDesigner({ prods, cats, local, setLocal }) {
   const [catConfigs,  setCatConfigs]  = useState(savedV2.catConfigs  || {});
   const [selCatId,    setSelCatId]    = useState(null);
   const [expandedPrev,setExpandedPrev]= useState({});
+  const autoCloseTimers = useRef({});
 
-  function getCatCfg(id) { return catConfigs[id] || { formato:'rectangle', imagen:null }; }
+  function getCatCfg(id) { return catConfigs[id] || { formato:'rectangle', imagen:null, color:null }; }
   function updCatCfg(id, upd) { setCatConfigs(p => ({ ...p, [id]: { ...getCatCfg(id), ...upd } })); }
 
   const activeCats = (cats||[]).filter(c => c.activa !== false);
@@ -1297,8 +1301,17 @@ function ScreenCartaDesigner({ prods, cats, local, setLocal }) {
               const isExp = !!expandedPrev[cat.id];
               return (
                 <div key={cat.id} style={{ marginBottom:10 }}>
-                  <div onClick={() => setExpandedPrev(p => ({...p,[cat.id]:!p[cat.id]}))}
-                    style={cdv2CardStyle(cfg.formato, cfg.imagen, accentColor)}>
+                  <div onClick={() => {
+                    const nowOpen = !expandedPrev[cat.id];
+                    setExpandedPrev(p => ({...p,[cat.id]:nowOpen}));
+                    if (autoCloseTimers.current[cat.id]) clearTimeout(autoCloseTimers.current[cat.id]);
+                    if (nowOpen) {
+                      autoCloseTimers.current[cat.id] = setTimeout(() => {
+                        setExpandedPrev(p => ({...p,[cat.id]:false}));
+                      }, 2000);
+                    }
+                  }}
+                    style={cdv2CardStyle(cfg.formato, cfg.imagen, accentColor, cfg.color)}>
                     {cdv2CatContent(cfg.formato, cat, isExp)}
                   </div>
                   {isExp && (
@@ -1307,11 +1320,11 @@ function ScreenCartaDesigner({ prods, cats, local, setLocal }) {
                         ? <div style={{ fontSize:11,color:'rgba(255,255,255,.2)',textAlign:'center',padding:'10px 0' }}>Sin productos</div>
                         : <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(142px,1fr))', gap:8 }}>
                             {catProds.map(p => (
-                              <div key={p.id} style={{ background:'rgba(255,255,255,.05)', borderRadius:10, overflow:'hidden', border:`1px solid ${accentColor}26` }}>
+                              <div key={p.id} style={{ background:'rgba(255,255,255,.05)', borderRadius:10, overflow:'hidden', border:`1px solid ${(cfg.color||accentColor)}26` }}>
                                 <img src={p.imagen||getPlaceholder(cat.label)} alt="" style={{ width:'100%',height:105,objectFit:'cover',display:'block' }} />
                                 <div style={{ padding:'7px 9px' }}>
                                   <div style={{ fontSize:12,fontWeight:700,color:'#fff',lineHeight:1.3 }}>{p.name||p.nombre}</div>
-                                  <div style={{ fontSize:13,fontWeight:800,color:accentColor,margin:'3px 0 2px' }}>{ARS(p.price??p.precio)}</div>
+                                  <div style={{ fontSize:13,fontWeight:800,color:cfg.color||accentColor,margin:'3px 0 2px' }}>{ARS(p.price??p.precio)}</div>
                                   {(p.desc||p.descripcion) && (
                                     <div style={{ fontSize:10,color:'rgba(255,255,255,.38)',lineHeight:1.4 }}>
                                       {((p.desc||p.descripcion)||'').slice(0,65)}{((p.desc||p.descripcion)||'').length>65?'…':''}
@@ -1406,6 +1419,23 @@ function ScreenCartaDesigner({ prods, cats, local, setLocal }) {
                           {fmt.label}
                         </button>
                       ))}
+                    </div>
+                    <div style={{ marginBottom:14 }}>
+                      <div style={{ fontSize:10,color:'rgba(255,255,255,.38)',marginBottom:8 }}>Color de la tarjeta</div>
+                      <div style={{ display:'flex',gap:6,flexWrap:'wrap' }}>
+                        {['#C9A84C','#e84040','#3ecf6e','#3e8cff','#a855f7','#f5c518','#ec4899','#ff6b35','#00bcd4','#ffffff'].map(c=>(
+                          <div key={c} onClick={()=>updCatCfg(cat.id,{color:cfg.color===c?null:c})}
+                            style={{ width:26,height:26,borderRadius:'50%',background:c,cursor:'pointer',
+                              outline:cfg.color===c?`3px solid #fff`:'2px solid transparent',
+                              outlineOffset:1,transition:'outline .12s',flexShrink:0 }} />
+                        ))}
+                        <label title="Color personalizado" style={{ width:26,height:26,borderRadius:'50%',overflow:'hidden',cursor:'pointer',border:'1px solid rgba(255,255,255,.2)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:12 }}>
+                          🎨
+                          <input type="color" value={cfg.color||'#ffffff'} onChange={e=>updCatCfg(cat.id,{color:e.target.value})}
+                            style={{ position:'absolute',opacity:0,width:1,height:1 }} />
+                        </label>
+                        {cfg.color && <div onClick={()=>updCatCfg(cat.id,{color:null})} title="Sin color" style={{ width:26,height:26,borderRadius:'50%',border:'1px dashed rgba(255,255,255,.25)',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,color:'rgba(255,255,255,.4)' }}>✕</div>}
+                      </div>
                     </div>
                     <div>
                       <label style={{ fontSize:10,color:'rgba(255,255,255,.38)',display:'block',marginBottom:5 }}>Foto de portada (URL)</label>
