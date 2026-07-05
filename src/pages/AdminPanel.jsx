@@ -1281,7 +1281,7 @@ function ScreenCartaDesigner({ prods, cats, local, setLocal }) {
   /* ── PREVIEW ── */
   function Preview() {
     return (
-      <div style={{ overflowY:'auto', flex:1, display:'flex', justifyContent:'center', padding:'4px 0 16px' }}>
+      <div style={{ overflowY:'auto', flex:1, display:'flex', justifyContent:'center', padding:'4px 0 16px', overscrollBehavior:'contain', WebkitOverflowScrolling:'touch' }} onTouchStart={e=>e.stopPropagation()} onTouchMove={e=>e.stopPropagation()}>
         <div style={{ width:'100%', maxWidth:430, background:bgColor, borderRadius:14, fontFamily, overflow:'hidden', boxShadow:'0 6px 32px rgba(0,0,0,.55)', minHeight:500 }}>
           {titulo && (
             <div style={{ padding:'18px 16px 8px', textAlign:'center', fontSize:21, fontWeight:800, color:accentColor, letterSpacing:.4 }}>
@@ -1369,7 +1369,7 @@ function ScreenCartaDesigner({ prods, cats, local, setLocal }) {
           </div>
         </div>
         {/* Categories */}
-        <div style={{ flex:1, overflowY:'auto', padding:'12px' }}>
+        <div style={{ flex:1, overflowY:'auto', padding:'12px', overscrollBehavior:'contain', WebkitOverflowScrolling:'touch' }} onTouchStart={e=>e.stopPropagation()} onTouchMove={e=>e.stopPropagation()}>
           <div style={{ fontSize:9,fontWeight:700,color:'rgba(255,255,255,.3)',letterSpacing:1,marginBottom:10,textTransform:'uppercase' }}>
             Categorías ({activeCats.length})
           </div>
@@ -1456,7 +1456,7 @@ function ScreenCartaDesigner({ prods, cats, local, setLocal }) {
   ];
 
   return (
-    <div style={{ display:'flex', flexDirection:'column', height:'calc(100vh - 110px)', minHeight:520 }}>
+    <div style={{ display:'flex', flexDirection:'column', height:'calc(100vh - 110px)', minHeight:520, margin:'-4px -4px 0' }}>
 
       {/* ── Publish modal ── */}
       {showPub && (
