@@ -2550,8 +2550,9 @@ function ScreenMesas({ local, pedidos }) {
    SCREEN: DELIVERY
 ══════════════════════════════════════════════════════════════ */
 function ScreenDelivery({ pedidos, setPedidos, local }) {
+  // Delivery: cualquier pedido con mesa_numero===0 (incluye los de DeliveryPage.jsx)
   const deliveryOrders = pedidos.filter(
-    (p) => (p.tipo_pedido === "delivery" || (p.mesa_numero === 0 && !p.tipo_pedido && p.nota?.includes("DELIVERY"))) && p.status !== "entregado"
+    (p) => (p.tipo_pedido === "delivery" || p.mesa_numero === 0) && p.status !== "entregado"
   );
   const [notaDelivery, setNotaDelivery] = React.useState({});
 
@@ -2567,6 +2568,13 @@ function ScreenDelivery({ pedidos, setPedidos, local }) {
     if (!next) return;
     if (supabase) await supabase.from("pedidos").update({ status: next }).eq("id", p.id);
     setPedidos(prev => prev.map(o => o.id === p.id ? { ...o, status: next } : o));
+    // Notificar al cliente que el repartidor salió
+    if (next === "en_camino" && supabase && local?.slug) {
+      const ch = supabase.channel("tracking:" + local.slug);
+      await ch.subscribe();
+      await ch.send({ type: "broadcast", event: "location", payload: { lat: null, lon: null, en_camino: true } });
+      setTimeout(() => supabase.removeChannel(ch), 3000);
+    }
   };
 
   const guardarNotaDelivery = async (p) => {
@@ -3780,7 +3788,7 @@ export default function AdminPanel({ local, setLocal, cats, setCats, prods, setP
 
   const pendingCount = pedidos.filter((p) => ["pendiente","pendiente_pago","nuevo"].includes(p.status)).length;
   const kitchenCount = pedidos.filter((p) => p.status === "en_cocina").length;
-  const deliveryCount = pedidos.filter((p) => (p.tipo_pedido==="delivery"||p.tipo_pedido==="retiro") && p.status!=="entregado").length;
+  const deliveryCount = pedidos.filter((p) => (p.tipo_pedido==="delivery"||p.tipo_pedido==="retiro"||p.mesa_numero===0) && p.status!=="entregado").length;
 
   const screenMap = {
     dashboard: <ScreenDashboard pedidos={pedidos} cats={cats} prods={prods} local={local} />,

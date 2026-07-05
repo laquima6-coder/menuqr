@@ -1,12 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams } from 'react-router-dom'
-import { createClient } from '@supabase/supabase-js'
+import { supabase as sb } from '../lib/supabase.js'
 
-const SUPABASE_URL = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_URL) || 'https://fwovflsaghnutysjyaus.supabase.co'
-const SUPABASE_KEY = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_ANON_KEY) || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ3b3ZmbHNhZ2hudXR5c2p5YXVzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2Njc0NzUsImV4cCI6MjA5NjI0MzQ3NX0.HtkD4AK35MSf4o9oNeGTlsooE0zSodjFVZH94ipCUAo'
 const TOMTOM_KEY  = import.meta.env.VITE_TOMTOM_KEY || 'NP2gPszMkFrVccT95vTeaMrsWfZ0ORLU'
-
-const sb  = SUPABASE_URL && SUPABASE_KEY ? createClient(SUPABASE_URL, SUPABASE_KEY) : null
 const fmt = n => Number(n || 0).toLocaleString('es-AR')
 
 // ─── TomTom SDK loader (CDN, one-time) ───────────────────────────────────────
@@ -493,25 +489,25 @@ export default function DeliveryPage() {
         🛵 Te van a contactar para coordinar la entrega.
       </p>
       {/* Live tracking del repartidor */}
-      {TOMTOM_KEY && (
-        <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 8 }}>
-          {trackingActive ? (
-            <LiveTrackingMap
-              apiKey={TOMTOM_KEY}
-              deliveryLat={direcPos?.lat ?? -34.6037}
-              deliveryLon={direcPos?.lon ?? -58.3816}
-              repartidorPos={repartidorPos}
-            />
-          ) : (
-            <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, padding: '20px 24px', marginBottom: 20, textAlign: 'center', width: '100%', maxWidth: 380 }}>
-              <div style={{ fontSize: 28, marginBottom: 8 }}>🛵</div>
-              <p style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 13, color: 'rgba(255,255,255,0.45)', margin: 0 }}>
-                El mapa aparece cuando el repartidor inicie el tracking
-              </p>
+      <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 8 }}>
+        {trackingActive ? (
+          <>
+            <div style={{ background: 'rgba(201,168,76,.12)', border: '1px solid rgba(201,168,76,.4)', borderRadius: 16, padding: '16px 24px', marginBottom: 16, textAlign: 'center', width: '100%', maxWidth: 380, boxSizing: 'border-box' }}>
+              <div style={{ fontSize: 28, marginBottom: 6 }}>🛵</div>
+              <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 15, fontWeight: 700, color: '#C9A84C', marginBottom: 4 }}>¡Tu pedido está en camino!</div>
+              <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 12, color: 'rgba(255,255,255,0.55)' }}>El repartidor ya salió hacia tu dirección.</div>
             </div>
-          )}
-        </div>
-      )}
+            {TOMTOM_KEY && repartidorPos && (
+              <LiveTrackingMap
+                apiKey={TOMTOM_KEY}
+                deliveryLat={direcPos?.lat ?? -34.6037}
+                deliveryLon={direcPos?.lon ?? -58.3816}
+                repartidorPos={repartidorPos}
+              />
+            )}
+          </>
+        ) : null}
+      </div>
 
       <button
         onClick={() => { setStep(1); setDone(false); setCart({}); setPayMethod(''); setZoneInfo(null); setDirec(''); setDirecPos(null); setName(''); setPhone(''); setPiso(''); setNota(''); setRepartidorPos(null); setTrackingActive(false) }}
