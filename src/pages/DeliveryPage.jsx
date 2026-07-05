@@ -289,8 +289,8 @@ export default function DeliveryPage() {
         restauranteId:           rest.id,
         slug,
         delivery_config:         rest.delivery_config || null,
-        mp_alias:                cfg.mp_alias     || rest.mp_alias     || '',
-        alias_trans:             cfg.alias_trans  || rest.alias_trans  || cfg.mp_alias || rest.mp_alias || '',
+        mp_alias:                cfg.mp_alias     || rest.mp_alias     || rest.alias_pago || '',
+        alias_trans:             cfg.alias_trans  || rest.alias_trans  || cfg.mp_alias || rest.mp_alias || rest.alias_pago || '',
         mp_titular:              cfg.mp_titular   || rest.mp_titular   || '',
         mp_mostrar_alias:        cfg.mp_mostrar_alias ?? true,
         // WhatsApp number: check several fields in priority order
