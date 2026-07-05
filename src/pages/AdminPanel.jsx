@@ -1212,30 +1212,79 @@ function ProductModal({ product, cats, restauranteId, onClose, onSave }) {
 ══════════════════════════════════════════════════════════════ */
 
 const CDV3_FONTS = [
-  { label:'Sistema',  value:'system-ui, sans-serif' },
-  { label:'Clásica',  value:"'Georgia', 'Times New Roman', serif" },
-  { label:'Moderna',  value:"'Helvetica Neue', Arial, sans-serif" },
-  { label:'Bold',     value:"'Arial Black', 'Impact', sans-serif" },
-  { label:'Mono',     value:"'Courier New', Courier, monospace" },
+  { label:'Sistema',   value:'system-ui, sans-serif' },
+  { label:'Clásica',   value:"'Georgia', 'Times New Roman', serif" },
+  { label:'Moderna',   value:"'Helvetica Neue', Arial, sans-serif" },
+  { label:'Bold',      value:"'Arial Black', 'Impact', sans-serif" },
+  { label:'Mono',      value:"'Courier New', Courier, monospace" },
 ];
 
+/* prodS: 'horizontal' | 'vertical' | 'compact-list' | 'full-photo'
+   catH:  'banner' | 'divider' | 'bold-label' | 'pill'                */
 const CDV3_TEMPLATES = [
-  {id:'pizzeria',   nombre:'Pizzería Napolitana',  cat:'Pizzería',    emoji:'🍕', dark:true,  bg:'#1a0500', ac:'#FF4500', font:"'Georgia', serif",                   catStyle:'rectangle'},
-  {id:'cafe',       nombre:'Café & Brunch',        cat:'Cafetería',   emoji:'☕', dark:true,  bg:'#2C1810', ac:'#D4956A', font:"'Georgia', serif",                   catStyle:'square'},
-  {id:'parrilla',   nombre:'Parrilla Argentina',   cat:'Parrilla',    emoji:'🥩', dark:true,  bg:'#0f0800', ac:'#C9A84C', font:'system-ui, sans-serif',              catStyle:'rectangle'},
-  {id:'sushi',      nombre:'Japonés & Sushi',      cat:'Japonés',     emoji:'🍣', dark:true,  bg:'#0a0a0f', ac:'#E8403E', font:"'Helvetica Neue', Arial, sans-serif", catStyle:'rectangle'},
-  {id:'helado',     nombre:'Heladería & Postres',  cat:'Heladería',   emoji:'🍦', dark:false, bg:'#f5f0ff', ac:'#9B59B6', font:'system-ui, sans-serif',              catStyle:'round'},
-  {id:'burger',     nombre:'Hamburguesería',       cat:'Hamburguesas',emoji:'🍔', dark:true,  bg:'#1a1200', ac:'#FFD700', font:"'Arial Black', sans-serif",          catStyle:'rectangle'},
-  {id:'bar',        nombre:'Bar & Coctelería',     cat:'Bar',         emoji:'🍸', dark:true,  bg:'#08001a', ac:'#8B5CF6', font:"'Georgia', serif",                   catStyle:'square'},
-  {id:'vegano',     nombre:'Vegano & Natural',     cat:'Vegano',      emoji:'🥗', dark:true,  bg:'#0a1a0a', ac:'#4CAF50', font:'system-ui, sans-serif',              catStyle:'rectangle'},
-  {id:'finedining', nombre:'Fine Dining',          cat:'Alta cocina', emoji:'🍽️', dark:true,  bg:'#080808', ac:'#C9A84C', font:"'Georgia', serif",                   catStyle:'rectangle'},
-  {id:'mariscos',   nombre:'Mariscos & Mar',       cat:'Mariscos',    emoji:'🦐', dark:true,  bg:'#001a2e', ac:'#00B4D8', font:'system-ui, sans-serif',              catStyle:'rectangle'},
-  {id:'arabe',      nombre:'Árabe & Oriental',     cat:'Árabe',       emoji:'🥙', dark:true,  bg:'#1a0f00', ac:'#F0C040', font:"'Georgia', serif",                   catStyle:'square'},
-  {id:'pasteleria', nombre:'Pastelería',           cat:'Pastelería',  emoji:'🎂', dark:false, bg:'#fff5f8', ac:'#E91E8C', font:'system-ui, sans-serif',              catStyle:'round'},
-  {id:'chino',      nombre:'Comida China',         cat:'Asiático',    emoji:'🍜', dark:true,  bg:'#1a0000', ac:'#FF3333', font:'system-ui, sans-serif',              catStyle:'rectangle'},
-  {id:'cerveceria', nombre:'Cervecería & Brew',    cat:'Cervecería',  emoji:'🍺', dark:true,  bg:'#100800', ac:'#E8A020', font:"'Arial Black', sans-serif",          catStyle:'rectangle'},
-  {id:'tacos',      nombre:'Tacos & Mexicano',     cat:'Mexicano',    emoji:'🌮', dark:true,  bg:'#1a0800', ac:'#FF5722', font:"'Arial Black', sans-serif",          catStyle:'square'},
-  {id:'desayunos',  nombre:'Desayunos & Merienda', cat:'Desayunos',   emoji:'🥞', dark:false, bg:'#fff8f0', ac:'#FF8C00', font:'system-ui, sans-serif',              catStyle:'square'},
+  {id:'nobu',       nombre:'Nobu Tokyo',          cat:'Japonés',     emoji:'🍣', mood:'Minimalista premium',
+   dark:true,  bg:'#0a0a0a', ac:'#C41E3A', font:"'Helvetica Neue',Arial,sans-serif",
+   catH:'divider',    prodS:'horizontal',    headerAlign:'center'},
+
+  {id:'bistro',     nombre:'Bistro Parisino',      cat:'Cafetería',   emoji:'🥐', mood:'Clásico francés',
+   dark:false, bg:'#f8f4e8', ac:'#1a3a5c', ac2:'#C9A84C', font:"'Georgia',serif",
+   catH:'divider',    prodS:'compact-list',  headerAlign:'center'},
+
+  {id:'parrilla',   nombre:'Parrilla Don José',    cat:'Parrilla',    emoji:'🥩', mood:'Rústico premium',
+   dark:true,  bg:'#120a04', ac:'#C9A84C', font:"'Georgia',serif",
+   catH:'banner',     prodS:'horizontal',    headerAlign:'left'},
+
+  {id:'omakase',    nombre:'Omakase',              cat:'Japonés',     emoji:'🎌', mood:'Zen minimalista',
+   dark:true,  bg:'#0d0d0d', ac:'#ffffff', ac2:'#C41E3A', font:"'Helvetica Neue',Arial,sans-serif",
+   catH:'bold-label', prodS:'compact-list',  headerAlign:'center'},
+
+  {id:'heladeria',  nombre:'Heladería Fresca',     cat:'Heladería',   emoji:'🍦', mood:'Fresco y alegre',
+   dark:false, bg:'#f0faf5', ac:'#7C3AED', font:"system-ui,sans-serif",
+   catH:'pill',       prodS:'vertical',      headerAlign:'center'},
+
+  {id:'moderna',    nombre:'La Brigada',           cat:'Hamburguesas',emoji:'🍔', mood:'Urbano moderno',
+   dark:true,  bg:'#111111', ac:'#FF5500', font:"'Arial Black',sans-serif",
+   catH:'bold-label', prodS:'full-photo',    headerAlign:'left'},
+
+  {id:'speakeasy',  nombre:'Speakeasy 1920',       cat:'Bar',         emoji:'🍸', mood:'Art Deco elegante',
+   dark:true,  bg:'#07040f', ac:'#B8963E', font:"'Georgia',serif",
+   catH:'divider',    prodS:'horizontal',    headerAlign:'center'},
+
+  {id:'vegano',     nombre:'Raíces',               cat:'Vegano',      emoji:'🌿', mood:'Orgánico natural',
+   dark:true,  bg:'#0b1a0d', ac:'#6DBE45', font:"system-ui,sans-serif",
+   catH:'banner',     prodS:'horizontal',    headerAlign:'left'},
+
+  {id:'grand',      nombre:'Grand Hotel',          cat:'Alta cocina', emoji:'🍽️', mood:'Fine dining formal',
+   dark:false, bg:'#faf8f2', ac:'#2D5016', ac2:'#C9A84C', font:"'Georgia',serif",
+   catH:'divider',    prodS:'compact-list',  headerAlign:'center'},
+
+  {id:'maremoto',   nombre:'Maremoto',             cat:'Mariscos',    emoji:'🦐', mood:'Mar profundo',
+   dark:true,  bg:'#001428', ac:'#00B4D8', font:"system-ui,sans-serif",
+   catH:'banner',     prodS:'full-photo',    headerAlign:'center'},
+
+  {id:'arabian',    nombre:'Al Arabiya',           cat:'Árabe',       emoji:'🥙', mood:'Oriental de lujo',
+   dark:true,  bg:'#120c02', ac:'#D4A84B', font:"'Georgia',serif",
+   catH:'banner',     prodS:'horizontal',    headerAlign:'center'},
+
+  {id:'pasteleria', nombre:'Pastelería Luna',      cat:'Pastelería',  emoji:'🎂', mood:'Delicado y dulce',
+   dark:false, bg:'#fef0f5', ac:'#D63384', font:"system-ui,sans-serif",
+   catH:'pill',       prodS:'vertical',      headerAlign:'center'},
+
+  {id:'dragon',     nombre:'Wok Dragon',           cat:'Asiático',    emoji:'🍜', mood:'Alta energía',
+   dark:true,  bg:'#0f0000', ac:'#FF2020', ac2:'#FFD700', font:"'Arial Black',sans-serif",
+   catH:'bold-label', prodS:'full-photo',    headerAlign:'left'},
+
+  {id:'brewery',    nombre:'Brew & Grub',          cat:'Cervecería',  emoji:'🍺', mood:'Craft artesanal',
+   dark:true,  bg:'#0e0800', ac:'#E8911A', font:"'Arial Black',sans-serif",
+   catH:'banner',     prodS:'horizontal',    headerAlign:'left'},
+
+  {id:'fogon',      nombre:'El Fogón',             cat:'Mexicano',    emoji:'🌮', mood:'Mexicano premium',
+   dark:true,  bg:'#160800', ac:'#E05C1A', ac2:'#FFD700', font:"'Georgia',serif",
+   catH:'divider',    prodS:'horizontal',    headerAlign:'center'},
+
+  {id:'nordic',     nombre:'Nordic Table',         cat:'Desayunos',   emoji:'🥞', mood:'Escandinavo limpio',
+   dark:false, bg:'#f7f7f5', ac:'#2C3E50', font:"'Helvetica Neue',Arial,sans-serif",
+   catH:'divider',    prodS:'compact-list',  headerAlign:'left'},
 ];
 
 function cdv3MakeDefaultBlocks(local) {
@@ -1248,38 +1297,131 @@ function cdv3MakeDefaultBlocks(local) {
   ];
 }
 
-/* ── card style helpers ── */
+/* ── helpers ── */
 function cdv2CardStyle(formato, imagen, accentColor, catColor) {
   const effectiveColor = catColor || accentColor;
   const imgBg = imagen
     ? `linear-gradient(rgba(0,0,0,.42),rgba(0,0,0,.62)), url(${imagen}) center/cover no-repeat`
-    : catColor
-      ? `linear-gradient(135deg, ${catColor}ee, ${catColor}99)`
-      : `linear-gradient(135deg, ${accentColor}28, ${accentColor}08)`;
+    : catColor ? `linear-gradient(135deg,${catColor}ee,${catColor}99)`
+               : `linear-gradient(135deg,${accentColor}28,${accentColor}08)`;
   const base = { background:imgBg, border:`1px solid ${effectiveColor}55`, cursor:'pointer', transition:'opacity .12s', userSelect:'none' };
   if (formato==='rectangle') return { ...base, borderRadius:10, minHeight:72, display:'flex', alignItems:'center', padding:'0 16px' };
   if (formato==='square')    return { ...base, borderRadius:10, aspectRatio:'1/1', maxWidth:160, margin:'0 auto', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:12 };
-  /* round */                return { ...base, borderRadius:'50%', width:110, height:110, margin:'0 auto', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:8 };
+  return { ...base, borderRadius:'50%', width:110, height:110, margin:'0 auto', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:8 };
 }
 function cdv2CatContent(formato, cat, isExp) {
-  if (formato==='rectangle') {
-    return (<div style={{ display:'flex',alignItems:'center',gap:12,width:'100%' }}>
+  if (formato==='rectangle') return (
+    <div style={{ display:'flex',alignItems:'center',gap:12,width:'100%' }}>
       <span style={{ fontSize:24 }}>{cat.emoji}</span>
       <span style={{ fontSize:16,fontWeight:700,color:'#fff',flex:1,textShadow:'0 1px 6px rgba(0,0,0,.8)' }}>{cat.label}</span>
-      <span style={{ fontSize:13,color:'rgba(255,255,255,.45)',transition:'transform .15s',display:'inline-block',transform:isExp?'rotate(180deg)':'none' }}>▼</span>
-    </div>);
-  }
+      <span style={{ fontSize:13,color:'rgba(255,255,255,.45)',display:'inline-block',transform:isExp?'rotate(180deg)':'none',transition:'transform .15s' }}>▼</span>
+    </div>
+  );
   return (<>
     <span style={{ fontSize:formato==='round'?30:26, marginBottom:4 }}>{cat.emoji}</span>
-    <span style={{ fontSize:formato==='round'?11:13, fontWeight:700, color:'#fff', textAlign:'center', textShadow:'0 1px 5px rgba(0,0,0,.8)', lineHeight:1.2 }}>{cat.label}</span>
-    {formato==='square' && <span style={{ fontSize:10,color:'rgba(255,255,255,.35)',marginTop:4 }}>{isExp?'▲':'▼'}</span>}
+    <span style={{ fontSize:formato==='round'?11:13,fontWeight:700,color:'#fff',textAlign:'center',textShadow:'0 1px 5px rgba(0,0,0,.8)',lineHeight:1.2 }}>{cat.label}</span>
+    {formato==='square'&&<span style={{ fontSize:10,color:'rgba(255,255,255,.35)',marginTop:4 }}>{isExp?'▲':'▼'}</span>}
   </>);
 }
 
+/* ── category header renderer ── */
+function cdv3CatHeader(cat, cfg, tpl, isExp, onToggle) {
+  const ac = cfg.color || tpl.ac;
+  const tc = tpl.dark===false ? '#1a1a1a' : '#ffffff';
+  if (tpl.catH==='divider') return (
+    <div onClick={onToggle} style={{ display:'flex',alignItems:'center',gap:10,padding:'14px 4px 10px',cursor:'pointer' }}>
+      <div style={{ flex:1,height:1,background:`${ac}35` }} />
+      <span style={{ fontSize:12,fontWeight:700,color:ac,letterSpacing:2,textTransform:'uppercase',fontFamily:tpl.font,whiteSpace:'nowrap' }}>{cat.emoji} {cat.label}</span>
+      <div style={{ flex:1,height:1,background:`${ac}35` }} />
+      <span style={{ fontSize:10,color:`${ac}70`,marginLeft:2 }}>{isExp?'▲':'▼'}</span>
+    </div>
+  );
+  if (tpl.catH==='bold-label') return (
+    <div onClick={onToggle} style={{ display:'flex',alignItems:'center',padding:'14px 0 8px',cursor:'pointer',borderBottom:`2px solid ${ac}` }}>
+      <span style={{ fontSize:18,marginRight:8 }}>{cat.emoji}</span>
+      <span style={{ fontSize:14,fontWeight:900,color:ac,letterSpacing:1,textTransform:'uppercase',fontFamily:tpl.font,flex:1 }}>{cat.label}</span>
+      <span style={{ fontSize:13,color:`${ac}80` }}>{isExp?'−':'+'}</span>
+    </div>
+  );
+  if (tpl.catH==='pill') return (
+    <div onClick={onToggle} style={{ display:'flex',justifyContent:'center',padding:'10px 0 6px',cursor:'pointer' }}>
+      <div style={{ background:ac,borderRadius:20,padding:'7px 20px',display:'flex',alignItems:'center',gap:8 }}>
+        <span style={{ fontSize:16 }}>{cat.emoji}</span>
+        <span style={{ fontSize:13,fontWeight:700,color:'#fff',letterSpacing:.5 }}>{cat.label}</span>
+        <span style={{ fontSize:10,color:'rgba(255,255,255,.65)' }}>{isExp?'▲':'▼'}</span>
+      </div>
+    </div>
+  );
+  /* banner */
+  return (
+    <div onClick={onToggle} style={cdv2CardStyle(cfg.formato,cfg.imagen,tpl.ac,cfg.color)}>
+      {cdv2CatContent(cfg.formato,cat,isExp)}
+    </div>
+  );
+}
+
+/* ── product card renderer ── */
+function cdv3ProdCard(p, cat, prodS, tpl, catColor) {
+  const ac  = catColor || tpl.ac;
+  const tc  = tpl.dark===false ? '#1a1a1a' : '#ffffff';
+  const imgSrc = p.imagen || getPlaceholder(cat.label);
+  const name   = p.name || p.nombre;
+  const price  = ARS(p.price ?? p.precio);
+  const desc   = (p.desc || p.descripcion || '').slice(0, 58);
+
+  if (prodS==='horizontal') return (
+    <div key={p.id} style={{ display:'flex',height:88,borderRadius:10,overflow:'hidden',marginBottom:8,background:'rgba(255,255,255,.04)',border:`1px solid ${ac}22` }}>
+      <img src={imgSrc} alt="" style={{ width:'38%',objectFit:'cover',flexShrink:0 }} />
+      <div style={{ flex:1,padding:'10px 12px',display:'flex',flexDirection:'column',justifyContent:'center',minWidth:0 }}>
+        <div style={{ fontSize:13,fontWeight:700,color:tc,lineHeight:1.3,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' }}>{name}</div>
+        {desc&&<div style={{ fontSize:10,color:`${tc}60`,lineHeight:1.3,marginTop:3,overflow:'hidden',display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical' }}>{desc}</div>}
+        <div style={{ fontSize:14,fontWeight:800,color:ac,marginTop:5 }}>{price}</div>
+      </div>
+    </div>
+  );
+
+  if (prodS==='compact-list') return (
+    <div key={p.id} style={{ display:'flex',alignItems:'center',padding:'11px 0',borderBottom:`1px solid ${ac}18` }}>
+      <div style={{ flex:1,minWidth:0 }}>
+        <div style={{ fontSize:13,fontWeight:600,color:tc,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' }}>{name}</div>
+        {desc&&<div style={{ fontSize:10,color:`${tc}55`,marginTop:2,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' }}>{desc}</div>}
+      </div>
+      <div style={{ fontFamily:"'Courier New',monospace",fontSize:14,fontWeight:700,color:ac,flexShrink:0,marginLeft:14 }}>{price}</div>
+    </div>
+  );
+
+  if (prodS==='full-photo') return (
+    <div key={p.id} style={{ borderRadius:10,overflow:'hidden',marginBottom:8,position:'relative' }}>
+      <img src={imgSrc} alt="" style={{ width:'100%',height:140,objectFit:'cover',display:'block' }} />
+      <div style={{ position:'absolute',bottom:0,left:0,right:0,background:'linear-gradient(transparent,rgba(0,0,0,.88))',padding:'20px 12px 10px' }}>
+        <div style={{ display:'flex',justifyContent:'space-between',alignItems:'flex-end' }}>
+          <div style={{ flex:1,minWidth:0 }}>
+            <div style={{ fontSize:14,fontWeight:700,color:'#fff',lineHeight:1.3 }}>{name}</div>
+            {desc&&<div style={{ fontSize:10,color:'rgba(255,255,255,.65)',marginTop:2 }}>{desc}</div>}
+          </div>
+          <div style={{ fontSize:15,fontWeight:800,color:ac,flexShrink:0,marginLeft:10 }}>{price}</div>
+        </div>
+      </div>
+    </div>
+  );
+
+  /* vertical (default) */
+  return (
+    <div key={p.id} style={{ background:'rgba(255,255,255,.05)',borderRadius:10,overflow:'hidden',border:`1px solid ${ac}22` }}>
+      <img src={imgSrc} alt="" style={{ width:'100%',height:105,objectFit:'cover',display:'block' }} />
+      <div style={{ padding:'7px 9px' }}>
+        <div style={{ fontSize:12,fontWeight:700,color:tc,lineHeight:1.3 }}>{name}</div>
+        <div style={{ fontSize:13,fontWeight:800,color:ac,margin:'3px 0 2px' }}>{price}</div>
+        {desc&&<div style={{ fontSize:10,color:`${tc}55`,lineHeight:1.4 }}>{desc}</div>}
+      </div>
+    </div>
+  );
+}
+
 function ScreenCartaDesigner({ prods, cats, local, setLocal }) {
-  const savedV3    = local?.config?.carta_v3 || {};
-  const savedV2    = local?.config?.carta_v2 || {};
-  const initView   = savedV3.templateId ? 'editor' : (savedV2.bgColor ? 'editor' : 'gallery');
+  const savedV3  = local?.config?.carta_v3 || {};
+  const savedV2  = local?.config?.carta_v2 || {};
+  const initView = savedV3.templateId ? 'editor' : (savedV2.bgColor ? 'editor' : 'gallery');
 
   const [view,        setView]        = useState(initView);
   const [tab,         setTab]         = useState('design');
@@ -1298,11 +1440,11 @@ function ScreenCartaDesigner({ prods, cats, local, setLocal }) {
   const [selBlockId,  setSelBlockId]  = useState(null);
   const [expandedPrev,setExpandedPrev]= useState({});
 
-  const curTemplate = CDV3_TEMPLATES.find(t => t.id === templateId) || null;
-  const textColor   = curTemplate?.dark === false ? '#1a1a1a' : '#ffffff';
-  const activeCats  = (cats||[]).filter(c => c.activa !== false);
+  const curTpl    = CDV3_TEMPLATES.find(t => t.id === templateId) || null;
+  const textColor = curTpl?.dark === false ? '#1a1a1a' : '#ffffff';
+  const activeCats= (cats||[]).filter(c => c.activa !== false);
 
-  function getCatCfg(id) { return catConfigs[id] || { formato: curTemplate?.catStyle || 'rectangle', imagen:null, color:null }; }
+  function getCatCfg(id) { return catConfigs[id] || { formato: curTpl?.catH==='banner'?'rectangle':'rectangle', imagen:null, color:null }; }
   function updCatCfg(id, upd) { setCatConfigs(p => ({ ...p, [id]: { ...getCatCfg(id), ...upd } })); }
   function updBlock(id, upd)  { setBlocks(p => p.map(b => b.id===id ? {...b,...upd} : b)); }
   function updBlockData(id, upd) { setBlocks(p => p.map(b => b.id===id ? {...b,data:{...b.data,...upd}} : b)); }
@@ -1338,65 +1480,119 @@ function ScreenCartaDesigner({ prods, cats, local, setLocal }) {
     {key:'delivery',label:'🛵 Delivery/Retiro',  desc:'Pedidos desde el celular'},
   ];
 
-  /* ── GALLERY VIEW ── */
+  /* ─────────────────── GALLERY ─────────────────── */
   function GalleryView() {
+    const catTabs = ['Todos','Japonés','Cafetería','Parrilla','Bar','Hamburguesas','Vegano','Alta cocina','Heladería','Mariscos','Árabe','Pastelería','Asiático','Cervecería','Mexicano','Desayunos'];
     const filtered = filterCat==='Todos' ? CDV3_TEMPLATES : CDV3_TEMPLATES.filter(t => t.cat===filterCat);
-    const catTabs  = ['Todos','Pizzería','Cafetería','Parrilla','Japonés','Bar','Vegano','Heladería','Hamburguesas','Alta cocina','Mariscos','Árabe','Pastelería','Cervecería','Mexicano','Desayunos','Asiático'];
+
+    /* mini-preview renders the template's actual layout character */
+    function MiniPreview({ t }) {
+      const tc = t.dark===false ? '#1a1a1a' : '#ffffff';
+      const SimProd = ({i=0}) => {
+        const op = [1,.75,.5][i]||.5;
+        if (t.prodS==='horizontal') return (
+          <div style={{ display:'flex',height:28,borderRadius:4,overflow:'hidden',marginBottom:3,background:`${tc}07`,border:`1px solid ${t.ac}18`,flexShrink:0 }}>
+            <div style={{ width:'36%',background:`${t.ac}${Math.round(op*.55*255).toString(16).padStart(2,'0')}`,flexShrink:0 }} />
+            <div style={{ flex:1,padding:'4px 5px' }}>
+              <div style={{ height:4,background:`${tc}35`,borderRadius:2,marginBottom:3,width:'70%' }} />
+              <div style={{ height:4,background:`${t.ac}90`,borderRadius:2,width:'40%' }} />
+            </div>
+          </div>
+        );
+        if (t.prodS==='compact-list') return (
+          <div style={{ display:'flex',alignItems:'center',marginBottom:4,paddingBottom:3,borderBottom:`1px solid ${t.ac}18` }}>
+            <div style={{ flex:1,height:4,background:`${tc}${Math.round(op*.35*255).toString(16).padStart(2,'0')}`,borderRadius:2,marginRight:6 }} />
+            <div style={{ height:5,background:t.ac,borderRadius:2,width:24,flexShrink:0 }} />
+          </div>
+        );
+        if (t.prodS==='full-photo') return (
+          <div style={{ borderRadius:4,height:30,marginBottom:3,background:`${t.ac}${Math.round(op*.45*255).toString(16).padStart(2,'0')}`,position:'relative',overflow:'hidden',flexShrink:0 }}>
+            <div style={{ position:'absolute',bottom:0,left:0,right:0,height:14,background:'linear-gradient(transparent,rgba(0,0,0,.7))',display:'flex',alignItems:'center',padding:'0 4px' }}>
+              <div style={{ height:3,background:'rgba(255,255,255,.7)',borderRadius:2,width:'55%' }} />
+            </div>
+          </div>
+        );
+        /* vertical */
+        return (
+          <div style={{ flex:1,borderRadius:4,overflow:'hidden',background:`${tc}07`,border:`1px solid ${t.ac}18` }}>
+            <div style={{ height:22,background:`${t.ac}${Math.round(op*.5*255).toString(16).padStart(2,'0')}` }} />
+            <div style={{ padding:'3px 3px' }}>
+              <div style={{ height:3,background:`${tc}30`,borderRadius:2,marginBottom:2 }} />
+              <div style={{ height:3,background:`${t.ac}90`,borderRadius:2,width:'55%' }} />
+            </div>
+          </div>
+        );
+      };
+      const SimCatH = () => {
+        if (t.catH==='divider') return (
+          <div style={{ display:'flex',alignItems:'center',gap:4,margin:'6px 0 4px' }}>
+            <div style={{ flex:1,height:1,background:`${t.ac}40` }} />
+            <div style={{ height:4,background:t.ac,borderRadius:2,width:36 }} />
+            <div style={{ flex:1,height:1,background:`${t.ac}40` }} />
+          </div>
+        );
+        if (t.catH==='bold-label') return (
+          <div style={{ borderBottom:`2px solid ${t.ac}`,paddingBottom:3,marginBottom:5 }}>
+            <div style={{ height:5,background:t.ac,borderRadius:2,width:44,marginLeft:t.headerAlign==='left'?0:'auto',marginRight:t.headerAlign==='center'?'auto':undefined }} />
+          </div>
+        );
+        if (t.catH==='pill') return (
+          <div style={{ display:'flex',justifyContent:'center',margin:'5px 0' }}>
+            <div style={{ height:11,background:t.ac,borderRadius:6,width:46,display:'flex',alignItems:'center',justifyContent:'center' }}>
+              <div style={{ height:3,background:'rgba(0,0,0,.25)',borderRadius:2,width:28 }} />
+            </div>
+          </div>
+        );
+        return <div style={{ height:15,background:`${t.ac}25`,border:`1px solid ${t.ac}44`,borderRadius:3,margin:'5px 0',display:'flex',alignItems:'center',padding:'0 4px' }}><div style={{ height:3,background:t.ac,borderRadius:2,width:38 }} /></div>;
+      };
+      return (
+        <div style={{ background:t.bg,padding:'9px 9px 6px',height:118,overflow:'hidden',borderRadius:'10px 10px 0 0' }}>
+          <div style={{ textAlign:t.headerAlign,marginBottom:5 }}>
+            <div style={{ height:6,background:t.ac,borderRadius:3,display:'inline-block',width:62,marginBottom:2 }} />
+            <div style={{ height:3,background:`${tc}30`,borderRadius:2,width:44,margin:t.headerAlign==='center'?'0 auto':undefined }} />
+          </div>
+          <SimCatH />
+          {t.prodS==='vertical'
+            ? <div style={{ display:'flex',gap:3 }}><SimProd i={0}/><SimProd i={1}/><SimProd i={2}/></div>
+            : <><SimProd i={0}/><SimProd i={1}/></>
+          }
+        </div>
+      );
+    }
+
     return (
       <div style={{ display:'flex', flexDirection:'column', height:'100%', overflow:'hidden' }}>
         <div style={{ flexShrink:0, paddingBottom:10 }}>
-          <div style={{ fontSize:11, color:'rgba(255,255,255,.4)', marginBottom:10 }}>
-            {CDV3_TEMPLATES.length} plantillas — elegí una base y personalizala al 100%
+          <div style={{ fontSize:11,color:'rgba(255,255,255,.4)',marginBottom:10 }}>
+            {CDV3_TEMPLATES.length} diseños premium — {CDV3_TEMPLATES.filter(t=>!t.dark).length} claros · {CDV3_TEMPLATES.filter(t=>t.dark).length} oscuros
           </div>
-          <div style={{ display:'flex', gap:5, overflowX:'auto', paddingBottom:4, WebkitOverflowScrolling:'touch' }}>
+          <div style={{ display:'flex',gap:5,overflowX:'auto',paddingBottom:4,WebkitOverflowScrolling:'touch' }}>
             {catTabs.map(c=>(
               <button key={c} onClick={()=>setFilterCat(c)}
                 className={`ap-btn ap-btn-sm ${filterCat===c?'ap-btn-gold':'ap-btn-ghost'}`}
-                style={{ flexShrink:0, fontSize:10, padding:'4px 10px' }}>{c}</button>
+                style={{ flexShrink:0,fontSize:10,padding:'4px 10px' }}>{c}</button>
             ))}
           </div>
         </div>
-        <div style={{ flex:1, overflowY:'auto', overscrollBehavior:'contain', WebkitOverflowScrolling:'touch' }}>
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:10, paddingBottom:20 }}>
+        <div style={{ flex:1,overflowY:'auto',overscrollBehavior:'contain',WebkitOverflowScrolling:'touch' }}>
+          <div style={{ display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:10,paddingBottom:20 }}>
             {filtered.map(t => {
               const isActive = t.id === templateId;
-              const tc = t.dark===false ? '#1a1a1a' : '#ffffff';
               return (
                 <div key={t.id} onClick={()=>applyTemplate(t)}
-                  style={{ borderRadius:12, overflow:'hidden', cursor:'pointer',
-                    border: isActive ? `2px solid ${t.ac}` : '2px solid transparent',
-                    boxShadow: isActive ? `0 0 0 2px ${t.ac}55` : '0 2px 14px rgba(0,0,0,.45)',
-                    position:'relative', transition:'transform .1s' }}>
-                  {/* Mini preview */}
-                  <div style={{ background:t.bg, padding:'10px 10px 8px' }}>
-                    <div style={{ display:'flex',alignItems:'center',gap:5,marginBottom:8 }}>
-                      <span style={{ fontSize:16 }}>{t.emoji}</span>
-                      <div>
-                        <div style={{ fontSize:9,fontWeight:800,color:t.ac,fontFamily:t.font,lineHeight:1.2,whiteSpace:'nowrap',overflow:'hidden',maxWidth:90 }}>{t.nombre}</div>
-                        <div style={{ fontSize:7,color:tc+'55' }}>{t.cat}</div>
-                      </div>
+                  style={{ borderRadius:12,overflow:'hidden',cursor:'pointer',
+                    border:isActive?`2px solid ${t.ac}`:'2px solid transparent',
+                    boxShadow:isActive?`0 0 0 2px ${t.ac}50`:'0 2px 14px rgba(0,0,0,.45)',
+                    position:'relative',transition:'box-shadow .15s' }}>
+                  <MiniPreview t={t} />
+                  <div style={{ background:t.ac,padding:'5px 8px',display:'flex',alignItems:'center',justifyContent:'space-between' }}>
+                    <div>
+                      <div style={{ fontSize:9,fontWeight:800,color:'rgba(0,0,0,.75)' }}>{t.nombre}</div>
+                      <div style={{ fontSize:7,color:'rgba(0,0,0,.5)',marginTop:1 }}>{t.mood}</div>
                     </div>
-                    {[0,1,2].map(i=>(
-                      <div key={i} style={{ display:'flex',alignItems:'center',gap:5,marginBottom:5 }}>
-                        <div style={{ width:t.catStyle==='round'?20:28, height:t.catStyle==='round'?20:14,
-                          borderRadius:t.catStyle==='round'?'50%':t.catStyle==='square'?5:3,
-                          background:`${t.ac}${i===0?'cc':i===1?'77':'33'}`,flexShrink:0 }} />
-                        <div style={{ flex:1,height:6,borderRadius:2,background:tc+(i===0?'25':i===1?'15':'0d') }} />
-                      </div>
-                    ))}
-                    <div style={{ display:'flex',gap:3,marginTop:7 }}>
-                      {[0.55,0.35,0.2].map((op,i)=>(
-                        <div key={i} style={{ flex:1,height:28,borderRadius:4,background:`${t.ac}${Math.round(op*255).toString(16).padStart(2,'0')}`,border:`1px solid ${t.ac}44` }} />
-                      ))}
-                    </div>
+                    <span style={{ fontSize:16 }}>{t.emoji}</span>
                   </div>
-                  <div style={{ background:t.ac, padding:'5px 8px', display:'flex',alignItems:'center',justifyContent:'space-between' }}>
-                    <span style={{ fontSize:8,fontWeight:800,color:t.dark===false?'rgba(0,0,0,.8)':'rgba(0,0,0,.7)' }}>{t.cat.toUpperCase()}</span>
-                    <span style={{ fontSize:9,color:t.dark===false?'rgba(0,0,0,.55)':'rgba(0,0,0,.5)' }}>Usar →</span>
-                  </div>
-                  {isActive && (
-                    <div style={{ position:'absolute',top:6,right:6,background:t.ac,borderRadius:'50%',width:18,height:18,fontSize:10,display:'flex',alignItems:'center',justifyContent:'center',fontWeight:800,color:'#000',boxShadow:'0 1px 4px rgba(0,0,0,.4)' }}>✓</div>
-                  )}
+                  {isActive&&<div style={{ position:'absolute',top:6,right:6,background:t.ac,borderRadius:'50%',width:18,height:18,fontSize:10,display:'flex',alignItems:'center',justifyContent:'center',fontWeight:800,color:'rgba(0,0,0,.8)',boxShadow:'0 1px 4px rgba(0,0,0,.5)' }}>✓</div>}
                 </div>
               );
             })}
@@ -1405,7 +1601,7 @@ function ScreenCartaDesigner({ prods, cats, local, setLocal }) {
         {templateId && (
           <div style={{ flexShrink:0,paddingTop:10,borderTop:'1px solid rgba(255,255,255,.07)' }}>
             <button className="ap-btn ap-btn-gold" style={{ width:'100%' }} onClick={()=>setView('editor')}>
-              ✏️ Continuar editando — {curTemplate?.emoji} {curTemplate?.nombre}
+              ✏️ Continuar con {curTpl?.emoji} {curTpl?.nombre}
             </button>
           </div>
         )}
@@ -1413,60 +1609,54 @@ function ScreenCartaDesigner({ prods, cats, local, setLocal }) {
     );
   }
 
-  /* ── PREVIEW ── */
+  /* ─────────────────── PREVIEW ─────────────────── */
   function Preview() {
+    const tpl = curTpl || { dark:true, bg:bgColor, ac:accentColor, font:fontFamily, catH:'banner', prodS:'vertical', headerAlign:'center' };
+    const tc  = tpl.dark===false ? '#1a1a1a' : textColor;
+    const prodLayout = tpl.prodS==='vertical' ? 'grid' : 'col';
+
     return (
-      <div style={{ overflowY:'auto', flex:1, display:'flex', justifyContent:'center', padding:'4px 0 20px', overscrollBehavior:'contain', WebkitOverflowScrolling:'touch' }}>
-        <div style={{ width:'100%', maxWidth:430, background:bgColor, borderRadius:14, fontFamily, overflow:'hidden', boxShadow:'0 6px 32px rgba(0,0,0,.55)', minHeight:500 }}>
+      <div style={{ overflowY:'auto',flex:1,display:'flex',justifyContent:'center',padding:'4px 0 20px',overscrollBehavior:'contain',WebkitOverflowScrolling:'touch' }}>
+        <div style={{ width:'100%',maxWidth:430,background:bgColor,borderRadius:14,fontFamily,overflow:'hidden',boxShadow:'0 6px 32px rgba(0,0,0,.55)',minHeight:500 }}>
 
           {/* HERO */}
           {(() => {
-            const b = blocks.find(x=>x.type==='hero');
-            if (!b||!b.on) return null;
+            const b=blocks.find(x=>x.type==='hero'); if(!b||!b.on) return null;
+            const align = tpl.headerAlign==='left' ? 'left' : 'center';
             return (
-              <div style={{ padding:'22px 16px 12px', textAlign:'center', borderBottom:`1px solid ${accentColor}22` }}>
-                {b.data.logo && <img src={b.data.logo} alt="" style={{ width:72,height:72,borderRadius:'50%',objectFit:'cover',margin:'0 auto 10px',display:'block',border:`2px solid ${accentColor}` }} onError={e=>e.target.style.display='none'} />}
-                <div style={{ fontSize:24,fontWeight:800,color:accentColor,letterSpacing:.3 }}>{b.data.titulo||titulo||local?.nombre||'Mi Restaurante'}</div>
-                {b.data.sub && <div style={{ fontSize:12,color:textColor+'80',marginTop:5,lineHeight:1.5 }}>{b.data.sub}</div>}
-                {curTemplate && <div style={{ fontSize:9,color:accentColor+'55',marginTop:8,letterSpacing:1 }}>{curTemplate.emoji} {curTemplate.cat.toUpperCase()}</div>}
+              <div style={{ padding:'22px 18px 14px',textAlign:align,borderBottom:`1px solid ${accentColor}25` }}>
+                {b.data.logo&&<img src={b.data.logo} alt="" style={{ width:72,height:72,borderRadius:'50%',objectFit:'cover',margin:`0 ${align==='center'?'auto':0} 12px`,display:'block',border:`2px solid ${accentColor}` }} onError={e=>e.target.style.display='none'} />}
+                <div style={{ fontSize:24,fontWeight:800,color:accentColor,letterSpacing:.3,fontFamily }}>{b.data.titulo||titulo||local?.nombre||'Mi Restaurante'}</div>
+                {b.data.sub&&<div style={{ fontSize:12,color:`${tc}80`,marginTop:5,lineHeight:1.5 }}>{b.data.sub}</div>}
+                {curTpl&&<div style={{ fontSize:9,color:`${accentColor}55`,marginTop:8,letterSpacing:2,textTransform:'uppercase' }}>{curTpl.mood}</div>}
               </div>
             );
           })()}
 
           {/* CATEGORÍAS */}
           {(() => {
-            const b = blocks.find(x=>x.type==='categorias');
-            if (!b||!b.on) return null;
+            const b=blocks.find(x=>x.type==='categorias'); if(!b||!b.on) return null;
             return (
-              <div style={{ padding:'10px 12px 16px' }}>
+              <div style={{ padding:'8px 14px 20px' }}>
                 {activeCats.length===0
                   ? <div style={{ textAlign:'center',color:'rgba(255,255,255,.15)',padding:'30px 0',fontSize:11 }}>Sin categorías activas</div>
                   : activeCats.map(cat => {
-                      const cfg = getCatCfg(cat.id);
-                      const catProds = (prods||[]).filter(p => (p.cat||p.categoria_id)===cat.id && p.active!==false && p.activo!==false);
-                      const isExp = !!expandedPrev[cat.id];
+                      const cfg     = getCatCfg(cat.id);
+                      const catProds= (prods||[]).filter(p=>(p.cat||p.categoria_id)===cat.id&&p.active!==false&&p.activo!==false);
+                      const isExp   = !!expandedPrev[cat.id];
+                      const tplEff  = curTpl || { dark:true, ac:accentColor, font:fontFamily, catH:'banner', prodS:'vertical', headerAlign:'center' };
                       return (
-                        <div key={cat.id} style={{ marginBottom:10 }}>
-                          <div onClick={()=>setExpandedPrev(p=>({...p,[cat.id]:!p[cat.id]}))}
-                            style={cdv2CardStyle(cfg.formato,cfg.imagen,accentColor,cfg.color)}>
-                            {cdv2CatContent(cfg.formato,cat,isExp)}
-                          </div>
-                          {isExp && (
-                            <div style={{ paddingTop:8 }}>
+                        <div key={cat.id} style={{ marginBottom:4 }}>
+                          {cdv3CatHeader(cat,cfg,tplEff,isExp,()=>setExpandedPrev(p=>({...p,[cat.id]:!p[cat.id]})))}
+                          {isExp&&(
+                            <div style={{ paddingTop:6 }}>
                               {catProds.length===0
-                                ? <div style={{ fontSize:11,color:'rgba(255,255,255,.2)',textAlign:'center',padding:'8px 0' }}>Sin productos en esta categoría</div>
-                                : <div style={{ display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(138px,1fr))',gap:8 }}>
-                                    {catProds.map(p=>(
-                                      <div key={p.id} style={{ background:'rgba(255,255,255,.05)',borderRadius:10,overflow:'hidden',border:`1px solid ${(cfg.color||accentColor)}26` }}>
-                                        <img src={p.imagen||getPlaceholder(cat.label)} alt="" style={{ width:'100%',height:100,objectFit:'cover',display:'block' }} />
-                                        <div style={{ padding:'7px 9px' }}>
-                                          <div style={{ fontSize:12,fontWeight:700,color:textColor,lineHeight:1.3 }}>{p.name||p.nombre}</div>
-                                          <div style={{ fontSize:13,fontWeight:800,color:cfg.color||accentColor,margin:'3px 0 2px' }}>{ARS(p.price??p.precio)}</div>
-                                          {(p.desc||p.descripcion)&&<div style={{ fontSize:10,color:textColor+'55',lineHeight:1.4 }}>{((p.desc||p.descripcion)||'').slice(0,60)}{((p.desc||p.descripcion)||'').length>60?'…':''}</div>}
-                                        </div>
-                                      </div>
-                                    ))}
-                                  </div>
+                                ? <div style={{ fontSize:11,color:'rgba(255,255,255,.2)',textAlign:'center',padding:'10px 0' }}>Sin productos</div>
+                                : prodLayout==='grid'
+                                  ? <div style={{ display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(138px,1fr))',gap:8 }}>
+                                      {catProds.map(p=>cdv3ProdCard(p,cat,tplEff.prodS,tplEff,cfg.color))}
+                                    </div>
+                                  : <div>{catProds.map(p=>cdv3ProdCard(p,cat,tplEff.prodS,tplEff,cfg.color))}</div>
                               }
                             </div>
                           )}
@@ -1480,10 +1670,9 @@ function ScreenCartaDesigner({ prods, cats, local, setLocal }) {
 
           {/* CONTACTO */}
           {(() => {
-            const b = blocks.find(x=>x.type==='contacto');
-            if (!b||!b.on||(!b.data.tel&&!b.data.dir&&!b.data.hs)) return null;
+            const b=blocks.find(x=>x.type==='contacto'); if(!b||!b.on||(!b.data.tel&&!b.data.dir&&!b.data.hs)) return null;
             return (
-              <div style={{ margin:'0 12px 12px',padding:'12px 14px',background:`${accentColor}12`,borderRadius:10,border:`1px solid ${accentColor}30` }}>
+              <div style={{ margin:'0 14px 14px',padding:'12px 14px',background:`${accentColor}12`,borderRadius:10,border:`1px solid ${accentColor}30` }}>
                 <div style={{ fontSize:9,fontWeight:700,color:accentColor,letterSpacing:1,marginBottom:8 }}>CONTACTO</div>
                 {b.data.tel&&<div style={{ fontSize:13,color:textColor,marginBottom:4 }}>📞 {b.data.tel}</div>}
                 {b.data.dir&&<div style={{ fontSize:13,color:textColor,marginBottom:4 }}>📍 {b.data.dir}</div>}
@@ -1494,28 +1683,25 @@ function ScreenCartaDesigner({ prods, cats, local, setLocal }) {
 
           {/* PAGO */}
           {(() => {
-            const b = blocks.find(x=>x.type==='pago');
-            if (!b||!b.on||!b.data.alias) return null;
+            const b=blocks.find(x=>x.type==='pago'); if(!b||!b.on||!b.data.alias) return null;
             return (
-              <div style={{ margin:'0 12px 12px',padding:'14px',background:`${accentColor}10`,borderRadius:10,border:`1px solid ${accentColor}40` }}>
+              <div style={{ margin:'0 14px 14px',padding:'14px',background:`${accentColor}10`,borderRadius:10,border:`1px solid ${accentColor}40` }}>
                 <div style={{ fontSize:9,fontWeight:700,color:accentColor,letterSpacing:1,marginBottom:8 }}>💳 {(b.data.lbl||'PAGO').toUpperCase()}</div>
                 <div style={{ fontFamily:"'Courier New',monospace",fontSize:16,fontWeight:700,color:textColor,letterSpacing:.5 }}>{b.data.alias}</div>
-                {b.data.titular&&<div style={{ fontSize:11,color:textColor+'70',marginTop:3 }}>Titular: {b.data.titular}</div>}
+                {b.data.titular&&<div style={{ fontSize:11,color:`${textColor}70`,marginTop:3 }}>Titular: {b.data.titular}</div>}
               </div>
             );
           })()}
 
           {/* QR */}
           {(() => {
-            const b = blocks.find(x=>x.type==='qr');
-            if (!b||!b.on||!b.data.url) return null;
-            const qrBg = bgColor.replace('#','');
-            const qrFg = accentColor.replace('#','');
+            const b=blocks.find(x=>x.type==='qr'); if(!b||!b.on||!b.data.url) return null;
+            const qrBg=bgColor.replace('#',''), qrFg=accentColor.replace('#','');
             return (
-              <div style={{ display:'flex',flexDirection:'column',alignItems:'center',margin:'0 12px 16px',padding:'16px',background:`${accentColor}08`,borderRadius:10,border:`1px solid ${accentColor}25` }}>
+              <div style={{ display:'flex',flexDirection:'column',alignItems:'center',margin:'0 14px 18px',padding:'16px',background:`${accentColor}08`,borderRadius:10,border:`1px solid ${accentColor}25` }}>
                 <img src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&color=${qrFg}&bgcolor=${qrBg}&data=${encodeURIComponent(b.data.url)}`}
                   alt="QR" style={{ width:130,height:130,borderRadius:8 }} />
-                {b.data.lbl&&<div style={{ fontSize:11,color:textColor+'70',marginTop:8,textAlign:'center' }}>{b.data.lbl}</div>}
+                {b.data.lbl&&<div style={{ fontSize:11,color:`${textColor}70`,marginTop:8,textAlign:'center' }}>{b.data.lbl}</div>}
               </div>
             );
           })()}
@@ -1525,21 +1711,21 @@ function ScreenCartaDesigner({ prods, cats, local, setLocal }) {
     );
   }
 
-  /* ── DESIGN PANEL ── */
+  /* ─────────────────── DESIGN PANEL ─────────────────── */
   const BLOCK_META = {
     hero:      { icon:'🏷️', label:'Encabezado',              desc:'Nombre, logo y eslogan' },
     categorias:{ icon:'📋', label:'Categorías & Productos',   desc:'Tu menú completo' },
     contacto:  { icon:'📞', label:'Contacto',                 desc:'Teléfono, dirección, horarios' },
     pago:      { icon:'💳', label:'Alias / Pago',             desc:'Alias MP, MODO u otro medio' },
-    qr:        { icon:'🔳', label:'QR personalizado',         desc:'QR con cualquier enlace' },
+    qr:        { icon:'🔳', label:'QR personalizado',         desc:'Cualquier enlace → QR' },
   };
 
   function DesignPanel() {
     return (
-      <div style={{ display:'flex', flexDirection:'column', height:'100%', overflow:'hidden' }}>
-        <div style={{ padding:'12px', borderBottom:'1px solid rgba(255,255,255,.07)', flexShrink:0 }}>
+      <div style={{ display:'flex',flexDirection:'column',height:'100%',overflow:'hidden' }}>
+        <div style={{ padding:'12px',borderBottom:'1px solid rgba(255,255,255,.07)',flexShrink:0 }}>
           <div style={{ fontSize:9,fontWeight:700,color:'rgba(255,255,255,.3)',letterSpacing:1,marginBottom:10,textTransform:'uppercase' }}>Colores y tipografía</div>
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:10 }}>
+          <div style={{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:10 }}>
             <label style={{ fontSize:10,display:'flex',alignItems:'center',justifyContent:'space-between',padding:'6px 8px',background:'rgba(255,255,255,.04)',borderRadius:7,gap:6 }}>
               🎨 Fondo
               <input type="color" value={bgColor} onChange={e=>setBgColor(e.target.value)}
@@ -1560,15 +1746,13 @@ function ScreenCartaDesigner({ prods, cats, local, setLocal }) {
           </div>
         </div>
 
-        <div style={{ flex:1, overflowY:'auto', padding:'12px', overscrollBehavior:'contain', WebkitOverflowScrolling:'touch' }}>
-
-          {/* BLOCKS */}
+        <div style={{ flex:1,overflowY:'auto',padding:'12px',overscrollBehavior:'contain',WebkitOverflowScrolling:'touch' }}>
           <div style={{ fontSize:9,fontWeight:700,color:'rgba(255,255,255,.3)',letterSpacing:1,marginBottom:10,textTransform:'uppercase' }}>
             Bloques ({blocks.filter(b=>b.on).length} activos)
           </div>
           {blocks.map(b => {
-            const meta  = BLOCK_META[b.type] || {icon:'📄',label:b.type,desc:''};
-            const isSel = selBlockId===b.id;
+            const meta=BLOCK_META[b.type]||{icon:'📄',label:b.type,desc:''};
+            const isSel=selBlockId===b.id;
             return (
               <div key={b.id} style={{ marginBottom:8,borderRadius:9,overflow:'hidden',border:`1px solid ${b.on?(isSel?'rgba(201,168,76,.4)':'rgba(255,255,255,.1)'):'rgba(255,255,255,.05)'}` }}>
                 <div style={{ display:'flex',alignItems:'center',gap:8,padding:'9px 11px',background:b.on?'rgba(255,255,255,.03)':'transparent',cursor:'pointer' }}
@@ -1630,15 +1814,11 @@ function ScreenCartaDesigner({ prods, cats, local, setLocal }) {
             );
           })}
 
-          {/* CATEGORIES */}
-          <div style={{ fontSize:9,fontWeight:700,color:'rgba(255,255,255,.3)',letterSpacing:1,marginBottom:10,marginTop:18,textTransform:'uppercase' }}>
-            Estilo por categoría
-          </div>
+          <div style={{ fontSize:9,fontWeight:700,color:'rgba(255,255,255,.3)',letterSpacing:1,marginBottom:10,marginTop:18,textTransform:'uppercase' }}>Estilo por categoría</div>
           {activeCats.length===0&&<div style={{ fontSize:11,color:'rgba(255,255,255,.18)',textAlign:'center',padding:'14px 0' }}>Sin categorías activas</div>}
           {activeCats.map(cat => {
-            const cfg  = getCatCfg(cat.id);
-            const isSel= selCatId===cat.id;
-            const cnt  = (prods||[]).filter(p=>(p.cat||p.categoria_id)===cat.id&&p.active!==false).length;
+            const cfg=getCatCfg(cat.id), isSel=selCatId===cat.id;
+            const cnt=(prods||[]).filter(p=>(p.cat||p.categoria_id)===cat.id&&p.active!==false).length;
             return (
               <div key={cat.id} style={{ marginBottom:8,borderRadius:9,overflow:'hidden',border:`1px solid ${isSel?'rgba(201,168,76,.35)':'rgba(255,255,255,.07)'}` }}>
                 <div onClick={()=>setSelCatId(isSel?null:cat.id)}
@@ -1646,24 +1826,28 @@ function ScreenCartaDesigner({ prods, cats, local, setLocal }) {
                   <span style={{ fontSize:18 }}>{cat.emoji}</span>
                   <div style={{ flex:1,minWidth:0 }}>
                     <div style={{ fontSize:12,fontWeight:600,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' }}>{cat.label}</div>
-                    <div style={{ fontSize:9,color:'rgba(255,255,255,.28)',marginTop:1 }}>{cnt} prods · {cfg.formato}</div>
+                    <div style={{ fontSize:9,color:'rgba(255,255,255,.28)',marginTop:1 }}>{cnt} prods · {cfg.color?'color personalizado':'color acento'}</div>
                   </div>
                   <span style={{ fontSize:10,color:'rgba(255,255,255,.28)',flexShrink:0 }}>{isSel?'▲':'▼'}</span>
                 </div>
                 {isSel&&(
                   <div style={{ padding:'12px',background:'rgba(0,0,0,.25)',borderTop:'1px solid rgba(255,255,255,.05)' }}>
-                    <div style={{ fontSize:10,color:'rgba(255,255,255,.4)',marginBottom:8 }}>Formato</div>
-                    <div style={{ display:'flex',gap:6,marginBottom:14 }}>
-                      {[{key:'rectangle',icon:'▬',label:'Rectángulo'},{key:'square',icon:'■',label:'Cuadrado'},{key:'round',icon:'●',label:'Círculo'}].map(fmt=>(
-                        <button key={fmt.key} onClick={()=>updCatCfg(cat.id,{formato:fmt.key})}
-                          className={`ap-btn ap-btn-sm ${cfg.formato===fmt.key?'ap-btn-gold':'ap-btn-ghost'}`}
-                          style={{ flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:3,padding:'7px 0',fontSize:10 }}>
-                          <span style={{ fontSize:17 }}>{fmt.icon}</span>{fmt.label}
-                        </button>
-                      ))}
-                    </div>
+                    {curTpl?.catH==='banner'&&(
+                      <>
+                        <div style={{ fontSize:10,color:'rgba(255,255,255,.4)',marginBottom:8 }}>Formato de la tarjeta</div>
+                        <div style={{ display:'flex',gap:6,marginBottom:14 }}>
+                          {[{key:'rectangle',icon:'▬',label:'Rectángulo'},{key:'square',icon:'■',label:'Cuadrado'},{key:'round',icon:'●',label:'Círculo'}].map(fmt=>(
+                            <button key={fmt.key} onClick={()=>updCatCfg(cat.id,{formato:fmt.key})}
+                              className={`ap-btn ap-btn-sm ${cfg.formato===fmt.key?'ap-btn-gold':'ap-btn-ghost'}`}
+                              style={{ flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:3,padding:'7px 0',fontSize:10 }}>
+                              <span style={{ fontSize:17 }}>{fmt.icon}</span>{fmt.label}
+                            </button>
+                          ))}
+                        </div>
+                      </>
+                    )}
                     <div style={{ marginBottom:14 }}>
-                      <div style={{ fontSize:10,color:'rgba(255,255,255,.38)',marginBottom:8 }}>Color</div>
+                      <div style={{ fontSize:10,color:'rgba(255,255,255,.38)',marginBottom:8 }}>Color de acento</div>
                       <div style={{ display:'flex',gap:6,flexWrap:'wrap' }}>
                         {['#C9A84C','#e84040','#3ecf6e','#3e8cff','#a855f7','#f5c518','#ec4899','#ff6b35','#00bcd4','#ffffff'].map(c=>(
                           <div key={c} onClick={()=>updCatCfg(cat.id,{color:cfg.color===c?null:c})}
@@ -1671,20 +1855,20 @@ function ScreenCartaDesigner({ prods, cats, local, setLocal }) {
                               outline:cfg.color===c?'3px solid #fff':'2px solid transparent',outlineOffset:1,transition:'outline .12s',flexShrink:0 }} />
                         ))}
                         <label style={{ width:26,height:26,borderRadius:'50%',overflow:'hidden',cursor:'pointer',border:'1px solid rgba(255,255,255,.2)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:12 }}>
-                          🎨
-                          <input type="color" value={cfg.color||'#ffffff'} onChange={e=>updCatCfg(cat.id,{color:e.target.value})}
-                            style={{ position:'absolute',opacity:0,width:1,height:1 }} />
+                          🎨<input type="color" value={cfg.color||'#ffffff'} onChange={e=>updCatCfg(cat.id,{color:e.target.value})} style={{ position:'absolute',opacity:0,width:1,height:1 }} />
                         </label>
                         {cfg.color&&<div onClick={()=>updCatCfg(cat.id,{color:null})} style={{ width:26,height:26,borderRadius:'50%',border:'1px dashed rgba(255,255,255,.25)',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,color:'rgba(255,255,255,.4)' }}>✕</div>}
                       </div>
                     </div>
-                    <div>
-                      <label style={{ fontSize:10,color:'rgba(255,255,255,.38)',display:'block',marginBottom:5 }}>Foto de portada (URL)</label>
-                      <input value={cfg.imagen||''} onChange={e=>updCatCfg(cat.id,{imagen:e.target.value||null})}
-                        placeholder="https://imagen.com/portada.jpg"
-                        style={{ background:'#1a1a1a',color:'var(--text)',border:'1px solid var(--border)',borderRadius:6,padding:'6px 8px',width:'100%',fontSize:10,boxSizing:'border-box' }} />
-                      {cfg.imagen&&<div style={{ marginTop:7,borderRadius:7,overflow:'hidden',height:52 }}><img src={cfg.imagen} alt="" style={{ width:'100%',height:'100%',objectFit:'cover' }} onError={e=>e.target.style.display='none'} /></div>}
-                    </div>
+                    {curTpl?.catH==='banner'&&(
+                      <div>
+                        <label style={{ fontSize:10,color:'rgba(255,255,255,.38)',display:'block',marginBottom:5 }}>Foto de portada (URL)</label>
+                        <input value={cfg.imagen||''} onChange={e=>updCatCfg(cat.id,{imagen:e.target.value||null})}
+                          placeholder="https://imagen.com/portada.jpg"
+                          style={{ background:'#1a1a1a',color:'var(--text)',border:'1px solid var(--border)',borderRadius:6,padding:'6px 8px',width:'100%',fontSize:10,boxSizing:'border-box' }} />
+                        {cfg.imagen&&<div style={{ marginTop:7,borderRadius:7,overflow:'hidden',height:52 }}><img src={cfg.imagen} alt="" style={{ width:'100%',height:'100%',objectFit:'cover' }} onError={e=>e.target.style.display='none'} /></div>}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -1695,10 +1879,10 @@ function ScreenCartaDesigner({ prods, cats, local, setLocal }) {
     );
   }
 
+  /* ─────────────────── MAIN RENDER ─────────────────── */
   return (
-    <div style={{ display:'flex', flexDirection:'column', height:'calc(100vh - 110px)', minHeight:520, margin:'-4px -4px 0' }}>
+    <div style={{ display:'flex',flexDirection:'column',height:'calc(100vh - 110px)',minHeight:520,margin:'-4px -4px 0' }}>
 
-      {/* Publish modal */}
       {showPub&&(
         <div style={{ position:'fixed',inset:0,background:'rgba(0,0,0,.76)',backdropFilter:'blur(4px)',zIndex:9999,display:'flex',alignItems:'center',justifyContent:'center',padding:16 }}
           onClick={()=>setShowPub(false)}>
@@ -1725,30 +1909,26 @@ function ScreenCartaDesigner({ prods, cats, local, setLocal }) {
         </div>
       )}
 
-      {/* Header */}
-      <div className="ap-sec-hdr" style={{ flexShrink:0, flexWrap:'wrap', gap:8 }}>
+      <div className="ap-sec-hdr" style={{ flexShrink:0,flexWrap:'wrap',gap:8 }}>
         <div style={{ display:'flex',alignItems:'center',gap:8,minWidth:0 }}>
-          {view==='editor'&&<button className="ap-btn ap-btn-ghost ap-btn-sm" onClick={()=>setView('gallery')}>← Plantillas</button>}
-          <h2 style={{ margin:0 }}>{view==='gallery'?'🎭 Plantillas':'🎨 Carta'}</h2>
-          {view==='editor'&&curTemplate&&(
+          {view==='editor'&&<button className="ap-btn ap-btn-ghost ap-btn-sm" onClick={()=>setView('gallery')}>← Diseños</button>}
+          <h2 style={{ margin:0 }}>{view==='gallery'?'🎭 Diseños':'🎨 Carta'}</h2>
+          {view==='editor'&&curTpl&&(
             <span style={{ fontSize:10,background:'rgba(201,168,76,.15)',color:'#C9A84C',padding:'2px 8px',borderRadius:10,border:'1px solid rgba(201,168,76,.3)',whiteSpace:'nowrap' }}>
-              {curTemplate.emoji} {curTemplate.nombre}
+              {curTpl.emoji} {curTpl.nombre}
             </span>
           )}
         </div>
         {view==='editor'&&(
           <div className="ap-sec-hdr-r" style={{ gap:6 }}>
             <button className="ap-btn ap-btn-ghost ap-btn-sm" onClick={()=>setShowPub(true)}>📲 Publicar</button>
-            <button className="ap-btn ap-btn-gold ap-btn-sm" onClick={async()=>{ const ok=await doSave(); if(ok)alert('✅ Guardado'); }} disabled={saving}>
-              {saving?'…':'💾 Guardar'}
-            </button>
+            <button className="ap-btn ap-btn-gold ap-btn-sm" onClick={async()=>{ const ok=await doSave(); if(ok)alert('✅ Guardado'); }} disabled={saving}>{saving?'…':'💾 Guardar'}</button>
           </div>
         )}
       </div>
 
-      {/* Tab bar (editor only) */}
       {view==='editor'&&(
-        <div style={{ display:'flex', gap:4, marginBottom:10, flexShrink:0 }}>
+        <div style={{ display:'flex',gap:4,marginBottom:10,flexShrink:0 }}>
           {[{key:'design',label:'⚙️ Diseño'},{key:'preview',label:'👁️ Vista previa'}].map(t=>(
             <button key={t.key} className={`ap-btn ap-btn-sm ${tab===t.key?'ap-btn-gold':'ap-btn-ghost'}`}
               style={{ flex:1 }} onClick={()=>setTab(t.key)}>{t.label}</button>
@@ -1756,12 +1936,8 @@ function ScreenCartaDesigner({ prods, cats, local, setLocal }) {
         </div>
       )}
 
-      {/* Content */}
-      <div style={{ flex:1, overflow:'hidden', minHeight:0, display:'flex', flexDirection:'column' }}>
-        {view==='gallery'
-          ? GalleryView()
-          : (tab==='design' ? DesignPanel() : Preview())
-        }
+      <div style={{ flex:1,overflow:'hidden',minHeight:0,display:'flex',flexDirection:'column' }}>
+        {view==='gallery' ? GalleryView() : (tab==='design' ? DesignPanel() : Preview())}
       </div>
     </div>
   );
