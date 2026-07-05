@@ -1063,31 +1063,42 @@ function ProductModal({ product, cats, restauranteId, onClose, onSave }) {
 
   async function handleSave() {
     if (!nombre.trim()) { alert("El nombre es obligatorio"); return; }
+    if (!restauranteId)  { alert("Error: sin restaurante configurado. Recargá la página."); return; }
     setSaving(true);
     try {
       const payload = {
-        nombre:       nombre.trim(),
-        precio:       Number(precio),
-        descripcion:  desc,
+        nombre:         nombre.trim(),
+        precio:         Number(precio),
+        descripcion:    desc,
         activo,
-        imagen:       imagen || null,
-        categoria_id: catId  || null,
+        imagen:         imagen || null,
+        categoria_id:   catId  || null,
         restaurante_id: restauranteId,
       };
-      if (!isNew) payload.id = product.id;
-      const saved = await upsertProducto(payload);
-      if (!saved) throw new Error("Sin respuesta del servidor");
+      let saved;
+      if (isNew) {
+        const { data, error } = await supabase.from("productos").insert(payload).select().single();
+        if (error) throw error;
+        saved = data;
+      } else {
+        const { data, error } = await supabase.from("productos")
+          .update({ nombre: payload.nombre, precio: payload.precio, descripcion: payload.descripcion,
+                    activo: payload.activo, imagen: payload.imagen, categoria_id: payload.categoria_id })
+          .eq("id", product.id).select().single();
+        if (error) throw error;
+        saved = data;
+      }
       onSave({
         id:     saved.id,
         cat:    saved.categoria_id,
-        name:   saved.nombre     || "",
+        name:   saved.nombre      || "",
         desc:   saved.descripcion || "",
-        price:  saved.precio     ?? 0,
-        active: saved.activo     ?? true,
-        imagen: saved.imagen     || null,
+        price:  saved.precio      ?? 0,
+        active: saved.activo      ?? true,
+        imagen: saved.imagen      || null,
       });
     } catch (err) {
-      alert("Error al guardar: " + (err.message || "intente de nuevo"));
+      alert("Error al guardar: " + (err.message || JSON.stringify(err)));
     } finally {
       setSaving(false);
     }
