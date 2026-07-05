@@ -959,27 +959,25 @@ function WAOrderFlow({local, prods, cats, tipo, onClose}) {
     setDirec(val);
     setZoneInfo(null);
     clearTimeout(direcTimer.current);
-    if(!val.trim()||val.length<4||!TOMTOM_KEY){ setDirecSugg([]); return; }
+    if(!val.trim()||val.length<4){ setDirecSugg([]); return; }
     setSuggLoad(true);
     direcTimer.current = setTimeout(async()=>{
       try {
-        const country = "AR"; // Argentina — cambiar si el restaurante es de otro país
+        // Nominatim (OpenStreetMap) — free, no API key required
         const rLat = local.delivery_config?.lat || "";
         const rLng = local.delivery_config?.lng || "";
-        const proximity = rLat && rLng ? `&lat=${rLat}&lon=${rLng}` : "";
-        const url = `https://api.tomtom.com/search/2/search/${encodeURIComponent(val)}.json?key=${TOMTOM_KEY}&limit=5&countrySet=${country}${proximity}`;
-        const res = await fetch(url);
+        const viewbox = rLat && rLng ? `&viewbox=${Number(rLng)-0.3},${Number(rLat)+0.2},${Number(rLng)+0.3},${Number(rLat)-0.2}&bounded=0` : "";
+        const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(val)}&format=json&addressdetails=1&countrycodes=ar&limit=5${viewbox}`;
+        const res = await fetch(url, { headers: { "Accept-Language": "es" } });
         const data = await res.json();
-        const suggestions = (data.results||[]).filter(r=>r.address?.freeformAddress).map(r=>({
-          label: r.address.freeformAddress,
-          lat: r.position?.lat, lon: r.position?.lon,
+        const suggestions = (data||[]).map(r=>({
+          label: r.display_name,
+          lat: parseFloat(r.lat), lon: parseFloat(r.lon),
         }));
-        const seen = new Set();
-        const unique = suggestions.filter(s=>{ if(seen.has(s.label)) return false; seen.add(s.label); return true; }).slice(0,5);
-        setDirecSugg(unique);
+        setDirecSugg(suggestions.slice(0,5));
       } catch { setDirecSugg([]); }
       finally { setSuggLoad(false); }
-    }, 400);
+    }, 500);
   };
 
   // Check delivery zone when address is selected
@@ -1383,6 +1381,7 @@ function WAOrderFlow({local, prods, cats, tipo, onClose}) {
               <input type="text" value={direc} onChange={e=>handleDirecChange(e.target.value)}
                 placeholder="Calle, número, piso..."
                 style={{width:"100%",background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.12)",borderRadius:10,padding:"12px 14px",color:"var(--cbri)",fontSize:14,boxSizing:"border-box",fontFamily:"'DM Sans',sans-serif"}}/>
+              {direc.length>3&&!direcSugg.length&&!suggLoading&&<p style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,color:"rgba(255,255,255,.35)",marginTop:5,marginBottom:0}}>💡 Si no aparecen sugerencias podés escribir la dirección completa manualmente</p>}
               {suggLoading&&<span style={{position:"absolute",right:14,top:38,fontSize:11,color:"rgba(255,255,255,.3)"}}>...</span>}
               {direcSugg.length>0&&(
                 <div style={{position:"absolute",top:"100%",left:0,right:0,background:"#1a1a1a",border:"1px solid rgba(255,255,255,.15)",borderRadius:10,zIndex:99,overflow:"hidden",marginTop:2}}>

@@ -399,7 +399,7 @@ const SCREEN_TITLES = {
 /* ══════════════════════════════════════════════════════════════
    SIDEBAR
 ══════════════════════════════════════════════════════════════ */
-function Sidebar({ screen, setScreen, pendingCount, kitchenCount, local, onLogout, open, onClose }) {
+function Sidebar({ screen, setScreen, pendingCount, kitchenCount, deliveryCount, local, onLogout, open, onClose }) {
   const nav = (id, icon, label, badge) => (
     <div
       key={id}
@@ -431,7 +431,7 @@ function Sidebar({ screen, setScreen, pendingCount, kitchenCount, local, onLogou
           {nav("dashboard", "📊", "Dashboard")}
           {nav("pedidos", "🧾", "Pedidos", pendingCount)}
           {nav("cocina", "👨‍🍳", "Cocina", kitchenCount)}
-          {nav("delivery", "🛵", "Delivery")}
+          {nav("delivery", "🛵", "Delivery", deliveryCount)}
           {nav("mesas", "🪑", "Mesas")}
         </div>
         <div className="ap-nav-group">
@@ -1848,7 +1848,8 @@ function ScreenDelivery({ pedidos, setPedidos, local }) {
     setPedidos(prev => prev.map(o => o.id === p.id ? { ...o, observaciones_delivery: obs } : o));
   };
 
-  const BTN_LABELS = { nuevo:"▶ En preparación", preparando:"✓ Listo", listo:"🛵 En camino", en_camino:"✅ Entregado" };
+  const BTN_LABELS = { nuevo:"▶ En preparación", preparando:"✓ Listo para enviar", listo:"🛵 Salió a entregar", en_camino:"✅ Marcar entregado" };
+  const BTN_COLORS = { nuevo:"#3e8cff", preparando:"#3ecf6e", listo:"#C9A84C", en_camino:"#3ecf6e" };
 
   return (
     <div>
@@ -2585,16 +2586,25 @@ function ScreenConfiguracion({ local, setLocal }) {
 
   async function handleSave() {
     setSaving(true);
-    if (setLocal) setLocal(prev => ({ ...prev, ...form }));
-    if (supabase && local?.restauranteId) {
-      await supabase.from("restaurantes").update({
+    try {
+      if (!local?.restauranteId) throw new Error("Sin restaurante configurado. Recargá la página.");
+      // Save extra fields into config JSON as well (covers columns that may not exist)
+      const existingConfig = local?.config || {};
+      const configExtra = {
+        ...existingConfig,
+        delivery_radio:    form.delivery_radio,
+        retiro_habilitado: form.retiro_habilitado,
+        retiro_horario:    form.retiro_horario,
+        delivery_horario:  form.delivery_horario,
+      };
+      const { error } = await supabase.from("restaurantes").update({
         nombre:              form.nombre,
         slug:                form.slug,
         telefono:            form.telefono,
         direccion:           form.direccion,
         descripcion:         form.descripcion,
         horario:             form.horario,
-        mesas:               form.mesas,
+        mesas:               Number(form.mesas)||0,
         wifi_ssid:           form.wifi_ssid,
         wifi_pass:           form.wifi_pass,
         logo_url:            form.logo_url,
@@ -2602,17 +2612,23 @@ function ScreenConfiguracion({ local, setLocal }) {
         retiro_habilitado:   form.retiro_habilitado,
         retiro_horario:      form.retiro_horario,
         delivery_habilitado: form.delivery_habilitado,
-        delivery_precio:     form.delivery_precio,
+        delivery_precio:     Number(form.delivery_precio)||0,
         delivery_horario:    form.delivery_horario,
         delivery_radio:      form.delivery_radio,
         alias_pago:          form.alias_pago,
         alias_titular:       form.alias_titular,
         promo_desc:          form.promo_desc,
+        config:              configExtra,
       }).eq("id", local.restauranteId);
+      if (error) throw error;
+      if (setLocal) setLocal(prev => ({ ...prev, ...form, config: configExtra }));
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    } catch(e) {
+      alert("❌ Error al guardar: " + (e.message || JSON.stringify(e)));
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
   }
 
   return (
@@ -3023,8 +3039,9 @@ export default function AdminPanel({ local, setLocal, cats, setCats, prods, setP
     return () => { if (unsub) unsub(); };
   }, [local?.restauranteId]);
 
-  const pendingCount = pedidos.filter((p) => p.status === "pendiente").length;
+  const pendingCount = pedidos.filter((p) => ["pendiente","pendiente_pago","nuevo"].includes(p.status)).length;
   const kitchenCount = pedidos.filter((p) => p.status === "en_cocina").length;
+  const deliveryCount = pedidos.filter((p) => (p.tipo_pedido==="delivery"||p.tipo_pedido==="retiro") && p.status!=="entregado").length;
 
   const screenMap = {
     dashboard: <ScreenDashboard pedidos={pedidos} cats={cats} prods={prods} local={local} />,
@@ -3062,6 +3079,7 @@ export default function AdminPanel({ local, setLocal, cats, setCats, prods, setP
           setScreen={setScreen}
           pendingCount={pendingCount}
           kitchenCount={kitchenCount}
+          deliveryCount={deliveryCount}
           local={local}
           onLogout={onLogout}
           open={navOpen}
