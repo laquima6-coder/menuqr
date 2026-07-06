@@ -1940,13 +1940,17 @@ return (
           <button onClick={()=>setShowCarta(false)} style={{width:36, height:36, borderRadius:10, background:"rgba(255,255,255,.07)", border:"1px solid rgba(255,255,255,.1)", color:"#fff", fontSize:20, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center"}}>‹</button>
           <div style={{fontFamily:"Georgia,serif", fontSize:20, fontWeight:900}}>Nuestra <span style={{color:"#c9a020"}}>Carta</span></div>
         </div>
-        <div style={{display:"flex", gap:8, padding:"12px 14px", overflowX:"auto", borderBottom:"1px solid rgba(255,255,255,.06)", background:"#0d0d0d", flexShrink:0, WebkitOverflowScrolling:"touch"}}>
-          {(cats||[]).map(c=>(
-            <button key={c.id} onClick={()=>setCartaCat(c.id)}
-              style={{padding:"7px 16px", borderRadius:30, fontSize:12, fontWeight:700, whiteSpace:"nowrap", cursor:"pointer", border:`1px solid ${cartaCat===c.id?"transparent":"rgba(255,255,255,.1)"}`, background:cartaCat===c.id?"linear-gradient(135deg,#b8900a,#c9a020)":"transparent", color:cartaCat===c.id?"#000":"rgba(255,255,255,.5)", transition:"all .2s"}}>
-              {c.nombre}
-            </button>
-          ))}
+        <div style={{position:"relative",background:"#0d0d0d",borderBottom:"1px solid rgba(255,255,255,.06)",flexShrink:0}}>
+          <div style={{display:"flex", gap:8, padding:"12px 14px", overflowX:"auto", scrollbarWidth:"none", WebkitOverflowScrolling:"touch", msOverflowStyle:"none"}}>
+            {(cats||[]).map(c=>(
+              <button key={c.id} onClick={()=>setCartaCat(c.id)}
+                style={{padding:"10px 20px", minHeight:42, borderRadius:30, fontSize:12, fontWeight:700, whiteSpace:"nowrap", cursor:"pointer", flexShrink:0, border:`1px solid ${cartaCat===c.id?"transparent":"rgba(255,255,255,.1)"}`, background:cartaCat===c.id?"linear-gradient(135deg,#b8900a,#c9a020)":"transparent", color:cartaCat===c.id?"#000":"rgba(255,255,255,.5)", transition:"all .2s", display:"flex", alignItems:"center"}}>
+                {c.nombre}
+              </button>
+            ))}
+          </div>
+          <div style={{position:"absolute",left:0,top:0,bottom:0,width:20,background:"linear-gradient(to right,#0d0d0d 60%,transparent)",pointerEvents:"none"}}/>
+          <div style={{position:"absolute",right:0,top:0,bottom:0,width:36,background:"linear-gradient(to left,#0d0d0d 60%,transparent)",pointerEvents:"none"}}/>
         </div>
         <div style={{flex:1, overflowY:"auto", padding:"14px"}}>
           <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:12}}>
@@ -3335,18 +3339,23 @@ export function ClientApp({onBack, local, cats, prods, vitrina=false, sinPedidos
         </div>
 
         {/* Category chips */}
-        <div style={{display:"flex",gap:8,padding:"0 14px 12px",overflowX:"auto",scrollbarWidth:"none",WebkitOverflowScrolling:"touch"}}>
-          {[{id:"TODO",icon:"",label:lang==="en"?"All":lang==="pt"?"Tudo":lang==="fr"?"Tout":lang==="de"?"Alle":lang==="it"?"Tutto":lang==="zh"?"全部":lang==="ja"?"全て":lang==="ko"?"전체":lang==="gn"?"Mba'etéva":"Todo"},...activeCats].map(cat=>(
-            <button key={cat.id} onClick={()=>setAC(cat.id)} className="pr" style={{
-              flexShrink:0,borderRadius:20,padding:"7px 16px",
-              background:activeCat===cat.id?(local.color||"#C9A84C"):"#F0F0F0",
-              color:activeCat===cat.id?"#fff":"#444",
-              border:"none",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,
-              cursor:"pointer",transition:"all .15s",whiteSpace:"nowrap",
-              boxShadow:activeCat===cat.id?"0 2px 8px rgba(0,0,0,.18)":"none"}}>
-              {cat.icon?cat.icon+" ":""}{tCat(cat.label,lang)}
-            </button>
-          ))}
+        <div style={{position:"relative"}}>
+          <div style={{display:"flex",gap:8,padding:"0 14px 14px",overflowX:"auto",scrollbarWidth:"none",WebkitOverflowScrolling:"touch",msOverflowStyle:"none"}}>
+            {[{id:"TODO",icon:"",label:lang==="en"?"All":lang==="pt"?"Tudo":lang==="fr"?"Tout":lang==="de"?"Alle":lang==="it"?"Tutto":lang==="zh"?"全部":lang==="ja"?"全て":lang==="ko"?"전체":lang==="gn"?"Mba'etéva":"Todo"},...activeCats].map(cat=>(
+              <button key={cat.id} onClick={()=>setAC(cat.id)} className="pr" style={{
+                flexShrink:0,borderRadius:22,padding:"10px 20px",minHeight:42,
+                background:activeCat===cat.id?(local.color||"#C9A84C"):"#F0F0F0",
+                color:activeCat===cat.id?"#fff":"#444",
+                border:"none",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,
+                cursor:"pointer",transition:"all .15s",whiteSpace:"nowrap",
+                boxShadow:activeCat===cat.id?"0 2px 8px rgba(0,0,0,.18)":"none",
+                display:"flex",alignItems:"center",justifyContent:"center"}}>
+                {cat.icon?cat.icon+" ":""}{tCat(cat.label,lang)}
+              </button>
+            ))}
+          </div>
+          <div style={{position:"absolute",left:0,top:0,bottom:4,width:20,background:"linear-gradient(to right,#FFF 60%,transparent)",pointerEvents:"none"}}/>
+          <div style={{position:"absolute",right:0,top:0,bottom:4,width:36,background:"linear-gradient(to left,#FFF 60%,transparent)",pointerEvents:"none"}}/>
         </div>
       </div>
 

@@ -3978,10 +3978,26 @@ export default function AdminPanel({ local, setLocal, cats, setCats, prods, setP
 
   const [navOpen, setNavOpen] = React.useState(false);
 
+  // Swipe gesture: right-edge swipe → open sidebar; left-swipe when open → close
+  const swipeRef = React.useRef({ x0: 0, y0: 0, edgeStart: false });
+  const onTouchStart = React.useCallback((e) => {
+    const t = e.touches[0];
+    const edgeStart = t.clientX > window.innerWidth - 44;
+    swipeRef.current = { x0: t.clientX, y0: t.clientY, edgeStart };
+  }, []);
+  const onTouchEnd = React.useCallback((e) => {
+    const t = e.changedTouches[0];
+    const dx = t.clientX - swipeRef.current.x0;
+    const dy = Math.abs(t.clientY - swipeRef.current.y0);
+    if (dy > 60) return; // ignore mostly-vertical swipes
+    if (!navOpen && swipeRef.current.edgeStart && dx < -50) setNavOpen(true);
+    if (navOpen && dx > 60) setNavOpen(false);
+  }, [navOpen]);
+
   return (
     <>
       <style>{AP_STYLES}</style>
-      <div id="ap2-root">
+      <div id="ap2-root" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
         <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
           <Topbar screen={screen} clock={clock} onMenuOpen={() => setNavOpen(true)} />
           <div style={{ flex: 1, overflowY: "auto", padding: "20px 24px" }}>
@@ -3989,27 +4005,4 @@ export default function AdminPanel({ local, setLocal, cats, setCats, prods, setP
               <button onClick={goBack}
                 style={{ marginBottom:10, display:'inline-flex', alignItems:'center', gap:6,
                   background:'rgba(255,255,255,.06)', border:'1px solid rgba(255,255,255,.1)',
-                  borderRadius:8, padding:'6px 14px 6px 10px', cursor:'pointer',
-                  fontSize:12, color:'rgba(255,255,255,.7)', fontWeight:600 }}>
-                ← Volver
-              </button>
-            )}
-            {screenMap[screen] || <ScreenDashboard pedidos={pedidos} cats={cats} prods={prods} local={local} />}
-          </div>
-        </div>
-        <div className={`ap-overlay${navOpen ? " nav-open" : ""}`} onClick={() => setNavOpen(false)} />
-        <Sidebar
-          screen={screen}
-          setScreen={navTo}
-          pendingCount={pendingCount}
-          kitchenCount={kitchenCount}
-          deliveryCount={deliveryCount}
-          local={local}
-          onLogout={onLogout}
-          open={navOpen}
-          onClose={() => setNavOpen(false)}
-        />
-      </div>
-    </>
-  );
-}
+              
