@@ -724,6 +724,8 @@ function ScreenDashboard({ pedidos, cats, prods, local }) {
 function ScreenPedidos({ pedidos, setPedidos, local }) {
   const [filter, setFilter] = useState("activos");
   const today = new Date().toISOString().split("T")[0];
+  const [ticketP, setTicketP] = useState(null);
+  const [editP,   setEditP]   = useState(null);
 
   const filtered = pedidos.filter((p) => {
     if (filter === "activos") return p.status !== "entregado" && p.status !== "cancelado";
@@ -811,6 +813,124 @@ function ScreenPedidos({ pedidos, setPedidos, local }) {
     fontWeight: 700, cursor: "pointer", letterSpacing: .5,
   });
 
+  const METODOS = { efectivo:"Efectivo", tarjeta:"Tarjeta", mp:"Mercado Pago", transferencia:"Transferencia", qr:"QR" };
+
+  function printTicket(p) {
+    const items = p.pedido_items || [];
+    const w = window.open('','_blank','width=400,height=600');
+    w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
+      *{margin:0;padding:0;box-sizing:border-box;}
+      body{font-family:'Courier New',monospace;font-size:13px;padding:20px;background:#fff;color:#000;}
+      h2{text-align:center;font-size:16px;margin-bottom:4px;}
+      .sub{text-align:center;font-size:11px;color:#666;margin-bottom:10px;}
+      .sep{border:none;border-top:1px dashed #000;margin:8px 0;}
+      .row{display:flex;justify-content:space-between;margin:3px 0;}
+      .total{font-size:15px;font-weight:bold;}
+      .foot{text-align:center;font-size:11px;margin-top:10px;color:#555;}
+      @media print{body{padding:4px;}}
+    </style></head><body>
+      <h2>${local?.nombre || 'MenuQR'}</h2>
+      <div class="sub">${new Date(p.created_at).toLocaleString('es-AR')}</div>
+      <hr class="sep"/>
+      ${p.mesa_numero > 0 ? `<div class="row"><span>Mesa</span><span>${p.mesa_numero}</span></div>` : ''}
+      ${p.tipo_pedido === 'delivery' ? `<div class="row"><span>Delivery</span><span>${p.nombre_cliente || ''}</span></div>` : ''}
+      <hr class="sep"/>
+      ${items.map(i => `<div class="row"><span>x${i.cantidad} ${i.nombre}</span><span>$${((i.precio||0)*(i.cantidad||1)).toLocaleString('es-AR')}</span></div>`).join('')}
+      <hr class="sep"/>
+      <div class="row total"><span>TOTAL</span><span>$${(p.total||0).toLocaleString('es-AR')}</span></div>
+      ${p.metodo_pago ? `<div class="row"><span>Pago</span><span>${METODOS[p.metodo_pago]||p.metodo_pago}</span></div>` : ''}
+      <div class="foot">¡Gracias por su visita! — MenuQR Digital</div>
+    </body></html>`);
+    w.document.close(); w.focus();
+    setTimeout(()=>{ w.print(); }, 300);
+  }
+
+  function shareTicketWA(p) {
+    const NL = "\n";
+    const items = (p.pedido_items||[]).map(i=>`x${i.cantidad} ${i.nombre}  $${((i.precio||0)*(i.cantidad||1)).toLocaleString("es-AR")}`).join(NL);
+    const txt = [
+      `*${local?.nombre||"MenuQR"}*`,
+      new Date(p.created_at).toLocaleString("es-AR"),
+      p.mesa_numero>0 ? "Mesa "+p.mesa_numero : null,
+      p.tipo_pedido==="delivery" ? "Delivery: "+(p.nombre_cliente||"") : null,
+      "",
+      items,
+      "",
+      "Total: $"+(p.total||0).toLocaleString("es-AR"),
+      p.metodo_pago ? "Pago: "+(METODOS[p.metodo_pago]||p.metodo_pago) : null,
+    ].filter(x=>x!=null).join(NL);
+    window.open("https://wa.me/?text="+encodeURIComponent(txt),"_blank");
+  }
+
+  /* ── EDIT PEDIDO MODAL ── */
+  function EditPedidoModal({ p, onClose }) {
+    const [items,   setItems]   = React.useState((p.pedido_items||[]).map(i=>({...i})));
+    const [metodo,  setMetodo]  = React.useState(p.metodo_pago||'');
+    const [saving,  setSaving]  = React.useState(false);
+    const newTotal = items.reduce((s,i)=>s+((i.precio||0)*(i.cantidad||1)),0);
+
+    async function save() {
+      setSaving(true);
+      try {
+        const removed = (p.pedido_items||[]).filter(orig => !items.find(i=>i.id===orig.id));
+        for (const r of removed) {
+          await supabase.from('pedido_items').delete().eq('id', r.id);
+        }
+        await supabase.from('pedidos').update({ metodo_pago: metodo||null, total: newTotal }).eq('id', p.id);
+        const updatedP = { ...p, pedido_items: items, metodo_pago: metodo||null, total: newTotal };
+        setPedidos(prev => prev.map(o => o.id === p.id ? updatedP : o));
+        onClose(updatedP);
+      } catch(e) { alert('Error: '+e.message); }
+      finally { setSaving(false); }
+    }
+
+    return (
+      <div style={{ position:"fixed",inset:0,background:"rgba(0,0,0,.75)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",padding:20 }}
+        onClick={onClose}>
+        <div style={{ background:"#1e1e1e",border:"1px solid rgba(255,255,255,.12)",borderRadius:16,width:"100%",maxWidth:420,maxHeight:"90vh",overflow:"auto",padding:24 }}
+          onClick={e=>e.stopPropagation()}>
+          <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:18 }}>
+            <div style={{ fontSize:16,fontWeight:800 }}>✏️ Editar pedido #{p.id?.slice(-4)}</div>
+            <div style={{ cursor:"pointer",color:"rgba(255,255,255,.4)",fontSize:22 }} onClick={onClose}>✕</div>
+          </div>
+
+          <div style={{ fontSize:11,fontWeight:700,color:"rgba(255,255,255,.4)",letterSpacing:1,marginBottom:8 }}>PRODUCTOS</div>
+          {items.map((item,idx) => (
+            <div key={item.id||idx} style={{ display:"flex",alignItems:"center",gap:10,background:"#161616",border:"1px solid rgba(255,255,255,.07)",borderRadius:10,padding:"10px 12px",marginBottom:8 }}>
+              <span style={{ flex:1,fontSize:13,color:"#fff" }}>x{item.cantidad} {item.nombre}</span>
+              <span style={{ fontSize:13,color:"#e8a020",fontWeight:700,minWidth:60,textAlign:"right" }}>${((item.precio||0)*(item.cantidad||1)).toLocaleString('es-AR')}</span>
+              <button onClick={() => setItems(prev=>prev.filter((_,i)=>i!==idx))}
+                style={{ width:28,height:28,border:"1px solid rgba(232,64,64,.4)",borderRadius:7,background:"rgba(232,64,64,.12)",color:"#e84040",cursor:"pointer",fontSize:15,display:"flex",alignItems:"center",justifyContent:"center" }}>✕</button>
+            </div>
+          ))}
+          {items.length===0 && <div style={{ fontSize:12,color:"rgba(255,255,255,.3)",marginBottom:12,textAlign:"center" }}>Sin productos</div>}
+
+          <div style={{ display:"flex",justifyContent:"space-between",padding:"10px 0",borderTop:"1px solid rgba(255,255,255,.08)",marginBottom:16 }}>
+            <span style={{ fontSize:14,fontWeight:700,color:"rgba(255,255,255,.6)" }}>Total</span>
+            <span style={{ fontSize:16,fontWeight:900,color:"#e8a020" }}>${newTotal.toLocaleString('es-AR')}</span>
+          </div>
+
+          <div style={{ fontSize:11,fontWeight:700,color:"rgba(255,255,255,.4)",letterSpacing:1,marginBottom:8 }}>FORMA DE PAGO</div>
+          <div style={{ display:"flex",gap:6,flexWrap:"wrap",marginBottom:20 }}>
+            {Object.entries(METODOS).map(([k,v]) => (
+              <button key={k} onClick={() => setMetodo(k)}
+                style={{ padding:"8px 14px",borderRadius:8,border:`1px solid ${metodo===k?"#C9A84C":"rgba(255,255,255,.12)"}`,background:metodo===k?"rgba(201,168,76,.15)":"transparent",color:metodo===k?"#C9A84C":"rgba(255,255,255,.5)",fontSize:12,fontWeight:700,cursor:"pointer" }}>
+                {v}
+              </button>
+            ))}
+          </div>
+
+          <div style={{ display:"flex",gap:8 }}>
+            <button className="ap-btn ap-btn-ghost" style={{ flex:1 }} onClick={onClose}>Cancelar</button>
+            <button className="ap-btn ap-btn-gold" style={{ flex:2 }} onClick={save} disabled={saving}>
+              {saving ? "Guardando..." : "✓ Guardar cambios"}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       <div className="ap-sec-hdr" style={{ marginBottom: 16 }}>
@@ -897,17 +1017,21 @@ function ScreenPedidos({ pedidos, setPedidos, local }) {
                   <td>{new Date(p.created_at).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}</td>
                   <td><span className={`ap-pill ${statusClass(p.status)}`}>{statusLabel(p.status)}</span></td>
                   <td>
-                    {p.status !== "entregado" && p.status !== "cancelado" && (
-                      <button className="ap-btn ap-btn-ghost ap-btn-sm" onClick={async () => {
-                        const next = p.status === "nuevo" || p.status === "pendiente_pago" ? "preparando" : p.status === "preparando" ? "listo" : "entregado";
-                        if (next === "preparando") playAlarm('cocina');
-                        if (next === "listo") playAlarm('listo');
-                        await updatePedidoStatus(p.id, next);
-                        setPedidos(prev => prev.map(o => o.id === p.id ? { ...o, status: next } : o));
-                      }}>
-                        {p.status === "nuevo" || p.status === "pendiente_pago" ? "▶ Cocina" : p.status === "preparando" ? "✓ Listo" : "📦 Entregar"}
-                      </button>
-                    )}
+                    <div style={{ display:"flex",gap:4,flexWrap:"wrap" }}>
+                      {p.status !== "entregado" && p.status !== "cancelado" && (
+                        <button className="ap-btn ap-btn-ghost ap-btn-sm" onClick={async () => {
+                          const next = p.status === "nuevo" || p.status === "pendiente_pago" ? "preparando" : p.status === "preparando" ? "listo" : "entregado";
+                          if (next === "preparando") playAlarm('cocina');
+                          if (next === "listo") playAlarm('listo');
+                          await updatePedidoStatus(p.id, next);
+                          setPedidos(prev => prev.map(o => o.id === p.id ? { ...o, status: next } : o));
+                        }}>
+                          {p.status === "nuevo" || p.status === "pendiente_pago" ? "▶ Cocina" : p.status === "preparando" ? "✓ Listo" : "📦 Entregar"}
+                        </button>
+                      )}
+                      <button className="ap-btn ap-btn-ghost ap-btn-sm" onClick={() => setTicketP(p)} title="Imprimir / Compartir">🖨️</button>
+                      <button className="ap-btn ap-btn-ghost ap-btn-sm" onClick={() => setEditP(p)} title="Editar pedido">✏️</button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -915,6 +1039,41 @@ function ScreenPedidos({ pedidos, setPedidos, local }) {
           </table>
         </div>
       )}
+      {ticketP && (
+        <div style={{ position:"fixed",inset:0,background:"rgba(0,0,0,.75)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",padding:20 }}
+          onClick={() => setTicketP(null)}>
+          <div style={{ background:"#1e1e1e",border:"1px solid rgba(255,255,255,.12)",borderRadius:16,width:"100%",maxWidth:400,padding:24 }}
+            onClick={e=>e.stopPropagation()}>
+            <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16 }}>
+              <div style={{ fontSize:16,fontWeight:800 }}>🧾 Ticket #{ticketP.id?.slice(-4)}</div>
+              <div style={{ cursor:"pointer",color:"rgba(255,255,255,.4)",fontSize:22 }} onClick={() => setTicketP(null)}>✕</div>
+            </div>
+            <div style={{ background:"#111",borderRadius:10,padding:16,fontFamily:"'IBM Plex Mono',monospace",fontSize:12,marginBottom:16 }}>
+              <div style={{ textAlign:"center",fontWeight:700,marginBottom:8 }}>{local?.nombre||'MenuQR'}</div>
+              <div style={{ textAlign:"center",fontSize:10,color:"rgba(255,255,255,.4)",marginBottom:10 }}>{new Date(ticketP.created_at).toLocaleString('es-AR')}</div>
+              {ticketP.mesa_numero>0 && <div style={{ display:"flex",justifyContent:"space-between",marginBottom:4 }}><span>Mesa</span><span>{ticketP.mesa_numero}</span></div>}
+              <hr style={{ border:"none",borderTop:"1px dashed rgba(255,255,255,.2)",margin:"8px 0" }}/>
+              {(ticketP.pedido_items||[]).map((i,idx) => (
+                <div key={idx} style={{ display:"flex",justifyContent:"space-between",marginBottom:3 }}>
+                  <span>x{i.cantidad} {i.nombre}</span>
+                  <span>${((i.precio||0)*(i.cantidad||1)).toLocaleString('es-AR')}</span>
+                </div>
+              ))}
+              <hr style={{ border:"none",borderTop:"1px dashed rgba(255,255,255,.2)",margin:"8px 0" }}/>
+              <div style={{ display:"flex",justifyContent:"space-between",fontWeight:800,fontSize:14 }}>
+                <span>TOTAL</span><span style={{ color:"#e8a020" }}>${(ticketP.total||0).toLocaleString('es-AR')}</span>
+              </div>
+              {ticketP.metodo_pago && <div style={{ display:"flex",justifyContent:"space-between",marginTop:4,color:"rgba(255,255,255,.5)" }}><span>Pago</span><span>{METODOS[ticketP.metodo_pago]||ticketP.metodo_pago}</span></div>}
+            </div>
+            <div style={{ display:"flex",gap:8 }}>
+              <button className="ap-btn ap-btn-ghost" style={{ flex:1 }} onClick={() => shareTicketWA(ticketP)}>📲 WhatsApp</button>
+              <button className="ap-btn ap-btn-gold" style={{ flex:1 }} onClick={() => printTicket(ticketP)}>🖨️ Imprimir</button>
+            </div>
+            <button className="ap-btn ap-btn-ghost" style={{ width:"100%",marginTop:8 }} onClick={() => { setTicketP(null); setEditP(ticketP); }}>✏️ Editar este pedido</button>
+          </div>
+        </div>
+      )}
+      {editP && <EditPedidoModal p={editP} onClose={(updated) => { setEditP(null); if(updated) setTicketP(updated); }} />}
     </div>
   );
 }
