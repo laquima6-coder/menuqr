@@ -2203,6 +2203,7 @@ function CartaV3ClientView({ cartaV3, local, cats, prods, cart, add, rem, cartCo
 
       {/* Content — matches AdminPanel Preview() */}
       <div style={{flex:1,overflowY:'auto',paddingBottom:effectiveVitrina?24:100}}>
+        {effectiveVitrina && <VitrinaInfo local={local} cats={cats} prods={prods}/>}
         {/* HERO */}
         {heroBlock?.on&&(heroBlock.data?.titulo||heroBlock.data?.sub||heroBlock.data?.logo||local?.nombre)&&(
           <div style={{padding:'22px 18px 14px',textAlign:align,borderBottom:`1px solid ${accentColor}25`}}>
