@@ -1760,26 +1760,26 @@ return (
 
       {/* ===== DELIVERY + RETIRO ===== */}
       <div className="vit-s6" style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:10}}>
-        <div style={{background:"rgba(255,255,255,.03)", border:"1px solid rgba(255,255,255,.08)", borderRadius:18, padding:"16px 14px"}}>
-          <div style={{fontSize:22, marginBottom:8}}>🛵</div>
-          <div style={{fontSize:13, fontWeight:800, color:"#fff", marginBottom:4}}>DELIVERY</div>
-          <div style={{fontSize:10, color:"rgba(255,255,255,.4)", lineHeight:1.4, marginBottom:10}}>Pedís desde casa y te lo llevamos</div>
-          <div style={{fontSize:10, color:"rgba(201,168,76,.8)", fontWeight:700}}>30-45 min · hasta 5 km</div>
-        </div>
-        {local.retiro_habilitado !== false ? (
-          <div style={{background:"rgba(255,255,255,.03)", border:"1px solid rgba(255,255,255,.08)", borderRadius:18, padding:"16px 14px"}}>
-            <div style={{fontSize:22, marginBottom:8}}>🏪</div>
-            <div style={{fontSize:13, fontWeight:800, color:"#fff", marginBottom:4}}>RETIRO</div>
-            <div style={{fontSize:10, color:"rgba(255,255,255,.4)", lineHeight:1.4, marginBottom:10}}>Pasás a buscar al local sin costo</div>
-            <div style={{fontSize:10, color:"rgba(201,168,76,.8)", fontWeight:700}}>{local.retiro_horario||"Lun-Dom 12-23 hs"}</div>
+        {local.delivery_habilitado ? (
+          <div style={{background:"rgba(255,255,255,.03)", border:"1px solid rgba(37,211,102,.2)", borderRadius:18, padding:"16px 14px"}}>
+            <div style={{fontSize:22, marginBottom:8}}>🛵</div>
+            <div style={{fontSize:13, fontWeight:800, color:"#fff", marginBottom:4}}>DELIVERY</div>
+            <div style={{fontSize:10, color:"rgba(255,255,255,.4)", lineHeight:1.4, marginBottom:10}}>Pedís desde casa y te lo llevamos</div>
+            <div style={{fontSize:10, color:"rgba(37,211,102,.8)", fontWeight:700}}>{local.delivery_precio>0?"$"+local.delivery_precio+" envío":"Envío gratis"}</div>
           </div>
         ) : (
           <div style={{background:"rgba(255,255,255,.02)", border:"1px solid rgba(255,255,255,.05)", borderRadius:18, padding:"16px 14px", opacity:.4}}>
-            <div style={{fontSize:22, marginBottom:8}}>🏪</div>
-            <div style={{fontSize:13, fontWeight:800, color:"#fff", marginBottom:4}}>RETIRO</div>
+            <div style={{fontSize:22, marginBottom:8}}>🛵</div>
+            <div style={{fontSize:13, fontWeight:800, color:"#fff", marginBottom:4}}>DELIVERY</div>
             <div style={{fontSize:10, color:"rgba(255,255,255,.4)", lineHeight:1.4}}>No disponible</div>
           </div>
         )}
+        <div style={{background:"rgba(255,255,255,.03)", border:"1px solid rgba(201,168,76,.2)", borderRadius:18, padding:"16px 14px"}}>
+          <div style={{fontSize:22, marginBottom:8}}>🏪</div>
+          <div style={{fontSize:13, fontWeight:800, color:"#fff", marginBottom:4}}>RETIRO</div>
+          <div style={{fontSize:10, color:"rgba(255,255,255,.4)", lineHeight:1.4, marginBottom:10}}>Pasás a buscar al local sin costo</div>
+          <div style={{fontSize:10, color:"rgba(201,168,76,.8)", fontWeight:700}}>{local.retiro_horario||"Lun-Dom 12-23 hs"}</div>
+        </div>
       </div>
 
       {/* ===== MÉTODOS DE PAGO ===== */}
