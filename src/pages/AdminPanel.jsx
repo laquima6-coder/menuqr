@@ -1186,6 +1186,15 @@ function ProductModal({ product, cats, restauranteId, onClose, onSave }) {
                 'https://images.unsplash.com/photo-1544487660-b86880a72e5c?w=400&h=400&fit=crop',
                 'https://images.unsplash.com/photo-1615361200141-f45040f367be?w=400&h=400&fit=crop',
                 'https://images.unsplash.com/photo-1611599537845-1c7aca0091c0?w=400&h=400&fit=crop',
+                /* Asado / vacío / tiras al fuego */
+                'https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=400&h=400&fit=crop',
+                'https://images.unsplash.com/photo-1432139555190-58524dae6a55?w=400&h=400&fit=crop',
+                'https://images.unsplash.com/photo-1516100882582-96c3a05fe590?w=400&h=400&fit=crop',
+                'https://images.unsplash.com/photo-1626082927389-6cd097cee6d7?w=400&h=400&fit=crop',
+                /* Choripán */
+                'https://images.unsplash.com/photo-1585947406187-6d5b44f10af5?w=400&h=400&fit=crop',
+                'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400&h=400&fit=crop',
+                'https://images.unsplash.com/photo-1565299507177-b0ac66763828?w=400&h=400&fit=crop',
               ]},
               {cat:'Hamburguesas', p:[
                 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&h=400&fit=crop',
@@ -1221,12 +1230,21 @@ function ProductModal({ product, cats, restauranteId, onClose, onSave }) {
                 'https://images.unsplash.com/photo-1604917877934-07d8d248d396?w=400&h=400&fit=crop',
                 'https://images.unsplash.com/photo-1548940740-204726a19be3?w=400&h=400&fit=crop',
                 'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=400&h=400&fit=crop',
+                /* Jamón y morrón / pepperoni / colores */
+                'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400&h=400&fit=crop',
+                'https://images.unsplash.com/photo-1571407970349-bc81e7e96d47?w=400&h=400&fit=crop',
+                'https://images.unsplash.com/photo-1458642849426-cfb724f15ef7?w=400&h=400&fit=crop',
+                'https://images.unsplash.com/photo-1590947132387-155cc02f3212?w=400&h=400&fit=crop',
+                'https://images.unsplash.com/photo-1534308983496-4fabb1a015ee?w=400&h=400&fit=crop',
               ]},
               {cat:'Pastas', p:[
                 /* Ñoquis / gnocchi */
                 'https://images.unsplash.com/photo-1555949258-eb67b1ef0ceb?w=400&h=400&fit=crop',
                 'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=400&h=400&fit=crop',
                 'https://images.unsplash.com/photo-1567608346706-68c6e5e1b0e6?w=400&h=400&fit=crop',
+                'https://images.unsplash.com/photo-1572030610501-53035bd27a7b?w=400&h=400&fit=crop',
+                'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&h=400&fit=crop',
+                'https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?w=400&h=400&fit=crop',
                 /* Lasaña */
                 'https://images.unsplash.com/photo-1598514983318-2f5da945b4d9?w=400&h=400&fit=crop',
                 'https://images.unsplash.com/photo-1637361922964-2b63ee3c9e35?w=400&h=400&fit=crop',
@@ -1279,18 +1297,35 @@ function ProductModal({ product, cats, restauranteId, onClose, onSave }) {
                 'https://images.unsplash.com/photo-1567234669003-dce7a7a88821?w=400&h=400&fit=crop',
               ]},
               {cat:'Mariscos', p:['https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=400&h=400&fit=crop','https://images.unsplash.com/photo-1559339352-11d035aa65de?w=400&h=400&fit=crop','https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?w=400&h=400&fit=crop','https://images.unsplash.com/photo-1515443961218-a51367888e4b?w=400&h=400&fit=crop','https://images.unsplash.com/photo-1611599537845-1c7aca0091c0?w=400&h=400&fit=crop','https://images.unsplash.com/photo-1560717845-968823efbee1?w=400&h=400&fit=crop']},
-              {cat:'Sándwiches', p:['https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=400&h=400&fit=crop','https://images.unsplash.com/photo-1509722747041-616f39b57569?w=400&h=400&fit=crop','https://images.unsplash.com/photo-1596956470007-2bf6095e7e16?w=400&h=400&fit=crop','https://images.unsplash.com/photo-1539252554453-80ab65ce3586?w=400&h=400&fit=crop','https://images.unsplash.com/photo-1554433607-66b5efe9d304?w=400&h=400&fit=crop','https://images.unsplash.com/photo-1567234669003-dce7a7a88821?w=400&h=400&fit=crop']},
+              {cat:'Sándwiches', p:[
+                /* Clásicos */
+                'https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=400&h=400&fit=crop',
+                'https://images.unsplash.com/photo-1509722747041-616f39b57569?w=400&h=400&fit=crop',
+                'https://images.unsplash.com/photo-1596956470007-2bf6095e7e16?w=400&h=400&fit=crop',
+                'https://images.unsplash.com/photo-1539252554453-80ab65ce3586?w=400&h=400&fit=crop',
+                'https://images.unsplash.com/photo-1554433607-66b5efe9d304?w=400&h=400&fit=crop',
+                'https://images.unsplash.com/photo-1567234669003-dce7a7a88821?w=400&h=400&fit=crop',
+                /* Lomito / steak sandwich */
+                'https://images.unsplash.com/photo-1553909489-cd47e0907980?w=400&h=400&fit=crop',
+                'https://images.unsplash.com/photo-1550507992-eb63ffee0847?w=400&h=400&fit=crop',
+                'https://images.unsplash.com/photo-1620088455215-27c44baf44fe?w=400&h=400&fit=crop',
+                'https://images.unsplash.com/photo-1572441713132-c542fc4fe282?w=400&h=400&fit=crop',
+              ]},
               {cat:'Desayuno', p:['https://images.unsplash.com/photo-1533089860892-a7c6f0a88666?w=400&h=400&fit=crop','https://images.unsplash.com/photo-1484723091739-30a097e8f929?w=400&h=400&fit=crop','https://images.unsplash.com/photo-1481070555726-e2fe8357725c?w=400&h=400&fit=crop','https://images.unsplash.com/photo-1525351484163-7529414344d8?w=400&h=400&fit=crop','https://images.unsplash.com/photo-1494390248081-4e521a5940db?w=400&h=400&fit=crop','https://images.unsplash.com/photo-1550617931-e17a7b70dce2?w=400&h=400&fit=crop','https://images.unsplash.com/photo-1506084868230-bb9d95c24759?w=400&h=400&fit=crop','https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=400&h=400&fit=crop']},
             ];
             const photos = FPHOTOS.find(g=>g.cat===galleryCat)?.p || [];
             return (
               <div style={{ marginTop: 10, background: "#111", borderRadius: 10, padding: 10, border: "1px solid rgba(255,255,255,.1)" }}>
-                <div style={{ display: "flex", gap: 6, overflowX: "auto", marginBottom: 10, paddingBottom: 4, WebkitOverflowScrolling: "touch" }}>
-                  {FPHOTOS.map(g => (
-                    <button key={g.cat} onClick={() => setGalleryCat(g.cat)}
-                      className={`ap-btn ap-btn-sm ${galleryCat===g.cat ? "ap-btn-gold" : "ap-btn-ghost"}`}
-                      style={{ flexShrink: 0, fontSize: 10 }}>{g.cat}</button>
-                  ))}
+                <div style={{ position:"relative", marginBottom:10 }}>
+                  <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 4, WebkitOverflowScrolling: "touch", scrollbarWidth:"none", msOverflowStyle:"none" }}>
+                    {FPHOTOS.map(g => (
+                      <button key={g.cat} onClick={() => setGalleryCat(g.cat)}
+                        className={`ap-btn ap-btn-sm ${galleryCat===g.cat ? "ap-btn-gold" : "ap-btn-ghost"}`}
+                        style={{ flexShrink: 0, fontSize: 11, padding:"7px 12px", minHeight:34 }}>{g.cat}</button>
+                    ))}
+                  </div>
+                  <div style={{ position:"absolute",left:0,top:0,bottom:4,width:16,background:"linear-gradient(to right,#111 50%,transparent)",pointerEvents:"none" }}/>
+                  <div style={{ position:"absolute",right:0,top:0,bottom:4,width:32,background:"linear-gradient(to left,#111 50%,transparent)",pointerEvents:"none" }}/>
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 6 }}>
                   {photos.map((url, i) => (
@@ -3978,18 +4013,17 @@ export default function AdminPanel({ local, setLocal, cats, setCats, prods, setP
 
   const [navOpen, setNavOpen] = React.useState(false);
 
-  // Swipe gesture: right-edge swipe → open sidebar; left-swipe when open → close
+  // Swipe gesture: right-edge → open sidebar; left-swipe when open → close
   const swipeRef = React.useRef({ x0: 0, y0: 0, edgeStart: false });
   const onTouchStart = React.useCallback((e) => {
     const t = e.touches[0];
-    const edgeStart = t.clientX > window.innerWidth - 44;
-    swipeRef.current = { x0: t.clientX, y0: t.clientY, edgeStart };
+    swipeRef.current = { x0: t.clientX, y0: t.clientY, edgeStart: t.clientX > window.innerWidth - 44 };
   }, []);
   const onTouchEnd = React.useCallback((e) => {
     const t = e.changedTouches[0];
     const dx = t.clientX - swipeRef.current.x0;
     const dy = Math.abs(t.clientY - swipeRef.current.y0);
-    if (dy > 60) return; // ignore mostly-vertical swipes
+    if (dy > 60) return;
     if (!navOpen && swipeRef.current.edgeStart && dx < -50) setNavOpen(true);
     if (navOpen && dx > 60) setNavOpen(false);
   }, [navOpen]);
@@ -4005,4 +4039,27 @@ export default function AdminPanel({ local, setLocal, cats, setCats, prods, setP
               <button onClick={goBack}
                 style={{ marginBottom:10, display:'inline-flex', alignItems:'center', gap:6,
                   background:'rgba(255,255,255,.06)', border:'1px solid rgba(255,255,255,.1)',
-              
+                  borderRadius:8, padding:'6px 14px 6px 10px', cursor:'pointer',
+                  fontSize:12, color:'rgba(255,255,255,.7)', fontWeight:600 }}>
+                ← Volver
+              </button>
+            )}
+            {screenMap[screen] || <ScreenDashboard pedidos={pedidos} cats={cats} prods={prods} local={local} />}
+          </div>
+        </div>
+        <div className={`ap-overlay${navOpen ? " nav-open" : ""}`} onClick={() => setNavOpen(false)} />
+        <Sidebar
+          screen={screen}
+          setScreen={navTo}
+          pendingCount={pendingCount}
+          kitchenCount={kitchenCount}
+          deliveryCount={deliveryCount}
+          local={local}
+          onLogout={onLogout}
+          open={navOpen}
+          onClose={() => setNavOpen(false)}
+        />
+      </div>
+    </>
+  );
+}
