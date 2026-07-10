@@ -473,7 +473,6 @@ function Sidebar({ screen, setScreen, pendingCount, kitchenCount, deliveryCount,
           {nav("gestion", "🔧", "Gestión")}
           {nav("config", "⚙️", "Configuración")}
         </div>
-      </div>
 
         {(local?.plus_ia || local?.plus_figma) && (
           <div className="ap-nav-group">
@@ -4318,7 +4317,7 @@ function ScreenPlusFigma({ prods, cats, local }) {
                 <div style={{ padding: 16 }}>
                   <div style={{ fontSize: 11, fontWeight: 700, color: bgColor, letterSpacing: 2, marginBottom: 12 }}>{cat.icon} {(cat.label || cat.nombre || "").toUpperCase()}</div>
                   {catProds.map(p => (
-                    <div key={p.id} style={{ display: "flex", gap: 12, padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,.06)", cursor: "pointer", background: selectedProd === p.id ? "rgba(255,255,255,.04)" : "transparent", borderRadius: 8, padding: "10px 8px", marginBottom: 4 }} onClick={() => setSelectedProd(p.id)}>
+                    <div key={p.id} style={{ display: "flex", gap: 12, padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,.06)", cursor: "pointer", background: selectedProd === p.id ? "rgba(255,255,255,.04)" : "transparent", borderRadius: 8, paddingLeft: "8px", paddingRight: "8px", paddingTop: "10px", paddingBottom: "8px", marginBottom: 4 }} onClick={() => setSelectedProd(p.id)}>
                       {p.foto_url && <img src={p.foto_url} alt="" style={{ width: 56, height: 56, borderRadius: 10, objectFit: "cover", flexShrink: 0 }} onError={e => e.target.style.display="none"} />}
                       <div style={{ flex: 1 }}>
                         <div style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>{p.name}</div>
