@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 /* ══════════════════════════════════════════════════════
-   LANDING PAGE — MenuQR
+   LANDING PAGE — PedidosQR
    Página de ventas / marketing
 ══════════════════════════════════════════════════════ */
 
@@ -149,7 +149,7 @@ export default function LandingPage() {
   }, [])
 
   const FAQS = [
-    { q:'¿Necesito saber de tecnología?', a:'Para nada. Si podés usar WhatsApp, podés usar MenuQR. Todo es desde el celular, sin instalaciones.' },
+    { q:'¿Necesito saber de tecnología?', a:'Para nada. Si podés usar WhatsApp, podés usar PedidosQR. Todo es desde el celular, sin instalaciones.' },
     { q:'¿Cuánto tarda en estar listo?', a:'En menos de 10 minutos podés tener tu primera carta online con QR listo para imprimir.' },
     { q:'¿Qué pasa si se me va la luz o el WiFi?', a:'La carta se guarda en el celular de cada cliente. Aunque se corte el WiFi, los clientes que ya la abrieron la siguen viendo.' },
     { q:'¿Puedo cambiar los precios fácil?', a:'Sí. Entrás al panel, tocás el producto, cambiás el precio y listo — se actualiza en tiempo real para todos los clientes.' },
@@ -460,7 +460,7 @@ export default function LandingPage() {
             <button onClick={()=>navigate('/panel')} style={{background:'none',border:'none',color:'#555',fontSize:13,cursor:'pointer',fontFamily:"'DM Sans',sans-serif"}}>Panel</button>
             <button onClick={()=>window.open('/menu/mi-restaurante','_blank')} style={{background:'none',border:'none',color:'#555',fontSize:13,cursor:'pointer',fontFamily:"'DM Sans',sans-serif"}}>Demo</button>
           </div>
-          <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:11,color:'#2A2A2A'}}>© 2026 MenuQR</div>
+          <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:11,color:'#2A2A2A'}}>© 2026 PedidosQR</div>
         </div>
       </footer>
 

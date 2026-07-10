@@ -6241,7 +6241,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
       <div class="row"><span>Pago</span><span><b>${PAY_LABELS[o.pay]||o.pay||"—"}</b></span></div>
       <div class="line"></div>
       <div class="thanks">¡Gracias!</div>
-      <div class="footer">${local.email?local.email+"<br>":""}Emitido por MenuQR</div>
+      <div class="footer">${local.email?local.email+"<br>":""}Emitido por PedidosQR</div>
       <script>window.onload=function(){window.print();setTimeout(function(){window.close()},1500)}</script>
     </body></html>`;
     const w=window.open("","_blank","width=420,height=620,toolbar=0,menubar=0,scrollbars=0");
@@ -7341,7 +7341,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
         <div class="row"><span class="b">TOTAL</span><span class="total">$${fmt(o.total)}</span></div>
         ${o.tip>0?`<div class="row"><span>Propina</span><span>+ $${fmt(o.tip)}</span></div>`:''}
         <div class="line"></div>
-        <div class="c" style="font-size:9px;margin-top:6px;color:#888">MenuQR · ${new Date().toLocaleString('es-AR')}</div>
+        <div class="c" style="font-size:9px;margin-top:6px;color:#888">PedidosQR · ${new Date().toLocaleString('es-AR')}</div>
         <script>window.onload=function(){window.print();setTimeout(function(){window.close()},1200)}</script>
       </body></html>`;
       const w = window.open('','_blank','width=380,height=550,toolbar=0,menubar=0,scrollbars=0');
@@ -9083,7 +9083,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
             <div style={{borderTop:"1px dashed #000",margin:"8px 0"}}/>
             <div style={{fontSize:13,fontWeight:"bold",textAlign:"center",margin:"8px 0 4px"}}>¡Gracias!</div>
             {local.email&&<div style={{fontSize:9,color:"var(--am)",textAlign:"center"}}>{local.email}</div>}
-            <div style={{fontSize:9,color:"var(--am)",textAlign:"center"}}>Emitido por MenuQR</div>
+            <div style={{fontSize:9,color:"var(--am)",textAlign:"center"}}>Emitido por PedidosQR</div>
             {/* Buttons */}
             <div style={{display:"flex",gap:8,marginTop:16,flexWrap:"wrap"}}>
               <button onClick={()=>setTicketPreview(null)} style={{flex:"1 1 auto",padding:"10px",borderRadius:8,background:"var(--ac)",border:"1px solid #ddd",fontFamily:"'Outfit',sans-serif",fontSize:13,fontWeight:700,cursor:"pointer",color:"var(--at)"}}>
@@ -9099,7 +9099,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
                   `💰 *TOTAL: $${fmt(ticketPreview.total)}*`,
                   `💳 ${fmtPay(ticketPreview.pay)}`,
                   ticketPreview.nota&&ticketPreview.nota!=="Venta en mostrador"?`📝 ${ticketPreview.nota}`:"",
-                  ``,`_Emitido por MenuQR_`,
+                  ``,`_Emitido por PedidosQR_`,
                 ].filter(Boolean).join("\n");
                 return (<>
                   <button onClick={()=>{navigator.clipboard?.writeText(lines);toast&&toast("Ticket copiado");}}
@@ -9475,7 +9475,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
               <h2 style={{margin:0,fontSize:"1.35rem",fontWeight:800,
                 background:"linear-gradient(135deg,#6366F1,#C9A84C)",
                 WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>
-                ¡Bienvenido a MenuQR!
+                ¡Bienvenido a PedidosQR!
               </h2>
               <p style={{margin:"6px 0 0",color:"#4A6080",fontSize:".9rem"}}>
                 Seguí estos 3 pasos para arrancar

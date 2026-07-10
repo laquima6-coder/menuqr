@@ -83,7 +83,7 @@ function DemoTab({ restaurantes }) {
     { ok: true,                          label: 'Panel admin con login seguro' },
   ]
 
-  const waText = "Hola! Te quiero mostrar MenuQR\n\nEscaneá este link para ver la carta demo en vivo:\n👉 " + links[0].url + "\n\nO la vitrina (para la puerta del local):\n👉 " + links[1].url + "\n\nMenuQR te permite tener tu carta digital con QR por mesa, pedidos en tiempo real, panel de admin, cocina y mucho más"
+  const waText = "Hola! Te quiero mostrar PedidosQR\n\nEscaneá este link para ver la carta demo en vivo:\n👉 " + links[0].url + "\n\nO la vitrina (para la puerta del local):\n👉 " + links[1].url + "\n\nMenuQR te permite tener tu carta digital con QR por mesa, pedidos en tiempo real, panel de admin, cocina y mucho más"
 
   function descargarPDF() {
     const BASE = "https://pedidosqr.vercel.app"
@@ -102,7 +102,7 @@ function DemoTab({ restaurantes }) {
     )).join("")
 
     const html = "<!DOCTYPE html><html lang=\"es\"><head><meta charset=\"UTF-8\"/>" +
-      "<title>MenuQR Demo " + rest.nombre + "</title>" +
+      "<title>PedidosQR Demo " + rest.nombre + "</title>" +
       "<style>" +
       "@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;600&display=swap');" +
       "*{box-sizing:border-box;margin:0;padding:0}" +
@@ -126,7 +126,7 @@ function DemoTab({ restaurantes }) {
       ".footer{margin-top:28px;text-align:center;font-size:.7rem;color:#BBB;font-family:'IBM Plex Mono',monospace}" +
       "@media print{body{padding:16px}@page{margin:12mm}}" +
       "</style></head><body>" +
-      "<h1>🍽️ MenuQR</h1>" +
+      "<h1>🍽️ PedidosQR</h1>" +
       "<div class=\"sub\">Demo en vivo — <strong>" + rest.nombre + "</strong></div>" +
       "<div class=\"section-title\">Escaneá para ver la app en tu celular</div>" +
       "<div class=\"qr-grid\">" + qrs + "</div>" +
@@ -134,7 +134,7 @@ function DemoTab({ restaurantes }) {
       "<div class=\"features\">" + feats + "</div>" +
       "<div class=\"cta\"><h2>Queres esto para tu restaurante?</h2><p>Carta digital, QR por mesa, pedidos en tiempo real y panel de gestión completo.</p>" +
       "<div class=\"links\">Carta demo: " + links[0].url + "<br/>Vitrina demo: " + links[1].url + "</div></div>" +
-      "<div class=\"footer\">Generado por MenuQR SuperAdmin</div>" +
+      "<div class=\"footer\">Generado por PedidosQR SuperAdmin</div>" +
       "<script>window.onload=function(){setTimeout(function(){window.print()},600)}<\/script>" +
       "</body></html>"
 
@@ -335,7 +335,7 @@ export default function SuperAdmin() {
         <div style={{background:'#0F1320',border:'1px solid #1E2A3A',borderRadius:16,padding:'40px 32px',width:'100%',maxWidth:360,textAlign:'center'}}>
           <div style={{fontSize:'2.5rem',marginBottom:12}}>🔐</div>
           <div style={{fontSize:'1.2rem',fontWeight:700,color:'#B8D0E8',marginBottom:6}}>Super Admin</div>
-          <div style={{color:'#4A6080',fontSize:'.85rem',marginBottom:24}}>Panel de gestión de MenuQR</div>
+          <div style={{color:'#4A6080',fontSize:'.85rem',marginBottom:24}}>Panel de gestión de PedidosQR</div>
           <div style={{position:'relative',marginBottom:14}}>
             <input
               type={showPin?"text":"password"} maxLength={20} placeholder="PIN de acceso"
@@ -387,7 +387,7 @@ export default function SuperAdmin() {
         <div style={{background:'#0C1018',borderBottom:'1px solid #1A2230',padding:'14px 24px',display:'flex',alignItems:'center',gap:12}}>
           <a href="/" style={{color:'#4A6080',textDecoration:'none',fontSize:'.88rem'}}>← App</a>
           <div style={{flex:1,fontWeight:700,fontSize:'1rem'}}>
-            MenuQR <span style={{color:'#4A6080',fontSize:'.8rem',fontWeight:400}}>/ Super Admin</span>
+            PedidosQR <span style={{color:'#4A6080',fontSize:'.8rem',fontWeight:400}}>/ Super Admin</span>
           </div>
           <span style={{background:'#EF4444',color:'#fff',padding:'2px 10px',borderRadius:20,fontSize:'.7rem',fontWeight:700}}>ADMIN</span>
           <button onClick={()=>{sessionStorage.removeItem('sa_auth');setAuth(false)}} style={{background:'none',border:'none',color:'#4A6080',cursor:'pointer',fontSize:'.85rem'}}>

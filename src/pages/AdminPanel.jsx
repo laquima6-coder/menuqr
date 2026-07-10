@@ -212,6 +212,22 @@ const AP_STYLES = `
   #ap2-root .ap-timer-warn { font-size:13px; font-weight:700; color:var(--gold); margin-bottom:10px }
   #ap2-root .ap-timer-urgent { font-size:13px; font-weight:700; color:var(--red); margin-bottom:10px }
 
+  /* PLUS IA / FIGMA */
+  #ap2-root .ap-plus-badge {
+    display:inline-flex; align-items:center; gap:5px;
+    padding:3px 10px; border-radius:20px; font-size:10px; font-weight:800; letter-spacing:.5px;
+  }
+  #ap2-root .ap-plus-ia { background:rgba(139,92,246,.15); color:#A78BFA; border:1px solid rgba(139,92,246,.3); }
+  #ap2-root .ap-plus-figma { background:rgba(6,182,212,.15); color:#22D3EE; border:1px solid rgba(6,182,212,.3); }
+  #ap2-root .ap-chat-bubble { padding:12px 16px; border-radius:14px; max-width:80%; font-size:13px; line-height:1.5; }
+  #ap2-root .ap-chat-user { background:var(--gold-dim); color:var(--text); border:1px solid rgba(232,160,32,.2); align-self:flex-end; }
+  #ap2-root .ap-chat-ai { background:rgba(139,92,246,.12); color:var(--text); border:1px solid rgba(139,92,246,.2); align-self:flex-start; }
+  #ap2-root .ap-figma-canvas { background:var(--bg3); border:1px solid var(--border); border-radius:12px; overflow:hidden; }
+  #ap2-root .ap-figma-toolbar { background:var(--bg2); border-bottom:1px solid var(--border); padding:10px 14px; display:flex; gap:8px; align-items:center; }
+  #ap2-root .ap-figma-tool { padding:6px 12px; border-radius:6px; border:none; font-size:11px; font-weight:700; cursor:pointer; font-family:inherit; background:var(--bg4); color:var(--text2); transition:.15s; }
+  #ap2-root .ap-figma-tool:hover { background:var(--bg5); color:var(--text); }
+  #ap2-root .ap-figma-tool.active { background:rgba(6,182,212,.2); color:#22D3EE; }
+
   /* PRODUCT GRID */
   #ap2-root .ap-prod-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:14px }
   #ap2-root .ap-prod-card { background:var(--bg3); border:1px solid var(--border); border-radius:12px; overflow:hidden; transition:border-color .15s }
@@ -396,6 +412,8 @@ const SCREEN_TITLES = {
   qr: "QR y links de acceso",
   config: "Configuración",
   gestion: "Gestión rápida",
+  plus_ia: "🤖 IA Asistente",
+  plus_figma: "🎨 Editor Visual Figma",
 };
 
 /* ══════════════════════════════════════════════════════════════
@@ -455,6 +473,15 @@ function Sidebar({ screen, setScreen, pendingCount, kitchenCount, deliveryCount,
           {nav("gestion", "🔧", "Gestión")}
           {nav("config", "⚙️", "Configuración")}
         </div>
+      </div>
+
+        {(local?.plus_ia || local?.plus_figma) && (
+          <div className="ap-nav-group">
+            <div className="ap-nav-label">✦ PLUS</div>
+            {local?.plus_ia    && nav("plus_ia",    "🤖", <><span>IA Asistente</span><span className="ap-plus-badge ap-plus-ia">IA</span></>)}
+            {local?.plus_figma && nav("plus_figma", "🎨", <><span>Editor Figma</span><span className="ap-plus-badge ap-plus-figma">FIGMA</span></>)}
+          </div>
+        )}
       </div>
 
       <div className="ap-sidebar-bottom">
@@ -839,7 +866,7 @@ function ScreenPedidos({ pedidos, setPedidos, local }) {
       <hr class="sep"/>
       <div class="row total"><span>TOTAL</span><span>$${(p.total||0).toLocaleString('es-AR')}</span></div>
       ${p.metodo_pago ? `<div class="row"><span>Pago</span><span>${METODOS[p.metodo_pago]||p.metodo_pago}</span></div>` : ''}
-      <div class="foot">¡Gracias por su visita! — MenuQR Digital</div>
+      <div class="foot">¡Gracias por su visita! — PedidosQR</div>
     </body></html>`);
     w.document.close(); w.focus();
     setTimeout(()=>{ w.print(); }, 300);
@@ -3888,7 +3915,7 @@ function ScreenConfiguracion({ local, setLocal }) {
         <div className="ap-card">
           <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 14, color: "var(--gold)" }}>ℹ️ Información del sistema</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {[["Versión","MenuQR 2.0"],["Plan","Pro"],["Estado","✅ Activo"]].map(([k,v])=>(
+            {[["Versión","PedidosQR 2.0"],["Plan","Pro"],["Estado","✅ Activo"]].map(([k,v])=>(
               <div key={k} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid var(--border)" }}>
                 <span style={{ color: "var(--text2)" }}>{k}</span>
                 <span style={{ fontWeight: 600 }}>{v}</span>
@@ -4093,6 +4120,243 @@ function ScreenGestion({ prods, setProds, cats, local, setLocal }) {
 /* ══════════════════════════════════════════════════════════════
    MAIN ADMIN PANEL
 ══════════════════════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════════════════════
+   SCREEN PLUS IA — Chat con IA
+══════════════════════════════════════════════════════════════ */
+function ScreenPlusIA({ local }) {
+  const [msgs, setMsgs] = React.useState([
+    { role: "ai", text: "¡Hola! Soy tu asistente IA de PedidosQR. Puedo ayudarte a analizar tus ventas, sugerir cambios en la carta, redactar descripciones de productos y mucho más. ¿En qué te ayudo hoy?" }
+  ]);
+  const [input, setInput] = React.useState("");
+  const [loading, setLoading] = React.useState(false);
+  const bottomRef = React.useRef(null);
+
+  React.useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs]);
+
+  async function send() {
+    if (!input.trim() || loading) return;
+    const userMsg = input.trim();
+    setInput("");
+    setMsgs(m => [...m, { role: "user", text: userMsg }]);
+    setLoading(true);
+    try {
+      // Llamar al API de IA (Vercel function)
+      const res = await fetch("/api/ia-chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: userMsg,
+          context: {
+            restaurante: local?.nombre,
+            plan: local?.plan,
+          }
+        })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setMsgs(m => [...m, { role: "ai", text: data.reply || "..." }]);
+      } else {
+        setMsgs(m => [...m, { role: "ai", text: "⚠️ Error conectando con la IA. Verificá tu configuración." }]);
+      }
+    } catch {
+      setMsgs(m => [...m, { role: "ai", text: "⚠️ No se pudo conectar. Revisá tu conexión a internet." }]);
+    }
+    setLoading(false);
+  }
+
+  const suggestions = [
+    "¿Cuáles son mis productos más vendidos?",
+    "Sugerí una descripción para mi producto estrella",
+    "¿Cómo puedo aumentar el ticket promedio?",
+    "Generá ideas para el menú del fin de semana",
+  ];
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 60px - 48px)", gap: 0 }}>
+      {/* Header */}
+      <div className="ap-card" style={{ padding: "14px 18px", marginBottom: 16, display: "flex", alignItems: "center", gap: 12 }}>
+        <div style={{ width: 44, height: 44, borderRadius: 12, background: "rgba(139,92,246,.2)", border: "1px solid rgba(139,92,246,.3)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22 }}>🤖</div>
+        <div>
+          <div style={{ fontWeight: 800, fontSize: 16 }}>Asistente IA</div>
+          <div style={{ fontSize: 11, color: "var(--text3)" }}>Powered by Claude · {local?.nombre}</div>
+        </div>
+        <span className="ap-plus-badge ap-plus-ia" style={{ marginLeft: "auto" }}>PLUS IA ACTIVO</span>
+      </div>
+
+      {/* Chat */}
+      <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: 12, padding: "4px 0", marginBottom: 16 }}>
+        {msgs.map((m, i) => (
+          <div key={i} style={{ display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start" }}>
+            {m.role === "ai" && (
+              <div style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(139,92,246,.2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0, marginRight: 8, alignSelf: "flex-end" }}>🤖</div>
+            )}
+            <div className={`ap-chat-bubble ${m.role === "user" ? "ap-chat-user" : "ap-chat-ai"}`}>{m.text}</div>
+          </div>
+        ))}
+        {loading && (
+          <div style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
+            <div style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(139,92,246,.2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>🤖</div>
+            <div className="ap-chat-bubble ap-chat-ai" style={{ display: "flex", gap: 4, alignItems: "center" }}>
+              <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#A78BFA", animation: "ap-livepulse 1s infinite" }} />
+              <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#A78BFA", animation: "ap-livepulse 1s .2s infinite" }} />
+              <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#A78BFA", animation: "ap-livepulse 1s .4s infinite" }} />
+            </div>
+          </div>
+        )}
+        <div ref={bottomRef} />
+      </div>
+
+      {/* Suggestions */}
+      {msgs.length <= 2 && (
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
+          {suggestions.map((s, i) => (
+            <button key={i} onClick={() => setInput(s)}
+              style={{ padding: "7px 12px", borderRadius: 20, border: "1px solid rgba(139,92,246,.3)", background: "rgba(139,92,246,.08)", color: "#A78BFA", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", transition: ".15s" }}>
+              {s}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Input */}
+      <div style={{ display: "flex", gap: 8 }}>
+        <input
+          value={input} onChange={e => setInput(e.target.value)}
+          onKeyDown={e => e.key === "Enter" && !e.shiftKey && send()}
+          placeholder="Escribí tu consulta..."
+          style={{ flex: 1, background: "var(--bg3)", border: "1px solid rgba(139,92,246,.3)", borderRadius: 12, padding: "12px 16px", color: "var(--text)", fontSize: 13, outline: "none", fontFamily: "inherit" }}
+        />
+        <button onClick={send} disabled={loading || !input.trim()}
+          style={{ padding: "12px 20px", borderRadius: 12, border: "none", background: loading ? "var(--bg4)" : "rgba(139,92,246,.8)", color: "#fff", fontWeight: 700, fontSize: 13, cursor: loading ? "not-allowed" : "pointer", fontFamily: "inherit", transition: ".15s" }}>
+          {loading ? "..." : "↑ Enviar"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════
+   SCREEN PLUS FIGMA — Editor visual de menú
+══════════════════════════════════════════════════════════════ */
+function ScreenPlusFigma({ prods, cats, local }) {
+  const [selectedCat, setSelectedCat] = React.useState(null);
+  const [selectedProd, setSelectedProd] = React.useState(null);
+  const [activeTool, setActiveTool] = React.useState("select");
+  const [bgColor, setBgColor] = React.useState(local?.color || "#C9A84C");
+  const [showExport, setShowExport] = React.useState(false);
+
+  const cat = selectedCat ? cats.find(c => c.id === selectedCat) : null;
+  const catProds = selectedCat ? prods.filter(p => p.cat === selectedCat && p.active !== false) : [];
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 60px - 48px)", gap: 0 }}>
+      {/* Header */}
+      <div className="ap-card" style={{ padding: "12px 18px", marginBottom: 16, display: "flex", alignItems: "center", gap: 12 }}>
+        <div style={{ width: 44, height: 44, borderRadius: 12, background: "rgba(6,182,212,.2)", border: "1px solid rgba(6,182,212,.3)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22 }}>🎨</div>
+        <div>
+          <div style={{ fontWeight: 800, fontSize: 16 }}>Editor Visual de Menú</div>
+          <div style={{ fontSize: 11, color: "var(--text3)" }}>Diseñá tu carta visualmente · {local?.nombre}</div>
+        </div>
+        <span className="ap-plus-badge ap-plus-figma" style={{ marginLeft: "auto" }}>PLUS FIGMA ACTIVO</span>
+        <button className="ap-btn ap-btn-gold" style={{ fontSize: 11, padding: "6px 14px" }} onClick={() => setShowExport(true)}>↓ Exportar</button>
+      </div>
+
+      <div style={{ display: "flex", gap: 16, flex: 1, minHeight: 0 }}>
+        {/* Panel izquierdo — categorías y productos */}
+        <div style={{ width: 220, display: "flex", flexDirection: "column", gap: 8, overflowY: "auto" }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: "var(--text3)", letterSpacing: 2, marginBottom: 4 }}>CATEGORÍAS</div>
+          {cats.map(c => (
+            <div key={c.id} onClick={() => { setSelectedCat(c.id); setSelectedProd(null); }}
+              style={{ padding: "10px 12px", borderRadius: 8, cursor: "pointer", border: `1px solid ${selectedCat === c.id ? "rgba(6,182,212,.4)" : "var(--border)"}`, background: selectedCat === c.id ? "rgba(6,182,212,.1)" : "var(--bg3)", fontSize: 13, color: selectedCat === c.id ? "#22D3EE" : "var(--text2)", display: "flex", gap: 8, alignItems: "center", transition: ".15s" }}>
+              <span>{c.icon || "📁"}</span>
+              <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.label || c.nombre}</span>
+              <span style={{ fontSize: 10, color: "var(--text3)" }}>{prods.filter(p => p.cat === c.id).length}</span>
+            </div>
+          ))}
+          {cats.length === 0 && <div style={{ color: "var(--text3)", fontSize: 12, textAlign: "center", padding: 20 }}>Sin categorías</div>}
+
+          {selectedCat && catProds.length > 0 && (
+            <>
+              <div style={{ fontSize: 10, fontWeight: 700, color: "var(--text3)", letterSpacing: 2, marginTop: 8, marginBottom: 4 }}>PRODUCTOS</div>
+              {catProds.map(p => (
+                <div key={p.id} onClick={() => setSelectedProd(p.id)}
+                  style={{ padding: "8px 12px", borderRadius: 8, cursor: "pointer", border: `1px solid ${selectedProd === p.id ? "rgba(6,182,212,.4)" : "var(--border)"}`, background: selectedProd === p.id ? "rgba(6,182,212,.08)" : "var(--bg2)", fontSize: 12, color: "var(--text2)", display: "flex", gap: 8, alignItems: "center", transition: ".15s" }}>
+                  {p.foto_url ? <img src={p.foto_url} alt="" style={{ width: 28, height: 28, borderRadius: 6, objectFit: "cover", flexShrink: 0 }} onError={e => e.target.style.display="none"} /> : <div style={{ width: 28, height: 28, borderRadius: 6, background: "var(--bg4)", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>🍽️</div>}
+                  <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</span>
+                </div>
+              ))}
+            </>
+          )}
+        </div>
+
+        {/* Canvas principal */}
+        <div className="ap-figma-canvas" style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+          <div className="ap-figma-toolbar">
+            {["select","text","color","layout"].map(t => (
+              <button key={t} className={`ap-figma-tool${activeTool === t ? " active" : ""}`} onClick={() => setActiveTool(t)}>
+                {t === "select" ? "↖ Seleccionar" : t === "text" ? "T Texto" : t === "color" ? "🎨 Color" : "⊞ Layout"}
+              </button>
+            ))}
+            <div style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" }}>
+              <div style={{ fontSize: 11, color: "var(--text3)" }}>Color base:</div>
+              <input type="color" value={bgColor} onChange={e => setBgColor(e.target.value)}
+                style={{ width: 30, height: 24, border: "1px solid var(--border)", borderRadius: 6, cursor: "pointer", background: "transparent", padding: 0 }} />
+            </div>
+          </div>
+
+          {/* Preview del menú */}
+          <div style={{ flex: 1, overflowY: "auto", padding: 24, background: "var(--bg4)" }}>
+            <div style={{ maxWidth: 400, margin: "0 auto", background: "#0A0806", borderRadius: 20, overflow: "hidden", boxShadow: "0 20px 60px rgba(0,0,0,.5)" }}>
+              {/* Header del menú */}
+              <div style={{ background: `linear-gradient(135deg, ${bgColor}22, ${bgColor}11)`, padding: "24px 20px", borderBottom: `1px solid ${bgColor}33`, textAlign: "center" }}>
+                <div style={{ fontSize: 22, fontWeight: 800, color: "#fff" }}>{local?.nombre || "Mi Restaurante"}</div>
+                <div style={{ fontSize: 12, color: "rgba(255,255,255,.5)", marginTop: 4 }}>{local?.descripcion || "Carta digital"}</div>
+              </div>
+
+              {/* Contenido */}
+              {selectedCat && cat ? (
+                <div style={{ padding: 16 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: bgColor, letterSpacing: 2, marginBottom: 12 }}>{cat.icon} {(cat.label || cat.nombre || "").toUpperCase()}</div>
+                  {catProds.map(p => (
+                    <div key={p.id} style={{ display: "flex", gap: 12, padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,.06)", cursor: "pointer", background: selectedProd === p.id ? "rgba(255,255,255,.04)" : "transparent", borderRadius: 8, padding: "10px 8px", marginBottom: 4 }} onClick={() => setSelectedProd(p.id)}>
+                      {p.foto_url && <img src={p.foto_url} alt="" style={{ width: 56, height: 56, borderRadius: 10, objectFit: "cover", flexShrink: 0 }} onError={e => e.target.style.display="none"} />}
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>{p.name}</div>
+                        <div style={{ fontSize: 11, color: "rgba(255,255,255,.4)", marginTop: 2 }}>{p.desc}</div>
+                        <div style={{ fontSize: 15, fontWeight: 800, color: bgColor, marginTop: 6 }}>${p.price?.toLocaleString("es-AR")}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div style={{ padding: 32, textAlign: "center", color: "rgba(255,255,255,.3)", fontSize: 13 }}>
+                  Seleccioná una categoría para previsualizar la carta
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Modal export */}
+      {showExport && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.75)", zIndex: 500, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div style={{ background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: 16, padding: 28, width: 360, textAlign: "center" }}>
+            <div style={{ fontSize: 32, marginBottom: 12 }}>🎨</div>
+            <div style={{ fontWeight: 800, fontSize: 18, marginBottom: 8 }}>Exportar diseño</div>
+            <div style={{ fontSize: 13, color: "var(--text3)", marginBottom: 24 }}>Descargá tu menú diseñado para imprimirlo o compartirlo</div>
+            <div style={{ display: "flex", gap: 10, flexDirection: "column" }}>
+              <button className="ap-btn ap-btn-gold" style={{ fontSize: 13 }} onClick={() => { window.print(); setShowExport(false); }}>🖨️ Imprimir / PDF</button>
+              <button className="ap-btn ap-btn-ghost" onClick={() => setShowExport(false)}>Cancelar</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
 export default function AdminPanel({ local, setLocal, cats, setCats, prods, setProds, authUser, onLogout }) {
   const [screen, setScreen] = React.useState("dashboard");
   const [screenHistory, setScreenHistory] = React.useState([]);
@@ -4168,6 +4432,8 @@ export default function AdminPanel({ local, setLocal, cats, setCats, prods, setP
     qr:        <ScreenQR local={local} />,
     config:    <ScreenConfiguracion local={local} setLocal={setLocal} />,
     gestion:   <ScreenGestion prods={prods} setProds={setProds} cats={cats} local={local} setLocal={setLocal} />,
+    plus_ia:   <ScreenPlusIA local={local} />,
+    plus_figma:<ScreenPlusFigma prods={prods} cats={cats} local={local} />,
   };
 
   const [navOpen, setNavOpen] = React.useState(false);
