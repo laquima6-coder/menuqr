@@ -140,6 +140,7 @@ function PhoneMockup() {
 export default function LandingPage() {
   const navigate = useNavigate()
   const [scrolled, setScrolled] = useState(false)
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
   const [activeFaq, setActiveFaq] = useState(null)
 
   useEffect(() => {
@@ -192,16 +193,18 @@ export default function LandingPage() {
             <span style={{fontFamily:"'Outfit',sans-serif",fontWeight:800,fontSize:18,color:'#FFF',letterSpacing:-.3}}>Pedidos<span style={{color:G}}>QR</span></span>
           </div>
           {/* Nav links */}
-          <div style={{display:'flex',gap:28,alignItems:'center'}}>
-            <a href="#problemas" style={{color:'#888',fontSize:14,fontWeight:600,textDecoration:'none',transition:'color .2s'}}
-              onMouseEnter={e=>e.target.style.color='#FFF'} onMouseLeave={e=>e.target.style.color='#888'}>El Problema</a>
-            <a href="#features" style={{color:'#888',fontSize:14,fontWeight:600,textDecoration:'none',transition:'color .2s'}}
-              onMouseEnter={e=>e.target.style.color='#FFF'} onMouseLeave={e=>e.target.style.color='#888'}>Funciones</a>
-            <a href="#pricing" style={{color:'#888',fontSize:14,fontWeight:600,textDecoration:'none',transition:'color .2s'}}
-              onMouseEnter={e=>e.target.style.color='#FFF'} onMouseLeave={e=>e.target.style.color='#888'}>Precios</a>
-            <a href="#demo" style={{color:'#888',fontSize:14,fontWeight:600,textDecoration:'none',transition:'color .2s'}}
-              onMouseEnter={e=>e.target.style.color='#FFF'} onMouseLeave={e=>e.target.style.color='#888'}>Demo</a>
-            <button className="btn-ghost" style={{padding:'8px 18px',fontSize:13}} onClick={()=>navigate('/panel')}>Acceder</button>
+          <div style={{display:'flex',gap:isMobile?10:28,alignItems:'center'}}>
+            {!isMobile && <>
+              <a href="#problemas" style={{color:'#888',fontSize:14,fontWeight:600,textDecoration:'none',transition:'color .2s'}}
+                onMouseEnter={e=>e.target.style.color='#FFF'} onMouseLeave={e=>e.target.style.color='#888'}>El Problema</a>
+              <a href="#features" style={{color:'#888',fontSize:14,fontWeight:600,textDecoration:'none',transition:'color .2s'}}
+                onMouseEnter={e=>e.target.style.color='#FFF'} onMouseLeave={e=>e.target.style.color='#888'}>Funciones</a>
+              <a href="#pricing" style={{color:'#888',fontSize:14,fontWeight:600,textDecoration:'none',transition:'color .2s'}}
+                onMouseEnter={e=>e.target.style.color='#FFF'} onMouseLeave={e=>e.target.style.color='#888'}>Precios</a>
+              <a href="#demo" style={{color:'#888',fontSize:14,fontWeight:600,textDecoration:'none',transition:'color .2s'}}
+                onMouseEnter={e=>e.target.style.color='#FFF'} onMouseLeave={e=>e.target.style.color='#888'}>Demo</a>
+              <button className="btn-ghost" style={{padding:'8px 18px',fontSize:13}} onClick={()=>navigate('/panel')}>Acceder</button>
+            </>}
             <button className="btn-gold" style={{padding:'9px 20px',fontSize:13}} onClick={()=>navigate('/registro')}>Empezar gratis</button>
           </div>
         </div>
