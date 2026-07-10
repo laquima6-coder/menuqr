@@ -1721,6 +1721,20 @@ return (
 
     <div style={{padding:"24px 14px 64px", display:"flex", flexDirection:"column", gap:20, maxWidth:520, margin:"0 auto"}}>
 
+      {/* ===== PROMO QR PERSONALIZADA ===== */}
+      {local.qr_promo?.activo && local.qr_promo?.texto && (
+        <div style={{background:"linear-gradient(135deg,rgba(201,168,76,.18),rgba(201,168,76,.06))", border:"1px solid rgba(201,168,76,.45)", borderRadius:20, padding:"18px 20px", display:"flex", gap:14, alignItems:"center", position:"relative", overflow:"hidden"}}>
+          <div style={{position:"absolute", top:0, left:0, right:0, height:2, background:"linear-gradient(90deg,transparent,rgba(201,168,76,.8),transparent)"}}/>
+          <div style={{fontSize:32, flexShrink:0}}>{local.qr_promo.emoji || "🎉"}</div>
+          <div style={{flex:1}}>
+            <div style={{fontSize:10, fontWeight:800, letterSpacing:2, color:"rgba(201,168,76,.8)", marginBottom:4}}>OFERTA ESPECIAL HOY</div>
+            <div style={{fontSize:16, fontWeight:800, color:"#fff", lineHeight:1.3}}>{local.qr_promo.texto}</div>
+            {local.qr_promo.subtexto && <div style={{fontSize:12, color:"rgba(255,255,255,.5)", marginTop:4}}>{local.qr_promo.subtexto}</div>}
+          </div>
+          <div style={{background:"rgba(201,168,76,.2)", border:"1px solid rgba(201,168,76,.4)", borderRadius:12, padding:"6px 12px", fontSize:11, fontWeight:800, color:"#C9A84C", whiteSpace:"nowrap"}}>Ver carta →</div>
+        </div>
+      )}
+
       {/* ===== CÓMO FUNCIONA ===== */}
       <div className="vit-s1" style={{background:"rgba(255,255,255,.03)", backdropFilter:"blur(20px)", WebkitBackdropFilter:"blur(20px)", border:"1px solid rgba(201,168,76,.2)", borderRadius:24, padding:"22px 18px", position:"relative", overflow:"hidden"}}>
         <div style={{position:"absolute", top:0, left:0, right:0, height:1, background:"linear-gradient(90deg, transparent, rgba(201,168,76,.5), transparent)"}}/>

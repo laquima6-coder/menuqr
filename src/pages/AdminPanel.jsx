@@ -4604,7 +4604,19 @@ function ScreenPlusFigma({ prods, cats, local }) {
             ))}
             <div style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" }}>
               <div style={{ fontSize: 11, color: "var(--text3)" }}>Color base:</div>
-              <input type="color" value={bgColor} onChange={e => setBgColor(e.target.value)}
+              <input type="color" value={bgColor} onChange={async e => {
+                const hex = e.target.value;
+                setBgColor(hex);
+                if (local?.restauranteId) {
+                  try {
+                    await import("https://esm.sh/@supabase/supabase-js@2").then(({ createClient }) =>
+                      createClient("https://fwovflsaghnutysjyaus.supabase.co","eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ3b3ZmbHNhZ2hudXR5c2p5YXVzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2Njc0NzUsImV4cCI6MjA5NjI0MzQ3NX0.HtkD4AK35MSf4o9oNeGTlsooE0zSodjFVZH94ipCUAo")
+                        .from("restaurantes").update({ color: hex }).eq("id", local.restauranteId)
+                    );
+                    if (setLocal) setLocal(l => ({ ...l, color: hex }));
+                  } catch(e) {}
+                }
+              }}
                 style={{ width: 30, height: 24, border: "1px solid var(--border)", borderRadius: 6, cursor: "pointer", background: "transparent", padding: 0 }} />
             </div>
           </div>
