@@ -733,7 +733,7 @@ function Landing({setMode}) {
           display:"flex",alignItems:"center",justifyContent:"center",
           fontSize:36,margin:"0 auto 20px"}}>🍽️</div>
         <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:"#C9A84C",
-          letterSpacing:3,marginBottom:8}}>MENUQR</p>
+          letterSpacing:3,marginBottom:8}}>PedidosQR</p>
         <h1 style={{fontFamily:"'Playfair Display',serif",fontSize:32,fontWeight:900,
           color:"#EDE0C8",lineHeight:1.1,marginBottom:8}}>La Trattoria</h1>
         <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"#5A4A30"}}>
@@ -769,7 +769,7 @@ function Landing({setMode}) {
         ))}
       </div>
       <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,
-        color:"#1A2A40",marginTop:32,letterSpacing:1}}>MENUQR · v1.0</p>
+        color:"#1A2A40",marginTop:32,letterSpacing:1}}>PedidosQR · v1.0</p>
     </div>
   );
 }
@@ -3437,7 +3437,7 @@ export function ClientApp({onBack, local, cats, prods, vitrina=false, sinPedidos
 
         {/* Footer */}
         <div style={{textAlign:"center",padding:"20px 0 8px"}}>
-          <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,color:"#CCC",letterSpacing:2}}>MENUQR</div>
+          <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,color:"#CCC",letterSpacing:2}}>PedidosQR</div>
         </div>
       </div>
 
@@ -9167,7 +9167,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
         </nav>
         <div style={{padding:"14px 18px",borderTop:"1px solid var(--abr)",flexShrink:0}}>
           <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,
-            color:"var(--abr)",letterSpacing:1}}>MENUQR · v1.0</p>
+            color:"var(--abr)",letterSpacing:1}}>PedidosQR · v1.0</p>
         </div>
       </div>
 
@@ -9596,7 +9596,10 @@ export default function MenuQR({
       supabase.auth.getSession().then(({ data: { session } }) => {
         if (session?.user) {
           setAuthUser(session.user);
-          if (!forceMode) loadRestaurantData(session.user.id);
+          if (!forceMode) {
+            loadRestaurantData(session.user.id);
+            setMode("admin");
+          }
         }
         setAuthLoading(false);
       });
@@ -9721,7 +9724,7 @@ function LandingAuth({ setMode, goAdmin, authUser, onLogout }) {
           fontSize:38,margin:"0 auto 22px",
           boxShadow:"0 12px 40px rgba(249,115,22,.35)"}}>🍽️</div>
         <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,color:"#F97316",
-          letterSpacing:4,fontWeight:700,marginBottom:10}}>MENUQR</p>
+          letterSpacing:4,fontWeight:700,marginBottom:10}}>PedidosQR</p>
         <h1 style={{fontFamily:"'DM Sans',sans-serif",fontSize:34,fontWeight:800,
           color:"#FFF",lineHeight:1.1,marginBottom:10}}>
           {authUser ? "Bienvenido" : "Carta Digital"}
@@ -9795,7 +9798,7 @@ function LandingAuth({ setMode, goAdmin, authUser, onLogout }) {
         </button>
       )}
       <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:9,color:"var(--at)",
-        marginTop:28,letterSpacing:2}}>MENUQR · v1.0</p>
+        marginTop:28,letterSpacing:2}}>PedidosQR · v1.0</p>
     </div>
   );
 }
