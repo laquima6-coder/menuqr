@@ -4690,7 +4690,7 @@ export default function AdminPanel({ local, setLocal, cats, setCats, prods, setP
     productos: <ScreenCarta prods={prods} setProds={setProds} cats={cats} local={local} setLocal={setLocal} />,
     categorias:<ScreenCategorias cats={cats} setCats={setCats} prods={prods} local={local} />,
     stock:     <ScreenStock />,
-    clientes:  <ScreenClientes />,
+    clientes:  <ScreenClientes pedidos={pedidos} />,
     caja:      <ScreenCajaPOS prods={prods} cats={cats} local={local} />,
     reportes:  <ScreenReportes pedidos={pedidos} prods={prods} />,
     qr:        <ScreenQR local={local} />,
