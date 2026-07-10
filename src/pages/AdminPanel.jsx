@@ -4387,12 +4387,13 @@ function ScreenGestion({ prods, setProds, cats, local, setLocal }) {
 /* ══════════════════════════════════════════════════════════════
    SCREEN PLUS IA — Chat con IA
 ══════════════════════════════════════════════════════════════ */
-function ScreenPlusIA({ local }) {
+function ScreenPlusIA({ local, prods = [], cats = [], setProds }) {
   const [msgs, setMsgs] = React.useState([
-    { role: "ai", text: "¡Hola! Soy tu asistente IA de PedidosQR. Puedo ayudarte a analizar tus ventas, sugerir cambios en la carta, redactar descripciones de productos y mucho más. ¿En qué te ayudo hoy?" }
+    { role: "ai", text: "¡Hola! Soy tu asistente IA de PedidosQR 🤖\n\nPuedo hacer cambios en tu carta al instante. Probá con:\n• \"Cambiá el precio del Bife de Chorizo a $4500\"\n• \"Aplicá 20% de descuento a las Empanadas\"\n• \"Marcá las Rabas sin stock\"\n• \"Pausar pedidos\"\n\n¿Qué necesitás?" }
   ]);
   const [input, setInput] = React.useState("");
   const [loading, setLoading] = React.useState(false);
+  const [lastAction, setLastAction] = React.useState(null);
   const bottomRef = React.useRef(null);
 
   React.useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs]);
@@ -4404,35 +4405,68 @@ function ScreenPlusIA({ local }) {
     setMsgs(m => [...m, { role: "user", text: userMsg }]);
     setLoading(true);
     try {
-      // Llamar al API de IA (Vercel function)
       const res = await fetch("/api/ia-chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          message: userMsg,
+          messages: [{ role: "user", content: userMsg }],
+          restaurantName: local?.nombre,
+          restaurantId: local?.id,
           context: {
-            restaurante: local?.nombre,
-            plan: local?.plan,
+            productos: prods.map(p => ({
+              id: p.id,
+              nombre: p.nombre || p.name,
+              precio: p.precio || p.price,
+              precio_original: p.precio_original || p.orig,
+              descripcion: p.descripcion || p.desc,
+              activo: p.activo ?? p.active ?? true,
+              sin_stock: p.sin_stock,
+              categoria_id: p.categoria_id || p.cat,
+              foto_url: p.foto_url,
+            })),
+            categorias: cats.map(c => ({ id: c.id, label: c.label })),
+            pedidoCount: 0,
           }
         })
       });
       if (res.ok) {
         const data = await res.json();
-        setMsgs(m => [...m, { role: "ai", text: data.reply || "..." }]);
+        const aiText = data.content || data.reply || "Sin respuesta";
+        setMsgs(m => [...m, { role: "ai", text: aiText, actions: data.actions }]);
+        // Si la IA hizo cambios, recargar productos
+        if (data.needsReload && data.actions?.length > 0) {
+          setLastAction(data.actions[0]);
+          // Trigger reload via supabase (si setProds disponible, hacer fetch)
+          if (setProds && local?.id) {
+            try {
+              const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
+              const sbClient = createClient(
+                "https://fwovflsaghnutysjyaus.supabase.co",
+                "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ3b3ZmbHNhZ2hudXR5c2p5YXVzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2Njc0NzUsImV4cCI6MjA5NjI0MzQ3NX0.HtkD4AK35MSf4o9oNeGTlsooE0zSodjFVZH94ipCUAo"
+              );
+              const { data: freshProds } = await sbClient
+                .from("productos")
+                .select("*")
+                .eq("restaurante_id", local.id)
+                .order("orden");
+              if (freshProds) setProds(freshProds);
+            } catch(e) { console.warn("Reload failed:", e) }
+          }
+        }
       } else {
-        setMsgs(m => [...m, { role: "ai", text: "⚠️ Error conectando con la IA. Verificá tu configuración." }]);
+        setMsgs(m => [...m, { role: "ai", text: "⚠️ Error conectando con la IA." }]);
       }
-    } catch {
-      setMsgs(m => [...m, { role: "ai", text: "⚠️ No se pudo conectar. Revisá tu conexión a internet." }]);
+    } catch(e) {
+      setMsgs(m => [...m, { role: "ai", text: "⚠️ No se pudo conectar. Revisá tu internet." }]);
     }
     setLoading(false);
   }
 
   const suggestions = [
-    "¿Cuáles son mis productos más vendidos?",
-    "Sugerí una descripción para mi producto estrella",
-    "¿Cómo puedo aumentar el ticket promedio?",
-    "Generá ideas para el menú del fin de semana",
+    "Mostrá el resumen de mi carta",
+    "Cambiá el precio de [producto] a $[precio]",
+    "Aplicá 15% de descuento a [producto]",
+    "Marcá [producto] sin stock",
   ];
 
   return (
@@ -4454,7 +4488,14 @@ function ScreenPlusIA({ local }) {
             {m.role === "ai" && (
               <div style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(139,92,246,.2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0, marginRight: 8, alignSelf: "flex-end" }}>🤖</div>
             )}
-            <div className={`ap-chat-bubble ${m.role === "user" ? "ap-chat-user" : "ap-chat-ai"}`}>{m.text}</div>
+            <div className={`ap-chat-bubble ${m.role === "user" ? "ap-chat-user" : "ap-chat-ai"}`} style={{ whiteSpace: "pre-wrap" }}>
+              {m.role === "ai" ? m.text.replace(/\*\*(.+?)\*\*/g, "$1") : m.text}
+              {m.actions?.length > 0 && (
+                <div style={{ marginTop: 8, padding: "6px 10px", borderRadius: 8, background: "rgba(139,92,246,.15)", fontSize: 11, color: "#A78BFA", fontWeight: 700 }}>
+                  ✅ {m.actions.length} cambio{m.actions.length > 1 ? "s" : ""} aplicado{m.actions.length > 1 ? "s" : ""} en la carta
+                </div>
+              )}
+            </div>
           </div>
         ))}
         {loading && (
@@ -4696,7 +4737,7 @@ export default function AdminPanel({ local, setLocal, cats, setCats, prods, setP
     qr:        <ScreenQR local={local} />,
     config:    <ScreenConfiguracion local={local} setLocal={setLocal} />,
     gestion:   <ScreenGestion prods={prods} setProds={setProds} cats={cats} local={local} setLocal={setLocal} />,
-    plus_ia:   <ScreenPlusIA local={local} />,
+    plus_ia:   <ScreenPlusIA local={local} prods={prods} cats={cats} setProds={setProds} />,
     plus_figma:<ScreenPlusFigma prods={prods} cats={cats} local={local} />,
   };
 

@@ -1,77 +1,131 @@
-// PLUS IA — Asistente de restaurante con respuestas inteligentes
-// Sin API key externa — funciona solo
+// ═══════════════════════════════════════════════════════════════════
+// PLUS IA — Agente completo con acceso total a la carta
+// Lee productos/categorías en contexto y ejecuta cambios en Supabase
+// ═══════════════════════════════════════════════════════════════════
+
+const SB_URL = process.env.SUPABASE_URL || 'https://fwovflsaghnutysjyaus.supabase.co'
+const SB_KEY = process.env.SUPABASE_SERVICE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ3b3ZmbHNhZ2hudXR5c2p5YXVzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDY2NzQ3NSwiZXhwIjoyMDk2MjQzNDc1fQ.EEtIVeMFSPt3xgIBy0aPm0O1IRPFOp7zpKZRSET7Otw'
+
+async function sb(method, path, body) {
+  const r = await fetch(`${SB_URL}/rest/v1/${path}`, {
+    method,
+    headers: {
+      apikey: SB_KEY,
+      Authorization: `Bearer ${SB_KEY}`,
+      'Content-Type': 'application/json',
+      Prefer: 'return=representation',
+    },
+    body: body != null ? JSON.stringify(body) : undefined,
+  })
+  const text = await r.text()
+  try { return { ok: r.ok, status: r.status, data: JSON.parse(text) } }
+  catch { return { ok: r.ok, status: r.status, data: text } }
+}
+
+function normalize(s) {
+  return (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim()
+}
+
+function findProduct(name, products) {
+  const n = normalize(name)
+  let match = products.find(p => normalize(p.nombre || p.name) === n)
+  if (match) return match
+  match = products.find(p => normalize(p.nombre || p.name).includes(n))
+  if (match) return match
+  match = products.find(p => n.includes(normalize(p.nombre || p.name).split(' ')[0]) && normalize(p.nombre || p.name).split(' ')[0].length > 3)
+  return match || null
+}
+
+function money(n) {
+  return '$' + Number(n).toLocaleString('es-AR')
+}
+
+async function updateProduct(id, patch) {
+  const fullPatch = {}
+  if (patch.precio      != null) { fullPatch.precio = patch.precio; fullPatch.price = patch.precio }
+  if (patch.nombre      != null) { fullPatch.nombre = patch.nombre; fullPatch.name  = patch.nombre }
+  if (patch.descripcion != null) { fullPatch.descripcion = patch.descripcion; fullPatch['desc'] = patch.descripcion }
+  if (patch.sin_stock   != null) { fullPatch.sin_stock = patch.sin_stock }
+  if (patch.activo      != null) { fullPatch.activo = patch.activo; fullPatch.active = patch.activo }
+  if (patch.foto_url    != null) { fullPatch.foto_url = patch.foto_url }
+  if (patch.precio_original != null) { fullPatch.precio_original = patch.precio_original }
+  return sb('PATCH', `productos?id=eq.${id}`, fullPatch)
+}
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
-  const { messages, restaurantName, context } = req.body
-  const lastMsg = (messages || []).filter(m => m.role === 'user').pop()?.content?.toLowerCase() || ''
+  const { messages = [], restaurantName, restaurantId, context = {} } = req.body
 
-  const name = restaurantName || 'tu restaurante'
-  const prods = context?.productos || []
-  const cats  = context?.categorias || []
-  const pedidoCount = context?.pedidoCount || 0
+  const lastUserMsg = messages.filter(m => m.role === 'user').pop()?.content || ''
+  const products    = context.productos  || []
+  const categories  = context.categorias || []
+  const msg         = normalize(lastUserMsg)
+  const raw         = lastUserMsg
 
-  function responder() {
-    // Análisis de ventas
-    if (lastMsg.match(/vend|más pedid|popular|top|mejor/)) {
-      if (prods.length === 0) return `📊 Todavía no tenés productos cargados en ${name}. Cargá tu carta primero y volvé a preguntarme — voy a poder decirte qué conviene destacar.`
-      const topProds = prods.filter(p => p.activo !== false).slice(0, 3).map(p => `• ${p.nombre || p.name} ($${(p.precio || p.price || 0).toLocaleString('es-AR')})`).join('\n')
-      return `📊 **Los productos que tenés activos en ${name}:**\n${topProds}\n\nPara saber cuáles venden más, revisá el Dashboard → sección de pedidos de hoy. También podés destacar los más rentables poniéndolos primero en su categoría.`
+  const actions = []
+  let content   = ''
+  let needsReload = false
+
+  // ── CAMBIAR PRECIO ────────────────────────────────────────────────
+  const precioPatterns = [
+    /(?:cambi[aáe]|modific[aáe]|pon[eé]|actualiz[aáe])(?:me|le|s)?\s+(?:el\s+)?precio\s+(?:de[l]?\s+(?:(?:la|el)\s+)?)?(.+?)\s+(?:a|en|por)\s+\$?\s*([\d.,]+)/i,
+    /(?:precio|cost[aáe])\s+(?:de[l]?\s+(?:(?:la|el)\s+)?)?(.+?)\s+(?:a|=|es)\s+\$?\s*([\d.,]+)/i,
+  ]
+  for (const pat of precioPatterns) {
+    const m = raw.match(pat)
+    if (m && !content) {
+      const productName = m[1].trim()
+      const newPrice    = parseFloat(m[2].replace(/\./g, '').replace(',', '.'))
+      if (!isNaN(newPrice) && newPrice > 0) {
+        const prod = findProduct(productName, products)
+        if (prod) {
+          await updateProduct(prod.id, { precio: newPrice })
+          actions.push({ type: 'price_update', productId: prod.id, newPrice })
+          needsReload = true
+          content = `✅ Precio de **${prod.nombre || prod.name}** actualizado a ${money(newPrice)}. Ya está en la carta.`
+        } else {
+          content = `No encontré "${productName}". Revisá el nombre — los productos son:\n${products.slice(0, 8).map(p => `• ${p.nombre || p.name}`).join('\n')}${products.length > 8 ? `\n...y ${products.length - 8} más` : ''}`
+        }
+      }
+      break
     }
-
-    // Precios
-    if (lastMsg.match(/precio|caro|barato|cobr|valor/)) {
-      const avgPrice = prods.length ? Math.round(prods.reduce((s, p) => s + (p.precio || p.price || 0), 0) / prods.length) : 0
-      return `💰 **Análisis de precios para ${name}:**\n\nTu precio promedio actual es $${avgPrice.toLocaleString('es-AR')}.\n\n✅ **Recomendaciones:**\n• Revisá precios cada 15-30 días según inflación\n• El plato más caro debería ser 3-4x el más barato (ancla de precio)\n• Agregá una opción "premium" para subir el ticket promedio\n• Si un producto no se pide, probá bajarlo 10-15%`
-    }
-
-    // Promociones
-    if (lastMsg.match(/promo|descuent|oferta|happy|2x1/)) {
-      return `🎯 **Ideas de promociones para ${name}:**\n\n• **Happy Hour** (ej: 18-20hs) — 20% off en bebidas\n• **Combo mesa** — plato + bebida + postre con descuento\n• **2x1 los martes** — el día más flojo de la semana\n• **Cumpleañero** — postre gratis con comprobante\n• **QR exclusivo** — descuento especial para quien escanea la vitrina\n\n💡 Podés configurar el Happy Hour y el descuento QR directamente desde Ajustes del panel.`
-    }
-
-    // Delivery
-    if (lastMsg.match(/delivery|envío|reparto|zona|domicilio/)) {
-      return `🛵 **Optimización de delivery para ${name}:**\n\n• Definí una zona máxima de entrega (15-20 min en moto)\n• Establecé un mínimo de pedido para delivery ($X)\n• Respondé los pedidos en menos de 2 min — es clave para la experiencia\n• Usá WhatsApp para notificar cuando el pedido sale\n• Si hay demoras, avisale al cliente antes de que pregunte\n\n¿Querés que te ayude a configurar el precio de delivery o la zona?`
-    }
-
-    // Menú / carta
-    if (lastMsg.match(/menú|carta|categori|producto|plato/)) {
-      return `🍽️ **Consejos para la carta de ${name}:**\n\n• Limitá el menú a 20-30 productos — menos opciones = más ventas\n• Organizá por: Entradas → Principales → Acompañamientos → Postres → Bebidas\n• Poné foto a al menos el 50% de los platos (aumenta 30% las ventas)\n• El nombre del plato vende tanto como el precio — sé descriptivo\n• Destacá 2-3 "recomendados del chef"\n\n${cats.length > 0 ? `Tenés ${cats.length} categorías activas. ¿Querés sugerencias para alguna en particular?` : ''}`
-    }
-
-    // Pedidos / operaciones
-    if (lastMsg.match(/pedido|orden|cocina|tiempo|demor|espera/)) {
-      return `⚡ **Optimización de operaciones para ${name}:**\n\n• Meta: aceptar pedido en <2 min, preparar en <15 min\n• Usá la pantalla de Cocina para que el equipo vea los pedidos en tiempo real\n• Los pedidos "NUEVO" suenan alarma — no los dejés esperar\n• Si un plato tarda, marcalo sin stock temporalmente y ponelo de nuevo después\n• Revisá el historial de hoy para ver a qué hora llegó el pico de pedidos\n\n${pedidoCount > 0 ? `Hoy llevás **${pedidoCount} pedidos** registrados. ¡Sigan así! 💪` : 'Todavía no hay pedidos hoy — compartí el QR de la mesa para arrancar.'}`
-    }
-
-    // Stock
-    if (lastMsg.match(/stock|ingrediente|inventari|falt/)) {
-      return `📦 **Gestión de stock para ${name}:**\n\n• Revisá el stock todos los días antes de abrir\n• Los items en ROJO = crítico, pedí hoy\n• Los items en AMARILLO = bajo, pedí esta semana\n• Si algo se termina → marcá el producto como "sin stock" en el panel para que no lo pidan\n• Configurá cantidades mínimas realistas (lo que usás en 3 días)\n\n¿Querés que te ayude a definir stocks mínimos para tus ingredientes?`
-    }
-
-    // Clientes
-    if (lastMsg.match(/cliente|fideliz|retención|satisf|reseñ|review/)) {
-      return `👥 **Fidelización de clientes para ${name}:**\n\n• Respondé todos los pedidos rápido — la velocidad = satisfacción\n• El estado del pedido en tiempo real (Cocina → Listo → Entregado) reduce los reclamos 80%\n• Pedí reseña en Google al terminar cada mesa (un código QR en la mesa funciona muy bien)\n• Clientes recurrentes = pedidos delivery con el mismo teléfono → analizalos en la sección Clientes\n• Un pequeño detalle (postre, bebida de cortesía) convierte a un cliente en promotor`
-    }
-
-    // Hola / inicio
-    if (lastMsg.match(/hola|buenas|buenos|inicio|empez|ayud|qué pod/)) {
-      return `¡Hola! 👋 Soy el asistente IA de **${name}**.\n\nPuedo ayudarte con:\n📊 **Análisis** — qué vendés más, precios, tendencias\n🎯 **Promociones** — ideas para aumentar ventas\n🛵 **Delivery** — optimizar entregas y zonas\n🍽️ **Carta** — estructura del menú, fotos, categorías\n⚡ **Operaciones** — tiempos, cocina, stock\n👥 **Clientes** — fidelización y retención\n\n¿Por dónde arrancamos?`
-    }
-
-    // Genérico inteligente
-    const temas = ['ventas', 'precios', 'delivery', 'menú', 'stock', 'clientes', 'promociones', 'operaciones']
-    return `Entendí tu consulta sobre **${name}**. Puedo ayudarte con: ${temas.join(', ')}.\n\nSé más específico y te doy recomendaciones concretas. Por ejemplo: *"¿Cómo mejoro mis ventas de delivery?"* o *"¿Qué promoción me conviene hacer?"*`
   }
 
-  // Simular delay natural
-  await new Promise(r => setTimeout(r, 400 + Math.random() * 600))
+  // ── DESCUENTO % ───────────────────────────────────────────────────
+  if (!content) {
+    const m = raw.match(/(\d+)\s*%\s*(?:de\s+)?(?:descuento|off|rebaj[ae])\s+(?:(?:a[l]?|en|para)\s+(?:(?:la|el)\s+)?)?(.+)/i)
+           || raw.match(/(?:aplic[aáe]|hac[eé]|pon[eé])\s+(?:un\s+)?(\d+)\s*%\s*(?:de\s+)?(?:descuento|off)\s+(?:(?:a[l]?|en)\s+(?:(?:la|el)\s+)?)?(.+)/i)
+    if (m) {
+      const pct   = parseInt(m[1])
+      const pName = m[2].trim()
+      const prod  = findProduct(pName, products)
+      if (prod) {
+        const orig     = prod.precio || prod.price || 0
+        const newPrice = Math.round(orig * (1 - pct / 100))
+        await updateProduct(prod.id, { precio: newPrice, precio_original: orig })
+        actions.push({ type: 'discount', productId: prod.id, newPrice, originalPrice: orig, pct })
+        needsReload = true
+        content = `✅ ${pct}% de descuento en **${prod.nombre || prod.name}**.\n${money(orig)} → **${money(newPrice)}**. El original queda guardado para revertir.`
+      } else {
+        content = `No encontré "${pName}". ¿Podés especificar el nombre completo?`
+      }
+    }
+  }
 
-  return res.status(200).json({
-    content: responder(),
-    configured: true,
-    mode: 'smart-local'
-  })
-}
+  // ── SUBIR PRECIO EN % ─────────────────────────────────────────────
+  if (!content) {
+    const m = raw.match(/(?:sub[ií]|increment[aáe]|aument[aáe])\s+(?:el\s+precio\s+(?:de[l]?\s+(?:(?:la|el)\s+)?)?)?(.+?)\s+(?:en|un|un\s+)\s*(\d+)\s*%/i)
+    if (m) {
+      const pName = m[1].trim()
+      const pct   = parseInt(m[2])
+      const prod  = findProduct(pName, products)
+      if (prod) {
+        const orig     = prod.precio || prod.price || 0
+        const newPrice = Math.round(orig * (1 + pct / 100))
+        await updateProduct(prod.id, { precio: newPrice })
+        actions.push({ type: 'price_increase', productId: prod.id, newPrice, originalPrice: orig })
+        needsReload = true
+        content = `✅ Precio de **${prod.nombre || prod.name}** subido ${pct}%.\n${money(orig)} → **${money(newPrice)}**.`
+      } else {
+        cont
