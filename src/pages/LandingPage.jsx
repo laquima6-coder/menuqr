@@ -189,10 +189,12 @@ export default function LandingPage() {
           {/* Logo */}
           <div style={{display:'flex',alignItems:'center',gap:10,cursor:'pointer'}} onClick={()=>window.scrollTo(0,0)}>
             <div style={{width:34,height:34,borderRadius:9,background:`linear-gradient(135deg,${G},#8B6914)`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:18}}>🍽️</div>
-            <span style={{fontFamily:"'Outfit',sans-serif",fontWeight:800,fontSize:18,color:'#FFF',letterSpacing:-.3}}>Menu<span style={{color:G}}>QR</span></span>
+            <span style={{fontFamily:"'Outfit',sans-serif",fontWeight:800,fontSize:18,color:'#FFF',letterSpacing:-.3}}>Pedidos<span style={{color:G}}>QR</span></span>
           </div>
           {/* Nav links */}
           <div style={{display:'flex',gap:28,alignItems:'center'}}>
+            <a href="#problemas" style={{color:'#888',fontSize:14,fontWeight:600,textDecoration:'none',transition:'color .2s'}}
+              onMouseEnter={e=>e.target.style.color='#FFF'} onMouseLeave={e=>e.target.style.color='#888'}>El Problema</a>
             <a href="#features" style={{color:'#888',fontSize:14,fontWeight:600,textDecoration:'none',transition:'color .2s'}}
               onMouseEnter={e=>e.target.style.color='#FFF'} onMouseLeave={e=>e.target.style.color='#888'}>Funciones</a>
             <a href="#pricing" style={{color:'#888',fontSize:14,fontWeight:600,textDecoration:'none',transition:'color .2s'}}
@@ -264,6 +266,77 @@ export default function LandingPage() {
           ))}
         </div>
       </div>
+
+      {/* ── PROBLEMAS ── */}
+      <section id="problemas" style={{padding:'96px 24px'}}>
+        <div style={{maxWidth:1100,margin:'0 auto'}}>
+          <div style={{textAlign:'center',marginBottom:60}}>
+            <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:'#EF4444',letterSpacing:3,textTransform:'uppercase',marginBottom:12}}>¿Te suena familiar?</div>
+            <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:'clamp(28px,4vw,48px)',fontWeight:900,color:'#FFF',lineHeight:1.1,marginBottom:16}}>Los dolores de tu restaurante</h2>
+            <p style={{fontSize:17,color:'#555',maxWidth:520,margin:'0 auto',lineHeight:1.6}}>Problemas que cuestan dinero, clientes y reputación todos los días.</p>
+          </div>
+          <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(280px,1fr))',gap:20}}>
+            {[
+              { icon:'😤', title:'Errores en pedidos',      desc:'Los mozos anotan mal → Cocina prepara equivocado → Clientes insatisfechos → Pérdida de dinero y reputación.' },
+              { icon:'⏰', title:'Pérdida de tiempo',       desc:'El cliente espera sin saber qué pasa → El mozo va y viene → Cocina no sabe prioridades → Gente molesta.' },
+              { icon:'📋', title:'Menús desactualizados',   desc:'Cambiás precios y quedan impresos viejos → El cliente pide lo que no tenés → Conflictos innecesarios.' },
+              { icon:'💰', title:'Ventas perdidas',         desc:'Clientes en la puerta ven espera → Se van a la competencia → Mesas libres sin ganancias.' },
+              { icon:'📱', title:'Sin delivery eficiente',  desc:'Entregas tarde → Clientes llaman sin información → Reputación dañada en apps.' },
+              { icon:'📊', title:'Sin datos de tu negocio', desc:'No sabés qué productos venden más → Sin análisis → Tomás decisiones a ciegas.' },
+            ].map((p,i)=>(
+              <div key={i} style={{
+                background:'#0D0D0D',border:'1px solid rgba(239,68,68,.15)',borderRadius:16,padding:'24px 20px',
+                transition:'border-color .2s,transform .2s',
+              }}
+                onMouseEnter={e=>{e.currentTarget.style.borderColor='rgba(239,68,68,.35)';e.currentTarget.style.transform='translateY(-2px)'}}
+                onMouseLeave={e=>{e.currentTarget.style.borderColor='rgba(239,68,68,.15)';e.currentTarget.style.transform='translateY(0)'}}>
+                <div style={{fontSize:32,marginBottom:12}}>{p.icon}</div>
+                <div style={{fontFamily:"'Outfit',sans-serif",fontSize:16,fontWeight:700,color:'#FFF',marginBottom:8}}>{p.title}</div>
+                <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:14,color:'#555',lineHeight:1.6}}>{p.desc}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── SOLUCION ── */}
+      <section id="solucion" style={{padding:'96px 24px',background:'#0D0D0D',borderTop:'1px solid #1A1A1A',borderBottom:'1px solid #1A1A1A'}}>
+        <div style={{maxWidth:1100,margin:'0 auto'}}>
+          <div style={{textAlign:'center',marginBottom:60}}>
+            <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:G,letterSpacing:3,textTransform:'uppercase',marginBottom:12}}>La respuesta</div>
+            <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:'clamp(28px,4vw,48px)',fontWeight:900,color:'#FFF',lineHeight:1.1,marginBottom:16}}>
+              La solución: <span style={{background:`linear-gradient(90deg,${G},${G2})`,WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent'}}>PedidosQR</span>
+            </h2>
+            <p style={{fontSize:17,color:'#555',maxWidth:520,margin:'0 auto',lineHeight:1.6}}>Todo lo que necesitás para digitalizar tu restaurante, en un solo lugar.</p>
+          </div>
+          <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(280px,1fr))',gap:20}}>
+            {[
+              { icon:'📱', title:'Pedidos sin errores',      desc:'El cliente elige desde su teléfono → 0 errores de anotación → Pedido perfecto en cocina → Cliente feliz.' },
+              { icon:'👁️', title:'Transparencia total',      desc:'El cliente ve en tiempo real: Confirmado → Preparando → Listo → Entregado. Sin incertidumbre, sin reclamos.' },
+              { icon:'🎨', title:'Tu carta personalizada',   desc:'Tus propias fotos de tus platos → Diseño profesional al instante → Cambios en tiempo real.' },
+              { icon:'🚀', title:'Más ventas automático',    desc:'Clientes piden más rápido → Sin tiempo de espera → Más mesas por hora → Más dinero al final del día.' },
+              { icon:'📍', title:'Delivery con mapas',       desc:'Google Maps + TomTom integrados → El cliente ve dónde está su pedido → Menos llamadas, más entregas exitosas.' },
+              { icon:'📈', title:'Dashboard inteligente',    desc:'Datos en tiempo real: qué vende, cuándo, cuánto ganás → Decisiones con información, no intuición.' },
+            ].map((s,i)=>(
+              <div key={i} style={{
+                background:'#0A0806',border:`1px solid ${G}18`,borderRadius:16,padding:'24px 20px',
+                transition:'border-color .2s,transform .2s',
+              }}
+                onMouseEnter={e=>{e.currentTarget.style.borderColor=`${G}44`;e.currentTarget.style.transform='translateY(-2px)'}}
+                onMouseLeave={e=>{e.currentTarget.style.borderColor=`${G}18`;e.currentTarget.style.transform='translateY(0)'}}>
+                <div style={{fontSize:32,marginBottom:12}}>{s.icon}</div>
+                <div style={{fontFamily:"'Outfit',sans-serif",fontSize:16,fontWeight:700,color:'#FFF',marginBottom:8}}>{s.title}</div>
+                <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:14,color:'#555',lineHeight:1.6}}>{s.desc}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{textAlign:'center',marginTop:48}}>
+            <button className="btn-gold" style={{fontSize:16,padding:'15px 36px'}} onClick={()=>navigate('/registro')}>
+              Quiero esto para mi restaurante →
+            </button>
+          </div>
+        </div>
+      </section>
 
       {/* ── FEATURES ── */}
       <section id="features" style={{padding:'96px 24px'}}>
@@ -369,101 +442,4 @@ export default function LandingPage() {
           <div style={{textAlign:'center',marginBottom:56}}>
             <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:G,letterSpacing:3,textTransform:'uppercase',marginBottom:12}}>Precios</div>
             <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:'clamp(26px,4vw,44px)',fontWeight:900,color:'#FFF',marginBottom:12}}>Simple y transparente</h2>
-            <p style={{fontSize:16,color:'#555'}}>Sin sorpresas. Sin comisiones por pedido.</p>
-          </div>
-          <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(280px,1fr))',gap:24,maxWidth:680,margin:'0 auto'}}>
-            {PLANS.map((p,i)=>(
-              <div key={i} style={{
-                background:p.color,border:`1.5px solid ${p.border}`,borderRadius:20,padding:'32px 28px',
-                position:'relative',boxShadow:p.highlight?`0 0 40px ${G}15`:'none',
-              }}>
-                {p.highlight && (
-                  <div style={{position:'absolute',top:-14,left:'50%',transform:'translateX(-50%)',background:G,color:'#0A0806',borderRadius:100,padding:'5px 18px',fontFamily:"'Outfit',sans-serif",fontSize:12,fontWeight:800,whiteSpace:'nowrap',letterSpacing:.5}}>MÁS POPULAR ⭐</div>
-                )}
-                <div style={{fontFamily:"'Outfit',sans-serif",fontSize:18,fontWeight:700,color:'#FFF',marginBottom:4}}>{p.name}</div>
-                <div style={{display:'flex',alignItems:'baseline',gap:4,marginBottom:4}}>
-                  <span style={{fontFamily:"'Playfair Display',serif",fontSize:40,fontWeight:900,color:p.highlight?G:'#FFF'}}>{p.price}</span>
-                </div>
-                <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:'#555',marginBottom:24}}>{p.period}</div>
-                <div style={{display:'flex',flexDirection:'column',gap:10,marginBottom:28}}>
-                  {p.features.map((f,fi)=>(
-                    <div key={fi} style={{fontFamily:"'DM Sans',sans-serif",fontSize:14,color:f.startsWith('✓')?'#CCC':'#3A3A3A',display:'flex',gap:8}}>
-                      {f}
-                    </div>
-                  ))}
-                </div>
-                <button
-                  className={p.highlight?'btn-gold':'btn-ghost'}
-                  style={{width:'100%',padding:'13px 0',fontSize:15}}
-                  onClick={()=>navigate(p.ctaTo)}>
-                  {p.cta}
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── FAQ ── */}
-      <section style={{padding:'80px 24px'}}>
-        <div style={{maxWidth:680,margin:'0 auto'}}>
-          <div style={{textAlign:'center',marginBottom:48}}>
-            <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:G,letterSpacing:3,textTransform:'uppercase',marginBottom:12}}>Preguntas frecuentes</div>
-            <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:'clamp(24px,4vw,40px)',fontWeight:900,color:'#FFF'}}>Dudas comunes</h2>
-          </div>
-          <div style={{display:'flex',flexDirection:'column',gap:8}}>
-            {FAQS.map((faq,i)=>(
-              <div key={i} style={{background:'#0D0D0D',border:'1px solid #1C1C1C',borderRadius:14,overflow:'hidden',cursor:'pointer'}}
-                onClick={()=>setActiveFaq(activeFaq===i?null:i)}>
-                <div style={{padding:'18px 20px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-                  <span style={{fontFamily:"'Outfit',sans-serif",fontSize:15,fontWeight:600,color:'#DDD'}}>{faq.q}</span>
-                  <span style={{color:G,fontSize:18,fontWeight:700,transition:'transform .2s',transform:activeFaq===i?'rotate(45deg)':'none',flexShrink:0,marginLeft:12}}>+</span>
-                </div>
-                {activeFaq===i && (
-                  <div style={{padding:'0 20px 18px',fontFamily:"'DM Sans',sans-serif",fontSize:14,color:'#555',lineHeight:1.65}}>{faq.a}</div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── FINAL CTA ── */}
-      <section style={{padding:'80px 24px',background:'linear-gradient(135deg,#0F0800,#0D0D0D)',borderTop:'1px solid #1A1A1A'}}>
-        <div style={{maxWidth:640,margin:'0 auto',textAlign:'center'}}>
-          <div style={{fontSize:40,marginBottom:16}}>🍽️</div>
-          <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:'clamp(26px,4vw,44px)',fontWeight:900,color:'#FFF',marginBottom:16,lineHeight:1.1}}>
-            Tu restaurante merece<br/>
-            <span style={{background:`linear-gradient(90deg,${G},${G2})`,WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent'}}>una carta a la altura</span>
-          </h2>
-          <p style={{fontSize:17,color:'#555',marginBottom:36,lineHeight:1.6}}>Registrarte es gratis y tarda 30 segundos. Sin tarjeta, sin contrato, sin letra chica.</p>
-          <div style={{display:'flex',gap:14,justifyContent:'center',flexWrap:'wrap'}}>
-            <button className="btn-gold" style={{fontSize:17,padding:'16px 40px'}} onClick={()=>navigate('/registro')}>
-              Crear mi carta gratis →
-            </button>
-            <button className="btn-ghost" style={{fontSize:15,padding:'15px 28px'}} onClick={()=>window.open('/menu/mi-restaurante','_blank')}>
-              Ver demo primero
-            </button>
-          </div>
-        </div>
-      </section>
-
-      {/* ── FOOTER ── */}
-      <footer style={{borderTop:'1px solid #1A1A1A',padding:'40px 24px',background:'#0A0806'}}>
-        <div style={{maxWidth:1100,margin:'0 auto',display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:16}}>
-          <div style={{display:'flex',alignItems:'center',gap:10}}>
-            <div style={{width:28,height:28,borderRadius:7,background:`linear-gradient(135deg,${G},#8B6914)`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:14}}>🍽️</div>
-            <span style={{fontFamily:"'Outfit',sans-serif",fontWeight:800,fontSize:15,color:'#FFF'}}>Menu<span style={{color:G}}>QR</span></span>
-          </div>
-          <div style={{display:'flex',gap:24}}>
-            <button onClick={()=>navigate('/registro')} style={{background:'none',border:'none',color:'#555',fontSize:13,cursor:'pointer',fontFamily:"'DM Sans',sans-serif"}}>Registrarse</button>
-            <button onClick={()=>navigate('/panel')} style={{background:'none',border:'none',color:'#555',fontSize:13,cursor:'pointer',fontFamily:"'DM Sans',sans-serif"}}>Panel</button>
-            <button onClick={()=>window.open('/menu/mi-restaurante','_blank')} style={{background:'none',border:'none',color:'#555',fontSize:13,cursor:'pointer',fontFamily:"'DM Sans',sans-serif"}}>Demo</button>
-          </div>
-          <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:11,color:'#2A2A2A'}}>© 2026 PedidosQR</div>
-        </div>
-      </footer>
-
-    </div>
-  )
-}
+            <p style={{fontSize:16,co
