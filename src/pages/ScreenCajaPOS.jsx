@@ -8,33 +8,21 @@ const TIPOS_MOV = ['ingreso','egreso','gasto'];
 export default function ScreenCajaPOS({ prods=[], cats=[], local={} }) {
   const ridl = local?.restauranteId;
 
-  // Self-load products if not passed via props
-  const [prodsLocal, setProdsLocal] = React.useState([]);
-  React.useEffect(() => {
-    if (!ridl) return;
-    supabase?.from('productos').select('*')
-      .eq('restaurante_id', ridl)
-      .then(({ data }) => { if (data?.length) setProdsLocal(data); });
-  }, [ridl]);
-  // Prefer real Supabase data over cached prop (which may have demo data)
-  const prodsAll = prodsLocal.length > 0 ? prodsLocal : prods;
-
   // Normalizar campos — el panel usa name/price/active, el POS espera nombre/precio/activo
-  const prodsNorm = React.useMemo(() => prodsAll.map(p => ({
+  const prodsNorm = React.useMemo(() => prods.map(p => ({
     ...p,
     nombre:       p.nombre      || p.name       || "",
     precio:       p.precio      ?? p.price       ?? 0,
     activo:       p.activo      ?? p.active      ?? true,
     categoria_id: p.categoria_id || p.cat        || null,
     foto_url:     p.foto_url    || p.imagen      || null,
-  })), [prodsAll]);
+  })), [prods]);
   const catsNorm = React.useMemo(() => cats.map(c => ({
     ...c,
     nombre: c.nombre || c.label || "",
   })), [cats]);
 
   const [tab, setTab] = React.useState('mostrador');
-  const [mobileView, setMobileView] = React.useState('prods'); // 'prods' | 'ticket'
   const [ticket, setTicket] = React.useState([]);
   const [selIdx, setSelIdx] = React.useState(null);
   const [metodoPago, setMetodoPago] = React.useState('efectivo');
@@ -48,7 +36,6 @@ export default function ScreenCajaPOS({ prods=[], cats=[], local={} }) {
   // Cobrar modal
   const [showCobrar, setShowCobrar] = React.useState(false);
   const [montoRec, setMontoRec] = React.useState('');
-  const [lastTicket, setLastTicket] = React.useState(null);
 
   // Special price modal
   const [showPrecio, setShowPrecio] = React.useState(false);
@@ -115,7 +102,6 @@ export default function ScreenCajaPOS({ prods=[], cats=[], local={} }) {
 
   // Mostrador actions
   const addProd = (prod) => {
-    setMobileView('ticket');
     setTicket(prev => {
       const idx = prev.findIndex(it => it.id === prod.id && it.precio_especial === 0 && (it.desc_pct||0) === 0);
       if (idx >= 0) {
@@ -160,24 +146,11 @@ export default function ScreenCajaPOS({ prods=[], cats=[], local={} }) {
       total, metodo_pago: metodoPago2 ? `${metodoPago}+${metodoPago2}` : metodoPago, estado: 'cerrado'
     });
     if (!error) {
-      setLastTicket({ numero, items: [...ticket], total, metodo_pago: metodoPago2 ? `${metodoPago}+${metodoPago2}` : metodoPago });
+      vaciarTicket();
       setShowCobrar(false);
       setMontoRec('');
       loadTickets();
     }
-  };
-
-  const compartirTicket = (t) => {
-    if (!t) return;
-    const items = (t.items||[]).map(it => {
-      const p = it.precio_especial > 0 ? it.precio_especial : it.precio_base;
-      const lin = p * (1-(it.desc_pct||0)/100) * it.qty;
-      return `${it.qty}x ${it.nombre}: ${ARS(lin)}`;
-    }).join('%0A');
-    const txt = encodeURIComponent(`🧾 Ticket #${t.numero} — ${local?.nombre||'MenuQR'}%0A${items}%0ATOTAL: ${ARS(t.total)}%0APago: ${t.metodo_pago}`);
-    const waNum = (local?.whatsapp||local?.telefono||'').replace(/\D/g,'');
-    const url = waNum ? `https://wa.me/${waNum}?text=${txt}` : `https://wa.me/?text=${txt}`;
-    window.open(url, '_blank');
   };
 
   const openPrecio = (idx) => {
@@ -226,7 +199,7 @@ export default function ScreenCajaPOS({ prods=[], cats=[], local={} }) {
     win.document.write(`<html><head><title>Ticket #${t.numero}</title>
       <style>body{font-family:monospace;padding:20px;max-width:300px;margin:0 auto}table{width:100%;border-collapse:collapse}td{padding:4px 2px;font-size:13px}hr{border:1px dashed #555}.tot{font-size:16px;font-weight:bold}</style>
       </head><body>
-      <h2 style="text-align:center;margin-bottom:4px">${local?.nombre||'MenuQR'}</h2>
+      <h2 style="text-align:center;margin-bottom:4px">${local?.nombre||'PedidosQR'}</h2>
       <p style="text-align:center;margin-top:0;font-size:12px">Ticket #${t.numero} — ${new Date(t.created_at).toLocaleString('es-AR')}</p>
       <hr>
       <table><tr><th style="text-align:left">Producto</th><th>Cant</th><th style="text-align:right">Total</th></tr>${rows}</table>
@@ -262,7 +235,7 @@ export default function ScreenCajaPOS({ prods=[], cats=[], local={} }) {
       .tot{display:flex;justify-content:space-between;padding:4px 0;font-size:13px}</style>
       </head><body>
       <h2 style="text-align:center;margin-bottom:4px">Movimientos de caja</h2>
-      <p style="text-align:center;margin-top:0;font-size:12px">${new Date().toLocaleDateString('es-AR')} — ${local?.nombre||'MenuQR'}</p>
+      <p style="text-align:center;margin-top:0;font-size:12px">${new Date().toLocaleDateString('es-AR')} — ${local?.nombre||'PedidosQR'}</p>
       <hr>
       <table>
         <thead><tr><th>Tipo</th><th>Hora</th><th>Detalle</th><th>Método</th><th style="text-align:right">Monto</th></tr></thead>
@@ -344,27 +317,10 @@ export default function ScreenCajaPOS({ prods=[], cats=[], local={} }) {
 
         {/* ===== MOSTRADOR ===== */}
         {tab === 'mostrador' && (
-          <div style={{display:'flex', flexDirection:'column', height:'calc(100vh - 190px)'}}>
-            {/* Mobile view switcher */}
-            <div style={{display:'flex', gap:0, marginBottom:8, borderRadius:8, overflow:'hidden', border:'1px solid var(--border)'}}>
-              <button onClick={()=>setMobileView('prods')}
-                style={{flex:1, padding:'8px', fontSize:12, fontWeight:700, border:'none', cursor:'pointer',
-                  background:mobileView==='prods'?'var(--gold)':'var(--bg3)',
-                  color:mobileView==='prods'?'#000':'var(--text2)'}}>
-                🛒 Productos
-              </button>
-              <button onClick={()=>setMobileView('ticket')}
-                style={{flex:1, padding:'8px', fontSize:12, fontWeight:700, border:'none', cursor:'pointer',
-                  background:mobileView==='ticket'?'var(--gold)':'var(--bg3)',
-                  color:mobileView==='ticket'?'#000':'var(--text2)'}}>
-                🧾 Ticket {ticket.length > 0 ? `(${ticket.length})` : ''}
-                {total > 0 ? ` · $${Math.round(total).toLocaleString('es-AR')}` : ''}
-              </button>
-            </div>
-          <div style={{display:'grid', gridTemplateColumns:'1fr', gap:12, flex:1, overflow:'hidden'}}>
+          <div style={{display:'grid', gridTemplateColumns:'1fr 350px', gap:12, height:'calc(100vh - 190px)'}}>
 
             {/* Left: products */}
-            <div style={{display: mobileView==='prods' ? 'flex' : 'none', flexDirection:'column', gap:8, minWidth:0}}>
+            <div style={{display:'flex', flexDirection:'column', gap:8, minWidth:0}}>
               <input style={S.inp} placeholder="Buscar producto..." value={search} onChange={e=>setSearch(e.target.value)}/>
               <div style={{display:'flex', gap:6, flexWrap:'wrap'}}>
                 <button style={S.btnSm(catF===null?'var(--gold)':'var(--bg3)', catF===null?'#000':'var(--text)')} onClick={()=>setCatF(null)}>Todos</button>
@@ -391,7 +347,7 @@ export default function ScreenCajaPOS({ prods=[], cats=[], local={} }) {
             </div>
 
             {/* Right: ticket */}
-            <div style={{display: mobileView==='ticket' ? 'flex' : 'none', background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:12, flexDirection:'column', overflow:'hidden'}}>
+            <div style={{background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:12, display:'flex', flexDirection:'column', overflow:'hidden'}}>
               <div style={{padding:'10px 12px', borderBottom:'1px solid var(--border)', display:'flex', justifyContent:'space-between', alignItems:'center'}}>
                 <span style={{fontWeight:700, fontSize:14}}>🧾 Ticket</span>
                 <div style={{display:'flex', gap:6}}>
@@ -447,7 +403,7 @@ export default function ScreenCajaPOS({ prods=[], cats=[], local={} }) {
                   <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:6}}>
                     <span style={{fontSize:11, color:'var(--text2)'}}>Pago:</span>
                     <button
-                      style={{background:'none', color: metodoPago2 !== null ? 'var(--red)' : 'var(--gold)', fontSize:10, cursor:'pointer', fontWeight:700, padding:'2px 6px', borderRadius:6, border:`1px solid ${metodoPago2 !== null ? 'var(--red)' : 'var(--gold)'}` }}
+                      style={{background:'none', border:'none', color: metodoPago2 !== null ? 'var(--red)' : 'var(--gold)', fontSize:10, cursor:'pointer', fontWeight:700, padding:'2px 6px', borderRadius:6, border:`1px solid ${metodoPago2 !== null ? 'var(--red)' : 'var(--gold)'}` }}
                       onClick={()=>{ if(metodoPago2!==null){setMetodoPago2(null);setSplitAmt('');setSplitAmt2('');}else{setMetodoPago2('tarjeta');} }}>
                       {metodoPago2 !== null ? '✕ cancelar mixto' : '÷ Pago Mixto'}
                     </button>
@@ -518,7 +474,6 @@ export default function ScreenCajaPOS({ prods=[], cats=[], local={} }) {
                 </div>
               </div>
             </div>
-          </div>
           </div>
         )}
 
@@ -689,51 +644,9 @@ export default function ScreenCajaPOS({ prods=[], cats=[], local={} }) {
                 Vuelto: {ARS(vuelto)}
               </div>
             )}
-            {(metodoPago==='mercadopago'||metodoPago==='transferencia'||metodoPago2==='mercadopago'||metodoPago2==='transferencia')&&(
-              <div style={{margin:'10px 0',padding:'10px 12px',background:'rgba(201,168,76,.08)',
-                border:'1px solid rgba(201,168,76,.3)',borderRadius:8,fontSize:12,
-                color:'#D4A843',lineHeight:1.5,textAlign:'center'}}>
-                💬 Una vez hecho el pago, compartí el comprobante a este número:<br/>
-                <span style={{fontWeight:800,fontSize:14}}>
-                  {local?.whatsapp||local?.telefono||'—'}
-                </span>
-              </div>
-            )}
             <div style={{display:'flex', gap:8, marginTop:16}}>
               <button style={{...S.btn('var(--bg3)','var(--text)'), flex:1}} onClick={()=>setShowCobrar(false)}>Cancelar</button>
               <button style={{...S.btn(), flex:2}} onClick={cobrar}>✓ Confirmar cobro</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Post-cobro: éxito con opciones de imprimir / compartir */}
-      {lastTicket && (
-        <div style={S.overlay}>
-          <div style={{...S.modal, textAlign:'center', maxWidth:360}}>
-            <div style={{fontSize:28, marginBottom:8}}>✅</div>
-            <div style={{fontWeight:700, fontSize:17, color:'var(--gold)', marginBottom:4}}>
-              Ticket #{lastTicket.numero} cobrado
-            </div>
-            <div style={{fontSize:22, fontWeight:800, color:'var(--text)', marginBottom:4}}>
-              {ARS(lastTicket.total)}
-            </div>
-            <div style={{fontSize:12, color:'var(--text3)', marginBottom:16, textTransform:'capitalize'}}>
-              Pago: {lastTicket.metodo_pago}
-            </div>
-            <div style={{display:'flex', flexDirection:'column', gap:8}}>
-              <button style={{...S.btn('var(--bg3)','var(--text)'), padding:'12px', fontSize:14}}
-                onClick={()=>imprimir({...lastTicket, items: lastTicket.items.map(it=>({...it, nombre:it.nombre, precio_base:it.precio_base, precio_especial:it.precio_especial, desc_pct:it.desc_pct, qty:it.qty}))})}>
-                🖨️ Imprimir ticket
-              </button>
-              <button style={{...S.btn('rgba(37,211,102,.12)','#25D366'), border:'1px solid rgba(37,211,102,.3)', padding:'12px', fontSize:14}}
-                onClick={()=>compartirTicket(lastTicket)}>
-                📲 Compartir por WhatsApp
-              </button>
-              <button style={{...S.btn(), padding:'12px', fontSize:14}}
-                onClick={()=>{ vaciarTicket(); setLastTicket(null); }}>
-                ✓ Nuevo pedido
-              </button>
             </div>
           </div>
         </div>

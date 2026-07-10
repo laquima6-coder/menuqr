@@ -337,7 +337,7 @@ export default function LandingPage() {
             </div>
             <div style={{marginTop:28,padding:'16px 20px',background:'#0D0D0D',border:'1px solid #1C1C1C',borderRadius:12}}>
               <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,color:'#3A3A3A',letterSpacing:1.5,textTransform:'uppercase',marginBottom:6}}>URL de la demo</div>
-              <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:13,color:G,wordBreak:'break-all'}}>menuqr-ten.vercel.app/menu/mi-restaurante</div>
+              <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:13,color:G,wordBreak:'break-all'}}>pedidosqr-ten.vercel.app/menu/mi-restaurante</div>
             </div>
           </div>
           {/* Mini screens */}

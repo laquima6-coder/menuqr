@@ -21,20 +21,6 @@ export default function App() {
     try { const s = localStorage.getItem('menuqr_prods'); return s ? JSON.parse(s) : INIT_PRODS } catch { return INIT_PRODS }
   })
 
-  // Clear demo INIT_PRODS if no restaurante_id — means it's template data
-  useEffect(() => {
-    try {
-      const s = localStorage.getItem('menuqr_prods');
-      if (s) {
-        const p = JSON.parse(s);
-        if (p.length > 0 && !p[0].restaurante_id) {
-          localStorage.removeItem('menuqr_prods');
-          setProds([]);
-        }
-      }
-    } catch {}
-  }, []);
-
   useEffect(() => { try { localStorage.setItem('menuqr_local', JSON.stringify(local)) } catch {} }, [local])
   useEffect(() => { try { localStorage.setItem('menuqr_cats',  JSON.stringify(cats))  } catch {} }, [cats])
   useEffect(() => { try { localStorage.setItem('menuqr_prods', JSON.stringify(prods)) } catch {} }, [prods])

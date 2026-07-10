@@ -1,12 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams } from 'react-router-dom'
-import { createClient } from '@supabase/supabase-js'
+import { supabase as sb } from '../lib/supabase.js'
 
-const SUPABASE_URL = 'https://fwovflsaghnutysjyaus.supabase.co'
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ3b3ZmbHNhZ2hudXR5c2p5YXVzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2Njc0NzUsImV4cCI6MjA5NjI0MzQ3NX0.HtkD4AK35MSf4o9oNeGTlsooE0zSodjFVZH94ipCUAo'
 const TOMTOM_KEY   = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_TOMTOM_KEY) || 'NP2gPszMkFrVccT95vTeaMrsWfZ0ORLU'
-
-const sb = createClient(SUPABASE_URL, SUPABASE_KEY)
 const G  = '#e8a020'
 const GA = 'rgba(232,160,32,'
 

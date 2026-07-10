@@ -86,15 +86,15 @@ function OrderCard({ order, onStatusChange }) {
         ))}
       </div>
 
-      {/* Notas / Observaciones */}
-      {(order.nota || order.notas) && (
+      {/* Notas */}
+      {order.notas && (
         <div style={{
           background: 'rgba(255,176,32,.08)', border: '1px solid rgba(255,176,32,.2)',
           borderRadius: 8, padding: '7px 10px',
           fontFamily: "'DM Sans',sans-serif", fontSize: 13, color: '#FFB020',
           display: 'flex', gap: 6, alignItems: 'flex-start',
         }}>
-          <span>📝</span><span>{order.nota || order.notas}</span>
+          <span>📝</span><span>{order.notas}</span>
         </div>
       )}
 

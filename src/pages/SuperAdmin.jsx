@@ -54,7 +54,7 @@ function DemoTab({ restaurantes }) {
   const rest = restaurantes.find(r => r.id === demoId) || restaurantes[0]
   if (!rest) return <div style={{color:'#4A6080',padding:40,textAlign:'center'}}>No hay restaurantes cargados.</div>
 
-  const base = `https://menuqr.vercel.app`
+  const base = `https://pedidosqr.vercel.app`
   const slug = rest.slug
   const links = [
     { label:'Carta (Mesa 1)', icon:'📋', url:`${base}/menu/${slug}/mesa/1`,  desc:'QR que va en cada mesa' },
@@ -86,7 +86,7 @@ function DemoTab({ restaurantes }) {
   const waText = "Hola! Te quiero mostrar MenuQR\n\nEscaneá este link para ver la carta demo en vivo:\n👉 " + links[0].url + "\n\nO la vitrina (para la puerta del local):\n👉 " + links[1].url + "\n\nMenuQR te permite tener tu carta digital con QR por mesa, pedidos en tiempo real, panel de admin, cocina y mucho más"
 
   function descargarPDF() {
-    const BASE = "https://menuqr.vercel.app"
+    const BASE = "https://pedidosqr.vercel.app"
     const featOk = features.filter(f=>f.ok).map(f=>f.label)
     const qrs = links.map(l=>(
       "<div class=\"qr-card\">" +

@@ -91,7 +91,7 @@ export default function Registro() {
     <div style={S.wrap}>
       <div style={S.card}>
         <div style={S.logo}>
-          <div style={S.logoText}>MenuQR</div>
+          <div style={S.logoText}>PedidosQR</div>
           <div style={S.sub}>Crea tu carta digital en 2 minutos</div>
         </div>
 

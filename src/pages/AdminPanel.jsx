@@ -421,7 +421,7 @@ function Sidebar({ screen, setScreen, pendingCount, kitchenCount, deliveryCount,
       <div className="ap-logo">
         <div className="ap-logo-icon">🍽️</div>
         <div style={{flex:1}}>
-          <div className="ap-logo-name">MenuQR</div>
+          <div className="ap-logo-name">PedidosQR</div>
           <div className="ap-logo-tag">SISTEMA DE GESTIÓN</div>
         </div>
         <div className="ap-sidebar-close" onClick={onClose}>✕</div>
@@ -829,7 +829,7 @@ function ScreenPedidos({ pedidos, setPedidos, local }) {
       .foot{text-align:center;font-size:11px;margin-top:10px;color:#555;}
       @media print{body{padding:4px;}}
     </style></head><body>
-      <h2>${local?.nombre || 'MenuQR'}</h2>
+      <h2>${local?.nombre || 'PedidosQR'}</h2>
       <div class="sub">${new Date(p.created_at).toLocaleString('es-AR')}</div>
       <hr class="sep"/>
       ${p.mesa_numero > 0 ? `<div class="row"><span>Mesa</span><span>${p.mesa_numero}</span></div>` : ''}
@@ -849,7 +849,7 @@ function ScreenPedidos({ pedidos, setPedidos, local }) {
     const NL = "\n";
     const items = (p.pedido_items||[]).map(i=>`x${i.cantidad} ${i.nombre}  $${((i.precio||0)*(i.cantidad||1)).toLocaleString("es-AR")}`).join(NL);
     const txt = [
-      `*${local?.nombre||"MenuQR"}*`,
+      `*${local?.nombre||"PedidosQR"}*`,
       new Date(p.created_at).toLocaleString("es-AR"),
       p.mesa_numero>0 ? "Mesa "+p.mesa_numero : null,
       p.tipo_pedido==="delivery" ? "Delivery: "+(p.nombre_cliente||"") : null,
@@ -1049,7 +1049,7 @@ function ScreenPedidos({ pedidos, setPedidos, local }) {
               <div style={{ cursor:"pointer",color:"rgba(255,255,255,.4)",fontSize:22 }} onClick={() => setTicketP(null)}>✕</div>
             </div>
             <div style={{ background:"#111",borderRadius:10,padding:16,fontFamily:"'IBM Plex Mono',monospace",fontSize:12,marginBottom:16 }}>
-              <div style={{ textAlign:"center",fontWeight:700,marginBottom:8 }}>{local?.nombre||'MenuQR'}</div>
+              <div style={{ textAlign:"center",fontWeight:700,marginBottom:8 }}>{local?.nombre||'PedidosQR'}</div>
               <div style={{ textAlign:"center",fontSize:10,color:"rgba(255,255,255,.4)",marginBottom:10 }}>{new Date(ticketP.created_at).toLocaleString('es-AR')}</div>
               {ticketP.mesa_numero>0 && <div style={{ display:"flex",justifyContent:"space-between",marginBottom:4 }}><span>Mesa</span><span>{ticketP.mesa_numero}</span></div>}
               <hr style={{ border:"none",borderTop:"1px dashed rgba(255,255,255,.2)",margin:"8px 0" }}/>
@@ -1086,7 +1086,7 @@ function ScreenCocina({ pedidos, setPedidos, local }) {
   const [qrUrl, setQrUrl] = React.useState(null);
 
   React.useEffect(() => {
-    const origin = window.location.hostname === 'localhost' ? window.location.origin : 'https://menuqr-ten.vercel.app';
+    const origin = window.location.hostname === 'localhost' ? window.location.origin : 'https://pedidosqr-ten.vercel.app';
     const slug = local?.slug || "mi-restaurante";
     const url = `${origin}/${slug}/cocina`;
     QRCodeLib.toDataURL(url, { width: 200, margin: 1, color: { dark: '#111', light: '#FFF' } })
@@ -1101,7 +1101,7 @@ function ScreenCocina({ pedidos, setPedidos, local }) {
   }
 
   const cocinaUrl = local?.slug
-    ? (window.location.hostname === 'localhost' ? window.location.origin : 'https://menuqr-ten.vercel.app') + `/${local.slug}/cocina`
+    ? (window.location.hostname === 'localhost' ? window.location.origin : 'https://pedidosqr-ten.vercel.app') + `/${local.slug}/cocina`
     : null;
 
   return (
@@ -3439,7 +3439,7 @@ function ScreenQR({ local }) {
   const slug = local?.slug || "mi-restaurante";
   // Si el panel se abre en localhost (dev), los QR deben apuntar al dominio de produccion
   const prodOrigin = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-    ? 'https://menuqr-ten.vercel.app'
+    ? 'https://pedidosqr-ten.vercel.app'
     : window.location.origin;
   const base = `${prodOrigin}/menu/${slug}`;
   const totalMesas = local?.mesas || 3;
@@ -3918,7 +3918,7 @@ function ScreenGestion({ prods, setProds, cats, local, setLocal }) {
   const [pausaDelivery, setPausaDelivery] = React.useState(!(local?.delivery_habilitado !== false));
 
   const _origin2 = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-    ? 'https://menuqr-ten.vercel.app'
+    ? 'https://pedidosqr-ten.vercel.app'
     : window.location.origin;
   const vitranaUrl = local?.slug ? `${_origin2}/menu/${local.slug}/vitrina` : null;
 

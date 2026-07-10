@@ -327,7 +327,7 @@ export const INIT_LOCAL = {
   feat_solicitudes:true, feat_promo10:true,
   wifi_nombre:"LaTrattoria_WiFi", wifi_pass:"bienvenido2024",
   whatsapp:"5491112345678", whatsapp_msg:"Hola! Quiero hacer una consulta.",
-  baseUrl:"latrattoria.menuqr.app",
+  baseUrl:"latrattoria.pedidosqr.app",
   plan:"free", restauranteId:null, slug:"", logo_url:"",
   activo:true,
 };
@@ -551,7 +551,7 @@ function LoginModal({ onSuccess, onClose }) {
     e.preventDefault(); setErr(""); setOk(""); setLoading(true);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: "https://menuqr-ten.vercel.app/"
+        redirectTo: "https://pedidosqr-ten.vercel.app/"
       });
       if (error) { setErr(error.message); return; }
       setOk("✓ Te enviamos un email para resetear tu contraseña. Revisá tu bandeja de entrada.");
@@ -595,7 +595,7 @@ function LoginModal({ onSuccess, onClose }) {
         <button style={S.close} onClick={onClose}>×</button>
         <div style={{textAlign:"center",marginBottom:20}}>
           <div style={{fontSize:"2rem",marginBottom:6}}>🍽️</div>
-          <div style={{fontFamily:"Playfair Display,serif",fontSize:"1.2rem",fontWeight:700,color:"#EDE0C8"}}>MenuQR</div>
+          <div style={{fontFamily:"Playfair Display,serif",fontSize:"1.2rem",fontWeight:700,color:"#EDE0C8"}}>PedidosQR</div>
         </div>
         {tab !== "forgot" && <div style={S.tabs}>
           <button style={S.tab(tab==="login")} onClick={()=>{setTab("login");setErr("");setOk("")}}>Iniciar sesión</button>
@@ -2314,14 +2314,14 @@ export function ClientApp({onBack, local, cats, prods, vitrina=false, sinPedidos
   const [solicEnviada, setSolicEnviada]       = useState(null);
   const [showDividir, setShowDividir]         = useState(false);
   const [dividirN, setDividirN]               = useState(2);
-  const [lang,setLang]     = useState(()=>localStorage.getItem("menuqr_lang")||"es");
+  const [lang,setLang]     = useState(()=>localStorage.getItem("pedidosqr_lang")||"es");
   const effectiveVitrina = vitrina || sinPedidos;
   const [promoActiva,setPromoActiva] = useState(()=>{
     if(vitrina || sinPedidos) return false;
-    try { return !!JSON.parse(localStorage.getItem("menuqr_promo10_"+(local.restauranteId||"x"))||"null"); } catch{ return false; }
+    try { return !!JSON.parse(localStorage.getItem("pedidosqr_promo10_"+(local.restauranteId||"x"))||"null"); } catch{ return false; }
   });
   const T = (key) => t(key,lang);
-  const changeLang = (code) => { setLang(code); localStorage.setItem("menuqr_lang",code); };
+  const changeLang = (code) => { setLang(code); localStorage.setItem("pedidosqr_lang",code); };
 
   /* ── Auto-traducción de productos ── */
   const transCacheRef = React.useRef({});
@@ -2632,11 +2632,11 @@ export function ClientApp({onBack, local, cats, prods, vitrina=false, sinPedidos
           </a>
         )}
         {/* Debug: mostrar error de guardado si hubo uno */}
-        {typeof window!=="undefined" && localStorage.getItem("menuqr_last_order_error") && (
+        {typeof window!=="undefined" && localStorage.getItem("pedidosqr_last_order_error") && (
           <div style={{background:"#1a0808",border:"1px solid #7f1d1d",color:"#f87171",
             padding:"10px 14px",borderRadius:10,marginBottom:16,fontSize:12,
             fontFamily:"monospace",textAlign:"left",maxWidth:340,width:"100%"}}>
-            ⚠️ {localStorage.getItem("menuqr_last_order_error")}
+            ⚠️ {localStorage.getItem("pedidosqr_last_order_error")}
           </div>
         )}
         <div style={{display:"flex",gap:10,width:"100%",maxWidth:340}}>
@@ -2684,15 +2684,15 @@ export function ClientApp({onBack, local, cats, prods, vitrina=false, sinPedidos
           const {error}=await supabase.from("pedidos").insert({id:pedidoId,restaurante_id:local.restauranteId,mesa_numero:mesa,status:"nuevo",metodo_pago:pagoFinalPC,propina:tipAmount,total:subtotal-descuentoAplicado+tipAmount,nota:[note,descuentoAplicado>0?`DESCUENTO_PRIMERA_VEZ_10%_$${descuentoAplicado}`:null].filter(Boolean).join(" | ")||null});
           if(error){errorMsg=error.message;alert("Error pedido: "+error.message);}
           else{
-            if(descuentoAplicado>0){localStorage.removeItem("menuqr_promo10_"+(local.restauranteId||"x"));setPromoActiva(false);}
+            if(descuentoAplicado>0){localStorage.removeItem("pedidosqr_promo10_"+(local.restauranteId||"x"));setPromoActiva(false);}
             const its=cartItems.map(i=>({pedido_id:pedidoId,producto_id:i.id,nombre:i.nombre||i.name||"?",precio:Math.round(i.precio??i.price??0),cantidad:i.qty}));
             const {error:itmErr}=await supabase.from("pedido_items").insert(its);
             if(itmErr){errorMsg=itmErr.message;alert("Error items: "+itmErr.message);}
           }
         } catch(e){errorMsg=e.message;alert("Error pedido: "+e.message);}
       }
-      if(errorMsg) localStorage.setItem("menuqr_last_order_error",errorMsg);
-      else{localStorage.removeItem("menuqr_last_order_error");setLastPedidoId(pedidoId);setOrderStatus("nuevo");}
+      if(errorMsg) localStorage.setItem("pedidosqr_last_order_error",errorMsg);
+      else{localStorage.removeItem("pedidosqr_last_order_error");setLastPedidoId(pedidoId);setOrderStatus("nuevo");}
       setView("done");
     };
     return(
@@ -3083,15 +3083,15 @@ export function ClientApp({onBack, local, cats, prods, vitrina=false, sinPedidos
               const {error}=await supabase.from("pedidos").insert({id:pedidoId,restaurante_id:local.restauranteId,mesa_numero:mesa,status:"nuevo",metodo_pago:pagoFinal,propina:tipAmount,total:totalFinal,nota:[note,descuentoAplicado>0?`DESCUENTO_PRIMERA_VEZ_10%_$${descuentoAplicado}`:null].filter(Boolean).join(" | ")||null});
               if(error){errorMsg=error.message;alert("Error pedido: "+error.message);}
               else{
-                if(descuentoAplicado>0){localStorage.removeItem("menuqr_promo10_"+(local.restauranteId||"x"));setPromoActiva(false);}
+                if(descuentoAplicado>0){localStorage.removeItem("pedidosqr_promo10_"+(local.restauranteId||"x"));setPromoActiva(false);}
                 const its=cartItems.map(i=>({pedido_id:pedidoId,producto_id:i.id,nombre:i.nombre||i.name||"?",precio:Math.round(i.precio??i.price??0),cantidad:i.qty}));
                 const {error:itmErr2}=await supabase.from("pedido_items").insert(its);
                 if(itmErr2){errorMsg=itmErr2.message;alert("Error items: "+itmErr2.message);}
               }
             } catch(e){errorMsg=e.message;}
           }
-          if(errorMsg) localStorage.setItem("menuqr_last_order_error",errorMsg);
-          else{localStorage.removeItem("menuqr_last_order_error");setLastPedidoId(pedidoId);setOrderStatus("nuevo");}
+          if(errorMsg) localStorage.setItem("pedidosqr_last_order_error",errorMsg);
+          else{localStorage.removeItem("pedidosqr_last_order_error");setLastPedidoId(pedidoId);setOrderStatus("nuevo");}
           setView("done");
         }} className="pr" style={{
           width:"100%",
@@ -3545,7 +3545,7 @@ function QRTabComp({ mesaNum, setMesaNum, qrType, setQrType, promoUrl, setPromoU
   const configuredBase = (local.baseUrl||"").replace(/^https?:\/\//,"");
   const slug_ = local.slug || "";
   const _prodHost = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-    ? 'menuqr-ten.vercel.app'
+    ? 'pedidosqr-ten.vercel.app'
     : window.location.host;
   const baseUrl = configuredBase
     ? (configuredBase.includes("/") ? configuredBase : configuredBase + (slug_ ? "/"+slug_ : ""))
@@ -3727,7 +3727,7 @@ function QRTabComp({ mesaNum, setMesaNum, qrType, setQrType, promoUrl, setPromoU
   .url{font-size:9px;color:#999;word-break:break-all;max-width:260px;margin:0 auto;font-family:monospace}
 </style></head><body>
 <div class="card">
-  <div class="name">${local.nombre||"MenuQR"}</div>
+  <div class="name">${local.nombre||"PedidosQR"}</div>
   <div class="qr"><img src="${qrUrl}" width="260" height="260"/></div><br>
   <div class="lbl">${label}</div>
   <div class="url">${qrData}</div>
@@ -3753,7 +3753,7 @@ function QRTabComp({ mesaNum, setMesaNum, qrType, setQrType, promoUrl, setPromoU
               const blob=new Blob([html],{type:"text/html"});
               const a=document.createElement("a");
               a.href=URL.createObjectURL(blob);
-              const slug=(local.nombre||"menuqr").toLowerCase().replace(/\s+/g,"-");
+              const slug=(local.nombre||"pedidosqr").toLowerCase().replace(/\s+/g,"-");
               const lbl=(label).toLowerCase().replace(/\s+/g,"-");
               a.download=`qr-${slug}-${lbl}.html`;
               a.click();
@@ -3789,7 +3789,7 @@ function QRTabComp({ mesaNum, setMesaNum, qrType, setQrType, promoUrl, setPromoU
               ctx.font="bold 22px monospace";
               ctx.textAlign="center";
               ctx.letterSpacing="4px";
-              ctx.fillText((local.nombre||"MenuQR").toUpperCase(),totalW/2,pad+36);
+              ctx.fillText((local.nombre||"PedidosQR").toUpperCase(),totalW/2,pad+36);
               // QR image
               const qrUrl=await QRCodeLib.toDataURL(qrData,{width:qrSize,margin:1,color:{dark:"#0A0806",light:"#FFFFFF"}});
               const img=new Image();
@@ -3811,14 +3811,14 @@ function QRTabComp({ mesaNum, setMesaNum, qrType, setQrType, promoUrl, setPromoU
               ctx.font="12px monospace";
               ctx.fillText(qrData.length>50?qrData.substring(0,50)+"...":qrData,totalW/2,lblY+44+footerH-8);
               // download or share
-              const fileSlug=(local.nombre||"menuqr").toLowerCase().replace(/\s+/g,"-");
+              const fileSlug=(local.nombre||"pedidosqr").toLowerCase().replace(/\s+/g,"-");
               const fileLbl=qrType==="mesa"?`mesa-${mesaNum}`:qrType==="cocina"?"cocina":qrType==="vitrina"?"vitrina":"qr";
               const fileName=`qr-${fileSlug}-${fileLbl}.png`;
               canvas.toBlob(async(blob)=>{
                 if(navigator.share && navigator.canShare && navigator.canShare({files:[new File([blob],"qr.png",{type:"image/png"})]})){
                   try{
                     await navigator.share({
-                      title:`QR ${lbl} — ${local.nombre||"MenuQR"}`,
+                      title:`QR ${lbl} — ${local.nombre||"PedidosQR"}`,
                       text:`Escaneá el QR para ver la carta de ${local.nombre||"tu restaurante"}`,
                       files:[new File([blob],fileName,{type:"image/png"})]
                     });
@@ -3965,7 +3965,7 @@ function pushNotify(title, body) {
     if (!("Notification" in window)) return;
     const send = () => new Notification(title, {
       body, icon: "/favicon.ico", badge: "/favicon.ico",
-      tag: "menuqr-pedido", renotify: true,
+      tag: "pedidosqr-pedido", renotify: true,
     });
     if (Notification.permission === "granted") { send(); }
     else if (Notification.permission !== "denied") {
@@ -4669,7 +4669,7 @@ function GestionTab({local,setLocal,cats,setCats,prods,setProds,gSubTab,setGSubT
         <GInput label="Email" value={localDraft.email||""}
           onChange={v=>setLocalDraft(d=>({...d,email:v}))} placeholder="hola@tu-local.com"/>
         <GInput label="URL de tu carta (para QRs)" value={localDraft.baseUrl||""}
-          onChange={v=>setLocalDraft(d=>({...d,baseUrl:v}))} placeholder="latrattoria.menuqr.app"/>
+          onChange={v=>setLocalDraft(d=>({...d,baseUrl:v}))} placeholder="latrattoria.pedidosqr.app"/>
         <div style={{marginBottom:0}}>
           <GLbl>Descripción breve</GLbl>
           <textarea value={localDraft.descripcion||""}
@@ -5258,7 +5258,7 @@ function ConfigTab({local,setLocal,toast,adminPinUnlocked}) {
       <GInput label="Dirección" value={cfgDraft.direccion||""} onChange={v=>setCfgDraft(d=>({...d,direccion:v}))} placeholder="Av. Corrientes 1234"/>
       <GInput label="Teléfono" value={cfgDraft.telefono||""} onChange={v=>setCfgDraft(d=>({...d,telefono:v}))} placeholder="+54 11 1234-5678"/>
       <GInput label="Email" value={cfgDraft.email||""} onChange={v=>setCfgDraft(d=>({...d,email:v}))} placeholder="hola@tu-local.com"/>
-      <GInput label="URL de tu carta (para QRs)" value={cfgDraft.baseUrl||""} onChange={v=>setCfgDraft(d=>({...d,baseUrl:v}))} placeholder="latrattoria.menuqr.app"/>
+      <GInput label="URL de tu carta (para QRs)" value={cfgDraft.baseUrl||""} onChange={v=>setCfgDraft(d=>({...d,baseUrl:v}))} placeholder="latrattoria.pedidosqr.app"/>
       <div style={{marginBottom:0}}>
         <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:9,letterSpacing:2.5,textTransform:"uppercase",color:"var(--ad)",marginBottom:7}}>Descripción breve</p>
         <textarea value={cfgDraft.descripcion||""} onChange={e=>setCfgDraft(d=>({...d,descripcion:e.target.value}))}
@@ -6785,7 +6785,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
   .url{font-size:9px;color:#999;word-break:break-all;max-width:260px;margin:0 auto;font-family:monospace}
 </style></head><body>
 <div class="card">
-  <div class="name">${local.nombre||"MenuQR"}</div>
+  <div class="name">${local.nombre||"PedidosQR"}</div>
   <div class="qr"><img src="${qrUrl}" width="240" height="240"/></div><br>
   <div class="label">Mesa ${tableNum}</div>
   <div class="url">${data}</div>
@@ -9133,7 +9133,7 @@ function AdminApp({onBack, local, setLocal, cats, setCats, prods, setProds}) {
               alignItems:"center",justifyContent:"center",fontSize:17}}>🍽️</div>
             <div>
               <p style={{fontFamily:"'Outfit',sans-serif",fontSize:13,fontWeight:800,
-                color:"var(--abri)",lineHeight:1}}>{local.nombre||"MenuQR"}</p>
+                color:"var(--abri)",lineHeight:1}}>{local.nombre||"PedidosQR"}</p>
               <p style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:8,
                 color:"var(--am)",letterSpacing:1,marginTop:2}}>PANEL ADMIN</p>
             </div>
