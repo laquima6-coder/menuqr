@@ -9637,6 +9637,8 @@ export default function MenuQR({
         alias_titular: rest.alias_titular || "",   // columna directa
         mp_alias:      rest.alias_pago    || "",   // alias para cart view
         config: rest.config || {},
+        plus_ia:    rest.plus_ia    || false,
+        plus_figma: rest.plus_figma || false,
         ...(rest.config || {}),
       });
       const [categorias, productos] = await Promise.all([

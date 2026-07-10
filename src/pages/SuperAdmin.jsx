@@ -291,6 +291,12 @@ export default function SuperAdmin() {
     loadAll()
   }
 
+  async function togglePlus(id, field, current) {
+    if (!supabase) return
+    await supabase.from('restaurantes').update({ [field]: !current }).eq('id', id)
+    loadAll()
+  }
+
   async function cambiarPlan(id, plan) {
     if (!supabase) return
     await supabase.from('restaurantes').update({ plan }).eq('id', id)
@@ -451,14 +457,14 @@ export default function SuperAdmin() {
                   <table style={{width:'100%',borderCollapse:'collapse',fontSize:'.84rem'}}>
                     <thead>
                       <tr style={{borderBottom:'1px solid #1E2A3A'}}>
-                        {['Restaurante','Slug','Plan','Estado','Creado','Acciones'].map(h=>(
+                        {['Restaurante','Slug','Plan','Estado','PLUS','Creado','Acciones'].map(h=>(
                           <th key={h} style={{textAlign:'left',padding:'10px 14px',color:'#4A6080',fontSize:'.72rem',textTransform:'uppercase',letterSpacing:'.05em',whiteSpace:'nowrap'}}>{h}</th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
                       {filtered.length === 0
-                        ? <tr><td colSpan={6} style={{textAlign:'center',padding:30,color:'#2A3A50'}}>Sin resultados</td></tr>
+                        ? <tr><td colSpan={7} style={{textAlign:'center',padding:30,color:'#2A3A50'}}>Sin resultados</td></tr>
                         : filtered.map(r => (
                           <tr key={r.id} className="sa-row" style={{borderBottom:'1px solid #0F1320',transition:'background .15s'}}>
                             <td style={{padding:'12px 14px'}}>
@@ -482,6 +488,26 @@ export default function SuperAdmin() {
                                 style={{padding:'4px 10px',borderRadius:6,border:'none',cursor:'pointer',fontSize:'.75rem',fontWeight:600,background:r.activo?'#0a1f0e':'#1a0808',color:r.activo?'#4ade80':'#f87171'}}>
                                 {r.activo ? '● Activo' : '○ Inactivo'}
                               </button>
+                            </td>
+                            <td style={{padding:'12px 14px'}}>
+                              <div style={{display:'flex',gap:6,flexDirection:'column'}}>
+                                <button onClick={()=>togglePlus(r.id,'plus_ia',r.plus_ia)}
+                                  title="PLUS IA — Asistente con Claude ($29/mes)"
+                                  style={{padding:'3px 8px',borderRadius:5,border:'none',cursor:'pointer',fontSize:'.7rem',fontWeight:700,
+                                    background:r.plus_ia?'rgba(139,92,246,.2)':'rgba(255,255,255,.04)',
+                                    color:r.plus_ia?'#A78BFA':'#3A4A60',
+                                    border:`1px solid ${r.plus_ia?'rgba(139,92,246,.4)':'rgba(255,255,255,.08)'}`}}>
+                                  🤖 IA {r.plus_ia?'ON':'OFF'}
+                                </button>
+                                <button onClick={()=>togglePlus(r.id,'plus_figma',r.plus_figma)}
+                                  title="PLUS Figma — Editor visual ($49/mes)"
+                                  style={{padding:'3px 8px',borderRadius:5,border:'none',cursor:'pointer',fontSize:'.7rem',fontWeight:700,
+                                    background:r.plus_figma?'rgba(6,182,212,.2)':'rgba(255,255,255,.04)',
+                                    color:r.plus_figma?'#22D3EE':'#3A4A60',
+                                    border:`1px solid ${r.plus_figma?'rgba(6,182,212,.4)':'rgba(255,255,255,.08)'}`}}>
+                                  🎨 Figma {r.plus_figma?'ON':'OFF'}
+                                </button>
+                              </div>
                             </td>
                             <td style={{padding:'12px 14px',color:'#4A6080',fontSize:'.78rem',whiteSpace:'nowrap'}}>
                               {new Date(r.created_at).toLocaleDateString('es-AR')}
