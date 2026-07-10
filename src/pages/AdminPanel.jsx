@@ -834,8 +834,8 @@ function ScreenPedidos({ pedidos, setPedidos, local }) {
   }
 
   const btnStyle = (bg, color, border) => ({
-    flex: 1, padding: "8px 4px", borderRadius: 8, border: `1px solid ${border}`,
-    background: bg, color, fontFamily: "'IBM Plex Mono',monospace", fontSize: 10,
+    flex: 1, padding: "10px 8px", borderRadius: 10, border: `1px solid ${border}`,
+    background: bg, color, fontFamily: "'IBM Plex Mono',monospace", fontSize: 12,
     fontWeight: 700, cursor: "pointer", letterSpacing: .5,
   });
 
@@ -957,8 +957,29 @@ function ScreenPedidos({ pedidos, setPedidos, local }) {
     );
   }
 
+  const pendientesMesa     = pedidos.filter(p=>["nuevo","pendiente_pago"].includes(p.status) && !p.tipo_pedido?.match(/delivery|retiro/)).length;
+  const pendientesDelivery = pedidos.filter(p=>["nuevo","pendiente_pago"].includes(p.status) && p.tipo_pedido?.match(/delivery|retiro/)).length;
+  const enCocinaCount      = pedidos.filter(p=>p.status==="preparando").length;
+
   return (
     <div>
+      {/* Stats rápidos */}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:20}}>
+        {[
+          {label:"Pedidos Mesa",    val:pendientesMesa,     color:"#FFB020", icon:"🆕", sub:"pendientes"},
+          {label:"Delivery",        val:pendientesDelivery, color:"#C9A84C", icon:"🛵", sub:"pendientes"},
+          {label:"En Cocina",       val:enCocinaCount,      color:"#60a8f0", icon:"👨‍🍳", sub:"preparando"},
+          {label:"Total hoy",       val:pedidos.filter(p=>p.created_at?.startsWith(today)).length, color:"#3ecf6e", icon:"📊", sub:"pedidos"},
+        ].map(s=>(
+          <div key={s.label} className="ap-card" style={{display:"flex",alignItems:"center",gap:12,padding:"14px 16px",cursor:"default"}}>
+            <div style={{fontSize:26}}>{s.icon}</div>
+            <div>
+              <div style={{fontSize:24,fontWeight:900,color:s.color,lineHeight:1}}>{s.val}</div>
+              <div style={{fontSize:10,color:"var(--text3)",letterSpacing:.5,marginTop:2}}>{s.label}</div>
+            </div>
+          </div>
+        ))}
+      </div>
       <div className="ap-sec-hdr" style={{ marginBottom: 16 }}>
         <h2>Pedidos</h2>
         <div style={{ display: "flex", gap: 8 }}>
@@ -979,8 +1000,12 @@ function ScreenPedidos({ pedidos, setPedidos, local }) {
               : nuevos.map(p => (
                 <OrderKanban key={p.id} p={p} actions={[
                   <button key="c" style={btnStyle("rgba(61,142,255,.15)","#3D8EFF","rgba(61,142,255,.35)")} onClick={() => toCocinaTx(p)}>
-                    {p.status === "pendiente_pago" ? "✅ Pago ok" : "👨‍🍳 Cocina"}
-                  </button>
+                    {p.status === "pendiente_pago" ? "✅ Pago ok" : "✅ Aceptar"}
+                  </button>,
+                  <button key="x" style={btnStyle("rgba(232,64,64,.12)","#e84040","rgba(232,64,64,.35)")} onClick={async()=>{
+                    await updatePedidoStatus(p.id,"cancelado");
+                    setPedidos(prev=>prev.map(o=>o.id===p.id?{...o,status:"cancelado"}:o));
+                  }}>✕ Rechazar</button>
                 ]}/>
               ))
             }
@@ -2882,35 +2907,108 @@ function ScreenCarta({ prods, setProds, cats, local, setLocal }) {
 ══════════════════════════════════════════════════════════════ */
 function ScreenMesas({ local, pedidos }) {
   const totalMesas = local?.mesas || 20;
-  const ocupadas = new Set(
-    pedidos.filter((p) => p.status !== "entregado" && p.mesa_numero).map((p) => p.mesa_numero)
-  );
+  const [selected, setSelected] = React.useState(null);
+
+  const mesaMap = {};
+  pedidos.filter(p => p.status !== "entregado" && p.mesa_numero).forEach(p => {
+    mesaMap[p.mesa_numero] = p;
+  });
+
+  const libre   = Array.from({length:totalMesas},(_,i)=>i+1).filter(n=>!mesaMap[n]).length;
+  const ocupada = Object.keys(mesaMap).length;
+  const selectedPedido = selected ? mesaMap[selected] : null;
 
   return (
-    <div>
-      <div className="ap-sec-hdr">
-        <h2>Plano de mesas</h2>
-        <div className="ap-sec-hdr-r">
-          <div style={{ display: "flex", gap: 12, fontSize: 12, alignItems: "center" }}>
-            <span><span style={{ color: "#3ecf6e" }}>●</span> Libre</span>
-            <span><span style={{ color: "#e8a020" }}>●</span> Ocupada</span>
+    <div style={{display:"flex",gap:20,height:"calc(100vh - 60px - 48px)"}}>
+      {/* Mapa de mesas */}
+      <div style={{flex:1,display:"flex",flexDirection:"column",gap:16,minWidth:0}}>
+        {/* Stats rápidos */}
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12}}>
+          {[
+            {label:"Total",     val:totalMesas, color:"var(--gold)"},
+            {label:"Ocupadas",  val:ocupada,    color:"#e8a020"},
+            {label:"Libres",    val:libre,      color:"#3ecf6e"},
+          ].map(s=>(
+            <div key={s.label} className="ap-card" style={{padding:"14px 18px",textAlign:"center"}}>
+              <div style={{fontSize:28,fontWeight:900,color:s.color}}>{s.val}</div>
+              <div style={{fontSize:11,color:"var(--text3)",letterSpacing:1,textTransform:"uppercase",marginTop:2}}>{s.label}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Leyenda */}
+        <div style={{display:"flex",gap:16,fontSize:12,color:"var(--text3)"}}>
+          <span style={{display:"flex",alignItems:"center",gap:5}}><span style={{width:10,height:10,borderRadius:3,background:"#3ecf6e",display:"inline-block"}}/> Libre</span>
+          <span style={{display:"flex",alignItems:"center",gap:5}}><span style={{width:10,height:10,borderRadius:3,background:"#e8a020",display:"inline-block"}}/> Ocupada</span>
+          <span style={{display:"flex",alignItems:"center",gap:5}}><span style={{width:10,height:10,borderRadius:3,background:"var(--gold)",border:"1px solid var(--gold)",display:"inline-block"}}/> Seleccionada</span>
+        </div>
+
+        {/* Grid */}
+        <div className="ap-card" style={{flex:1,overflowY:"auto"}}>
+          <div style={{fontSize:11,fontWeight:700,color:"var(--text3)",letterSpacing:2,marginBottom:14}}>SALÓN</div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(90px,1fr))",gap:10}}>
+            {Array.from({length:totalMesas},(_,i)=>i+1).map(num=>{
+              const pedido = mesaMap[num];
+              const isOcupada = !!pedido;
+              const isSel = selected === num;
+              return (
+                <div key={num} onClick={()=>setSelected(isSel?null:num)}
+                  style={{
+                    borderRadius:12,padding:"14px 8px",textAlign:"center",cursor:"pointer",
+                    border:`2px solid ${isSel?"var(--gold)":isOcupada?"rgba(232,160,32,.4)":"rgba(62,207,110,.2)"}`,
+                    background:isSel?"rgba(232,160,32,.12)":isOcupada?"rgba(232,160,32,.06)":"rgba(62,207,110,.04)",
+                    transition:"all .15s",
+                  }}>
+                  <div style={{fontSize:24,marginBottom:4}}>🪑</div>
+                  <div style={{fontSize:16,fontWeight:900,color:isOcupada?"var(--gold)":"#3ecf6e"}}>{num}</div>
+                  <div style={{fontSize:9,fontWeight:700,letterSpacing:1,color:isOcupada?"rgba(232,160,32,.6)":"rgba(62,207,110,.5)",textTransform:"uppercase",marginTop:2}}>
+                    {isOcupada?"OCUPADA":"LIBRE"}
+                  </div>
+                  {pedido && <div style={{fontSize:9,color:"var(--text3)",marginTop:4}}>#{String(pedido.id||"").slice(0,6)}</div>}
+                </div>
+              );
+            })}
           </div>
-          <button className="ap-btn ap-btn-gold ap-btn-sm">+ Agregar mesa</button>
         </div>
       </div>
-      <div className="ap-card">
-        <div style={{ fontSize: 12, color: "rgba(255,255,255,.35)", marginBottom: 12, fontWeight: 700, letterSpacing: 1 }}>SALÓN</div>
-        <div className="ap-mesas-grid">
-          {Array.from({ length: totalMesas }, (_, i) => i + 1).map((num) => {
-            const isOcupada = ocupadas.has(num);
-            return (
-              <div key={num} className={`ap-mesa ${isOcupada ? "ocupada" : "libre"}`}>
-                <div className="ap-mesa-num">{num}</div>
-                <div className="ap-mesa-status">{isOcupada ? "ocupada" : "libre"}</div>
+
+      {/* Panel detalle */}
+      <div style={{width:280,display:"flex",flexDirection:"column",gap:12}}>
+        {selectedPedido ? (
+          <>
+            <div className="ap-card" style={{borderColor:"rgba(232,160,32,.3)"}}>
+              <div style={{fontSize:11,fontWeight:700,color:"var(--gold)",letterSpacing:2,marginBottom:12}}>MESA {selected}</div>
+              <div style={{fontSize:22,fontWeight:900,marginBottom:4}}>#{String(selectedPedido.id||"").slice(0,8)}</div>
+              <div style={{fontSize:12,color:"var(--text3)",marginBottom:16}}>{new Date(selectedPedido.created_at||"").toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"})}</div>
+              <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:16}}>
+                {(selectedPedido.pedido_items||[]).map((item,i)=>(
+                  <div key={i} style={{display:"flex",justifyContent:"space-between",fontSize:13}}>
+                    <span style={{color:"var(--text)"}}>{item.cantidad}× {item.nombre}</span>
+                    <span style={{color:"var(--gold)",fontWeight:700}}>${(item.precio*item.cantidad).toLocaleString("es-AR")}</span>
+                  </div>
+                ))}
               </div>
-            );
-          })}
-        </div>
+              <div style={{borderTop:"1px solid var(--border)",paddingTop:12,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                <span style={{fontSize:13,color:"var(--text3)"}}>Total</span>
+                <span style={{fontSize:20,fontWeight:900,color:"var(--gold)"}}>${(selectedPedido.total||0).toLocaleString("es-AR")}</span>
+              </div>
+            </div>
+            <div className="ap-card" style={{textAlign:"center"}}>
+              <div style={{marginBottom:8}}>
+                <span className={`ap-pill ${selectedPedido.status==="listo"?"pill-listo":selectedPedido.status==="preparando"?"pill-preparando":"pill-nuevo"}`} style={{fontSize:13,padding:"6px 14px"}}>
+                  {selectedPedido.status?.toUpperCase()}
+                </span>
+              </div>
+              <div style={{fontSize:12,color:"var(--text3)"}}>Estado actual del pedido</div>
+            </div>
+          </>
+        ) : (
+          <div className="ap-card" style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",textAlign:"center",color:"var(--text3)"}}>
+            <div style={{fontSize:40,marginBottom:12}}>🪑</div>
+            <div style={{fontSize:14,fontWeight:700,color:"var(--text2)",marginBottom:6}}>Seleccioná una mesa</div>
+            <div style={{fontSize:12}}>Hacé clic en una mesa ocupada para ver el pedido activo</div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -3181,33 +3279,139 @@ const STOCK_DEMO = [
 ];
 
 function ScreenStock() {
+  const [items, setItems] = React.useState(STOCK_DEMO.map(s=>({...s})));
+  const [editIdx, setEditIdx] = React.useState(null);
+  const [editVal, setEditVal] = React.useState("");
+  const [showAdd, setShowAdd] = React.useState(false);
+  const [newItem, setNewItem] = React.useState({ing:"",stock:0,min:0,unit:"kg"});
+
+  const criticos = items.filter(s=>s.status==="critico").length;
+  const bajos    = items.filter(s=>s.status==="bajo").length;
+  const ok       = items.filter(s=>s.status==="ok").length;
+
+  function recalcStatus(stock, min) {
+    const pct = min > 0 ? stock/min : 1;
+    return pct < 0.5 ? "critico" : pct < 1 ? "bajo" : "ok";
+  }
+
+  function saveEdit(i) {
+    const val = parseFloat(editVal);
+    if (isNaN(val) || val < 0) return;
+    setItems(prev => prev.map((s,idx)=>idx===i ? {...s, stock:val, status:recalcStatus(val,s.min)} : s));
+    setEditIdx(null);
+  }
+
+  function addItem() {
+    if (!newItem.ing.trim()) return;
+    setItems(prev=>[...prev, {...newItem, status:recalcStatus(newItem.stock,newItem.min)}]);
+    setNewItem({ing:"",stock:0,min:0,unit:"kg"});
+    setShowAdd(false);
+  }
+
+  const barColor = (s) => s==="critico" ? "#e84040" : s==="bajo" ? "#FFB020" : "#3ecf6e";
+  const barPct   = (stock, min) => min>0 ? Math.min(100, Math.round(stock/min*100)) : 100;
+
   return (
     <div>
       <div className="ap-sec-hdr">
         <h2>Stock e inventario</h2>
-        <button className="ap-btn ap-btn-gold">+ Agregar ítem</button>
+        <button className="ap-btn ap-btn-gold" onClick={()=>setShowAdd(s=>!s)}>+ Agregar ítem</button>
       </div>
-      <div className="ap-card">
-        <table>
+
+      {/* Stats */}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginBottom:20}}>
+        {[
+          {label:"En stock",    val:ok,       color:"#3ecf6e", icon:"✅"},
+          {label:"Stock bajo",  val:bajos,    color:"#FFB020", icon:"⚠️"},
+          {label:"Crítico",     val:criticos, color:"#e84040", icon:"🔴"},
+        ].map(s=>(
+          <div key={s.label} className="ap-card" style={{display:"flex",alignItems:"center",gap:14,padding:"16px 20px"}}>
+            <div style={{fontSize:28}}>{s.icon}</div>
+            <div>
+              <div style={{fontSize:28,fontWeight:900,color:s.color}}>{s.val}</div>
+              <div style={{fontSize:11,color:"var(--text3)",letterSpacing:.5}}>{s.label}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Add form */}
+      {showAdd && (
+        <div className="ap-card" style={{marginBottom:16,borderColor:"rgba(201,168,76,.3)"}}>
+          <div style={{fontSize:12,fontWeight:700,color:"var(--gold)",letterSpacing:1,marginBottom:12}}>NUEVO INGREDIENTE</div>
+          <div style={{display:"grid",gridTemplateColumns:"2fr 1fr 1fr 1fr",gap:10,marginBottom:12}}>
+            {[
+              {ph:"Nombre",   key:"ing",   type:"text"},
+              {ph:"Stock",    key:"stock", type:"number"},
+              {ph:"Mínimo",   key:"min",   type:"number"},
+              {ph:"Unidad",   key:"unit",  type:"text"},
+            ].map(f=>(
+              <input key={f.key} type={f.type} placeholder={f.ph} value={newItem[f.key]}
+                onChange={e=>setNewItem(prev=>({...prev,[f.key]:f.type==="number"?parseFloat(e.target.value)||0:e.target.value}))}
+                style={{background:"var(--bg3)",border:"1px solid var(--border)",borderRadius:8,padding:"8px 12px",color:"var(--text)",fontSize:13}}/>
+            ))}
+          </div>
+          <div style={{display:"flex",gap:8}}>
+            <button className="ap-btn ap-btn-ghost" onClick={()=>setShowAdd(false)}>Cancelar</button>
+            <button className="ap-btn ap-btn-gold" onClick={addItem}>Agregar</button>
+          </div>
+        </div>
+      )}
+
+      {/* Table */}
+      <div className="ap-card" style={{padding:0,overflow:"hidden"}}>
+        <table style={{width:"100%",borderCollapse:"collapse"}}>
           <thead>
-            <tr>
-              <th>INGREDIENTE</th><th>STOCK ACTUAL</th><th>MÍNIMO</th><th>UNIDAD</th><th>ESTADO</th>
+            <tr style={{borderBottom:"1px solid var(--border)"}}>
+              {["Ingrediente","Stock actual","Nivel","Mínimo","Unidad","Estado","Editar"].map(h=>(
+                <th key={h} style={{padding:"12px 16px",textAlign:"left",fontSize:10,fontWeight:700,color:"var(--text3)",letterSpacing:1,textTransform:"uppercase"}}>{h}</th>
+              ))}
             </tr>
           </thead>
           <tbody>
-            {STOCK_DEMO.map((s, i) => (
-              <tr key={i}>
-                <td>{s.ing}</td>
-                <td>{s.stock}</td>
-                <td>{s.min}</td>
-                <td>{s.unit}</td>
-                <td>
-                  {s.status === "ok" && <span className="ap-pill pill-listo">✓ OK</span>}
-                  {s.status === "bajo" && <span className="ap-pill" style={{ background: "rgba(232,64,64,.1)", color: "#e84040" }}>⚠ BAJO</span>}
-                  {s.status === "critico" && <span className="ap-pill" style={{ background: "rgba(232,64,64,.15)", color: "#e84040" }}>🔴 CRÍTICO</span>}
-                </td>
-              </tr>
-            ))}
+            {items.map((s,i)=>{
+              const pct = barPct(s.stock,s.min);
+              const col = barColor(s.status);
+              return (
+                <tr key={i} style={{borderBottom:"1px solid var(--bg3)"}}
+                  onMouseEnter={e=>e.currentTarget.style.background="var(--bg3)"}
+                  onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+                  <td style={{padding:"14px 16px",fontWeight:700,fontSize:14}}>{s.ing}</td>
+                  <td style={{padding:"14px 16px"}}>
+                    {editIdx===i ? (
+                      <div style={{display:"flex",gap:6,alignItems:"center"}}>
+                        <input type="number" value={editVal} onChange={e=>setEditVal(e.target.value)}
+                          autoFocus
+                          style={{width:70,background:"var(--bg3)",border:`1px solid ${col}`,borderRadius:6,padding:"4px 8px",color:col,fontWeight:700,fontSize:14}}/>
+                        <button onClick={()=>saveEdit(i)} style={{padding:"4px 8px",borderRadius:6,border:"1px solid #3ecf6e",background:"rgba(62,207,110,.12)",color:"#3ecf6e",cursor:"pointer",fontWeight:700}}>✓</button>
+                        <button onClick={()=>setEditIdx(null)} style={{padding:"4px 8px",borderRadius:6,border:"1px solid rgba(255,255,255,.15)",background:"transparent",color:"rgba(255,255,255,.4)",cursor:"pointer"}}>✕</button>
+                      </div>
+                    ) : (
+                      <span style={{fontSize:16,fontWeight:900,color:col}}>{s.stock} <span style={{fontSize:11,color:"var(--text3)"}}>{s.unit}</span></span>
+                    )}
+                  </td>
+                  <td style={{padding:"14px 16px",minWidth:120}}>
+                    <div style={{background:"rgba(255,255,255,.06)",borderRadius:999,height:8,overflow:"hidden"}}>
+                      <div style={{width:`${pct}%`,height:"100%",background:col,borderRadius:999,transition:"width .4s"}}/>
+                    </div>
+                    <div style={{fontSize:10,color:"var(--text3)",marginTop:3}}>{pct}%</div>
+                  </td>
+                  <td style={{padding:"14px 16px",fontSize:13,color:"var(--text3)"}}>{s.min} {s.unit}</td>
+                  <td style={{padding:"14px 16px",fontSize:13,color:"var(--text2)"}}>{s.unit}</td>
+                  <td style={{padding:"14px 16px"}}>
+                    {s.status==="ok"      && <span className="ap-pill pill-listo"   style={{fontSize:11}}>✓ OK</span>}
+                    {s.status==="bajo"    && <span className="ap-pill" style={{background:"rgba(255,176,32,.1)",color:"#FFB020",fontSize:11}}>⚠ BAJO</span>}
+                    {s.status==="critico" && <span className="ap-pill" style={{background:"rgba(232,64,64,.12)",color:"#e84040",fontSize:11}}>🔴 CRÍTICO</span>}
+                  </td>
+                  <td style={{padding:"14px 16px"}}>
+                    <button onClick={()=>{setEditIdx(i);setEditVal(String(s.stock));}}
+                      style={{padding:"5px 12px",borderRadius:7,border:"1px solid rgba(255,255,255,.12)",background:"rgba(255,255,255,.04)",color:"rgba(255,255,255,.6)",cursor:"pointer",fontSize:12}}>
+                      ✏️ Editar
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -3218,29 +3422,90 @@ function ScreenStock() {
 /* ══════════════════════════════════════════════════════════════
    SCREEN: CLIENTES
 ══════════════════════════════════════════════════════════════ */
-function ScreenClientes() {
-  const [search, setSearch] = useState("");
+function ScreenClientes({ pedidos }) {
+  const [search, setSearch] = React.useState("");
+
+  // Build client list from delivery orders
+  const clientMap = {};
+  (pedidos||[]).filter(p=>p.cliente_nombre||p.cliente_tel).forEach(p=>{
+    const key = p.cliente_tel || p.cliente_nombre || "?";
+    if (!clientMap[key]) {
+      clientMap[key] = { nombre: p.cliente_nombre||"Sin nombre", tel: p.cliente_tel||"—", pedidos:0, total:0, ultimo:"" };
+    }
+    clientMap[key].pedidos++;
+    clientMap[key].total += p.total||0;
+    if (!clientMap[key].ultimo || p.created_at > clientMap[key].ultimo) clientMap[key].ultimo = p.created_at;
+  });
+  const clientes = Object.values(clientMap).sort((a,b)=>b.total-a.total);
+  const filtered = clientes.filter(c=>
+    !search || c.nombre.toLowerCase().includes(search.toLowerCase()) || c.tel.includes(search)
+  );
+
   return (
     <div>
       <div className="ap-sec-hdr">
         <h2>Clientes</h2>
-        <input
-          type="text"
-          placeholder="🔍 Buscar cliente..."
-          style={{ width: 260 }}
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-      </div>
-      <div className="ap-card" style={{ textAlign: "center", padding: 48, color: "rgba(255,255,255,.35)" }}>
-        <div style={{ fontSize: 48, marginBottom: 12 }}>👥</div>
-        <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 8, color: "rgba(255,255,255,.65)" }}>
-          Módulo de clientes
-        </div>
-        <div style={{ fontSize: 13 }}>
-          Los clientes que pidan por delivery con nombre y teléfono aparecerán aquí.
+        <div className="ap-sec-hdr-r">
+          <input type="text" placeholder="🔍 Buscar..." style={{width:220}} value={search} onChange={e=>setSearch(e.target.value)} />
         </div>
       </div>
+
+      {/* Stats */}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginBottom:20}}>
+        {[
+          {label:"Clientes únicos", val:clientes.length, color:"var(--gold)", icon:"👥"},
+          {label:"Pedidos delivery", val:clientes.reduce((s,c)=>s+c.pedidos,0), color:"#60a8f0", icon:"🚗"},
+          {label:"Gasto promedio",  val:"$"+(clientes.length?Math.round(clientes.reduce((s,c)=>s+c.total,0)/clientes.length).toLocaleString("es-AR"):"0"), color:"#3ecf6e", icon:"💰"},
+        ].map(s=>(
+          <div key={s.label} className="ap-card" style={{display:"flex",alignItems:"center",gap:14,padding:"16px 20px"}}>
+            <div style={{fontSize:28}}>{s.icon}</div>
+            <div>
+              <div style={{fontSize:22,fontWeight:900,color:s.color}}>{s.val}</div>
+              <div style={{fontSize:11,color:"var(--text3)",letterSpacing:.5}}>{s.label}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {filtered.length === 0 ? (
+        <div className="ap-card" style={{textAlign:"center",padding:48,color:"var(--text3)"}}>
+          <div style={{fontSize:48,marginBottom:12}}>👥</div>
+          <div style={{fontSize:15,fontWeight:700,color:"var(--text2)",marginBottom:8}}>Sin clientes todavía</div>
+          <div style={{fontSize:13}}>Los clientes que pidan delivery con nombre y teléfono aparecerán aquí.</div>
+        </div>
+      ) : (
+        <div className="ap-card" style={{padding:0,overflow:"hidden"}}>
+          <table style={{width:"100%",borderCollapse:"collapse"}}>
+            <thead>
+              <tr style={{borderBottom:"1px solid var(--border)"}}>
+                {["Cliente","Teléfono","Pedidos","Gasto total","Último pedido"].map(h=>(
+                  <th key={h} style={{padding:"12px 16px",textAlign:"left",fontSize:10,fontWeight:700,color:"var(--text3)",letterSpacing:1,textTransform:"uppercase"}}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((c,i)=>(
+                <tr key={i} style={{borderBottom:"1px solid var(--bg3)",transition:"background .1s"}}
+                  onMouseEnter={e=>e.currentTarget.style.background="var(--bg3)"}
+                  onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+                  <td style={{padding:"14px 16px"}}>
+                    <div style={{display:"flex",alignItems:"center",gap:10}}>
+                      <div style={{width:34,height:34,borderRadius:10,background:"rgba(232,160,32,.15)",border:"1px solid rgba(232,160,32,.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16}}>👤</div>
+                      <span style={{fontWeight:700,fontSize:14}}>{c.nombre}</span>
+                    </div>
+                  </td>
+                  <td style={{padding:"14px 16px",fontSize:13,color:"var(--text2)"}}>{c.tel}</td>
+                  <td style={{padding:"14px 16px"}}>
+                    <span style={{background:"rgba(96,168,240,.1)",color:"#60a8f0",border:"1px solid rgba(96,168,240,.2)",borderRadius:6,padding:"3px 10px",fontSize:12,fontWeight:700}}>{c.pedidos}</span>
+                  </td>
+                  <td style={{padding:"14px 16px",fontSize:15,fontWeight:800,color:"var(--gold)"}}>${c.total.toLocaleString("es-AR")}</td>
+                  <td style={{padding:"14px 16px",fontSize:12,color:"var(--text3)"}}>{c.ultimo?new Date(c.ultimo).toLocaleDateString("es-AR"):"—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
