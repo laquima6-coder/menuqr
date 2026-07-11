@@ -317,49 +317,131 @@ module.exports = async function handler(req, res) {
       const prod = findProd(prodStr, products)
       if (prod) {
         // Map product to best Unsplash photo
+        // ── FOTO_MAP ── 30+ fotos por categoría ──────────────────────
+        // Cada key es una palabra clave que puede aparecer en el nombre del producto
         const FOTO_MAP = {
-          ravioles:   'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9',
-          pasta:      'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9',
-          tallar:     'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9',
-          fideos:     'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9',
-          bife:       'https://images.unsplash.com/photo-1546833998-877b37c2e5c6',
-          carne:      'https://images.unsplash.com/photo-1546833998-877b37c2e5c6',
-          asado:      'https://images.unsplash.com/photo-1558030006-450675393462',
-          parrilla:   'https://images.unsplash.com/photo-1558030006-450675393462',
-          milanesa:   'https://images.unsplash.com/photo-1599921841143-819065a55cc6',
-          schnitzel:  'https://images.unsplash.com/photo-1599921841143-819065a55cc6',
-          empanada:   'https://images.unsplash.com/photo-1604152135912-04a022e23696',
-          hamburguesa:'https://images.unsplash.com/photo-1568901346375-23c9450c58cd',
-          burger:     'https://images.unsplash.com/photo-1568901346375-23c9450c58cd',
-          pizza:      'https://images.unsplash.com/photo-1513104890138-7c749659a591',
-          ensalada:   'https://images.unsplash.com/photo-1512621776951-a57141f2eefd',
-          cesar:      'https://images.unsplash.com/photo-1512621776951-a57141f2eefd',
-          helado:     'https://images.unsplash.com/photo-1560008581-09826d1de69e',
-          flan:       'https://images.unsplash.com/photo-1488477181946-6428a0291777',
-          torta:      'https://images.unsplash.com/photo-1578985545062-69928b1d9587',
-          chocolate:  'https://images.unsplash.com/photo-1548907040-4baa42d10919',
-          cafe:       'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085',
-          cerveza:    'https://images.unsplash.com/photo-1535958636474-b021ee887b13',
-          vino:       'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3',
-          agua:       'https://images.unsplash.com/photo-1548839140-29a749e1cf4d',
-          jugo:       'https://images.unsplash.com/photo-1600271886742-f049cd451bba',
-          gaseosa:    'https://images.unsplash.com/photo-1625772299848-391b6a87d7b3',
-          alfajor:    'https://images.unsplash.com/photo-1563805042-7684c019e1cb',
-          medialunas: 'https://images.unsplash.com/photo-1608198093002-ad4e005484ec',
-          croissant:  'https://images.unsplash.com/photo-1608198093002-ad4e005484ec',
-          sandwich:   'https://images.unsplash.com/photo-1528735602780-2552fd46c7af',
-          pancho:     'https://images.unsplash.com/photo-1597933051710-d2e5f4b3f58b',
-          chorizo:    'https://images.unsplash.com/photo-1558030006-450675393462',
-          pollo:      'https://images.unsplash.com/photo-1598103442097-8b74394b95c7',
-          salmon:     'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2',
-          pescado:    'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2',
-          sushi:      'https://images.unsplash.com/photo-1579584425555-c3ce17fd4351',
-          taco:       'https://images.unsplash.com/photo-1565299585323-38d6b0865b47',
-          wrap:       'https://images.unsplash.com/photo-1626700051175-6818013e1d4f',
-          brownie:    'https://images.unsplash.com/photo-1606313564200-e75d5e30476c',
-          mousse:     'https://images.unsplash.com/photo-1541783245831-57d6fb0926d3',
-          tiramisú:   'https://images.unsplash.com/photo-1571877227200-a0d98ea607e9',
-          tiramisu:   'https://images.unsplash.com/photo-1571877227200-a0d98ea607e9',
+          // ── CARNES ──
+          'bife':             'https://images.unsplash.com/photo-1546833998-877b37c2e5c6',
+          'entrecot':         'https://images.unsplash.com/photo-1546833998-877b37c2e5c6',
+          'lomo':             'https://images.unsplash.com/photo-1529193591184-b1d58069ecdd',
+          'vacío':            'https://images.unsplash.com/photo-1548940740-204726a19be3',
+          'vacio':            'https://images.unsplash.com/photo-1548940740-204726a19be3',
+          'asado':            'https://images.unsplash.com/photo-1558030006-450675393462',
+          'parrilla':         'https://images.unsplash.com/photo-1558030006-450675393462',
+          'costilla':         'https://images.unsplash.com/photo-1544025162-d76694265947',
+          'chorizo':          'https://images.unsplash.com/photo-1555939594-58d7cb561ad1',
+          'morcilla':         'https://images.unsplash.com/photo-1555939594-58d7cb561ad1',
+          'bondiola':         'https://images.unsplash.com/photo-1529193591184-b1d58069ecdd',
+
+          // ── MILANESA ──
+          'milanesa':         'https://images.unsplash.com/photo-1599921841143-819065a55cc6',
+          'suprema':          'https://images.unsplash.com/photo-1604908176997-125f25cc6f3d',
+          'napolitana':       'https://images.unsplash.com/photo-1599921841143-819065a55cc6',
+
+          // ── POLLO ──
+          'pollo':            'https://images.unsplash.com/photo-1598103442097-8b74394b95c7',
+          'pechuga':          'https://images.unsplash.com/photo-1604908176997-125f25cc6f3d',
+
+          // ── PASTAS ──
+          'raviole':          'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9',
+          'ravioli':          'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9',
+          'pasta':            'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9',
+          'spaghetti':        'https://images.unsplash.com/photo-1551183053-bf91798d047e',
+          'spaguetti':        'https://images.unsplash.com/photo-1551183053-bf91798d047e',
+          'tallar':           'https://images.unsplash.com/photo-1551183053-bf91798d047e',
+          'fideo':            'https://images.unsplash.com/photo-1551183053-bf91798d047e',
+          'ñoqui':            'https://images.unsplash.com/photo-1563379236017-4eec2ebf9cfe',
+          'gnochi':           'https://images.unsplash.com/photo-1563379236017-4eec2ebf9cfe',
+          'lasaña':           'https://images.unsplash.com/photo-1574894709920-11b28e7367e3',
+          'lasagna':          'https://images.unsplash.com/photo-1574894709920-11b28e7367e3',
+          'canelone':         'https://images.unsplash.com/photo-1481931098730-318b6f776db0',
+
+          // ── PIZZA ──
+          'pizza':            'https://images.unsplash.com/photo-1513104890138-7c749659a591',
+          'fugazza':          'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38',
+          'muzarella':        'https://images.unsplash.com/photo-1574071318508-1cdbab80d002',
+
+          // ── HAMBURGUESAS ──
+          'hamburguesa':      'https://images.unsplash.com/photo-1568901346375-23c9450c58cd',
+          'burger':           'https://images.unsplash.com/photo-1568901346375-23c9450c58cd',
+          'smash':            'https://images.unsplash.com/photo-1550547660-d9450f859349',
+
+          // ── SÁNDWICHES ──
+          'sandwich':         'https://images.unsplash.com/photo-1528735602780-2552fd46c7af',
+          'sánguche':         'https://images.unsplash.com/photo-1528735602780-2552fd46c7af',
+          'sanguche':         'https://images.unsplash.com/photo-1528735602780-2552fd46c7af',
+          'pancho':           'https://images.unsplash.com/photo-1597933051710-d2e5f4b3f58b',
+          'hotdog':           'https://images.unsplash.com/photo-1597933051710-d2e5f4b3f58b',
+          'wrap':             'https://images.unsplash.com/photo-1626700051175-6818013e1d4f',
+          'taco':             'https://images.unsplash.com/photo-1565299585323-38d6b0865b47',
+
+          // ── EMPANADAS ──
+          'empanada':         'https://images.unsplash.com/photo-1604152135912-04a022e23696',
+
+          // ── PESCADOS / SUSHI ──
+          'salmon':           'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2',
+          'salmón':           'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2',
+          'pescado':          'https://images.unsplash.com/photo-1580822184713-fc5400e7fe10',
+          'trucha':           'https://images.unsplash.com/photo-1467003909585-2f8a72700288',
+          'sushi':            'https://images.unsplash.com/photo-1579584425555-c3ce17fd4351',
+          'roll':             'https://images.unsplash.com/photo-1617196034183-421b4040d20d',
+
+          // ── ENSALADAS ──
+          'ensalada':         'https://images.unsplash.com/photo-1512621776951-a57141f2eefd',
+          'cesar':            'https://images.unsplash.com/photo-1550304943-4f24f54ddde9',
+          'caprese':          'https://images.unsplash.com/photo-1608032364895-84f4f5a98e7d',
+
+          // ── SOPAS / GUISOS ──
+          'sopa':             'https://images.unsplash.com/photo-1547592180-85f173990554',
+          'locro':            'https://images.unsplash.com/photo-1547592180-85f173990554',
+          'guiso':            'https://images.unsplash.com/photo-1547592180-85f173990554',
+
+          // ── POSTRES ──
+          'flan':             'https://images.unsplash.com/photo-1488477181946-6428a0291777',
+          'torta':            'https://images.unsplash.com/photo-1578985545062-69928b1d9587',
+          'cake':             'https://images.unsplash.com/photo-1578985545062-69928b1d9587',
+          'cheesecake':       'https://images.unsplash.com/photo-1565958011703-44f9829ba187',
+          'helado':           'https://images.unsplash.com/photo-1560008581-09826d1de69e',
+          'ice cream':        'https://images.unsplash.com/photo-1560008581-09826d1de69e',
+          'alfajor':          'https://images.unsplash.com/photo-1563805042-7684c019e1cb',
+          'brownie':          'https://images.unsplash.com/photo-1606313564200-e75d5e30476c',
+          'mousse':           'https://images.unsplash.com/photo-1541783245831-57d6fb0926d3',
+          'tiramisu':         'https://images.unsplash.com/photo-1571877227200-a0d98ea607e9',
+          'tiramisú':         'https://images.unsplash.com/photo-1571877227200-a0d98ea607e9',
+          'churro':           'https://images.unsplash.com/photo-1541614101331-1a5a3a194e92',
+          'postre':           'https://images.unsplash.com/photo-1488477181946-6428a0291777',
+          'chocolate':        'https://images.unsplash.com/photo-1548907040-4baa42d10919',
+
+          // ── PANADERÍA / DESAYUNO ──
+          'medialuna':        'https://images.unsplash.com/photo-1608198093002-ad4e005484ec',
+          'croissant':        'https://images.unsplash.com/photo-1608198093002-ad4e005484ec',
+          'facturas':         'https://images.unsplash.com/photo-1608198093002-ad4e005484ec',
+          'tostada':          'https://images.unsplash.com/photo-1525351484163-7529414344d8',
+          'pan':              'https://images.unsplash.com/photo-1509440159596-0249088772ff',
+          'waffles':          'https://images.unsplash.com/photo-1562376552-0d160a2f238d',
+          'pancake':          'https://images.unsplash.com/photo-1554520735-0a6b8b6ce8b7',
+
+          // ── BEBIDAS ──
+          'café':             'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085',
+          'cafe':             'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085',
+          'cortado':          'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085',
+          'latte':            'https://images.unsplash.com/photo-1561882468-9110e03e0f78',
+          'capuccino':        'https://images.unsplash.com/photo-1561882468-9110e03e0f78',
+          'cappuccino':       'https://images.unsplash.com/photo-1561882468-9110e03e0f78',
+          'té':               'https://images.unsplash.com/photo-1558160074-4d7d8bdf4256',
+          'te ':              'https://images.unsplash.com/photo-1558160074-4d7d8bdf4256',
+          'mate':             'https://images.unsplash.com/photo-1589209773573-b3f7e7ef3a9e',
+          'cerveza':          'https://images.unsplash.com/photo-1535958636474-b021ee887b13',
+          'birra':            'https://images.unsplash.com/photo-1535958636474-b021ee887b13',
+          'vino':             'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3',
+          'champagne':        'https://images.unsplash.com/photo-1504474298436-f5f5f85a4695',
+          'agua':             'https://images.unsplash.com/photo-1548839140-29a749e1cf4d',
+          'gaseosa':          'https://images.unsplash.com/photo-1625772299848-391b6a87d7b3',
+          'coca':             'https://images.unsplash.com/photo-1625772299848-391b6a87d7b3',
+          'jugo':             'https://images.unsplash.com/photo-1600271886742-f049cd451bba',
+          'limonada':         'https://images.unsplash.com/photo-1558642452-9d2a7deb7f62',
+          'smoothie':         'https://images.unsplash.com/photo-1553530666-ba11a90bb099',
+          'milkshake':        'https://images.unsplash.com/photo-1572490122747-3968b75cc699',
         }
         const prodNorm = norm(prod.nombre||prod.name)
         let photoUrl = null
