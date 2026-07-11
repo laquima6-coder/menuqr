@@ -4411,7 +4411,7 @@ function ScreenPlusIA({ local, prods = [], cats = [], setProds }) {
         body: JSON.stringify({
           messages: [{ role: "user", content: userMsg }],
           restaurantName: local?.nombre,
-          restaurantId: local?.id,
+          restaurantId: local?.restauranteId,
           context: {
             productos: prods.map(p => ({
               id: p.id,
@@ -4437,7 +4437,7 @@ function ScreenPlusIA({ local, prods = [], cats = [], setProds }) {
         if (data.needsReload && data.actions?.length > 0) {
           setLastAction(data.actions[0]);
           // Trigger reload via supabase (si setProds disponible, hacer fetch)
-          if (setProds && local?.id) {
+          if (setProds && local?.restauranteId) {
             try {
               const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
               const sbClient = createClient(
@@ -4447,7 +4447,7 @@ function ScreenPlusIA({ local, prods = [], cats = [], setProds }) {
               const { data: freshProds } = await sbClient
                 .from("productos")
                 .select("*")
-                .eq("restaurante_id", local.id)
+                .eq("restaurante_id", local.restauranteId)
                 .order("orden");
               if (freshProds) setProds(freshProds);
             } catch(e) { console.warn("Reload failed:", e) }
