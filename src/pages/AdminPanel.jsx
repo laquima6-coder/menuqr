@@ -4543,135 +4543,298 @@ function ScreenPlusIA({ local, prods = [], cats = [], setProds }) {
 /* ══════════════════════════════════════════════════════════════
    SCREEN PLUS FIGMA — Editor visual de menú
 ══════════════════════════════════════════════════════════════ */
-function ScreenPlusFigma({ prods, cats, local }) {
-  const [selectedCat, setSelectedCat] = React.useState(null);
-  const [selectedProd, setSelectedProd] = React.useState(null);
-  const [activeTool, setActiveTool] = React.useState("select");
-  const [bgColor, setBgColor] = React.useState(local?.color || "#C9A84C");
-  const [showExport, setShowExport] = React.useState(false);
+function ScreenPlusFigma({ prods, cats, local, setLocal }) {
+  const SB_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ3b3ZmbHNhZ2hudXR5c2p5YXVzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2Njc0NzUsImV4cCI6MjA5NjI0MzQ3NX0.HtkD4AK35MSf4o9oNeGTlsooE0zSodjFVZH94ipCUAo";
+  const FONTS = [
+    'Outfit','Inter','Poppins','Roboto','Montserrat','Lato','Nunito','Raleway',
+    'Josefin Sans','DM Sans','Oswald','Merriweather','Ubuntu','Quicksand',
+    'Dancing Script','Pacifico','Bebas Neue','Cinzel','Sacramento','Barlow',
+  ];
+  const SCREENS = {
+    mobile:  { label: '📱 Celular',  w: 375  },
+    tablet:  { label: '📲 Tablet',   w: 700  },
+    vitrina: { label: '🖥️ Vitrina',  w: 1100 },
+  };
+  const PRESETS = [
+    { name:'Oscuro Oro',  accent:'#C9A84C', cardBg:'#0A0806', text:'#FFFFFF', panelBg:'#060810' },
+    { name:'Blanco',      accent:'#6366F1', cardBg:'#FFFFFF', text:'#1a1a1a', panelBg:'#F8F9FA' },
+    { name:'Verde',       accent:'#22C55E', cardBg:'#0A1A0A', text:'#FFFFFF', panelBg:'#050F05' },
+    { name:'Rojo',        accent:'#EF4444', cardBg:'#1A0505', text:'#FFFFFF', panelBg:'#0F0404' },
+    { name:'Azul',        accent:'#3B82F6', cardBg:'#050A1A', text:'#FFFFFF', panelBg:'#030814' },
+    { name:'Rosado',      accent:'#EC4899', cardBg:'#1A0510', text:'#FFFFFF', panelBg:'#120308' },
+    { name:'Naranja',     accent:'#F97316', cardBg:'#1A0D00', text:'#FFFFFF', panelBg:'#0F0800' },
+    { name:'Violeta',     accent:'#A855F7', cardBg:'#0D0518', text:'#FFFFFF', panelBg:'#08030F' },
+  ];
 
-  const cat = selectedCat ? cats.find(c => c.id === selectedCat) : null;
-  const catProds = selectedCat ? prods.filter(p => p.cat === selectedCat && p.active !== false) : [];
+  const cfg = local?.config || {};
+  const [font,       setFont]       = React.useState(cfg.font       || 'Outfit');
+  const [fontSize,   setFontSize]   = React.useState(cfg.fontSize   || 14);
+  const [accentColor,setAccentColor]= React.useState(local?.color   || '#C9A84C');
+  const [cardBg,     setCardBg]     = React.useState(cfg.cardBg     || '#0A0806');
+  const [textColor,  setTextColor]  = React.useState(cfg.textColor  || '#FFFFFF');
+  const [panelBg,    setPanelBg]    = React.useState(cfg.panelBg    || '#060810');
+  const [zoom,       setZoom]       = React.useState(1);
+  const [screen,     setScreen]     = React.useState('mobile');
+  const [selCat,     setSelCat]     = React.useState(null);
+  const [exporting,  setExporting]  = React.useState(false);
+  const [saved,      setSaved]      = React.useState(false);
+  const previewRef = React.useRef(null);
+
+  // Cargar Google Font dinámicamente
+  React.useEffect(() => {
+    const slug = font.replace(/ /g, '+');
+    const id   = 'gfont-' + slug;
+    if (!document.getElementById(id)) {
+      const lnk = document.createElement('link');
+      lnk.id   = id;
+      lnk.rel  = 'stylesheet';
+      lnk.href = `https://fonts.googleapis.com/css2?family=${slug}:wght@400;700;800&display=swap`;
+      document.head.appendChild(lnk);
+    }
+  }, [font]);
+
+  async function saveDesign() {
+    if (!local?.restauranteId) return;
+    const newCfg = { ...cfg, font, fontSize, cardBg, textColor, panelBg };
+    try {
+      const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
+      const sb = createClient('https://fwovflsaghnutysjyaus.supabase.co', SB_ANON);
+      await sb.from('restaurantes').update({ color: accentColor, config: newCfg }).eq('id', local.restauranteId);
+      if (setLocal) setLocal(l => ({ ...l, color: accentColor, config: newCfg }));
+      setSaved(true); setTimeout(() => setSaved(false), 2500);
+    } catch(e) { alert('Error guardando: ' + e.message); }
+  }
+
+  async function doExport(action) {
+    if (!previewRef.current || exporting) return;
+    setExporting(true);
+    try {
+      const canvas = await html2canvas(previewRef.current, { scale: 2, useCORS: true, backgroundColor: cardBg });
+      if (action === 'download') {
+        const a = document.createElement('a');
+        a.href = canvas.toDataURL('image/png');
+        a.download = `${(local?.nombre||'menu').replace(/\s+/g,'-')}-diseño.png`;
+        a.click();
+      } else if (action === 'copy') {
+        canvas.toBlob(async blob => {
+          try { await navigator.clipboard.write([new ClipboardItem({'image/png': blob})]); alert('✅ Imagen copiada al portapapeles'); }
+          catch(e) { alert('Tu navegador no soporta copiar imágenes directamente'); }
+        });
+      } else if (action === 'share') {
+        canvas.toBlob(async blob => {
+          const file = new File([blob], 'menu.png', { type: 'image/png' });
+          if (navigator.share && navigator.canShare?.({ files: [file] })) {
+            await navigator.share({ files: [file], title: local?.nombre || 'Mi carta', text: 'Mirá el diseño de mi carta digital' });
+          } else {
+            const a = document.createElement('a');
+            a.href = canvas.toDataURL('image/png');
+            a.download = 'menu.png';
+            a.click();
+            alert('Compartir no disponible en este navegador — se descargó la imagen');
+          }
+        });
+      }
+    } catch(e) { alert('Error al exportar: ' + e.message); }
+    finally { setExporting(false); }
+  }
+
+  const catProds = selCat
+    ? prods.filter(p => (p.cat||p.categoria_id) === selCat && p.activo !== false && p.active !== false)
+    : prods.filter(p => p.activo !== false && p.active !== false).slice(0, 6);
+  const catObj = selCat ? cats.find(c => c.id === selCat) : null;
+  const sw = SCREENS[screen].w;
+
+  const cardStyle = {
+    fontFamily: `'${font}', sans-serif`,
+    fontSize: fontSize,
+    background: cardBg,
+    color: textColor,
+    width: sw,
+    borderRadius: 20,
+    overflow: 'hidden',
+    boxShadow: '0 24px 64px rgba(0,0,0,.7)',
+    transformOrigin: 'top center',
+    transform: `scale(${zoom})`,
+    marginBottom: `${-(sw * (1 - zoom) * 0.5)}px`,
+  };
+
+  const Btn = ({ children, onClick, gold, disabled }) => (
+    <button onClick={onClick} disabled={disabled}
+      style={{ padding: '7px 14px', borderRadius: 8, border: `1px solid ${gold ? '#C9A84C' : 'var(--border)'}`,
+        background: gold ? 'linear-gradient(135deg,#C9A84C,#a07830)' : 'var(--bg3)',
+        color: gold ? '#000' : 'var(--text2)', fontSize: 12, fontWeight: 700,
+        cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? .5 : 1 }}>
+      {children}
+    </button>
+  );
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 60px - 48px)", gap: 0 }}>
+    <div style={{ display:'flex', flexDirection:'column', height:'calc(100vh - 60px - 48px)' }}>
       {/* Header */}
-      <div className="ap-card" style={{ padding: "12px 18px", marginBottom: 16, display: "flex", alignItems: "center", gap: 12 }}>
-        <div style={{ width: 44, height: 44, borderRadius: 12, background: "rgba(6,182,212,.2)", border: "1px solid rgba(6,182,212,.3)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22 }}>🎨</div>
+      <div className="ap-card" style={{ padding:'12px 18px', marginBottom:12, display:'flex', alignItems:'center', gap:10, flexWrap:'wrap' }}>
+        <div style={{ width:38, height:38, borderRadius:10, background:'rgba(6,182,212,.2)', border:'1px solid rgba(6,182,212,.3)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18 }}>🎨</div>
         <div>
-          <div style={{ fontWeight: 800, fontSize: 16 }}>Editor Visual de Menú</div>
-          <div style={{ fontSize: 11, color: "var(--text3)" }}>Diseñá tu carta visualmente · {local?.nombre}</div>
+          <div style={{ fontWeight:800, fontSize:14 }}>Editor Visual</div>
+          <div style={{ fontSize:10, color:'var(--text3)' }}>{local?.nombre} · PLUS FIGMA</div>
         </div>
-        <span className="ap-plus-badge ap-plus-figma" style={{ marginLeft: "auto" }}>PLUS FIGMA ACTIVO</span>
-        <button className="ap-btn ap-btn-gold" style={{ fontSize: 11, padding: "6px 14px" }} onClick={() => setShowExport(true)}>↓ Exportar</button>
+        <div style={{ marginLeft:'auto', display:'flex', gap:6, flexWrap:'wrap' }}>
+          <Btn onClick={saveDesign} gold>{saved ? '✅ Guardado' : '💾 Guardar'}</Btn>
+          <Btn onClick={() => doExport('download')} disabled={exporting}>⬇ Descargar</Btn>
+          <Btn onClick={() => doExport('copy')}     disabled={exporting}>📋 Copiar</Btn>
+          <Btn onClick={() => doExport('share')}    disabled={exporting}>📤 Compartir</Btn>
+        </div>
       </div>
 
-      <div style={{ display: "flex", gap: 16, flex: 1, minHeight: 0 }}>
-        {/* Panel izquierdo — categorías y productos */}
-        <div style={{ width: 220, display: "flex", flexDirection: "column", gap: 8, overflowY: "auto" }}>
-          <div style={{ fontSize: 10, fontWeight: 700, color: "var(--text3)", letterSpacing: 2, marginBottom: 4 }}>CATEGORÍAS</div>
-          {cats.map(c => (
-            <div key={c.id} onClick={() => { setSelectedCat(c.id); setSelectedProd(null); }}
-              style={{ padding: "10px 12px", borderRadius: 8, cursor: "pointer", border: `1px solid ${selectedCat === c.id ? "rgba(6,182,212,.4)" : "var(--border)"}`, background: selectedCat === c.id ? "rgba(6,182,212,.1)" : "var(--bg3)", fontSize: 13, color: selectedCat === c.id ? "#22D3EE" : "var(--text2)", display: "flex", gap: 8, alignItems: "center", transition: ".15s" }}>
-              <span>{c.icon || "📁"}</span>
-              <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.label || c.nombre}</span>
-              <span style={{ fontSize: 10, color: "var(--text3)" }}>{prods.filter(p => p.cat === c.id).length}</span>
+      <div style={{ display:'flex', gap:12, flex:1, minHeight:0 }}>
+        {/* Panel izquierdo */}
+        <div style={{ width:230, overflowY:'auto', display:'flex', flexDirection:'column', gap:10 }}>
+
+          {/* Tipografía */}
+          <div className="ap-card" style={{ padding:14 }}>
+            <div style={{ fontSize:10, fontWeight:700, color:'var(--text3)', letterSpacing:2, marginBottom:10 }}>TIPOGRAFÍA</div>
+            <select value={font} onChange={e => setFont(e.target.value)}
+              style={{ width:'100%', padding:'8px 10px', background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:8, color:'var(--text1)', fontSize:13, marginBottom:10, fontFamily:`'${font}',sans-serif` }}>
+              {FONTS.map(f => <option key={f} value={f}>{f}</option>)}
+            </select>
+            <div style={{ fontSize:11, color:'var(--text3)', marginBottom:6 }}>Tamaño: <b style={{ color:'var(--text1)' }}>{fontSize}px</b></div>
+            <input type="range" min={11} max={22} value={fontSize} onChange={e => setFontSize(+e.target.value)} style={{ width:'100%', accentColor:'#6366F1' }} />
+            <div style={{ display:'flex', justifyContent:'space-between', fontSize:9, color:'var(--text3)', marginTop:3 }}>
+              <span>Pequeña</span><span>Normal</span><span>Grande</span>
             </div>
-          ))}
-          {cats.length === 0 && <div style={{ color: "var(--text3)", fontSize: 12, textAlign: "center", padding: 20 }}>Sin categorías</div>}
-
-          {selectedCat && catProds.length > 0 && (
-            <>
-              <div style={{ fontSize: 10, fontWeight: 700, color: "var(--text3)", letterSpacing: 2, marginTop: 8, marginBottom: 4 }}>PRODUCTOS</div>
-              {catProds.map(p => (
-                <div key={p.id} onClick={() => setSelectedProd(p.id)}
-                  style={{ padding: "8px 12px", borderRadius: 8, cursor: "pointer", border: `1px solid ${selectedProd === p.id ? "rgba(6,182,212,.4)" : "var(--border)"}`, background: selectedProd === p.id ? "rgba(6,182,212,.08)" : "var(--bg2)", fontSize: 12, color: "var(--text2)", display: "flex", gap: 8, alignItems: "center", transition: ".15s" }}>
-                  {p.foto_url ? <img src={p.foto_url} alt="" style={{ width: 28, height: 28, borderRadius: 6, objectFit: "cover", flexShrink: 0 }} onError={e => e.target.style.display="none"} /> : <div style={{ width: 28, height: 28, borderRadius: 6, background: "var(--bg4)", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>🍽️</div>}
-                  <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</span>
-                </div>
-              ))}
-            </>
-          )}
-        </div>
-
-        {/* Canvas principal */}
-        <div className="ap-figma-canvas" style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-          <div className="ap-figma-toolbar">
-            {["select","text","color","layout"].map(t => (
-              <button key={t} className={`ap-figma-tool${activeTool === t ? " active" : ""}`} onClick={() => setActiveTool(t)}>
-                {t === "select" ? "↖ Seleccionar" : t === "text" ? "T Texto" : t === "color" ? "🎨 Color" : "⊞ Layout"}
-              </button>
-            ))}
-            <div style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" }}>
-              <div style={{ fontSize: 11, color: "var(--text3)" }}>Color base:</div>
-              <input type="color" value={bgColor} onChange={async e => {
-                const hex = e.target.value;
-                setBgColor(hex);
-                if (local?.restauranteId) {
-                  try {
-                    await import("https://esm.sh/@supabase/supabase-js@2").then(({ createClient }) =>
-                      createClient("https://fwovflsaghnutysjyaus.supabase.co","eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ3b3ZmbHNhZ2hudXR5c2p5YXVzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2Njc0NzUsImV4cCI6MjA5NjI0MzQ3NX0.HtkD4AK35MSf4o9oNeGTlsooE0zSodjFVZH94ipCUAo")
-                        .from("restaurantes").update({ color: hex }).eq("id", local.restauranteId)
-                    );
-                    if (setLocal) setLocal(l => ({ ...l, color: hex }));
-                  } catch(e) {}
-                }
-              }}
-                style={{ width: 30, height: 24, border: "1px solid var(--border)", borderRadius: 6, cursor: "pointer", background: "transparent", padding: 0 }} />
+            <div style={{ marginTop:12, padding:'10px 12px', background:'var(--bg3)', borderRadius:8, fontFamily:`'${font}',sans-serif`, fontSize:fontSize, color:'var(--text1)', lineHeight:1.5 }}>
+              <div style={{ fontWeight:800 }}>Bife de chorizo</div>
+              <div style={{ fontSize:fontSize*0.8, opacity:.6 }}>Con papas fritas</div>
+              <div style={{ fontWeight:700, color:accentColor }}>${(4500).toLocaleString('es-AR')}</div>
             </div>
           </div>
 
-          {/* Preview del menú */}
-          <div style={{ flex: 1, overflowY: "auto", padding: 24, background: "var(--bg4)" }}>
-            <div style={{ maxWidth: 400, margin: "0 auto", background: "#0A0806", borderRadius: 20, overflow: "hidden", boxShadow: "0 20px 60px rgba(0,0,0,.5)" }}>
-              {/* Header del menú */}
-              <div style={{ background: `linear-gradient(135deg, ${bgColor}22, ${bgColor}11)`, padding: "24px 20px", borderBottom: `1px solid ${bgColor}33`, textAlign: "center" }}>
-                <div style={{ fontSize: 22, fontWeight: 800, color: "#fff" }}>{local?.nombre || "Mi Restaurante"}</div>
-                <div style={{ fontSize: 12, color: "rgba(255,255,255,.5)", marginTop: 4 }}>{local?.descripcion || "Carta digital"}</div>
+          {/* Colores */}
+          <div className="ap-card" style={{ padding:14 }}>
+            <div style={{ fontSize:10, fontWeight:700, color:'var(--text3)', letterSpacing:2, marginBottom:10 }}>COLORES</div>
+            {[
+              ['Color principal', accentColor, setAccentColor],
+              ['Fondo carta',     cardBg,      setCardBg     ],
+              ['Color texto',     textColor,   setTextColor  ],
+              ['Fondo del panel', panelBg,     setPanelBg    ],
+            ].map(([label, val, setter]) => (
+              <div key={label} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:9 }}>
+                <div style={{ fontSize:12, color:'var(--text2)' }}>{label}</div>
+                <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+                  <div style={{ width:18, height:18, borderRadius:4, background:val, border:'1px solid var(--border)' }} />
+                  <input type="color" value={val} onChange={e => setter(e.target.value)}
+                    style={{ width:30, height:24, border:'none', background:'transparent', cursor:'pointer', padding:0 }} />
+                  <span style={{ fontSize:10, color:'var(--text3)', fontFamily:'monospace' }}>{val}</span>
+                </div>
+              </div>
+            ))}
+
+            {/* Presets */}
+            <div style={{ fontSize:10, fontWeight:700, color:'var(--text3)', letterSpacing:2, marginTop:6, marginBottom:8 }}>TEMAS RÁPIDOS</div>
+            <div style={{ display:'flex', flexWrap:'wrap', gap:5 }}>
+              {PRESETS.map(p => (
+                <button key={p.name} onClick={() => { setAccentColor(p.accent); setCardBg(p.cardBg); setTextColor(p.text); setPanelBg(p.panelBg); }}
+                  style={{ padding:'4px 10px', borderRadius:20, border:`2px solid ${p.accent}`, background:p.cardBg, color:p.accent, fontSize:10, fontWeight:700, cursor:'pointer' }}>
+                  {p.name}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Categorías */}
+          <div className="ap-card" style={{ padding:14 }}>
+            <div style={{ fontSize:10, fontWeight:700, color:'var(--text3)', letterSpacing:2, marginBottom:8 }}>SECCIÓN</div>
+            {[null, ...cats].map(c => (
+              <div key={c?.id||'all'} onClick={() => setSelCat(c?.id||null)}
+                style={{ padding:'7px 10px', borderRadius:6, cursor:'pointer', marginBottom:3,
+                  background: selCat===(c?.id||null) ? 'rgba(6,182,212,.15)' : 'var(--bg3)',
+                  border:`1px solid ${selCat===(c?.id||null) ? 'rgba(6,182,212,.4)' : 'var(--border)'}`,
+                  fontSize:12, color: selCat===(c?.id||null) ? '#22D3EE' : 'var(--text2)' }}>
+                {c ? `${c.icon||''} ${c.label}` : '⭐ Destacados (todos)'}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Canvas */}
+        <div style={{ flex:1, display:'flex', flexDirection:'column', minWidth:0 }}>
+          {/* Toolbar canvas */}
+          <div style={{ display:'flex', gap:8, marginBottom:10, alignItems:'center', flexWrap:'wrap' }}>
+            <div style={{ display:'flex', gap:3, background:'var(--bg3)', borderRadius:8, padding:3 }}>
+              {Object.entries(SCREENS).map(([k,v]) => (
+                <button key={k} onClick={() => setScreen(k)}
+                  style={{ padding:'6px 12px', borderRadius:6, border:'none', fontSize:12, cursor:'pointer', fontWeight: screen===k ? 700 : 400,
+                    background: screen===k ? 'var(--bg2)' : 'transparent', color: screen===k ? 'var(--text1)' : 'var(--text3)' }}>
+                  {v.label}
+                </button>
+              ))}
+            </div>
+            <div style={{ display:'flex', alignItems:'center', gap:6, background:'var(--bg3)', borderRadius:8, padding:'5px 12px' }}>
+              <button onClick={() => setZoom(z => Math.max(.2, +(z-.1).toFixed(1)))} style={{ background:'none', border:'none', color:'var(--text1)', fontSize:18, cursor:'pointer', lineHeight:1, padding:'0 2px' }}>−</button>
+              <span style={{ fontSize:12, color:'var(--text2)', minWidth:38, textAlign:'center' }}>{Math.round(zoom*100)}%</span>
+              <button onClick={() => setZoom(z => Math.min(2,  +(z+.1).toFixed(1)))} style={{ background:'none', border:'none', color:'var(--text1)', fontSize:18, cursor:'pointer', lineHeight:1, padding:'0 2px' }}>+</button>
+              <button onClick={() => setZoom(1)} style={{ background:'none', border:'none', color:'var(--text3)', fontSize:10, cursor:'pointer', marginLeft:4 }}>1:1</button>
+            </div>
+            <span style={{ fontSize:10, color:'var(--text3)', marginLeft:'auto' }}>{sw}px · {exporting ? '⏳ Exportando…' : 'Listo'}</span>
+          </div>
+
+          {/* Preview */}
+          <div style={{ flex:1, overflowY:'auto', overflowX:'auto', background:'#12122a', borderRadius:12, padding:32, display:'flex', justifyContent:'center', alignItems:'flex-start' }}>
+            <div ref={previewRef} style={cardStyle}>
+              {/* Header carta */}
+              <div style={{ background:`linear-gradient(135deg,${accentColor}44,${accentColor}11)`, padding: sw > 700 ? '32px 40px' : '22px 18px', borderBottom:`1px solid ${accentColor}33`, textAlign:'center' }}>
+                <div style={{ fontSize: sw > 700 ? fontSize*2.2 : fontSize*1.7, fontWeight:800, color:textColor, fontFamily:`'${font}',sans-serif` }}>{local?.nombre || 'Mi Restaurante'}</div>
+                <div style={{ fontSize:fontSize*0.85, color:`${textColor}80`, marginTop:6, fontFamily:`'${font}',sans-serif` }}>
+                  {catObj ? `${catObj.icon||''} ${catObj.label}` : '✨ Carta digital'}
+                </div>
               </div>
 
-              {/* Contenido */}
-              {selectedCat && cat ? (
-                <div style={{ padding: 16 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: bgColor, letterSpacing: 2, marginBottom: 12 }}>{cat.icon} {(cat.label || cat.nombre || "").toUpperCase()}</div>
-                  {catProds.map(p => (
-                    <div key={p.id} style={{ display: "flex", gap: 12, padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,.06)", cursor: "pointer", background: selectedProd === p.id ? "rgba(255,255,255,.04)" : "transparent", borderRadius: 8, paddingLeft: "8px", paddingRight: "8px", paddingTop: "10px", paddingBottom: "8px", marginBottom: 4 }} onClick={() => setSelectedProd(p.id)}>
-                      {p.foto_url && <img src={p.foto_url} alt="" style={{ width: 56, height: 56, borderRadius: 10, objectFit: "cover", flexShrink: 0 }} onError={e => e.target.style.display="none"} />}
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>{p.name}</div>
-                        <div style={{ fontSize: 11, color: "rgba(255,255,255,.4)", marginTop: 2 }}>{p.desc}</div>
-                        <div style={{ fontSize: 15, fontWeight: 800, color: bgColor, marginTop: 6 }}>${p.price?.toLocaleString("es-AR")}</div>
+              {/* Productos */}
+              <div style={{ padding: sw > 700 ? '24px 32px' : '14px 14px',
+                display: sw > 700 ? 'grid' : 'block',
+                gridTemplateColumns: sw > 1000 ? 'repeat(3,1fr)' : sw > 700 ? 'repeat(2,1fr)' : undefined,
+                gap: sw > 700 ? 14 : undefined }}>
+                {catProds.slice(0, sw > 1000 ? 9 : sw > 700 ? 6 : 6).map(p => {
+                  const nombre = p.nombre||p.name||'';
+                  const precio = p.precio||p.price||0;
+                  const desc   = p.descripcion||p.desc||'';
+                  const foto   = p.foto_url||p.imagen||'';
+                  const imgSz  = sw > 700 ? 72 : 52;
+                  return (
+                    <div key={p.id} style={{ display:'flex', gap:10, padding: sw > 700 ? 12 : '10px 0',
+                      borderBottom: sw <= 700 ? `1px solid ${textColor}10` : 'none',
+                      background: sw > 700 ? `${textColor}06` : 'transparent',
+                      borderRadius: sw > 700 ? 12 : 0, marginBottom: sw > 700 ? 0 : 2 }}>
+                      {foto
+                        ? <img src={foto} alt="" style={{ width:imgSz, height:imgSz, borderRadius:10, objectFit:'cover', flexShrink:0 }} onError={e=>e.target.style.display='none'} />
+                        : <div style={{ width:imgSz, height:imgSz, borderRadius:10, background:`${accentColor}22`, flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center', fontSize: sw > 700 ? 28 : 20 }}>🍽️</div>
+                      }
+                      <div style={{ flex:1, minWidth:0 }}>
+                        <div style={{ fontSize:fontSize, fontWeight:700, color:textColor, fontFamily:`'${font}',sans-serif`, overflow:'hidden', whiteSpace:'nowrap', textOverflow:'ellipsis' }}>{nombre}</div>
+                        {desc && <div style={{ fontSize:fontSize*0.8, color:`${textColor}60`, marginTop:2, overflow:'hidden', whiteSpace:'nowrap', textOverflow:'ellipsis', fontFamily:`'${font}',sans-serif` }}>{desc}</div>}
+                        <div style={{ fontSize:fontSize*1.1, fontWeight:800, color:accentColor, marginTop:4, fontFamily:`'${font}',sans-serif` }}>${precio.toLocaleString('es-AR')}</div>
                       </div>
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <div style={{ padding: 32, textAlign: "center", color: "rgba(255,255,255,.3)", fontSize: 13 }}>
-                  Seleccioná una categoría para previsualizar la carta
-                </div>
-              )}
+                  );
+                })}
+                {catProds.length === 0 && (
+                  <div style={{ textAlign:'center', padding:40, color:`${textColor}40`, fontSize:13, fontFamily:`'${font}',sans-serif` }}>
+                    Seleccioná una categoría para previsualizar
+                  </div>
+                )}
+              </div>
+
+              {/* Footer */}
+              <div style={{ padding:'14px 20px', borderTop:`1px solid ${accentColor}22`, textAlign:'center' }}>
+                <div style={{ fontSize:fontSize*0.75, color:`${textColor}40`, fontFamily:`'${font}',sans-serif` }}>Powered by PedidosQR 🍽️</div>
+              </div>
             </div>
           </div>
         </div>
       </div>
-
-      {/* Modal export */}
-      {showExport && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.75)", zIndex: 500, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <div style={{ background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: 16, padding: 28, width: 360, textAlign: "center" }}>
-            <div style={{ fontSize: 32, marginBottom: 12 }}>🎨</div>
-            <div style={{ fontWeight: 800, fontSize: 18, marginBottom: 8 }}>Exportar diseño</div>
-            <div style={{ fontSize: 13, color: "var(--text3)", marginBottom: 24 }}>Descargá tu menú diseñado para imprimirlo o compartirlo</div>
-            <div style={{ display: "flex", gap: 10, flexDirection: "column" }}>
-              <button className="ap-btn ap-btn-gold" style={{ fontSize: 13 }} onClick={() => { window.print(); setShowExport(false); }}>🖨️ Imprimir / PDF</button>
-              <button className="ap-btn ap-btn-ghost" onClick={() => setShowExport(false)}>Cancelar</button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
+
 
 
 export default function AdminPanel({ local, setLocal, cats, setCats, prods, setProds, authUser, onLogout }) {
