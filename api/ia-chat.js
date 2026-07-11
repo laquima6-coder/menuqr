@@ -739,9 +739,130 @@ module.exports = async function handler(req, res) {
     }
   }
 
+  // ══ 22. AGREGAR PRODUCTO ═══════════════════════════════════
+  if (!content) {
+    const mAdd = raw.match(/(?:agre[gh]|sum[aáe]|cre[aáe]|new)\s+(?:producto|plato|item|dish)?\s*[:\-]?\s*(.+?)(?:\s+(?:precio|a)\s*\$?\s*([\d.,]+))?$/i)
+    if (mAdd && mAdd[1] && mAdd[1].length > 2) {
+      const nombre = mAdd[1].replace(/\s+(?:precio|a)\s*\$?.*/i,'').trim()
+      const precio = mAdd[2] ? parseInt(mAdd[2].replace(/\D/g,'')) : 0
+      content = `Para agregar **${nombre}** necesito que uses el panel de Productos (botón "+" azul).`
+      if (precio) content += ` El precio sería ${money(precio)}.`
+      content += `
+
+💡 *Tip: también podés pedirme "cambiá el precio de ${nombre} a $X" una vez que lo hayas creado.*`
+    }
+  }
+
+  // ══ 23. CAMBIAR DESCRIPCIÓN ═════════════════════════════════
+  if (!content) {
+    const mDesc = raw.match(/(?:cambi[aáe]|modific[aáe]|actualiz[aáe]|pon[eé]le?)\s+(?:la\s+)?descripci[oó]n\s+(?:de[l]?(?:\s+(?:los?|las?))?\s+)?(.+?)\s+(?:a|por|con)[\s:]+(.+)/i)
+    if (mDesc) {
+      const prod = findProd(mDesc[1].trim(), products)
+      if (prod) {
+        await patchProd(prod.id, { descripcion: mDesc[2].trim(), desc: mDesc[2].trim() })
+        actions.push({ type:'desc_update', id:prod.id })
+        needsReload = true
+        content = `✅ Descripción de **${prod.nombre||prod.name}** actualizada.`
+      } else {
+        content = `No encontré el producto "${mDesc[1].trim()}".`
+      }
+    }
+  }
+
+  // ══ 24. DUPLICAR PRECIO ══════════════════════════════════════
+  if (!content) {
+    const mDup = raw.match(/(?:duplic[aáe]|dobl[aáe])\s+(?:el\s+)?precio\s+(?:de[l]?(?:\s+(?:los?|las?))?\s+)?(.+)/i)
+    if (mDup) {
+      const prod = findProd(mDup[1].trim(), products)
+      if (prod) {
+        const np = (prod.precio||prod.price||0)*2
+        await patchProd(prod.id, { precio: np, price: np })
+        actions.push({ type:'price_update', id:prod.id })
+        needsReload = true
+        content = `✅ Precio de **${prod.nombre||prod.name}** duplicado a **${money(np)}**.`
+      }
+    }
+  }
+
+  // ══ 25. MOSTRAR/OCULTAR CATEGORÍA ═══════════════════════════
+  if (!content) {
+    const mHideCat = raw.match(/(?:ocult[aáe]|desactiv[aáe]|escond[eéeé]|borr[aáe])\s+(?:la\s+)?categor[ií]a\s+(?:de\s+)?(.+)/i)
+    if (mHideCat) {
+      const catName = mHideCat[1].trim()
+      const cat = cats.find(c => norm(c.label||c.nombre||'').includes(norm(catName)))
+      if (cat) {
+        content = `Para ocultar la categoría **${cat.label||cat.nombre}** vas a Categorías en el panel → click en el ojo 👁. Los productos quedan guardados.`
+      } else {
+        content = `No encontré la categoría "${catName}".`
+      }
+    }
+  }
+
+  // ══ 26. PRECIO DE TODO ═══════════════════════════════════════
+  if (!content) {
+    const mAll = raw.match(/(?:sub[ií]|baj[aáe])\s+(?:todos?\s+los?\s+)?precios?\s+(?:un\s+)?(\d+)\s*%/i)
+    if (mAll) {
+      const pct = parseInt(mAll[1])
+      const isUp = /sub[ií]/i.test(raw)
+      let updated = 0
+      for (const p of products) {
+        const base = p.precio_original || p.precio || p.price || 0
+        const np = isUp ? Math.round(base*(1+pct/100)) : Math.round(base*(1-pct/100))
+        if (np > 0) { await patchProd(p.id, { precio: np, price: np }); updated++ }
+      }
+      needsReload = true
+      actions.push({ type:'bulk_price' })
+      content = `✅ ${isUp?'Subí':'Bajé'} el precio de **${updated} productos** un **${pct}%**.`
+    }
+  }
+
+  // ══ 27. CONSULTA DE PRECIO ═══════════════════════════════════
+  if (!content) {
+    const mQuery = raw.match(/(?:cu[aá]nto\s+(?:cuesta|vale|sale)|precio\s+de[l]?\s+(?:la|el|los?|las?)?)\s+(.+)/i)
+    if (mQuery) {
+      const prod = findProd(mQuery[1].trim(), products)
+      if (prod) {
+        content = `**${prod.nombre||prod.name}** cuesta **${money(prod.precio||prod.price||0)}**${prod.sin_stock?' — ⚠️ Sin stock actualmente':''}.`
+      } else {
+        content = `No encontré "${mQuery[1].trim()}" en la carta.`
+      }
+    }
+  }
+
+  // ══ 28. ACTIVAR/DESACTIVAR DELIVERY ═════════════════════════
+  if (!content) {
+    if (/(?:activ[aáe]|habilit[aáe]|turn[aáe]\s+on)\s+(?:el\s+)?delivery/i.test(raw)) {
+      content = `Para habilitar el delivery andá a **Configuración → Delivery** en el panel. Ahí podés activarlo y configurar el precio de envío.`
+    } else if (/(?:desactiv[aáe]|deshabilit[aáe]|turn[aáe]\s+off)\s+(?:el\s+)?delivery/i.test(raw)) {
+      content = `Para deshabilitar el delivery andá a **Configuración → Delivery** en el panel y desactivalo.`
+    }
+  }
+
+  // ══ 29. HORARIOS ═════════════════════════════════════════════
+  if (!content) {
+    if (/horario|abre|cierra|hora\s+de|cuando\s+abr/i.test(raw)) {
+      content = `Podés configurar los horarios del local en **Configuración** en el panel. Actualmente no tengo acceso a los horarios cargados.`
+    }
+  }
+
+  // ══ 30. NOMBRE DEL LOCAL ═════════════════════════════════════
+  if (!content) {
+    const mNombre = raw.match(/(?:cambi[aáe]|actualiz[aáe])\s+(?:el\s+)?(?:nombre|titulo)\s+(?:del?\s+)?(?:local|restaurante|negocio)?\s+(?:a|por|con)[\s:]+(.+)/i)
+    if (mNombre) {
+      content = `Para cambiar el nombre del restaurante andá a **Configuración** en el panel. El nombre también aparece en la carta pública.`
+    }
+  }
+
   // ══ FALLBACK ════════════════════════════════════════════════
   if (!content) {
-    content = `No entendí bien. Puedo:\n• **Precios**: "Cambiá el precio de [producto] a $[precio]"\n• **Descuentos**: "Aplicá [X]% de descuento a [producto]"\n• **Stock**: "Marcá [producto] sin stock"\n• **Pedidos**: "Pausar pedidos" / "Reanudar pedidos"\n• **Recetas**: "Dame la receta de [plato]"\n• **Colores**: "Cambiá el color a dorado"\n\n¿Qué querés hacer?`
+    // Smart fallback: buscar si mencionó algún producto aunque no entendió el intent
+    const anyProd = products.find(p => norm(raw).includes(norm(p.nombre||p.name||'')))
+    if (anyProd) {
+      const cat = cats.find(c => c.id === anyProd.categoria_id)
+      content = `Encontré **${anyProd.nombre||anyProd.name}** (${money(anyProd.precio||anyProd.price||0)}) pero no entendí qué querés hacer.\n\nPodés pedirme:\n• "Cambiá el precio a $[precio]"\n• "Aplicá [X]% de descuento"\n• "Marcá sin stock"\n• "Cambiá la foto"\n• "Cambiá la descripción a [texto]"`
+    } else {
+      content = `No entendí bien. Puedo ayudarte con:\n\n**Precios**\n• "Cambiá el precio de [producto] a $[precio]"\n• "Ponele $X a [producto]"\n• "Subí todos los precios un 10%"\n\n**Stock y visibilidad**\n• "Marcá [producto] sin stock" / "Reponer"\n• "Ocultá [producto]" / "Mostrá [producto]"\n\n**Descuentos**\n• "Aplicá 20% de descuento a [producto]"\n• "Sacá el descuento de [producto]"\n\n**Fotos**\n• "Cambiá la foto de [producto]"\n\n**Pedidos**\n• "Pausar pedidos" / "Reanudar pedidos"\n\n**Info**\n• "Cuánto cuesta [producto]"\n• "Mostrá toda la carta"\n• "Dame la receta de [plato]"\n\n¿Qué necesitás?`
+    }
   }
 
   return res.status(200).json({ content, actions, needsReload })
