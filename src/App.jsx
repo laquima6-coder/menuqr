@@ -35,8 +35,9 @@ export default function App() {
         <Route path="/menu/:slug/delivery" element={<DeliveryPage />} />
         <Route path="/tracking/:slug" element={<TrackingPage />} />
 
-        {/* Registro de nuevo restaurante */}
+        {/* Registro / Login */}
         <Route path="/registro" element={<Registro />} />
+        <Route path="/login" element={<Registro />} />
 
         {/* Panel super-admin (solo vos) */}
         <Route path="/superadmin" element={<SuperAdmin />} />
@@ -69,7 +70,4 @@ export default function App() {
         {/* Landing page de ventas - raiz */}
         <Route path="/" element={<LandingPage />} />
         <Route path="/*" element={<LandingPage />} />
-      </Routes>
-    </BrowserRouter>
-  )
-}
+ 
