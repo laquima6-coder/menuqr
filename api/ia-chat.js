@@ -318,40 +318,61 @@ module.exports = async function handler(req, res) {
       if (prod) {
         // Map product to best Unsplash photo
         const FOTO_MAP = {
-          ravioles:'photo-1621996346565-e3dbc646d9a9',
-          pasta:'photo-1621996346565-e3dbc646d9a9',
-          bife:'photo-1546833998-877b37c2e5c6',
-          milanesa:'photo-1599921841143-819065a55cc6',
-          empanada:'photo-1638439430466-b2bb7fdc1d67',
-          asado:'photo--parrilla-1546833998',
-          hamburguesa:'photo-1568901346375-23c9450c58cd',
-          pizza:'photo-1513104890138-7c749659a591',
-          ensalada:'photo-1512621776951-a57141f2eefd',
-          helado:'photo-1570197788417-0e82375c9371',
-          flan:'photo-1488477181946-6428a0291777',
-          torta:'photo-1578985545062-69928b1d9587',
-          chocolate:'photo-1548907040-4baa42d10919',
-          cafe:'photo-1495474472287-4d71bcdd2085',
-          cerveza:'photo-1535958636474-b021ee887b13',
-          vino:'photo-1510812431401-41d2bd2722f3',
-          agua:'photo-1548839140-29a749e1cf4d',
-          jugo:'photo-1600271886742-f049cd451bba',
-          postre:'photo-1488477181946-6428a0291777',
-          alfajor:'photo-1563805042-7684c019e1cb',
+          ravioles:   'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9',
+          pasta:      'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9',
+          tallar:     'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9',
+          fideos:     'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9',
+          bife:       'https://images.unsplash.com/photo-1546833998-877b37c2e5c6',
+          carne:      'https://images.unsplash.com/photo-1546833998-877b37c2e5c6',
+          asado:      'https://images.unsplash.com/photo-1558030006-450675393462',
+          parrilla:   'https://images.unsplash.com/photo-1558030006-450675393462',
+          milanesa:   'https://images.unsplash.com/photo-1599921841143-819065a55cc6',
+          schnitzel:  'https://images.unsplash.com/photo-1599921841143-819065a55cc6',
+          empanada:   'https://images.unsplash.com/photo-1604152135912-04a022e23696',
+          hamburguesa:'https://images.unsplash.com/photo-1568901346375-23c9450c58cd',
+          burger:     'https://images.unsplash.com/photo-1568901346375-23c9450c58cd',
+          pizza:      'https://images.unsplash.com/photo-1513104890138-7c749659a591',
+          ensalada:   'https://images.unsplash.com/photo-1512621776951-a57141f2eefd',
+          cesar:      'https://images.unsplash.com/photo-1512621776951-a57141f2eefd',
+          helado:     'https://images.unsplash.com/photo-1560008581-09826d1de69e',
+          flan:       'https://images.unsplash.com/photo-1488477181946-6428a0291777',
+          torta:      'https://images.unsplash.com/photo-1578985545062-69928b1d9587',
+          chocolate:  'https://images.unsplash.com/photo-1548907040-4baa42d10919',
+          cafe:       'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085',
+          cerveza:    'https://images.unsplash.com/photo-1535958636474-b021ee887b13',
+          vino:       'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3',
+          agua:       'https://images.unsplash.com/photo-1548839140-29a749e1cf4d',
+          jugo:       'https://images.unsplash.com/photo-1600271886742-f049cd451bba',
+          gaseosa:    'https://images.unsplash.com/photo-1625772299848-391b6a87d7b3',
+          alfajor:    'https://images.unsplash.com/photo-1563805042-7684c019e1cb',
+          medialunas: 'https://images.unsplash.com/photo-1608198093002-ad4e005484ec',
+          croissant:  'https://images.unsplash.com/photo-1608198093002-ad4e005484ec',
+          sandwich:   'https://images.unsplash.com/photo-1528735602780-2552fd46c7af',
+          pancho:     'https://images.unsplash.com/photo-1597933051710-d2e5f4b3f58b',
+          chorizo:    'https://images.unsplash.com/photo-1558030006-450675393462',
+          pollo:      'https://images.unsplash.com/photo-1598103442097-8b74394b95c7',
+          salmon:     'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2',
+          pescado:    'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2',
+          sushi:      'https://images.unsplash.com/photo-1579584425555-c3ce17fd4351',
+          taco:       'https://images.unsplash.com/photo-1565299585323-38d6b0865b47',
+          wrap:       'https://images.unsplash.com/photo-1626700051175-6818013e1d4f',
+          brownie:    'https://images.unsplash.com/photo-1606313564200-e75d5e30476c',
+          mousse:     'https://images.unsplash.com/photo-1541783245831-57d6fb0926d3',
+          tiramisú:   'https://images.unsplash.com/photo-1571877227200-a0d98ea607e9',
+          tiramisu:   'https://images.unsplash.com/photo-1571877227200-a0d98ea607e9',
         }
         const prodNorm = norm(prod.nombre||prod.name)
-        let photoId = null
-        for (const [key, id] of Object.entries(FOTO_MAP)) {
-          if (prodNorm.includes(key)) { photoId = id; break }
+        let photoUrl = null
+        for (const [key, url] of Object.entries(FOTO_MAP)) {
+          if (prodNorm.includes(norm(key))) { photoUrl = url; break }
         }
-        if (photoId) {
-          const url = `https://images.unsplash.com/${photoId}`
-          await patchProd(prod.id, { foto_url: url })
+        if (photoUrl) {
+          await patchProd(prod.id, { foto_url: photoUrl, imagen: photoUrl })
           actions.push({ type: 'foto_update' })
           needsReload = true
-          content = `Foto de **${prod.nombre||prod.name}** actualizada.`
+          content = `✅ Foto de **${prod.nombre||prod.name}** actualizada.`
         } else {
-          content = `Actualicé el precio. Para la foto de **${prod.nombre||prod.name}** necesito que me des una URL de imagen (ej: https://images.unsplash.com/photo-xxx).`
+          content = `No tengo una foto predefinida para ese plato. Podés pegarme una URL de imagen directamente, ej: "Cambiá la foto de [producto] a https://..."`
         }
       } else {
         content = `No encontré "${prodStr}" para cambiar la foto.`
