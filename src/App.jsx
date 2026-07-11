@@ -28,22 +28,18 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Carta publica - clientes escanean el QR */}
         <Route path="/menu/:slug" element={<MenuPublico />} />
         <Route path="/menu/:slug/mesa/:mesa" element={<MenuPublico />} />
         <Route path="/menu/:slug/vitrina" element={<MenuPublico vitrina />} />
         <Route path="/menu/:slug/delivery" element={<DeliveryPage />} />
         <Route path="/tracking/:slug" element={<TrackingPage />} />
 
-        {/* Registro / Login */}
         <Route path="/registro" element={<Registro />} />
         <Route path="/login" element={<Registro />} />
 
-        {/* Panel super-admin (solo vos) */}
         <Route path="/superadmin" element={<SuperAdmin />} />
         <Route path="/superadmin/:section" element={<SuperAdmin />} />
 
-        {/* Carta publica por slug corto */}
         <Route path="/:slug/cocina" element={<CocinaScreen />} />
         <Route path="/:slug/pedido/:id" element={<PedidoStatus />} />
         <Route path="/menu/:slug/cocina" element={<CocinaScreen />} />
@@ -51,7 +47,6 @@ export default function App() {
         <Route path="/:slug/mesa/:mesa" element={<MenuPublico />} />
         <Route path="/:slug/vitrina" element={<MenuPublico vitrina />} />
 
-        {/* Panel del dueno - acceso directo */}
         <Route path="/panel" element={
           <MenuQR
             local={local}   setLocal={setLocal}
@@ -67,7 +62,9 @@ export default function App() {
           />
         } />
 
-        {/* Landing page de ventas - raiz */}
         <Route path="/" element={<LandingPage />} />
         <Route path="/*" element={<LandingPage />} />
- 
+      </Routes>
+    </BrowserRouter>
+  )
+}
