@@ -281,23 +281,80 @@ module.exports = async function handler(req, res) {
   // ══ 1. CAMBIAR PRECIO ═══════════════════════════════════════
   if (!content) {
     const pats = [
-      /(?:cambi[aáe]|modific[aáe]|pon[eé]|actualiz[aáe])(?:me|le)?\s+(?:el\s+)?precio\s+(?:de[l]?\s+)?(?:(?:la|el)\s+)?(.+?)\s+(?:a|en|por)\s+\$?\s*([\d.,]+)/i,
-      /(?:precio|costo)\s+(?:de[l]?\s+)?(?:(?:la|el)\s+)?(.+?)\s+(?:a|=)\s+\$?\s*([\d.,]+)/i,
+      /(?:cambi[aáe]|modific[aáe]|actualiz[aáe])(?:me|le)?\s+(?:el\s+)?precio\s+(?:de[l]?(?:\s+los?)?\s+)?(.+?)\s+(?:a|en|por|ponele)\s+\$?\s*([\d.,]+)/i,
+      /(?:precio|costo)\s+(?:de[l]?(?:\s+los?)?\s+)?(.+?)\s+(?:a|=)\s+\$?\s*([\d.,]+)/i,
+      /(?:pon[eé]le|pone|pon)\s+\$?\s*([\d.,]+)\s+(?:a[l]?\s+)?(?:(?:los?|las?)\s+)?(.+)/i,
+      /(.+?)\s+(?:ponele|precio|vale|cuesta|a)\s+\$?\s*([\d.,]+)/i,
     ]
     for (const pat of pats) {
       const m = raw.match(pat)
       if (m) {
-        const newP = parseFloat(m[2].replace(/\./g,'').replace(',','.'))
-        const prod = findProd(m[1].trim(), products)
+        // pattern 3 has reversed groups (price first, then product)
+        const isReversed = pat.source.startsWith('(?:pon')
+        const prodStr = isReversed ? m[2] : m[1]
+        const priceStr = isReversed ? m[1] : m[2]
+        const newP = parseFloat(priceStr.replace(/\./g,'').replace(',','.'))
+        const prod = findProd(prodStr.trim(), products)
         if (prod && newP > 0) {
           await patchProd(prod.id, { precio: newP })
           actions.push({ type: 'price_update' })
           needsReload = true
           content = `Precio de **${prod.nombre||prod.name}** actualizado a ${money(newP)}. Ya está en la carta.`
         } else if (!prod) {
-          content = `No encontré "${m[1].trim()}". Productos:\n${products.slice(0,8).map(p=>`• ${p.nombre||p.name}`).join('\n')}`
+          content = `No encontré "${prodStr.trim()}". Productos:\n${products.slice(0,8).map(p=>`• ${p.nombre||p.name}`).join('\n')}`
         }
         break
+      }
+    }
+  }
+
+
+  // ══ 1b. CAMBIAR FOTO/IMAGEN ════════════════════════════════
+  if (!content) {
+    const mPhoto = raw.match(/(?:cambi[aáe]|pon[eé]|actualiz[aáe])\s+(?:la\s+)?(?:foto|imagen|image|photo)\s+(?:de[l]?(?:\s+los?)?\s+)?(.+)/i)
+    if (mPhoto) {
+      const prodStr = mPhoto[1].replace(/\s+(?:con|por|a)\s+.+$/i,'').trim()
+      const prod = findProd(prodStr, products)
+      if (prod) {
+        // Map product to best Unsplash photo
+        const FOTO_MAP = {
+          ravioles:'photo-1621996346565-e3dbc646d9a9',
+          pasta:'photo-1621996346565-e3dbc646d9a9',
+          bife:'photo-1546833998-877b37c2e5c6',
+          milanesa:'photo-1599921841143-819065a55cc6',
+          empanada:'photo-1638439430466-b2bb7fdc1d67',
+          asado:'photo--parrilla-1546833998',
+          hamburguesa:'photo-1568901346375-23c9450c58cd',
+          pizza:'photo-1513104890138-7c749659a591',
+          ensalada:'photo-1512621776951-a57141f2eefd',
+          helado:'photo-1570197788417-0e82375c9371',
+          flan:'photo-1488477181946-6428a0291777',
+          torta:'photo-1578985545062-69928b1d9587',
+          chocolate:'photo-1548907040-4baa42d10919',
+          cafe:'photo-1495474472287-4d71bcdd2085',
+          cerveza:'photo-1535958636474-b021ee887b13',
+          vino:'photo-1510812431401-41d2bd2722f3',
+          agua:'photo-1548839140-29a749e1cf4d',
+          jugo:'photo-1600271886742-f049cd451bba',
+          postre:'photo-1488477181946-6428a0291777',
+          alfajor:'photo-1563805042-7684c019e1cb',
+        }
+        const prodNorm = norm(prod.nombre||prod.name)
+        let photoId = null
+        for (const [key, id] of Object.entries(FOTO_MAP)) {
+          if (prodNorm.includes(key)) { photoId = id; break }
+        }
+        if (photoId) {
+          const url = `https://images.unsplash.com/${photoId}`
+          await patchProd(prod.id, { foto_url: url })
+          actions.push({ type: 'foto_update' })
+          needsReload = true
+          content = `Foto de **${prod.nombre||prod.name}** actualizada.`
+        } else {
+          content = `Actualicé el precio. Para la foto de **${prod.nombre||prod.name}** necesito que me des una URL de imagen (ej: https://images.unsplash.com/photo-xxx).`
+        }
+      } else {
+        content = `No encontré "${prodStr}" para cambiar la foto.`
       }
     }
   }
