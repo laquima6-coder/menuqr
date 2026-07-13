@@ -853,17 +853,79 @@ module.exports = async function handler(req, res) {
     }
   }
 
-  // ══ FALLBACK ════════════════════════════════════════════════
+  // ══ FALLBACK — Claude API (lenguaje natural) ════════════════
   if (!content) {
-    // Smart fallback: buscar si mencionó algún producto aunque no entendió el intent
-    const anyProd = products.find(p => norm(raw).includes(norm(p.nombre||p.name||'')))
-    if (anyProd) {
-      const cat = cats.find(c => c.id === anyProd.categoria_id)
-      content = `Encontré **${anyProd.nombre||anyProd.name}** (${money(anyProd.precio||anyProd.price||0)}) pero no entendí qué querés hacer.\n\nPodés pedirme:\n• "Cambiá el precio a $[precio]"\n• "Aplicá [X]% de descuento"\n• "Marcá sin stock"\n• "Cambiá la foto"\n• "Cambiá la descripción a [texto]"`
+    const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY
+    if (ANTHROPIC_KEY) {
+      try {
+        const cartaSummary = products.slice(0,40).map(p =>
+          `- ${p.nombre||p.name} ($${p.precio||p.price||0})${p.sin_stock?' [SIN STOCK]':''}${(p.activo===false||p.active===false)?' [OCULTO]':''}`
+        ).join('\n')
+        const catsSummary = cats.map(c => c.label||c.nombre).join(', ')
+
+        const systemPrompt = `Sos el asistente IA de PedidosQR para el restaurante "${restaurantName||'este restaurante'}".
+Ayudás al dueño a gestionar su carta digital. Respondé siempre en español rioplatense, de forma concisa (máximo 4 líneas).
+
+CARTA ACTUAL (${products.length} productos en ${cats.length} categorías):
+${cartaSummary||'Sin productos cargados.'}
+CATEGORÍAS: ${catsSummary||'ninguna'}
+
+ACCIONES DISPONIBLES — decile al usuario EXACTAMENTE cómo escribirlo:
+• Cambiar precio: "Cambiá el precio de [producto] a $[precio]" o "Ponele $X a [producto]"
+• Descuento: "Aplicá [X]% de descuento a [producto]"
+• Quitar descuento: "Sacá el descuento de [producto]"
+• Sin stock: "Marcá [producto] sin stock"
+• Reponer: "Reponer [producto]"
+• Ocultar/mostrar: "Ocultá [producto]" / "Mostrá [producto]"
+• Cambiar foto: "Cambiá la foto de [producto]"
+• Cambiar descripción: "Cambiá la descripción de [producto] a [texto]"
+• Renombrar: "Renombrá [producto] a [nuevo nombre]"
+• Subir/bajar todos: "Subí todos los precios un 10%"
+• Pausar pedidos: "Pausar pedidos"
+• Recetas: "Dame la receta de [plato]"
+• Consulta precio: "Cuánto cuesta [producto]"
+• Ver carta: "Mostrá toda la carta"
+• Wifi: "El wifi es [nombre] contraseña [pass]"
+
+Si te piden algo que no podés hacer automáticamente, guialos al lugar del panel con un emoji.`
+
+        const claudeRes = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': ANTHROPIC_KEY,
+            'anthropic-version': '2023-06-01'
+          },
+          body: JSON.stringify({
+            model: 'claude-haiku-4-5-20251001',
+            max_tokens: 500,
+            system: systemPrompt,
+            messages: [{ role: 'user', content: lastMsg }]
+          })
+        })
+        if (claudeRes.ok) {
+          const claudeData = await claudeRes.json()
+          content = claudeData.content?.[0]?.text || msgFallback()
+        } else {
+          console.error('Claude API error:', claudeRes.status, await claudeRes.text())
+          content = msgFallback()
+        }
+      } catch(e) {
+        console.error('Claude fetch error:', e.message)
+        content = msgFallback()
+      }
     } else {
-      content = `No entendí bien. Puedo ayudarte con:\n\n**Precios**\n• "Cambiá el precio de [producto] a $[precio]"\n• "Ponele $X a [producto]"\n• "Subí todos los precios un 10%"\n\n**Stock y visibilidad**\n• "Marcá [producto] sin stock" / "Reponer"\n• "Ocultá [producto]" / "Mostrá [producto]"\n\n**Descuentos**\n• "Aplicá 20% de descuento a [producto]"\n• "Sacá el descuento de [producto]"\n\n**Fotos**\n• "Cambiá la foto de [producto]"\n\n**Pedidos**\n• "Pausar pedidos" / "Reanudar pedidos"\n\n**Info**\n• "Cuánto cuesta [producto]"\n• "Mostrá toda la carta"\n• "Dame la receta de [plato]"\n\n¿Qué necesitás?`
+      // Sin API key: fallback inteligente por producto
+      const anyProd = products.find(p => norm(raw).includes(norm(p.nombre||p.name||'').replace(/\s+/g,' ').trim()))
+      content = anyProd
+        ? `Encontré **${anyProd.nombre||anyProd.name}** pero no entendí qué querés hacer con él.\n• "Cambiá el precio a $X"\n• "Marcá sin stock"\n• "Cambiá la foto"`
+        : msgFallback()
     }
   }
 
   return res.status(200).json({ content, actions, needsReload })
+}
+
+function msgFallback() {
+  return `No entendí bien. Probá con:\n• "Cambiá el precio de [producto] a $[precio]"\n• "Aplicá 20% de descuento a [producto]"\n• "Marcá [producto] sin stock"\n• "Subí todos los precios un 10%"\n• "Cuánto cuesta [producto]"\n\n¿Qué necesitás?`
 }
