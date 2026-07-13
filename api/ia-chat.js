@@ -236,7 +236,7 @@ async function patchProd(id, patch) {
   if (patch.descripcion != null) { p.descripcion = patch.descripcion; p['desc'] = patch.descripcion }
   if (patch.sin_stock   != null) { p.sin_stock = patch.sin_stock }
   if (patch.activo      != null) { p.activo = patch.activo; p.active = patch.activo }
-  if (patch.foto_url    != null) { p.foto_url = patch.foto_url }
+  if (patch.foto_url    != null) { p.foto_url = patch.foto_url; p.imagen = patch.foto_url }
   if (patch.precio_original != null) { p.precio_original = patch.precio_original }
   return sbReq('PATCH', `productos?id=eq.${id}`, p)
 }
