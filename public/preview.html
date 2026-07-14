@@ -3,359 +3,345 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MenuQR — Diseño premium</title>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<title>MenuQR — Diseño Preview</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Poppins',sans-serif;background:#f5f5f5;color:#1a1a1a;min-height:100vh;padding:20px}
-h1{text-align:center;color:#FF5722;font-size:24px;font-weight:700;margin-bottom:4px}
-.sub{text-align:center;color:#888;font-size:13px;margin-bottom:24px}
-.tabs{display:flex;gap:10px;justify-content:center;margin-bottom:28px;flex-wrap:wrap}
-.tb{padding:10px 24px;border-radius:50px;border:2px solid #e0e0e0;background:#fff;color:#888;font-size:14px;font-weight:600;cursor:pointer;font-family:'Poppins',sans-serif}
-.tb.on{background:#FF5722;color:#fff;border-color:#FF5722}
-.pane{display:none}.pane.on{display:block}
-.frames{display:flex;justify-content:center;gap:24px;flex-wrap:wrap;align-items:flex-start}
-.flabel{text-align:center;font-size:12px;font-weight:600;margin-bottom:10px;letter-spacing:.5px}
-.ph{width:360px;background:#fff;border-radius:36px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.15);border:3px solid #eee}
-.phst{background:#fff;padding:12px 20px 4px;display:flex;justify-content:space-between}
-.phst span{font-size:12px;font-weight:600;color:#333}
-.phh{padding:8px 20px 14px;background:#fff}
-.phtop{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
-.phrn{font-size:20px;font-weight:700}
-.phmesa{font-size:11px;font-weight:600;padding:5px 12px;border-radius:20px}
-.phsrch{background:#f8f8f8;border-radius:14px;padding:11px 16px;display:flex;align-items:center;gap:8px;color:#bbb;font-size:14px}
-.phhero{height:155px;position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;padding:16px 20px}
-.phhero-bg{position:absolute;top:-10px;right:-10px;font-size:130px;opacity:.12;line-height:1}
-.phhero h2{color:#fff;font-size:18px;font-weight:700;position:relative;z-index:1}
-.phhero p{color:rgba(255,255,255,.85);font-size:12px;position:relative;z-index:1;margin-top:2px}
-.phhero-badge{position:absolute;top:14px;right:16px;background:#fff;font-size:13px;font-weight:700;padding:6px 14px;border-radius:20px;z-index:1}
-.phcats{padding:14px 20px 6px;display:flex;gap:8px;overflow-x:auto}.phcats::-webkit-scrollbar{display:none}
-.cat{flex-shrink:0;padding:7px 14px;border-radius:20px;font-size:12px;font-weight:600;border:none;cursor:pointer;font-family:'Poppins',sans-serif}
-.cat.s{background:#FF5722;color:#fff}.cat:not(.s){background:#f0f0f0;color:#666}
-.phtitle{padding:10px 20px;font-size:15px;font-weight:700;display:flex;justify-content:space-between}
-.phtitle span{font-size:12px;color:#FF5722;font-weight:600}
-.phrow{display:flex;gap:12px;padding:0 20px 14px;overflow-x:auto}.phrow::-webkit-scrollbar{display:none}
-.hc{flex-shrink:0;width:158px;background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,.08)}
-.hcimg{height:108px;display:flex;align-items:center;justify-content:center;font-size:52px}
+body{font-family:'Poppins',sans-serif;background:#f0f0f0;min-height:100vh;padding:20px 16px 40px}
+h1{text-align:center;font-size:22px;font-weight:800;color:#1a1a1a;margin-bottom:4px}
+.sub{text-align:center;font-size:13px;color:#888;margin-bottom:24px}
+.accent{color:#FF5722}
+.dtabs{display:flex;gap:8px;justify-content:center;margin-bottom:28px;flex-wrap:wrap}
+.dtb{padding:9px 22px;border-radius:50px;border:2px solid #ddd;background:#fff;color:#888;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s;-webkit-tap-highlight-color:transparent}
+.dtb.on{background:#FF5722;color:#fff;border-color:#FF5722;box-shadow:0 4px 14px rgba(255,87,34,.3)}
+.screen{display:none}.screen.on{display:block}
+.phones-row{display:flex;gap:20px;justify-content:center;flex-wrap:wrap;align-items:flex-start}
+.phone-label{text-align:center;font-size:11px;font-weight:700;letter-spacing:.5px;margin-bottom:8px;text-transform:uppercase}
+.ph{width:320px;background:#fff;border-radius:36px;overflow:hidden;box-shadow:0 16px 48px rgba(0,0,0,.13);border:3px solid #e8e8e8;color:#1a1a1a}
+.phst{background:#fff;padding:12px 20px 4px;display:flex;justify-content:space-between;align-items:center}
+.phst span{font-size:11px;font-weight:600;color:#333}
+.phh{padding:6px 18px 14px;background:#fff}
+.phtop{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.phrn{font-size:19px;font-weight:800;color:#1a1a1a}
+.phsub{font-size:11px;color:#aaa;margin-top:1px}
+.phmesa{font-size:10px;font-weight:700;padding:5px 12px;border-radius:20px}
+.phsrch{background:#f5f5f5;border-radius:14px;padding:10px 14px;display:flex;align-items:center;gap:8px;color:#bbb;font-size:13px}
+.phhero{height:148px;position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;padding:14px 18px}
+.herobg{position:absolute;top:-20px;right:-15px;font-size:120px;opacity:.1;line-height:1;pointer-events:none}
+.herobadge{position:absolute;top:12px;right:14px;font-size:11px;font-weight:800;padding:5px 13px;border-radius:20px;z-index:1}
+.phhero h2{color:#fff;font-size:16px;font-weight:800;position:relative;z-index:1}
+.phhero p{color:rgba(255,255,255,.85);font-size:11px;position:relative;z-index:1;margin-top:2px}
+.phcats{padding:12px 18px 6px;display:flex;gap:7px;overflow-x:auto}.phcats::-webkit-scrollbar{display:none}
+.cat{flex-shrink:0;padding:7px 13px;border-radius:20px;font-size:11px;font-weight:600;border:none;cursor:pointer;font-family:inherit}
+.phtitle{padding:10px 18px 7px;font-size:13px;font-weight:800;color:#1a1a1a;display:flex;justify-content:space-between;align-items:center}
+.phrow{display:flex;gap:10px;padding:0 18px 14px;overflow-x:auto}.phrow::-webkit-scrollbar{display:none}
+.hc{flex-shrink:0;width:148px;background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 4px 14px rgba(0,0,0,.09)}
+.hcimg{height:98px;display:flex;align-items:center;justify-content:center;font-size:48px}
 .hcb{padding:10px 12px 12px}
-.hcn{font-size:13px;font-weight:700;margin-bottom:2px}
-.hcd{font-size:11px;color:#999;margin-bottom:8px}
+.hcn{font-size:12px;font-weight:700;color:#1a1a1a;margin-bottom:2px}
+.hcd{font-size:10px;color:#aaa;margin-bottom:8px}
 .hcf{display:flex;justify-content:space-between;align-items:center}
-.hcp{font-size:15px;font-weight:700;color:#FF5722}
-.ab{width:30px;height:30px;background:#FF5722;border-radius:50%;border:none;cursor:pointer;font-size:18px;color:#fff;line-height:30px;text-align:center}
-.phlist{padding:0 20px 10px;display:flex;flex-direction:column;gap:10px}
-.li{background:#fff;border-radius:16px;padding:12px;display:flex;gap:12px;align-items:center;box-shadow:0 2px 8px rgba(0,0,0,.06)}
-.liimg{width:58px;height:58px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0}
-.liinfo{flex:1}
-.lin{font-size:14px;font-weight:700;margin-bottom:2px}
-.lid{font-size:11px;color:#999;margin-bottom:5px}
-.lip{font-size:15px;font-weight:700;color:#FF5722}
-.liadd{width:32px;height:32px;background:#FF5722;border-radius:50%;border:none;cursor:pointer;font-size:20px;color:#fff;flex-shrink:0;line-height:32px;text-align:center}
-.cbar{margin:8px 16px 14px;border-radius:16px;padding:14px 20px;display:flex;justify-content:space-between;align-items:center}
-.cbarl{display:flex;align-items:center;gap:10px}
-.ccnt{background:rgba(255,255,255,.25);color:#fff;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
-.cbar span{color:#fff;font-size:14px;font-weight:600}
-.cbar strong{color:#fff;font-size:16px;font-weight:700}
-.bnav{background:#fff;border-top:1px solid #f0f0f0;padding:10px 20px 18px;display:flex;justify-content:space-around}
+.hcp{font-size:14px;font-weight:800}
+.ab{width:28px;height:28px;border-radius:50%;border:none;cursor:pointer;font-size:18px;color:#fff;line-height:28px;text-align:center;font-weight:700}
+.phlist{padding:0 18px 10px;display:flex;flex-direction:column;gap:10px}
+.li{background:#fff;border-radius:16px;padding:11px;display:flex;gap:11px;align-items:center;box-shadow:0 3px 10px rgba(0,0,0,.07)}
+.liimg{width:54px;height:54px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0}
+.lin{font-size:13px;font-weight:700;color:#1a1a1a;margin-bottom:2px}
+.lid{font-size:10px;color:#aaa;margin-bottom:4px}
+.lip{font-size:13px;font-weight:800}
+.liadd{width:30px;height:30px;border-radius:50%;border:none;cursor:pointer;font-size:18px;color:#fff;flex-shrink:0;line-height:30px;text-align:center;font-weight:700;margin-left:auto}
+.cbar{margin:8px 14px 12px;border-radius:16px;padding:13px 18px;display:flex;justify-content:space-between;align-items:center;cursor:pointer}
+.ccnt{background:rgba(255,255,255,.3);color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800}
+.cbar-l{display:flex;align-items:center;gap:9px}
+.cbar span{color:#fff;font-size:13px;font-weight:600}
+.cbar strong{color:#fff;font-size:15px;font-weight:800}
+.bnav{background:#fff;border-top:1px solid #f0f0f0;padding:10px 18px 16px;display:flex;justify-content:space-around}
 .bni{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer}
-.bni span{font-size:10px;font-weight:600;color:#ccc}
-.bni.a span{color:#FF5722}
 .bni-ico{font-size:22px}
-/* TABLET */
-.tbf{background:#fff;border-radius:22px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.1);max-width:900px;margin:0 auto;border:2px solid #eee}
-.tbl{display:flex;height:600px}
-.tbsb{width:215px;background:#fff;border-right:1px solid #f0f0f0;flex-shrink:0}
-.tbsb-head{padding:20px;border-bottom:1px solid #f0f0f0;margin-bottom:8px}
-.tbtni{padding:12px 20px;display:flex;align-items:center;gap:10px;font-size:14px;font-weight:500;color:#888;cursor:pointer;border-left:3px solid transparent}
-.tbtni.a{color:#FF5722;background:#FFF3E0;border-left-color:#FF5722;font-weight:600}
-.tbobox{margin:16px;background:#FFF3E0;border-radius:16px;padding:16px}
-.tbomain{flex:1;overflow-y:auto;background:#fafafa}
-.tbomh{padding:14px 18px;background:#fff;border-bottom:1px solid #f0f0f0;position:sticky;top:0;z-index:1;display:flex;justify-content:space-between;align-items:center}
-.tbomh h2{font-size:16px;font-weight:700}
-.tbgrid{display:grid;grid-template-columns:1fr 1fr;gap:13px;padding:14px}
-.tcard{background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.07)}
-.tcimg{height:100px;display:flex;align-items:center;justify-content:center;font-size:52px}
-.tcb{padding:11px 13px 13px}
-.tcn{font-size:14px;font-weight:700;margin-bottom:3px}
-.tcd{font-size:11px;color:#999;margin-bottom:9px}
+.bni span{font-size:9px;font-weight:600;color:#ccc}
+.tablet-wrap{display:flex;justify-content:center}
+.tbf{background:#fff;border-radius:22px;overflow:hidden;box-shadow:0 16px 48px rgba(0,0,0,.1);width:100%;max-width:720px;border:2.5px solid #e8e8e8;color:#1a1a1a}
+.tbl{display:flex;height:580px}
+.tbsb{width:200px;background:#fff;border-right:1.5px solid #f0f0f0;flex-shrink:0;display:flex;flex-direction:column}
+.tbsbh{padding:20px 18px 14px;border-bottom:1px solid #f0f0f0}
+.tbsbh .rname{font-size:16px;font-weight:800;color:#1a1a1a}
+.tbsbh .rloc{font-size:11px;font-weight:600;margin-top:2px}
+.tbtni{padding:11px 18px;display:flex;align-items:center;gap:10px;font-size:12px;font-weight:600;color:#999;cursor:pointer;border-left:3px solid transparent}
+.tbtni.act{border-left-color:#FF5722;background:#FFF3E0;color:#FF5722}
+.tbobox{margin:12px;margin-top:auto;border-radius:16px;padding:14px}
+.tbobox .obt{font-size:10px;font-weight:800;letter-spacing:.6px;margin-bottom:5px}
+.tbobox .obv{font-size:22px;font-weight:800;color:#1a1a1a;margin-bottom:2px}
+.tbobox .obs{font-size:11px;color:#aaa;margin-bottom:12px}
+.tbobox button{width:100%;border:none;border-radius:12px;padding:11px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;color:#fff}
+.tbmn{flex:1;overflow-y:auto;background:#fafafa;display:flex;flex-direction:column}
+.tbmh{padding:14px 16px;background:#fff;border-bottom:1px solid #f0f0f0;display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
+.tbmh h2{font-size:15px;font-weight:800;color:#1a1a1a}
+.tbcatrow{display:flex;gap:6px;padding:10px 12px;background:#fff;border-bottom:1px solid #f0f0f0;flex-shrink:0;overflow-x:auto}
+.tbcatrow::-webkit-scrollbar{display:none}
+.tbgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:12px;flex:1}
+.tc{background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 3px 12px rgba(0,0,0,.07)}
+.tcimg{height:94px;display:flex;align-items:center;justify-content:center;font-size:48px}
+.tcb{padding:11px 13px 13px;color:#1a1a1a}
+.tcn{font-size:13px;font-weight:700;margin-bottom:2px}
+.tcd{font-size:10px;color:#aaa;margin-bottom:9px}
 .tcf{display:flex;justify-content:space-between;align-items:center}
-.tcp{font-size:15px;font-weight:700;color:#FF5722}
-.tcadd{background:#FF5722;color:#fff;border:none;border-radius:10px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Poppins',sans-serif}
-/* PC */
-.pcf{background:#fafafa;border-radius:16px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.08);max-width:1100px;margin:0 auto;border:2px solid #eee}
-.pctb{background:#fff;padding:13px 22px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #f0f0f0}
-.pclogo{display:flex;align-items:center;gap:7px;font-size:16px;font-weight:700}
+.tcp{font-size:15px;font-weight:800}
+.tcadd{border:none;border-radius:10px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;color:#fff}
+.pc-wrap{display:flex;justify-content:center}
+.pcf{background:#fafafa;border-radius:16px;overflow:hidden;box-shadow:0 16px 48px rgba(0,0,0,.08);width:100%;max-width:760px;border:2px solid #e8e8e8;color:#1a1a1a}
+.pctb{background:#fff;padding:12px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:1.5px solid #f0f0f0}
+.pclogo{display:flex;align-items:center;gap:6px;font-size:15px;font-weight:800;color:#1a1a1a}
 .pcdot{width:8px;height:8px;background:#FF5722;border-radius:50%}
-.pcnav{display:flex;gap:4px}
-.pcni2{padding:7px 15px;font-size:13px;font-weight:500;color:#888;border-radius:8px;cursor:pointer;border:none;background:transparent;font-family:'Poppins',sans-serif}
-.pcni2.a{background:#FFF3E0;color:#FF5722;font-weight:600}
-.pcav{width:33px;height:33px;border-radius:50%;background:#FF5722;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:700}
-.pcbody{display:flex;min-height:500px}
-.pcsb{width:195px;background:#fff;border-right:1px solid #f0f0f0;flex-shrink:0;padding:14px 0}
-.pcg{padding:8px 16px 4px;font-size:10px;font-weight:700;color:#ccc;letter-spacing:1px}
-.pcm{padding:9px 19px;display:flex;align-items:center;gap:9px;font-size:13px;font-weight:500;color:#888;cursor:pointer;border-left:3px solid transparent}
-.pcm.a{color:#FF5722;background:#FFF3E0;border-left-color:#FF5722;font-weight:600}
-.pccc{flex:1;padding:20px}
-.pcch{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
-.pcch h3{font-size:18px;font-weight:700}
-.pcch p{font-size:13px;color:#999;margin-top:2px}
-.pccbtn{background:#FF5722;color:#fff;border:none;border-radius:10px;padding:10px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Poppins',sans-serif}
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:11px;margin-bottom:18px}
-.st{background:#fff;border-radius:13px;padding:15px;box-shadow:0 2px 8px rgba(0,0,0,.05)}
-.stl{font-size:11px;color:#999;font-weight:600;margin-bottom:5px}
-.stv{font-size:23px;font-weight:700;margin-bottom:4px}
-.stt{font-size:11px;font-weight:600}
-.up{color:#00C853}.dn{color:#FF1744}.nt{color:#999}
-.pg2{display:grid;grid-template-columns:1fr 1fr;gap:13px}
-.pcrd{background:#fff;border-radius:13px;padding:15px;box-shadow:0 2px 8px rgba(0,0,0,.05)}
-.pcrdh{font-size:14px;font-weight:700;margin-bottom:12px;display:flex;justify-content:space-between}
-.pcrdh a{font-size:12px;color:#FF5722;font-weight:600;cursor:pointer;text-decoration:none}
-.or{display:flex;align-items:center;gap:9px;padding:8px 0;border-bottom:1px solid #f5f5f5}
+.pcnav{display:flex;gap:2px}
+.pcni{padding:6px 13px;font-size:12px;font-weight:600;color:#999;border-radius:8px;cursor:pointer;border:none;background:transparent;font-family:inherit}
+.pcni.act{background:#FFF3E0;color:#FF5722;font-weight:700}
+.pcav{width:32px;height:32px;border-radius:50%;background:#FF5722;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:800}
+.pcbody{display:flex;min-height:480px}
+.pcsb{width:175px;background:#fff;border-right:1.5px solid #f0f0f0;flex-shrink:0;padding:12px 0}
+.pcg{padding:8px 16px 4px;font-size:9px;font-weight:800;color:#ccc;letter-spacing:1.2px}
+.pcm{padding:9px 18px;display:flex;align-items:center;gap:9px;font-size:12px;font-weight:600;color:#999;cursor:pointer;border-left:3px solid transparent}
+.pcm.act{color:#FF5722;background:#FFF3E0;border-left-color:#FF5722;font-weight:700}
+.pccc{flex:1;padding:18px;overflow:hidden}
+.pcch{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px}
+.pcch h3{font-size:16px;font-weight:800;color:#1a1a1a}
+.pcch p{font-size:11px;color:#aaa;margin-top:2px}
+.pccbtn{background:#FF5722;color:#fff;border:none;border-radius:10px;padding:9px 16px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+.st{background:#fff;border-radius:13px;padding:13px;box-shadow:0 2px 8px rgba(0,0,0,.05)}
+.stl{font-size:9px;color:#bbb;font-weight:700;letter-spacing:.6px;margin-bottom:5px}
+.stv{font-size:20px;font-weight:800;color:#1a1a1a;margin-bottom:3px}
+.stt{font-size:10px;font-weight:700}
+.up{color:#00C853}.dn{color:#FF1744}.nt{color:#bbb}
+.pg2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.prd{background:#fff;border-radius:13px;padding:14px;box-shadow:0 2px 8px rgba(0,0,0,.05)}
+.prdh{font-size:12px;font-weight:800;color:#1a1a1a;margin-bottom:11px;display:flex;justify-content:space-between;align-items:center}
+.or{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f5f5f5}
 .or:last-child{border:none}
-.ornum{font-size:12px;font-weight:700;color:#FF5722;width:30px}
-.ori{flex:1}.orim{font-size:13px;font-weight:600}.ors{font-size:11px;color:#999}
-.ort{font-size:13px;font-weight:700}
-.badge{font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px}
-.bnew{background:#E8F5E9;color:#00C853}.bprep{background:#FFF8E1;color:#FFB300}.bdone{background:#f5f5f5;color:#999}
-.bars{display:flex;align-items:flex-end;gap:6px;height:78px;margin-top:8px}
-.bw{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px}
-.bf{width:100%;border-radius:4px 4px 0 0}
-.bl{font-size:9px;color:#ccc;font-weight:600}
+.ornum{font-size:11px;font-weight:800;color:#FF5722;width:30px;flex-shrink:0}
+.orim{font-size:12px;font-weight:700;color:#1a1a1a}
+.ors{font-size:10px;color:#bbb}
+.ort{font-size:12px;font-weight:800;color:#1a1a1a;margin-left:auto;margin-right:6px;white-space:nowrap}
+.bdg{font-size:9px;font-weight:800;padding:3px 9px;border-radius:20px;white-space:nowrap}
+.bnew{background:#E8F5E9;color:#00C853}.bprep{background:#FFF8E1;color:#FFB300}.bdone{background:#f5f5f5;color:#bbb}
+.brs{display:flex;align-items:flex-end;gap:5px;height:70px;margin-top:8px}
+.bw{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;height:100%}
+.bf{width:100%;border-radius:4px 4px 0 0;margin-top:auto}
+.bbl{font-size:8px;color:#ccc;font-weight:700}
+.top3{margin-top:12px;padding-top:12px;border-top:1px solid #f5f5f5}
+.top3-title{font-size:11px;font-weight:800;margin-bottom:8px;color:#1a1a1a}
+.top3-row{display:flex;justify-content:space-between;font-size:11px;color:#1a1a1a;margin-bottom:5px}
+.top3-row span:last-child{color:#FF5722;font-weight:800}
 </style>
 </head>
 <body>
-<h1>MenuQR</h1>
-<p class="sub">Nuevo diseño premium — restaurante, cafetería y pizzería</p>
-<div class="tabs">
-  <button class="tb on" onclick="sw('mob',this)">📱 Celular</button>
-  <button class="tb" onclick="sw('tab',this)">📲 Tablet</button>
-  <button class="tb" onclick="sw('pc',this)">🖥️ Panel admin</button>
+<h1>MenuQR <span class="accent">Preview</span></h1>
+<p class="sub">Tocá para cambiar la vista</p>
+<div class="dtabs">
+  <button class="dtb on" onclick="sw('mob',this)">📱 Celular</button>
+  <button class="dtb" onclick="sw('tab',this)">📲 Tablet</button>
+  <button class="dtb" onclick="sw('pc',this)">🖥️ Panel Admin</button>
 </div>
 
-<!-- CELULAR -->
-<div id="v-mob" class="pane on">
-<div class="frames">
-
+<div id="v-mob" class="screen on">
+<div class="phones-row">
 <div>
-<p class="flabel" style="color:#FF5722">🍕 Restaurante / Pizzería</p>
+<p class="phone-label" style="color:#FF5722">🍕 Restaurante</p>
 <div class="ph">
   <div class="phst"><span>9:41</span><span>📶 🔋</span></div>
   <div class="phh">
     <div class="phtop">
-      <div><div class="phrn">La Trattoria</div><div style="font-size:12px;color:#999;margin-top:1px">Buenos Aires · Palermo</div></div>
+      <div><div class="phrn">La Trattoria</div><div class="phsub">Buenos Aires · Palermo</div></div>
       <div class="phmesa" style="background:#FFF3E0;color:#FF5722">Mesa 4</div>
     </div>
-    <div class="phsrch">🔍 Buscar platos...</div>
+    <div class="phsrch">🔍 <span>Buscar platos...</span></div>
   </div>
   <div class="phhero" style="background:linear-gradient(135deg,#FF5722,#FF8A65)">
-    <div class="phhero-bg">🍕</div>
-    <div class="phhero-badge" style="color:#FF5722">$1.250</div>
+    <div class="herobg">🍕</div>
+    <div class="herobadge" style="background:#fff;color:#FF5722">$1.250</div>
     <h2>Especial del día</h2>
-    <p>Pizza Margarita + bebida a elección</p>
+    <p>Pizza Margarita + bebida</p>
   </div>
   <div class="phcats">
-    <button class="cat s">🍽️ Todo</button>
-    <button class="cat">🍕 Pizzas</button>
-    <button class="cat">🍝 Pastas</button>
-    <button class="cat">🥩 Carnes</button>
-    <button class="cat">🥤 Bebidas</button>
+    <button class="cat" style="background:#FF5722;color:#fff">🍽️ Todo</button>
+    <button class="cat" style="background:#f0f0f0;color:#666">🍕 Pizzas</button>
+    <button class="cat" style="background:#f0f0f0;color:#666">🍝 Pastas</button>
+    <button class="cat" style="background:#f0f0f0;color:#666">🥩 Carnes</button>
+    <button class="cat" style="background:#f0f0f0;color:#666">🥤 Bebidas</button>
   </div>
-  <div class="phtitle">Los más pedidos <span>Ver todo</span></div>
+  <div class="phtitle">Los más pedidos <span style="font-size:11px;color:#FF5722;font-weight:600">Ver todo</span></div>
   <div class="phrow">
-    <div class="hc"><div class="hcimg" style="background:#FFF3E0">🍕</div><div class="hcb"><div class="hcn">Pizza Napolitana</div><div class="hcd">Tomate, mozz, albahaca</div><div class="hcf"><span class="hcp">$950</span><button class="ab">+</button></div></div></div>
-    <div class="hc"><div class="hcimg" style="background:#FFF8E1">🍝</div><div class="hcb"><div class="hcn">Ravioles caseros</div><div class="hcd">Carne, salsa pomodoro</div><div class="hcf"><span class="hcp">$890</span><button class="ab">+</button></div></div></div>
-    <div class="hc"><div class="hcimg" style="background:#FCE4EC">🥩</div><div class="hcb"><div class="hcn">Bife de chorizo</div><div class="hcd">350g + papas fritas</div><div class="hcf"><span class="hcp">$1.450</span><button class="ab">+</button></div></div></div>
+    <div class="hc"><div class="hcimg" style="background:#FFF3E0">🍕</div><div class="hcb"><div class="hcn">Pizza Napolitana</div><div class="hcd">Tomate, mozz, albahaca</div><div class="hcf"><span class="hcp" style="color:#FF5722">$950</span><button class="ab" style="background:#FF5722">+</button></div></div></div>
+    <div class="hc"><div class="hcimg" style="background:#FFF8E1">🍝</div><div class="hcb"><div class="hcn">Ravioles caseros</div><div class="hcd">Carne, salsa pomodoro</div><div class="hcf"><span class="hcp" style="color:#FF5722">$890</span><button class="ab" style="background:#FF5722">+</button></div></div></div>
   </div>
   <div class="phtitle">Carta completa</div>
   <div class="phlist">
-    <div class="li"><div class="liimg" style="background:#FFF3E0">🍕</div><div class="liinfo"><div class="lin">Cuatro quesos</div><div class="lid">Mozz · brie · azul · parmesano</div><div class="lip">$1.050</div></div><button class="liadd">+</button></div>
-    <div class="li"><div class="liimg" style="background:#E8F5E9">🐟</div><div class="liinfo"><div class="lin">Salmón a la plancha</div><div class="lid">Con vegetales · Sin TACC 🌿</div><div class="lip">$1.200</div></div><button class="liadd">+</button></div>
-    <div class="li"><div class="liimg" style="background:#F3E5F5">🥗</div><div class="liinfo"><div class="lin">Ensalada César</div><div class="lid">Pollo grillado · parmesano</div><div class="lip">$680</div></div><button class="liadd">+</button></div>
+    <div class="li"><div class="liimg" style="background:#FCE4EC">🥩</div><div style="flex:1"><div class="lin">Bife de chorizo</div><div class="lid">350g · con papas fritas</div><div class="lip" style="color:#FF5722">$1.450</div></div><button class="liadd" style="background:#FF5722">+</button></div>
+    <div class="li"><div class="liimg" style="background:#E8F5E9">🐟</div><div style="flex:1"><div class="lin">Salmón a la plancha</div><div class="lid">Vegetales · Sin TACC 🌿</div><div class="lip" style="color:#FF5722">$1.200</div></div><button class="liadd" style="background:#FF5722">+</button></div>
   </div>
   <div class="cbar" style="background:#FF5722">
-    <div class="cbarl"><div class="ccnt">3</div><span>Ver mi pedido</span></div>
-    <strong>$2.840</strong>
+    <div class="cbar-l"><div class="ccnt">3</div><span>Ver mi pedido</span></div><strong>$2.840</strong>
   </div>
   <div class="bnav">
-    <div class="bni a"><div class="bni-ico">🍽️</div><span>Menú</span></div>
+    <div class="bni"><div class="bni-ico">🍽️</div><span style="color:#FF5722">Menú</span></div>
     <div class="bni"><div class="bni-ico">🛒</div><span>Pedido</span></div>
     <div class="bni"><div class="bni-ico">🔔</div><span>Llamar</span></div>
     <div class="bni"><div class="bni-ico">📶</div><span>WiFi</span></div>
   </div>
 </div>
 </div>
-
 <div>
-<p class="flabel" style="color:#00897B">☕ Cafetería</p>
+<p class="phone-label" style="color:#00897B">☕ Cafetería</p>
 <div class="ph">
   <div class="phst"><span>9:41</span><span>📶 🔋</span></div>
   <div class="phh">
     <div class="phtop">
-      <div><div class="phrn" style="color:#00695C">Café Botánico</div><div style="font-size:12px;color:#999;margin-top:1px">Palermo Soho</div></div>
+      <div><div class="phrn" style="color:#00695C">Café Botánico</div><div class="phsub">Palermo Soho</div></div>
       <div class="phmesa" style="background:#E0F2F1;color:#00897B">Mesa 2</div>
     </div>
-    <div class="phsrch">🔍 Buscar en el menú...</div>
+    <div class="phsrch">🔍 <span>Buscar en el menú...</span></div>
   </div>
   <div class="phhero" style="background:linear-gradient(135deg,#00897B,#26C6DA)">
-    <div class="phhero-bg">☕</div>
-    <div class="phhero-badge" style="color:#00897B">Menú AM</div>
+    <div class="herobg">☕</div>
+    <div class="herobadge" style="background:#fff;color:#00897B">AM</div>
     <h2>Desayuno gourmet</h2>
     <p>Servido hasta las 12:00 hs</p>
   </div>
   <div class="phcats">
     <button class="cat" style="background:#00897B;color:#fff">☕ Cafés</button>
-    <button class="cat">🍵 Tés</button>
-    <button class="cat">🥐 Medialunas</button>
-    <button class="cat">🥑 Tostadas</button>
+    <button class="cat" style="background:#f0f0f0;color:#666">🍵 Tés</button>
+    <button class="cat" style="background:#f0f0f0;color:#666">🥐 Medialunas</button>
+    <button class="cat" style="background:#f0f0f0;color:#666">🥑 Tostadas</button>
   </div>
   <div class="phtitle" style="color:#00695C">Nuestros cafés</div>
   <div class="phlist">
-    <div class="li"><div class="liimg" style="background:#E0F2F1">☕</div><div class="liinfo"><div class="lin">Flat White</div><div class="lid">Doble espresso · leche vaporizada</div><div class="lip" style="color:#00897B">$380</div></div><button class="liadd" style="background:#00897B">+</button></div>
-    <div class="li"><div class="liimg" style="background:#F1F8E9">🍵</div><div class="liinfo"><div class="lin">Matcha Latte</div><div class="lid">Leche de avena · vegano 🌱</div><div class="lip" style="color:#00897B">$420</div></div><button class="liadd" style="background:#00897B">+</button></div>
-    <div class="li"><div class="liimg" style="background:#FFF8E1">🥐</div><div class="liinfo"><div class="lin">Medialunas (x4)</div><div class="lid">Con manteca y mermelada artesanal</div><div class="lip" style="color:#00897B">$320</div></div><button class="liadd" style="background:#00897B">+</button></div>
-    <div class="li"><div class="liimg" style="background:#E8F5E9">🥑</div><div class="liinfo"><div class="lin">Tostada de palta</div><div class="lid">Pan de masa madre · semillas</div><div class="lip" style="color:#00897B">$550</div></div><button class="liadd" style="background:#00897B">+</button></div>
+    <div class="li"><div class="liimg" style="background:#E0F2F1">☕</div><div style="flex:1"><div class="lin">Flat White</div><div class="lid">Doble espresso · leche vaporizada</div><div class="lip" style="color:#00897B">$380</div></div><button class="liadd" style="background:#00897B">+</button></div>
+    <div class="li"><div class="liimg" style="background:#F1F8E9">🍵</div><div style="flex:1"><div class="lin">Matcha Latte</div><div class="lid">Leche de avena · vegano 🌱</div><div class="lip" style="color:#00897B">$420</div></div><button class="liadd" style="background:#00897B">+</button></div>
+    <div class="li"><div class="liimg" style="background:#FFF8E1">🥐</div><div style="flex:1"><div class="lin">Medialunas (x4)</div><div class="lid">Con manteca y mermelada artesanal</div><div class="lip" style="color:#00897B">$320</div></div><button class="liadd" style="background:#00897B">+</button></div>
   </div>
   <div class="cbar" style="background:#00897B">
-    <div class="cbarl"><div class="ccnt">2</div><span>Ver mi pedido</span></div>
-    <strong>$740</strong>
+    <div class="cbar-l"><div class="ccnt">2</div><span>Ver mi pedido</span></div><strong>$740</strong>
   </div>
   <div class="bnav">
-    <div class="bni"><div class="bni-ico">🍽️</div><span style="color:#00897B;font-size:10px;font-weight:600">Menú</span></div>
+    <div class="bni"><div class="bni-ico">🍽️</div><span style="color:#00897B">Menú</span></div>
     <div class="bni"><div class="bni-ico">🛒</div><span>Pedido</span></div>
     <div class="bni"><div class="bni-ico">🔔</div><span>Llamar</span></div>
     <div class="bni"><div class="bni-ico">📶</div><span>WiFi</span></div>
   </div>
 </div>
 </div>
-
 </div>
 </div>
 
-<!-- TABLET -->
-<div id="v-tab" class="pane">
+<div id="v-tab" class="screen">
+<div class="tablet-wrap">
 <div class="tbf">
 <div class="tbl">
   <div class="tbsb">
-    <div class="tbsb-head">
-      <div style="font-size:18px;font-weight:700">La Trattoria</div>
-      <div style="font-size:12px;color:#FF5722;font-weight:600;margin-top:2px">📍 Palermo · Mesa 6</div>
-    </div>
-    <div class="tbtni a">🍽️ Menú</div>
-    <div class="tbtni">🛒 Mi pedido <span style="margin-left:auto;background:#FF5722;color:#fff;width:20px;height:20px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700">3</span></div>
+    <div class="tbsbh"><div class="rname">La Trattoria</div><div class="rloc" style="color:#FF5722">📍 Palermo · Mesa 6</div></div>
+    <div class="tbtni act">🍽️ Menú</div>
+    <div class="tbtni">🛒 Mi pedido <span style="margin-left:auto;background:#FF5722;color:#fff;width:19px;height:19px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:800">3</span></div>
     <div class="tbtni">⭐ Favoritos</div>
     <div class="tbtni">🔔 Llamar mozo</div>
     <div class="tbtni">📶 WiFi gratis</div>
-    <div class="tbobox">
-      <div style="font-size:12px;font-weight:700;color:#FF5722;margin-bottom:6px">TU PEDIDO</div>
-      <div style="font-size:22px;font-weight:700;margin-bottom:4px">$2.840</div>
-      <div style="font-size:12px;color:#888;margin-bottom:12px">3 ítems · Mesa 6</div>
-      <button style="width:100%;background:#FF5722;color:#fff;border:none;border-radius:12px;padding:11px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Poppins',sans-serif">✓ Confirmar pedido</button>
+    <div class="tbobox" style="background:#FFF3E0">
+      <div class="obt" style="color:#FF5722">TU PEDIDO</div>
+      <div class="obv">$2.840</div>
+      <div class="obs">3 ítems · Mesa 6</div>
+      <button style="background:#FF5722">✓ Confirmar pedido</button>
     </div>
   </div>
-  <div class="tbomain">
-    <div class="tbomh">
-      <h2>🍕 Pizzas</h2>
-      <div style="display:flex;gap:7px">
-        <button class="cat" style="background:#f0f0f0;color:#666;border:none;font-size:11px;padding:5px 12px">Todo</button>
-        <button class="cat s" style="border:none;font-size:11px;padding:5px 12px">🍕 Pizzas</button>
-        <button class="cat" style="background:#f0f0f0;color:#666;border:none;font-size:11px;padding:5px 12px">🍝 Pastas</button>
-        <button class="cat" style="background:#f0f0f0;color:#666;border:none;font-size:11px;padding:5px 12px">🥩 Carnes</button>
-      </div>
+  <div class="tbmn">
+    <div class="tbmh"><h2>Carta completa</h2><div style="font-size:11px;color:#FF5722;font-weight:700">24 productos</div></div>
+    <div class="tbcatrow">
+      <button class="cat" style="background:#f0f0f0;color:#666;font-size:11px;padding:6px 12px">Todo</button>
+      <button class="cat" style="background:#FF5722;color:#fff;font-size:11px;padding:6px 12px">🍕 Pizzas</button>
+      <button class="cat" style="background:#f0f0f0;color:#666;font-size:11px;padding:6px 12px">🍝 Pastas</button>
+      <button class="cat" style="background:#f0f0f0;color:#666;font-size:11px;padding:6px 12px">🥩 Carnes</button>
     </div>
     <div class="tbgrid">
-      <div class="tcard"><div class="tcimg" style="background:#FFF3E0">🍕</div><div class="tcb"><div class="tcn">Margarita clásica</div><div class="tcd">Tomate san marzano, mozzarella di bufala, albahaca</div><div class="tcf"><span class="tcp">$850</span><button class="tcadd">+ Agregar</button></div></div></div>
-      <div class="tcard"><div class="tcimg" style="background:#FFF8E1">🍕</div><div class="tcb"><div class="tcn">Napolitana</div><div class="tcd">Tomate, mozzarella, aceitunas negras, orégano</div><div class="tcf"><span class="tcp">$950</span><button class="tcadd">+ Agregar</button></div></div></div>
-      <div class="tcard"><div class="tcimg" style="background:#F3E5F5">🧀</div><div class="tcb"><div class="tcn">Cuatro quesos</div><div class="tcd">Mozzarella, brie, azul y parmesano rallado</div><div class="tcf"><span class="tcp">$1.050</span><button class="tcadd">+ Agregar</button></div></div></div>
-      <div class="tcard"><div class="tcimg" style="background:#FCE4EC">🌶️</div><div class="tcb"><div class="tcn">Americana picante</div><div class="tcd">Pepperoni, jalapeños, cheddar fundido</div><div class="tcf"><span class="tcp">$1.100</span><button class="tcadd">+ Agregar</button></div></div></div>
-      <div class="tcard"><div class="tcimg" style="background:#E8F5E9">🧅</div><div class="tcb"><div class="tcn">Fugazzeta</div><div class="tcd">Cebolla caramelizada, aceitunas, orégano</div><div class="tcf"><span class="tcp">$920</span><button class="tcadd">+ Agregar</button></div></div></div>
-      <div class="tcard"><div class="tcimg" style="background:#E1F5FE">🌿</div><div class="tcb"><div class="tcn">Vegetariana</div><div class="tcd">Pimiento, zucchini, rúcula y tomates cherry</div><div class="tcf"><span class="tcp">$880</span><button class="tcadd">+ Agregar</button></div></div></div>
+      <div class="tc"><div class="tcimg" style="background:#FFF3E0">🍕</div><div class="tcb"><div class="tcn">Margarita clásica</div><div class="tcd">Tomate san marzano, mozzarella, albahaca</div><div class="tcf"><span class="tcp" style="color:#FF5722">$850</span><button class="tcadd" style="background:#FF5722">+ Agregar</button></div></div></div>
+      <div class="tc"><div class="tcimg" style="background:#FFF8E1">🍕</div><div class="tcb"><div class="tcn">Napolitana</div><div class="tcd">Tomate, mozzarella, aceitunas, orégano</div><div class="tcf"><span class="tcp" style="color:#FF5722">$950</span><button class="tcadd" style="background:#FF5722">+ Agregar</button></div></div></div>
+      <div class="tc"><div class="tcimg" style="background:#F3E5F5">🧀</div><div class="tcb"><div class="tcn">Cuatro quesos</div><div class="tcd">Mozzarella, brie, azul, parmesano</div><div class="tcf"><span class="tcp" style="color:#FF5722">$1.050</span><button class="tcadd" style="background:#FF5722">+ Agregar</button></div></div></div>
+      <div class="tc"><div class="tcimg" style="background:#FCE4EC">🌶️</div><div class="tcb"><div class="tcn">Americana picante</div><div class="tcd">Pepperoni, jalapeños, cheddar</div><div class="tcf"><span class="tcp" style="color:#FF5722">$1.100</span><button class="tcadd" style="background:#FF5722">+ Agregar</button></div></div></div>
     </div>
   </div>
+</div>
 </div>
 </div>
 </div>
 
-<!-- PC ADMIN -->
-<div id="v-pc" class="pane">
+<div id="v-pc" class="screen">
+<div class="pc-wrap">
 <div class="pcf">
   <div class="pctb">
     <div class="pclogo"><div class="pcdot"></div>MenuQR Panel</div>
-    <div class="pcnav">
-      <button class="pcni2 a">Dashboard</button>
-      <button class="pcni2">Mi carta</button>
-      <button class="pcni2">Pedidos</button>
-      <button class="pcni2">Mesas</button>
-    </div>
-    <div style="display:flex;align-items:center;gap:10px">
-      <div style="text-align:right"><div style="font-size:13px;font-weight:600">La Trattoria</div><div style="font-size:11px;color:#999">Palermo, CABA</div></div>
-      <div class="pcav">T</div>
-    </div>
+    <div class="pcnav"><button class="pcni act">Dashboard</button><button class="pcni">Mi carta</button><button class="pcni">Pedidos</button><button class="pcni">Mesas</button></div>
+    <div style="display:flex;align-items:center;gap:9px"><div style="text-align:right"><div style="font-size:12px;font-weight:700;color:#1a1a1a">La Trattoria</div><div style="font-size:10px;color:#aaa">Palermo, CABA</div></div><div class="pcav">T</div></div>
   </div>
   <div class="pcbody">
     <div class="pcsb">
-      <div class="pcg">GESTIÓN</div>
-      <div class="pcm a">📊 Dashboard</div>
+      <div class="pcg">GESTION</div>
+      <div class="pcm act">📊 Dashboard</div>
       <div class="pcm">🍽️ Mi carta</div>
-      <div class="pcm">🧾 Pedidos</div>
+      <div class="pcm">🧶 Pedidos</div>
       <div class="pcm">🪑 Mesas</div>
-      <div class="pcg" style="margin-top:8px">MI APP</div>
+      <div class="pcg" style="margin-top:6px">MI APP </div>
       <div class="pcm">🎨 Diseño PLUS</div>
       <div class="pcm">🤖 IA Asistente</div>
       <div class="pcm">📱 Mis QRs</div>
-      <div class="pcg" style="margin-top:8px">CONFIG</div>
+      <div class="pcg" style="margin-top:6px">CONFIG</div>
       <div class="pcm">⚙️ Configuración</div>
-      <div class="pcm">🛵 Delivery</div>
     </div>
     <div class="pccc">
-      <div class="pcch">
-        <div><h3>Dashboard</h3><p>Martes 14 de julio · Buenos Aires</p></div>
-        <button class="pccbtn">📱 Ver mi QR</button>
-      </div>
+      <div class="pcch"><div><h3>Dashboard</h3><p>Martes 14 julio · Buenos Aires</p></div><button class="pccbtn">📱 Ver mi QR</button></div>
       <div class="stats">
-        <div class="st"><div class="stl">PEDIDOS HOY</div><div class="stv">24</div><div class="stt up">↑ 18% vs ayer</div></div>
-        <div class="st"><div class="stl">FACTURACIÓN</div><div class="stv">$28.4K</div><div class="stt up">↑ 12%</div></div>
-        <div class="st"><div class="stl">MESAS ACTIVAS</div><div class="stv">7/12</div><div class="stt nt">58% ocupación</div></div>
-        <div class="st"><div class="stl">TICKET PROMEDIO</div><div class="stv">$1.183</div><div class="stt dn">↓ 3%</div></div>
+        <div class="st"><div class="stl">PEDIDOSHOY</div><div class="stv">24</div><div class="stt up">↑ 18% vs ayer</div></div>
+        <div class="st"><div class="stl">FACTURACION</div><div class="stv">$28.4K</div><div class="stt up">↑ 12%</div></div>
+        <div class="st"><div class="stl">MESASACTIVAS</div><div class="stv">7/12</div><div class="stt nt">58% ocup.</div></div>
+        <div class="st"><div class="stl">TICKETPROM.</div><div class="stv">$1.183</div><div class="stt dn">↓ 3%</div></div>
       </div>
       <div class="pg2">
-        <div class="pcrd">
-          <div class="pcrdh">Pedidos en vivo <a>Ver todos →</a></div>
-          <div class="or"><div class="ornum">#47</div><div class="ori"><div class="orim">Mesa 3</div><div class="ors">4 ítems · hace 2 min</div></div><div class="ort">$2.350</div><div class="badge bnew">Nuevo</div></div>
-          <div class="or"><div class="ornum">#46</div><div class="ori"><div class="orim">Mesa 7</div><div class="ors">2 ítems · hace 8 min</div></div><div class="ort">$1.800</div><div class="badge bprep">En cocina</div></div>
-          <div class="or"><div class="ornum">#45</div><div class="ori"><div class="orim">Mesa 1</div><div class="ors">5 ítems · hace 15 min</div></div><div class="ort">$3.100</div><div class="badge bdone">Listo</div></div>
-          <div class="or"><div class="ornum">#44</div><div class="ori"><div class="orim">Delivery</div><div class="ors">3 ítems · hace 22 min</div></div><div class="ort">$1.950</div><div class="badge bprep">En camino</div></div>
+        <div class="prd">
+          <div class="prdh">Pedidos en vivo <span style="font-size:11px;color:#FF5722;font-weight:600;cursor:pointer">Ver todos →</span></div>
+          <div class="or"><div class="ornum">#47</div><div style="flex:1"><div class="orim">Mesa 3</div><div class="ors">4 ítems · hace 2 min</div></div><div class="ort">$2.350</div><div class="bdg bnew">Nuevo</div></div>
+          <div class="or"><div class="ornum">#46</div><div style="flex:1"><div class="orim">Mesa 7</div><div class="ors">2 ítems · hace 8 min</div></div><div class="ort">$1.800</div><div class="bdg bprep">En cocina</div></div>
+          <div class="or"><div class="ornum">#45</div><div style="flex:1"><div class="orim">Mesa 1</div><div class="ors">5 ítems · hace 15 min</div></div><div class="ort">$3.100</div><div class="bdg bdone">Listo</div></div>
+          <div class="or"><div class="ornum">#44</div><div style="flex:1"><div class="orim">Delivery</div><div class="ors">3 ítems · hace 22 min</div></div><div class="ort">$1.950</div><div class="bdg bprep">En camino</div></div>
         </div>
-        <div class="pcrd">
-          <div class="pcrdh">Ventas por hora <a>Esta semana →</a></div>
-          <div class="bars">
-            <div class="bw"><div class="bf" style="height:18%;background:#FFE0B2;flex:1"></div><div class="bl">10h</div></div>
-            <div class="bw"><div class="bf" style="height:35%;background:#FFE0B2;flex:1"></div><div class="bl">11h</div></div>
-            <div class="bw"><div class="bf" style="height:88%;background:#FF5722;flex:1"></div><div class="bl">12h</div></div>
-            <div class="bw"><div class="bf" style="height:100%;background:#FF5722;flex:1"></div><div class="bl">13h</div></div>
-            <div class="bw"><div class="bf" style="height:55%;background:#FFE0B2;flex:1"></div><div class="bl">14h</div></div>
-            <div class="bw"><div class="bf" style="height:25%;background:#FFE0B2;flex:1"></div><div class="bl">15h</div></div>
-            <div class="bw"><div class="bf" style="height:12%;background:#FFE0B2;flex:1"></div><div class="bl">16h</div></div>
-            <div class="bw"><div class="bf" style="height:74%;background:#FF5722;flex:1"></div><div class="bl">20h</div></div>
-            <div class="bw"><div class="bf" style="height:96%;background:#FF5722;flex:1"></div><div class="bl">21h</div></div>
-            <div class="bw"><div class="bf" style="height:60%;background:#FFE0B2;flex:1"></div><div class="bl">22h</div></div>
+        <div class="prd">
+          <div class="prdh">Ventas por hora</div>
+          <div class="brs">
+            <div class="bw"><div class="bf" style="height:18%;background:#FFE0B2"></div><div class="bbl">10h</div></div>
+            <div class="bw"><div class="bf" style="height:35%;background:#FFE0B2"></div><div class="bbl">11h</div></div>
+            <div class="bw"><div class="bf" style="height:88%;background:#FF5722"></div><div class="bbl">12h</div></div>
+            <div class="bw"><div class="bf" style="height:100%;background:#FF5722"></div><div class="bbl">13h</div></div>
+            <div class="bw"><div class="bf" style="height:55%;background:#FFE0B2"></div><div class="bbl">14h</div></div>
+            <div class="bw"><div class="bf" style="height:25%;background:#FFE0B2"></div><div class="bbl">15h</div></div>
+            <div class="bw"><div class="bf" style="height:74%;background:#FF5722"></div><div class="bbl">20h</div></div>
+            <div class="bw"><div class="bf" style="height:96%;background:#FF5722"></div><div class="bbl">21h</div></div>
+            <div class="bw"><div class="bf" style="height:60%;background:#FFE0B2"></div><div class="bbl">22h</div></div>
           </div>
-          <div style="margin-top:14px;padding-top:12px;border-top:1px solid #f5f5f5">
-            <div style="font-size:13px;font-weight:700;margin-bottom:8px">🏆 Top productos hoy</div>
-            <div style="display:flex;flex-direction:column;gap:7px">
-              <div style="display:flex;justify-content:space-between;font-size:13px;align-items:center"><span>🍕 Pizza Napolitana</span><span style="color:#FF5722;font-weight:700">×14</span></div>
-              <div style="display:flex;justify-content:space-between;font-size:13px;align-items:center"><span>🍝 Ravioles caseros</span><span style="color:#FF5722;font-weight:700">×11</span></div>
-              <div style="display:flex;justify-content:space-between;font-size:13px;align-items:center"><span>🥩 Bife de chorizo</span><span style="color:#FF5722;font-weight:700">×9</span></div>
-            </div>
+          <div class="top3">
+            <div class="top3-title">🏲 Top hoy</div>
+            <div class="top3-row"><span>🍕 Pizza Napolitana</span><span>×14</span></div>
+            <div class="top3-row"><span>🍝 Ravioles caseros</span><span>×11</span></div>
+            <div class="top3-row"><span>🥩 Bife de chorizo</span><span>×9</span></div>
           </div>
         </div>
       </div>
     </div>
   </div>
+</div>
 </div>
 </div>
 
 <script>
-function sw(v,btn){document.querySelectorAll('.pane').forEach(p=>p.classList.remove('on'));document.querySelectorAll('.tb').forEach(b=>b.classList.remove('on'));document.getElementById('v-'+v).classList.add('on');btn.classList.add('on')}
+function sw(v,btn){
+  document.querySelectorAll('.screen').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.dtb').forEach(b=>b.classList.remove('on'));
+  document.getElementById('v-'+v').classList.add('on');
+  btn.classList.add('on');
+}
 </script>
 </body>
 </html>
