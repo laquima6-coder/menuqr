@@ -4388,28 +4388,86 @@ function ScreenGestion({ prods, setProds, cats, local, setLocal }) {
    SCREEN PLUS IA — Chat con IA
 ══════════════════════════════════════════════════════════════ */
 function ScreenPlusIA({ local, prods = [], cats = [], setProds }) {
-  const [msgs, setMsgs] = React.useState([
-    { role: "ai", text: "¡Hola! Soy tu asistente IA de PedidosQR 🤖\n\nPuedo hacer cambios en tu carta al instante. Probá con:\n• \"Cambiá el precio del Bife de Chorizo a $4500\"\n• \"Aplicá 20% de descuento a las Empanadas\"\n• \"Marcá las Rabas sin stock\"\n• \"Pausar pedidos\"\n\n¿Qué necesitás?" }
-  ]);
+  const QUICK_ACTIONS = [
+    { label: "📊 Mis ventas de hoy", msg: "Mostrme las estadísticas de ventas de hoy" },
+    { label: "📋 Ver mi carta completa", msg: "Mostrá mi carta completa con precios" },
+    { label: "🍽️ Diseñar nueva carta", msg: "Diseñame una carta optimizada para mi restaurante con nombres atractivos y descripciones que vendan más" },
+    { label: "💡 Ideas de marketing", msg: "Buscá las últimas tendencias de marketing gastronómico en Argentina y dame 5 ideas concretas para aplicar esta semana" },
+    { label: "📈 Analizar mis precios", msg: "Analizá mis precios actuales y decime si están bien posicionados respecto al mercado" },
+    { label: "🖼️ Completar fotos", msg: "Buscá fotos para los productos de mi carta que no tienen imagen" },
+    { label: "🔥 Tendencias gastro", msg: "Buscá en internet las tendencias gastronómicas más importantes de 2025 y cómo las puedo aplicar en mi local" },
+    { label: "⚡ Subir todos los precios 10%", msg: "Subí todos los precios de mi carta un 10%" },
+  ];
+
+  const BIENVENIDA = `¡Hola! Soy **GASTRO AI**, tu experto en negocios gastronómicos 🍽️
+
+Puedo ayudarte con todo esto y más:
+• 🔍 Buscar en internet tendencias, precios y estrategias
+• 📸 Buscar y asignar fotos profesionales a tus platos
+• 💰 Analizar y actualizar precios en tiempo real
+• 📊 Ver estadísticas de ventas y productos top
+• 🎨 Diseñar cartas completas y optimizadas
+• 📦 Gestionar stock y visibilidad de productos
+• 🚀 Ideas de marketing y promos
+
+¿Con qué arrancamos?`;
+
+  const [msgs, setMsgs] = React.useState([{ role: "ai", text: BIENVENIDA }]);
   const [input, setInput] = React.useState("");
   const [loading, setLoading] = React.useState(false);
-  const [lastAction, setLastAction] = React.useState(null);
+  const [toolActivity, setToolActivity] = React.useState(null);
   const bottomRef = React.useRef(null);
+  const inputRef  = React.useRef(null);
 
-  React.useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs]);
+  React.useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs, loading]);
 
-  async function send() {
-    if (!input.trim() || loading) return;
-    const userMsg = input.trim();
+  // Simple markdown → plain text with bold
+  function renderText(text) {
+    if (!text) return null;
+    return text.split('\n').map((line, li) => {
+      const parts = line.split(/\*\*(.+?)\*\*/g);
+      return (
+        <div key={li} style={{ marginBottom: line === '' ? 4 : 0 }}>
+          {parts.map((p, pi) => pi % 2 === 1
+            ? <strong key={pi}>{p}</strong>
+            : <span key={pi}>{p}</span>
+          )}
+        </div>
+      );
+    });
+  }
+
+  const TOOL_LABELS = {
+    buscar_web:              "🔍 Buscando en internet...",
+    buscar_imagenes_comida:  "🖼️ Buscando fotos profesionales...",
+    ver_carta_completa:      "📋 Leyendo tu carta...",
+    ver_estadisticas:        "📊 Analizando estadísticas...",
+    actualizar_producto:     "✏️ Actualizando producto...",
+    crear_producto:          "➕ Creando nuevo producto...",
+    actualizar_restaurante:  "⚙️ Configurando restaurante...",
+    aplicar_descuento_masivo:"💰 Aplicando cambios masivos...",
+    disenar_carta_sugerida:  "🎨 Diseñando tu carta...",
+  };
+
+  async function send(overrideText) {
+    const userMsg = (overrideText || input).trim();
+    if (!userMsg || loading) return;
     setInput("");
     setMsgs(m => [...m, { role: "user", text: userMsg }]);
     setLoading(true);
+    setToolActivity(null);
+
+    // Build conversation history for the API
+    const history = [...msgs, { role: "user", text: userMsg }]
+      .filter(m => m.role === "user" || m.role === "ai")
+      .map(m => ({ role: m.role === "ai" ? "assistant" : "user", content: m.text }));
+
     try {
-      const res = await fetch("/api/ia-chat", {
+      const res = await fetch("/api/ai", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          messages: [{ role: "user", content: userMsg }],
+          messages: history,
           restaurantName: local?.nombre,
           restaurantId: local?.restauranteId,
           context: {
@@ -4417,128 +4475,151 @@ function ScreenPlusIA({ local, prods = [], cats = [], setProds }) {
               id: p.id,
               nombre: p.nombre || p.name,
               precio: p.precio || p.price,
-              precio_original: p.precio_original || p.orig,
+              precio_original: p.precio_original,
               descripcion: p.descripcion || p.desc,
               activo: p.activo ?? p.active ?? true,
-              sin_stock: p.sin_stock,
-              categoria_id: p.categoria_id || p.cat,
-              foto_url: p.foto_url,
+              sin_stock: !!p.sin_stock,
+              categoria_id: p.categoria_id,
+              foto_url: p.foto_url || p.imagen,
             })),
-            categorias: cats.map(c => ({ id: c.id, label: c.label })),
-            pedidoCount: 0,
-          }
-        })
+            categorias: cats.map(c => ({ id: c.id, label: c.label || c.nombre })),
+          },
+        }),
       });
+
       if (res.ok) {
         const data = await res.json();
-        const aiText = data.content || data.reply || "Sin respuesta";
-        setMsgs(m => [...m, { role: "ai", text: aiText, actions: data.actions }]);
-        // Si la IA hizo cambios, recargar productos
-        if (data.needsReload && data.actions?.length > 0) {
-          setLastAction(data.actions[0]);
-          // Trigger reload via supabase (si setProds disponible, hacer fetch)
-          if (setProds && local?.restauranteId) {
-            try {
-              const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
-              const sbClient = createClient(
-                "https://fwovflsaghnutysjyaus.supabase.co",
-                "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ3b3ZmbHNhZ2hudXR5c2p5YXVzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2Njc0NzUsImV4cCI6MjA5NjI0MzQ3NX0.HtkD4AK35MSf4o9oNeGTlsooE0zSodjFVZH94ipCUAo"
-              );
-              const { data: freshProds } = await sbClient
-                .from("productos")
-                .select("*")
-                .eq("restaurante_id", local.restauranteId)
-                .order("orden");
-              if (freshProds) setProds(freshProds);
-            } catch(e) { console.warn("Reload failed:", e) }
-          }
+        const aiText = data.content || "¿En qué más te puedo ayudar?";
+        const herramientas = data.herramientas_usadas || [];
+
+        setMsgs(m => [...m, {
+          role: "ai",
+          text: aiText,
+          herramientas,
+          needsReload: data.needsReload,
+        }]);
+
+        if (data.needsReload && setProds && local?.restauranteId) {
+          try {
+            const sbUrl  = "https://fwovflsaghnutysjyaus.supabase.co";
+            const sbAnon = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ3b3ZmbHNhZ2hudXR5c2p5YXVzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2Njc0NzUsImV4cCI6MjA5NjI0MzQ3NX0.HtkD4AK35MSf4o9oNeGTlsooE0zSodjFVZH94ipCUAo";
+            const r2 = await fetch(`${sbUrl}/rest/v1/productos?restaurante_id=eq.${local.restauranteId}&select=*&order=orden`, {
+              headers: { apikey: sbAnon, Authorization: `Bearer ${sbAnon}` }
+            });
+            if (r2.ok) { const fresh = await r2.json(); setProds(fresh); }
+          } catch(e) { console.warn("Reload failed:", e); }
         }
       } else {
-        setMsgs(m => [...m, { role: "ai", text: "⚠️ Error conectando con la IA." }]);
+        setMsgs(m => [...m, { role: "ai", text: "⚠️ Error al conectar con la IA. Intentá de nuevo." }]);
       }
     } catch(e) {
-      setMsgs(m => [...m, { role: "ai", text: "⚠️ No se pudo conectar. Revisá tu internet." }]);
+      setMsgs(m => [...m, { role: "ai", text: "⚠️ Sin conexión. Revisá tu internet." }]);
     }
     setLoading(false);
+    setToolActivity(null);
+    setTimeout(() => inputRef.current?.focus(), 100);
   }
 
-  const suggestions = [
-    "Mostrá el resumen de mi carta",
-    "Cambiá el precio de [producto] a $[precio]",
-    "Aplicá 15% de descuento a [producto]",
-    "Marcá [producto] sin stock",
-  ];
+  const purple = "#8B5CF6";
+  const purpleDim = "rgba(139,92,246,.15)";
+  const purpleBorder = "rgba(139,92,246,.25)";
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 60px - 48px)", gap: 0 }}>
-      {/* Header */}
-      <div className="ap-card" style={{ padding: "14px 18px", marginBottom: 16, display: "flex", alignItems: "center", gap: 12 }}>
-        <div style={{ width: 44, height: 44, borderRadius: 12, background: "rgba(139,92,246,.2)", border: "1px solid rgba(139,92,246,.3)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22 }}>🤖</div>
-        <div>
-          <div style={{ fontWeight: 800, fontSize: 16 }}>Asistente IA</div>
-          <div style={{ fontSize: 11, color: "var(--text3)" }}>Powered by Claude · {local?.nombre}</div>
+    <div style={{ display:"flex", flexDirection:"column", height:"calc(100vh - 60px - 48px)", gap:0 }}>
+
+      {/* ── Header ─────────────────────────────────────────────── */}
+      <div className="ap-card" style={{ padding:"14px 18px", marginBottom:14, display:"flex", alignItems:"center", gap:12 }}>
+        <div style={{ width:44, height:44, borderRadius:12, background:purpleDim, border:`1px solid ${purpleBorder}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:22, flexShrink:0 }}>🤖</div>
+        <div style={{ flex:1, minWidth:0 }}>
+          <div style={{ fontWeight:800, fontSize:15 }}>GASTRO AI</div>
+          <div style={{ fontSize:10, color:"var(--text3)", marginTop:1 }}>Experto gastronómico · Búsqueda web · Claude Sonnet</div>
         </div>
-        <span className="ap-plus-badge ap-plus-ia" style={{ marginLeft: "auto" }}>PLUS IA ACTIVO</span>
+        <div style={{ display:"flex", alignItems:"center", gap:6, flexShrink:0 }}>
+          <div style={{ width:7, height:7, borderRadius:"50%", background:"#4ADE80", boxShadow:"0 0 6px #4ADE80" }} />
+          <span style={{ fontSize:10, fontWeight:800, color:"#4ADE80" }}>EN LÍNEA</span>
+        </div>
       </div>
 
-      {/* Chat */}
-      <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: 12, padding: "4px 0", marginBottom: 16 }}>
+      {/* ── Chat ───────────────────────────────────────────────── */}
+      <div style={{ flex:1, overflowY:"auto", display:"flex", flexDirection:"column", gap:10, paddingBottom:8 }}>
         {msgs.map((m, i) => (
-          <div key={i} style={{ display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start" }}>
-            {m.role === "ai" && (
-              <div style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(139,92,246,.2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0, marginRight: 8, alignSelf: "flex-end" }}>🤖</div>
+          <div key={i} style={{ display:"flex", justifyContent:m.role==="user"?"flex-end":"flex-start", gap:8, alignItems:"flex-end" }}>
+            {m.role==="ai" && (
+              <div style={{ width:28, height:28, borderRadius:8, background:purpleDim, display:"flex", alignItems:"center", justifyContent:"center", fontSize:13, flexShrink:0 }}>🤖</div>
             )}
-            <div className={`ap-chat-bubble ${m.role === "user" ? "ap-chat-user" : "ap-chat-ai"}`} style={{ whiteSpace: "pre-wrap" }}>
-              {m.role === "ai" ? m.text.replace(/\*\*(.+?)\*\*/g, "$1") : m.text}
-              {m.actions?.length > 0 && (
-                <div style={{ marginTop: 8, padding: "6px 10px", borderRadius: 8, background: "rgba(139,92,246,.15)", fontSize: 11, color: "#A78BFA", fontWeight: 700 }}>
-                  ✅ {m.actions.length} cambio{m.actions.length > 1 ? "s" : ""} aplicado{m.actions.length > 1 ? "s" : ""} en la carta
+            <div style={{ maxWidth:"80%" }}>
+              <div className={`ap-chat-bubble ${m.role==="user"?"ap-chat-user":"ap-chat-ai"}`} style={{ whiteSpace:"pre-wrap", lineHeight:1.55, fontSize:13 }}>
+                {m.role==="ai" ? renderText(m.text) : m.text}
+              </div>
+              {m.herramientas?.length > 0 && (
+                <div style={{ marginTop:5, display:"flex", gap:5, flexWrap:"wrap" }}>
+                  {[...new Set(m.herramientas)].map((h, hi) => (
+                    <span key={hi} style={{ fontSize:10, padding:"2px 8px", borderRadius:10, background:purpleDim, color:purple, fontWeight:700, border:`1px solid ${purpleBorder}` }}>
+                      {(TOOL_LABELS[h] || h).replace(/\.\.\.$/, '').replace(/^[^ ]+ /, '')}
+                    </span>
+                  ))}
+                  {m.needsReload && (
+                    <span style={{ fontSize:10, padding:"2px 8px", borderRadius:10, background:"rgba(74,222,128,.12)", color:"#4ADE80", fontWeight:700, border:"1px solid rgba(74,222,128,.25)" }}>
+                      ✓ Cambios aplicados
+                    </span>
+                  )}
                 </div>
               )}
             </div>
           </div>
         ))}
+
         {loading && (
-          <div style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
-            <div style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(139,92,246,.2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>🤖</div>
-            <div className="ap-chat-bubble ap-chat-ai" style={{ display: "flex", gap: 4, alignItems: "center" }}>
-              <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#A78BFA", animation: "ap-livepulse 1s infinite" }} />
-              <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#A78BFA", animation: "ap-livepulse 1s .2s infinite" }} />
-              <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#A78BFA", animation: "ap-livepulse 1s .4s infinite" }} />
+          <div style={{ display:"flex", gap:8, alignItems:"flex-end" }}>
+            <div style={{ width:28, height:28, borderRadius:8, background:purpleDim, display:"flex", alignItems:"center", justifyContent:"center", fontSize:13 }}>🤖</div>
+            <div className="ap-chat-bubble ap-chat-ai" style={{ fontSize:12 }}>
+              {toolActivity ? (
+                <span style={{ color:purple }}>{TOOL_LABELS[toolActivity] || "Pensando..."}</span>
+              ) : (
+                <span style={{ display:"flex", gap:4, alignItems:"center" }}>
+                  <span style={{ color:"var(--text3)" }}>Pensando</span>
+                  {[0,.2,.4].map((d,i) => (
+                    <span key={i} style={{ width:5, height:5, borderRadius:"50%", background:purple, display:"inline-block", animation:`ap-livepulse 1s ${d}s infinite` }} />
+                  ))}
+                </span>
+              )}
             </div>
           </div>
         )}
         <div ref={bottomRef} />
       </div>
 
-      {/* Suggestions */}
-      {msgs.length <= 2 && (
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
-          {suggestions.map((s, i) => (
-            <button key={i} onClick={() => setInput(s)}
-              style={{ padding: "7px 12px", borderRadius: 20, border: "1px solid rgba(139,92,246,.3)", background: "rgba(139,92,246,.08)", color: "#A78BFA", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", transition: ".15s" }}>
-              {s}
+      {/* ── Quick Actions ──────────────────────────────────────── */}
+      {msgs.length <= 1 && (
+        <div style={{ display:"flex", gap:7, flexWrap:"wrap", paddingTop:8, paddingBottom:8, borderTop:`1px solid var(--border)` }}>
+          {QUICK_ACTIONS.map((a, i) => (
+            <button key={i} onClick={() => send(a.msg)}
+              style={{ padding:"7px 12px", borderRadius:20, border:`1px solid ${purpleBorder}`, background:purpleDim, color:purple, fontSize:11, fontWeight:700, cursor:"pointer", fontFamily:"inherit", transition:".15s", whiteSpace:"nowrap" }}>
+              {a.label}
             </button>
           ))}
         </div>
       )}
 
-      {/* Input */}
-      <div style={{ display: "flex", gap: 8 }}>
+      {/* ── Input ─────────────────────────────────────────────── */}
+      <div style={{ display:"flex", gap:8, paddingTop:8, borderTop: msgs.length > 1 ? `1px solid var(--border)` : "none" }}>
         <input
-          value={input} onChange={e => setInput(e.target.value)}
-          onKeyDown={e => e.key === "Enter" && !e.shiftKey && send()}
-          placeholder="Escribí tu consulta..."
-          style={{ flex: 1, background: "var(--bg3)", border: "1px solid rgba(139,92,246,.3)", borderRadius: 12, padding: "12px 16px", color: "var(--text)", fontSize: 13, outline: "none", fontFamily: "inherit" }}
+          ref={inputRef}
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          onKeyDown={e => e.key==="Enter" && !e.shiftKey && send()}
+          placeholder="Preguntá cualquier cosa o pedí un cambio en tu carta..."
+          style={{ flex:1, background:"var(--bg3)", border:`1px solid ${purpleBorder}`, borderRadius:12, padding:"12px 16px", color:"var(--text)", fontSize:13, outline:"none", fontFamily:"inherit" }}
         />
-        <button onClick={send} disabled={loading || !input.trim()}
-          style={{ padding: "12px 20px", borderRadius: 12, border: "none", background: loading ? "var(--bg4)" : "rgba(139,92,246,.8)", color: "#fff", fontWeight: 700, fontSize: 13, cursor: loading ? "not-allowed" : "pointer", fontFamily: "inherit", transition: ".15s" }}>
-          {loading ? "..." : "↑ Enviar"}
+        <button onClick={() => send()} disabled={loading || !input.trim()}
+          style={{ padding:"12px 20px", borderRadius:12, border:"none", background:loading||!input.trim() ? "var(--bg4)" : purple, color:"#fff", fontWeight:800, fontSize:13, cursor:loading||!input.trim()?"not-allowed":"pointer", fontFamily:"inherit", transition:".15s", flexShrink:0 }}>
+          {loading ? "···" : "↑"}
         </button>
       </div>
     </div>
   );
 }
+
 
 /* ══════════════════════════════════════════════════════════════
    SCREEN PLUS FIGMA — Editor visual de menú
