@@ -551,7 +551,13 @@ module.exports = async function handler(req, res) {
   const systemPrompt = buildSystemPrompt(restaurantName, restaurante_id, productos, categorias)
 
   // ── Agentic loop: hasta 8 iteraciones ──────────────────────────────────────
-  let msgs = messages.map(m => ({ role: m.role, content: m.content || m.text || '' }))
+  // Sanitizar: la API de Anthropic requiere que el primer msg sea 'user'
+  let msgs = messages
+    .map(m => ({ role: m.role, content: m.content || m.text || '' }))
+    .filter(m => m.role === 'user' || m.role === 'assistant')
+  // Eliminar mensajes 'assistant' al inicio hasta encontrar el primer 'user'
+  while (msgs.length > 0 && msgs[0].role === 'assistant') msgs.shift()
+  if (msgs.length === 0) return res.status(400).json({ error: 'Se requiere al menos un mensaje de usuario' })
   let needsReload = false
   let herramientasUsadas = []
   const MAX_ITER = 8
