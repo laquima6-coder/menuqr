@@ -4460,7 +4460,8 @@ Puedo ayudarte con todo esto y más:
     // Build conversation history for the API
     const history = [...msgs, { role: "user", text: userMsg }]
       .filter(m => m.role === "user" || m.role === "ai")
-      .map(m => ({ role: m.role === "ai" ? "assistant" : "user", content: m.text }));
+      .map(m => ({ role: m.role === "ai" ? "assistant" : "user", content: m.text || "" }))
+      .filter((_, i, arr) => !(i === 0 && arr[0].role === "assistant")); // Anthropic requiere que el primer msg sea user
 
     try {
       const res = await fetch("/api/ai", {
