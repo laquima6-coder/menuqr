@@ -303,23 +303,19 @@ async function runTool(name, input, context) {
 
     // ── VER CARTA ───────────────────────────────────────────────────────────
     case 'ver_carta_completa': {
-      const rid = input.restaurante_id || restaurante_id
-      const [prodRes, catRes] = await Promise.all([
-        sb('GET', `productos?restaurante_id=eq.${rid}&select=id,nombre,name,descripcion,desc,precio,price,activo,active,sin_stock,foto_url,imagen,categoria_id,precio_original&order=categoria_id`),
-        sb('GET', `categorias?restaurante_id=eq.${rid}&select=id,nombre,label,orden&order=orden`),
-      ])
-      const prods = (prodRes.data || []).map(p => ({
+      // Usamos el contexto ya enviado (evita Supabase calls extra)
+      const prods = (productos || []).map(p => ({
         id: p.id,
         nombre: p.nombre || p.name || '—',
         descripcion: p.descripcion || p.desc || '',
         precio: p.precio || p.price || 0,
         activo: p.activo ?? p.active ?? true,
         sin_stock: !!p.sin_stock,
-        foto: !!p.foto_url || !!p.imagen,
+        foto: !!(p.foto_url || p.imagen),
         categoria_id: p.categoria_id,
         precio_original: p.precio_original || null,
       }))
-      const cats = (catRes.data || []).map(c => ({
+      const cats = (categorias || []).map(c => ({
         id: c.id,
         nombre: c.label || c.nombre,
         cantidad: prods.filter(p => p.categoria_id === c.id).length,
@@ -560,7 +556,7 @@ module.exports = async function handler(req, res) {
   if (msgs.length === 0) return res.status(400).json({ error: 'Se requiere al menos un mensaje de usuario' })
   let needsReload = false
   let herramientasUsadas = []
-  const MAX_ITER = 8
+  const MAX_ITER = 4
 
   for (let iter = 0; iter < MAX_ITER; iter++) {
     let claudeRes
@@ -574,7 +570,7 @@ module.exports = async function handler(req, res) {
         },
         body: JSON.stringify({
           model: 'claude-sonnet-4-6',
-          max_tokens: 2048,
+          max_tokens: 1024,
           system: systemPrompt,
           tools: TOOLS,
           messages: msgs,
