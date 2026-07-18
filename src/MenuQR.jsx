@@ -2203,7 +2203,7 @@ function CartaV3ClientView({ cartaV3, local, cats, prods, cart, add, rem, cartCo
             {local.mesa&&<div style={{fontSize:10,fontWeight:700,color:accentColor,marginTop:1}}>Mesa {local.mesa}</div>}
           </div>
           <div style={{display:'flex',gap:6,flexShrink:0}}>
-            {!effectiveVitrina&&local?.mesa&&local?.feat_solicitudes!==false&&onCampanita&&(
+            {!effectiveVitrina&&local?.feat_solicitudes!==false&&onCampanita&&(
               <button onClick={onCampanita} style={{width:34,height:34,borderRadius:10,background:`${accentColor}22`,border:`1px solid ${accentColor}44`,fontSize:16,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>🛎️</button>
             )}
             {!effectiveVitrina&&cartCount>0&&(
@@ -3210,7 +3210,7 @@ export function ClientApp({onBack, local, cats, prods, vitrina=false, sinPedidos
           {/* Header with category tabs */}
           <div style={{padding:"18px 32px 14px",borderBottom:`2px solid ${warmBorder}`,display:"flex",alignItems:"center",gap:12,flexShrink:0}}>
             <span style={{fontSize:13,letterSpacing:4,textTransform:"uppercase",color:warmText,fontFamily:"'DM Sans',sans-serif",fontWeight:700}}>La Carta</span>
-            {local.mesa&&local.feat_solicitudes!==false&&(
+            {local.feat_solicitudes!==false&&(
               <button onClick={()=>setShowSolicitudes(true)} style={{width:34,height:34,borderRadius:10,background:"#EAE0CC",border:`1px solid ${warmBorder}`,fontSize:18,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>🛎️</button>
             )}
             <div style={{flex:1,display:"flex",gap:0,overflowX:"auto",scrollbarWidth:"none",justifyContent:"flex-end"}}>
@@ -3343,7 +3343,7 @@ export function ClientApp({onBack, local, cats, prods, vitrina=false, sinPedidos
           )}
           {!effectiveVitrina&&(
             <div style={{flexShrink:0,display:"flex",gap:6,alignItems:"center"}}>
-              {local.mesa&&local.feat_solicitudes!==false&&(
+              {local.feat_solicitudes!==false&&(
                 <button onClick={()=>setShowSolicitudes(true)} className="pr" style={{width:36,height:36,borderRadius:10,background:"#F5F5F5",border:"1px solid #EBEBEB",fontSize:18,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>🛎️</button>
               )}
               <button onClick={()=>setShowLang(true)} style={{width:36,height:36,borderRadius:10,background:"#F5F5F5",border:"1px solid #EBEBEB",fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
