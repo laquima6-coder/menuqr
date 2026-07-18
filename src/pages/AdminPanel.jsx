@@ -3043,6 +3043,13 @@ function ScreenDelivery({ pedidos, setPedidos, local }) {
       await ch.send({ type: "broadcast", event: "location", payload: { lat: null, lon: null, en_camino: true } });
       setTimeout(() => supabase.removeChannel(ch), 3000);
     }
+    // Abrir WhatsApp al cliente con link de seguimiento
+    if (next === "en_camino" && p.telefono_cliente) {
+      const trackLink = `https://menuqr.vercel.app/${local?.slug}/pedido/${p.id}`;
+      const msg = encodeURIComponent(`¡Hola ${p.nombre_cliente || ""}! 🛵 Tu pedido ya salió.\n\nSeguilo en tiempo real acá:\n${trackLink}`);
+      const phone = (p.telefono_cliente || "").replace(/\D/g, "");
+      if (phone) window.open(`https://wa.me/${phone}?text=${msg}`, "_blank");
+    }
   };
 
   const guardarNotaDelivery = async (p) => {
@@ -3115,10 +3122,26 @@ function ScreenDelivery({ pedidos, setPedidos, local }) {
                   ✅ Confirmar pago
                 </button>
               )}
+              {p.status === "pendiente_pago" && p.telefono_cliente && (local?.alias_pago || local?.mp_alias) && (
+                <a href={"https://wa.me/"+p.telefono_cliente.replace(/\D/g,"")+"?text="+encodeURIComponent(
+                  `¡Hola ${p.nombre_cliente||""}! Tu pedido está confirmado 🍽️\n\nTotal: $${(p.total||0).toLocaleString("es-AR")}\n\nPara pagarlo, transferí al alias:\n*${local.alias_pago||local.mp_alias}*\n\nUna vez que pagues, mandanos el comprobante y empezamos a preparar tu pedido.`
+                )} target="_blank" rel="noreferrer"
+                  style={{ background: "#25D366", border: "none", borderRadius: 8, padding: "8px 12px", fontSize: 11, fontWeight: 700, color: "#fff", textDecoration: "none", display: "flex", alignItems: "center", gap: 4 }}>
+                  📲 Enviar alias
+                </a>
+              )}
               {p.status !== "pendiente_pago" && p.status !== "entregado" && (
                 <button className="ap-btn ap-btn-gold" style={{ flex: 1 }} onClick={() => avanzarEstado(p)}>
                   {BTN_LABELS[p.status] || "Avanzar"}
                 </button>
+              )}
+              {p.status === "listo" && (
+                <a href={"https://wa.me/?text="+encodeURIComponent(
+                  `📦 Pedido delivery #${p.id?.slice(-3)}\n👤 ${p.nombre_cliente||"Cliente"}\n📍 ${p.direccion_cliente||""}${p.entrecalles?"\nEntre: "+p.entrecalles:""}${p.observaciones_delivery?"\nNota: "+p.observaciones_delivery:""}\n\n🗺️ Link de tracking:\nhttps://menuqr.vercel.app/tracking/${local?.slug}`
+                )} target="_blank" rel="noreferrer"
+                  style={{ background: "#5C6BC0", border: "none", borderRadius: 8, padding: "8px 12px", fontSize: 11, fontWeight: 700, color: "#fff", textDecoration: "none", display: "flex", alignItems: "center", gap: 4 }}>
+                  🛵 Link repartidor
+                </a>
               )}
               {(p.telefono_cliente || local?.telefono) && (
                 <a href={"https://wa.me/"+((p.telefono_cliente||local?.telefono||"").replace(/\D/g,""))+"?text="+encodeURIComponent("Hola "+(p.nombre_cliente||"!")+"! Tu pedido #"+p.id?.slice(-3)+" está: "+statusLabel(p.status)+" 🛵")}

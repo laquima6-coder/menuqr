@@ -1,13 +1,80 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useParams } from 'react-router-dom'
-import { getRestaurante, getPedidoById, subscribePedido } from '../lib/supabase.js'
+import { getRestaurante, getPedidoById, subscribePedido, supabase as sb } from '../lib/supabase.js'
 
 const STEPS = [
   { key: 'nuevo',     icon: '📋', label: 'Recibido',   sub: 'Tu pedido llegó a la cocina' },
   { key: 'preparando',icon: '🍳', label: 'Preparando', sub: 'Lo están cocinando ahora' },
   { key: 'listo',     icon: '🔔', label: '¡Listo!',    sub: 'Ya puede pasar a buscarlo' },
+  { key: 'en_camino', icon: '🛵', label: 'En camino',  sub: 'El repartidor va a tu casa' },
   { key: 'entregado', icon: '🎉', label: 'Entregado',  sub: '¡Buen provecho!' },
 ]
+
+const TOMTOM_KEY = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_TOMTOM_KEY) || 'NP2gPszMkFrVccT95vTeaMrsWfZ0ORLU'
+
+let _ttState = 'idle', _ttCbs = []
+function loadTT(cb) {
+  if (window.tt) { cb(); return }
+  _ttCbs.push(cb)
+  if (_ttState !== 'idle') return
+  _ttState = 'loading'
+  const l = document.createElement('link'); l.rel = 'stylesheet'
+  l.href = 'https://api.tomtom.com/maps-sdk-for-web/cdn/6.x/6.25.0/maps/maps.css'
+  document.head.appendChild(l)
+  const s = document.createElement('script')
+  s.src = 'https://api.tomtom.com/maps-sdk-for-web/cdn/6.x/6.25.0/maps/maps-web.min.js'
+  s.onload = () => { _ttState = 'ready'; _ttCbs.forEach(f => f()); _ttCbs = [] }
+  s.onerror = () => { _ttState = 'idle'; _ttCbs = [] }
+  document.head.appendChild(s)
+}
+
+function LiveMap({ slug, repartidorPos }) {
+  const contRef  = useRef(null)
+  const mapRef   = useRef(null)
+  const markerRef = useRef(null)
+
+  useEffect(() => {
+    if (!contRef.current) return
+    loadTT(() => {
+      if (mapRef.current || !contRef.current) return
+      const map = window.tt.map({ key: TOMTOM_KEY, container: contRef.current, zoom: 15 })
+      mapRef.current = map
+    })
+    return () => { if (mapRef.current) { mapRef.current.remove(); mapRef.current = null } }
+  }, [])
+
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || !repartidorPos?.lat) return
+    const update = () => {
+      try {
+        if (markerRef.current) {
+          markerRef.current.setLngLat([repartidorPos.lon, repartidorPos.lat])
+        } else {
+          markerRef.current = new window.tt.Marker({ color: '#e8a020' })
+            .setLngLat([repartidorPos.lon, repartidorPos.lat]).addTo(map)
+        }
+        map.setCenter([repartidorPos.lon, repartidorPos.lat])
+      } catch (e) { console.warn(e) }
+    }
+    if (map.loaded()) update(); else map.once('load', update)
+  }, [repartidorPos])
+
+  return (
+    <div style={{ borderRadius: 16, overflow: 'hidden', height: 220, background: '#111', border: '1px solid rgba(232,160,32,0.25)', position: 'relative', marginBottom: 16, width: '100%', maxWidth: 400 }}>
+      <div ref={contRef} style={{ width: '100%', height: '100%' }} />
+      <div style={{ position: 'absolute', top: 10, left: 10, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(6px)', borderRadius: 20, padding: '4px 12px', display: 'flex', alignItems: 'center', gap: 6 }}>
+        <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#4CAF50', boxShadow: '0 0 6px #4CAF50', animation: 'pulse 1.5s infinite' }} />
+        <span style={{ fontSize: 10, color: '#fff', fontFamily: "'IBM Plex Mono',monospace", letterSpacing: 1 }}>REPARTIDOR EN VIVO</span>
+      </div>
+      {!repartidorPos?.lat && (
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(10,10,10,0.7)' }}>
+          <div style={{ color: 'rgba(255,255,255,0.45)', fontSize: 13, fontFamily: "'DM Sans',sans-serif" }}>Esperando señal GPS...</div>
+        </div>
+      )}
+    </div>
+  )
+}
 
 export default function PedidoStatus() {
   const { slug, id } = useParams()
@@ -15,6 +82,8 @@ export default function PedidoStatus() {
   const [pedido,  setPedido]  = useState(null)
   const [loading, setLoading] = useState(true)
   const [error,   setError]   = useState(null)
+  const [repartidorPos, setRepartidorPos] = useState(null)
+  const trackChRef = useRef(null)
 
   useEffect(() => {
     let cancelled = false
@@ -37,10 +106,28 @@ export default function PedidoStatus() {
     return unsub
   }, [id])
 
+  // Live tracking: subscribe when delivery order is en_camino
+  useEffect(() => {
+    const isDelivery = pedido?.tipo_pedido === 'delivery' || pedido?.mesa_numero === 0
+    if (!isDelivery || pedido?.status !== 'en_camino' || !sb || !slug) return
+    if (trackChRef.current) return
+
+    const ch = sb.channel(`tracking:${slug}`)
+      .on('broadcast', { event: 'location' }, ({ payload }) => {
+        if (payload.lat) setRepartidorPos({ lat: payload.lat, lon: payload.lon })
+      })
+      .on('broadcast', { event: 'stopped' }, () => {})
+      .subscribe()
+    trackChRef.current = ch
+    return () => { try { sb.removeChannel(ch); trackChRef.current = null } catch {} }
+  }, [pedido?.status, pedido?.tipo_pedido, pedido?.mesa_numero, slug])
+
   const acColor = rest?.config?.color || rest?.color || '#C9A84C'
+  const isDelivery = pedido?.tipo_pedido === 'delivery' || pedido?.mesa_numero === 0
   const stepIdx = STEPS.findIndex(s => s.key === pedido?.status)
   const curStep = STEPS[Math.max(0, stepIdx)]
   const isDone  = pedido?.status === 'listo' || pedido?.status === 'entregado'
+  const isEnCamino = pedido?.status === 'en_camino'
   const items   = pedido?.pedido_items || []
   const mesa    = pedido?.mesa_numero
 
@@ -67,12 +154,12 @@ export default function PedidoStatus() {
         <div style={{fontSize:36,marginBottom:8}}>{rest?.emoji||'🍽️'}</div>
         <div style={{fontFamily:"'Outfit',sans-serif",fontSize:20,fontWeight:800,color:'#F5F0E8',marginBottom:4}}>{rest?.nombre||slug}</div>
         <div style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:11,color:'#4A6080',letterSpacing:1}}>
-          {mesa&&mesa!==0?`MESA ${mesa} · `:'MOSTRADOR · '}#{String(id).slice(-4)}
+          {mesa&&mesa!==0?`MESA ${mesa} · `:(isDelivery?'DELIVERY · ':'MOSTRADOR · ')}#{String(id).slice(-4)}
         </div>
       </div>
 
       {/* Status card */}
-      <div style={{width:'100%',maxWidth:400,background:'rgba(255,255,255,.04)',border:`1px solid ${isDone?'rgba(74,154,90,.3)':'rgba(255,255,255,.08)'}`,borderRadius:20,padding:'28px 24px',marginBottom:16,textAlign:'center'}}>
+      <div style={{width:'100%',maxWidth:400,background:'rgba(255,255,255,.04)',border:`1px solid ${isDone?'rgba(74,154,90,.3)':isEnCamino?'rgba(232,160,32,.3)':'rgba(255,255,255,.08)'}`,borderRadius:20,padding:'28px 24px',marginBottom:16,textAlign:'center'}}>
         {!isDone&&(
           <div style={{display:'inline-flex',alignItems:'center',gap:6,background:'rgba(74,154,90,.1)',border:'1px solid rgba(74,154,90,.25)',borderRadius:20,padding:'4px 12px',marginBottom:18}}>
             <div style={{width:6,height:6,borderRadius:'50%',background:'#4A9A5A',animation:'pulse 1.5s infinite'}}/>
@@ -80,9 +167,14 @@ export default function PedidoStatus() {
           </div>
         )}
         <div style={{fontSize:54,marginBottom:12,lineHeight:1}}>{curStep.icon}</div>
-        <div style={{fontFamily:"'Outfit',sans-serif",fontSize:26,fontWeight:800,color:isDone?'#4A9A5A':acColor,marginBottom:6}}>{curStep.label}</div>
+        <div style={{fontFamily:"'Outfit',sans-serif",fontSize:26,fontWeight:800,color:isDone?'#4A9A5A':isEnCamino?'#e8a020':acColor,marginBottom:6}}>{curStep.label}</div>
         <div style={{fontSize:13,color:'#7A8898',lineHeight:1.5}}>{curStep.sub}</div>
       </div>
+
+      {/* Live map for delivery en_camino */}
+      {isDelivery && isEnCamino && (
+        <LiveMap slug={slug} repartidorPos={repartidorPos} />
+      )}
 
       {/* Steps */}
       <div style={{width:'100%',maxWidth:400,display:'flex',flexDirection:'column',gap:8,marginBottom:20}}>
